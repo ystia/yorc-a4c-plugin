@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: alien4cloud:alien4cloud-core:1.2.0-SM2">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/alien4cloud/alien4cloud-core/1.2.0-SM2/alien4cloud-core-1.2.0-SM2.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/alien4cloud/alien4cloud-core/1.2.0-SM2/alien4cloud-core-1.2.0-SM2-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/alien4cloud/alien4cloud-core/1.2.0-SM2/alien4cloud-core-1.2.0-SM2-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

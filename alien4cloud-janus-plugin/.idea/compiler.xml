@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <resourceExtensions />
+    <wildcardResourcePatterns>
+      <entry name="!?*.java" />
+      <entry name="!?*.form" />
+      <entry name="!?*.class" />
+      <entry name="!?*.groovy" />
+      <entry name="!?*.scala" />
+      <entry name="!?*.flex" />
+      <entry name="!?*.kt" />
+      <entry name="!?*.clj" />
+      <entry name="!?*.aj" />
+    </wildcardResourcePatterns>
+    <annotationProcessing>
+      <profile default="true" name="Default" enabled="false">
+        <processorPath useClasspath="true" />
+      </profile>
+      <profile default="false" name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="alien4cloud-mock-paas-provider-plugin" />
+      </profile>
+      <profile default="false" name="Annotation profile for alien4cloud-hpc-provider-plugin" enabled="true">
+        <sourceOutputDir name="target\generated-sources\annotations" />
+        <sourceTestOutputDir name="target\generated-test-sources\test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="alien4cloud-hpc-provider-plugin" />
+      </profile>
+      <profile default="false" name="Annotation profile for alien4cloud-Janus-plugin" enabled="true">
+        <sourceOutputDir name="target\generated-sources\annotations" />
+        <sourceTestOutputDir name="target\generated-test-sources\test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="alien4cloud-Janus-plugin" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="alien4cloud-hpc-provider-plugin" target="1.7" />
+      <module name="alien4cloud-Janus-plugin" target="1.7" />
+      <module name="alien4cloud-mock-paas-provider-plugin" target="1.7" />
+    </bytecodeTargetLevel>
+  </component>
+</project>
