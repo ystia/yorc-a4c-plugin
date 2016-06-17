@@ -12,7 +12,7 @@ This mean that we allocate nodes with Slurm, then deploy component (docker image
 
 ## Installation
 ### Alien4Cloud
-* Download: [http://fastconnect.org/maven/service/local/artifact/maven/redirect?r=opensource&g=alien4cloud&a=alien4cloud-dist&v=1.2.0-RC1&p=tar.gz&c=dist](alien4cloud)
+* Download: [alien4Cloud not the latest build v1.2](http://fastconnect.org/maven/service/local/artifact/maven/redirect?r=opensource&g=alien4cloud&a=alien4cloud-dist&v=1.2.0-RC1&p=tar.gz&c=dist)
 * Run : 
 * Unix:
 alien4cloud.sh
