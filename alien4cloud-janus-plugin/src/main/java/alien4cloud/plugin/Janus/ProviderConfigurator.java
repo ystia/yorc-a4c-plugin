@@ -10,7 +10,7 @@ import alien4cloud.rest.utils.JsonUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 @Slf4j
-@Component("hpc-provider-configurator")
+@Component("Janus-provider-configurator")
 public class ProviderConfigurator implements IPluginConfigurator<ProviderConfig> {
 
     @Override

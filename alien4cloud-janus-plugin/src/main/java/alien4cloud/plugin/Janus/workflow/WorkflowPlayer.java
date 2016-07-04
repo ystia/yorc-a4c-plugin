@@ -57,10 +57,10 @@ public class WorkflowPlayer {
                 //We looking for a Gpu propertie in the host if any
                 if(gpu.equals(NONE)){
                     log.info("url image docker : " + properties.get(0));
-                    execPython.componentInstall(getNodeId(), properties.get(0), scriptPath, gpu);
+                   // execPython.componentInstall(getNodeId(), properties.get(0), scriptPath, gpu);
                 }else{
                     log.info("url image docker : " + properties.get(1));
-                    execPython.componentInstall(getNodeId(), properties.get(1), scriptPath, gpu);
+                   // execPython.componentInstall(getNodeId(), properties.get(1), scriptPath, gpu);
                 }
             //STEP : CONFIGURE
             //for this poc we use the HPCDockerContainer component which have only a create step

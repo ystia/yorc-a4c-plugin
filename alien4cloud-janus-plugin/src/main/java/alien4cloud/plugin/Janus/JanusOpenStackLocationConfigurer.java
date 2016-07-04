@@ -86,8 +86,8 @@ public class JanusOpenStackLocationConfigurer implements ILocationConfiguratorPl
 
     @Override
     public List<String> getResourcesTypes() {
-        return Lists.newArrayList("alien.nodes.Janus.slurm.Image", "alien.nodes.Janus.slurm.Flavor", "alien.nodes.Janus.Compute",
-                "alien.nodes.Janus.BlockStorage", "alien.nodes.Janus.Network");
+        return Lists.newArrayList("alien.nodes.hpc.slurm.Image", "alien.nodes.hpc.slurm.Flavor", "alien.nodes.hpc.Compute",
+                "alien.nodes.hpc.BlockStorage", "alien.nodes.hpc.Network");
     }
 
     @Override
@@ -104,8 +104,8 @@ public class JanusOpenStackLocationConfigurer implements ILocationConfiguratorPl
 
     @Override
     public List<LocationResourceTemplate> instances(ILocationResourceAccessor resourceAccessor) {
-        ImageFlavorContext imageContext = resourceGeneratorService.buildContext("alien.nodes.Janus.slurm.Image", "id", resourceAccessor);
-        ImageFlavorContext flavorContext = resourceGeneratorService.buildContext("alien.nodes.Janus.slurm.Flavor", "id", resourceAccessor);
+        ImageFlavorContext imageContext = resourceGeneratorService.buildContext("alien.nodes.hpc.slurm.Image", "id", resourceAccessor);
+        ImageFlavorContext flavorContext = resourceGeneratorService.buildContext("alien.nodes.hpc.slurm.Flavor", "id", resourceAccessor);
         boolean canProceed = true;
 
         if (CollectionUtils.isEmpty(imageContext.getTemplates())) {
@@ -120,7 +120,7 @@ public class JanusOpenStackLocationConfigurer implements ILocationConfiguratorPl
             log.warn("Skipping auto configuration");
             return null;
         }
-        ComputeContext computeContext = resourceGeneratorService.buildComputeContext("alien.nodes.Janus.Compute", null, IMAGE_ID_PROP, FLAVOR_ID_PROP,
+        ComputeContext computeContext = resourceGeneratorService.buildComputeContext("alien.nodes.hpc.Compute", null, IMAGE_ID_PROP, FLAVOR_ID_PROP,
                 resourceAccessor);
 
         return resourceGeneratorService.generateComputeFromImageAndFlavor(imageContext, flavorContext, computeContext, resourceAccessor);

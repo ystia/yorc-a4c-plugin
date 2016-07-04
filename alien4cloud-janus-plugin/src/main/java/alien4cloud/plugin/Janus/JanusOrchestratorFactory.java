@@ -23,7 +23,7 @@ import com.google.common.collect.Maps;
 /**
  * Factory for Mock implementation of orchestrator instance.
  */
-@Component("hpc-orchestrator-factory")
+@Component("Janus-orchestrator-factory")
 public class JanusOrchestratorFactory implements IOrchestratorPluginFactory<JanusOrchestrator, ProviderConfig> {
     public static final String OPENSTACK = "OpenStack";
     @Resource
