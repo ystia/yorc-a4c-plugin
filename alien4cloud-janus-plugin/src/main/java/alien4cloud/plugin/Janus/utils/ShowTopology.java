@@ -1,3 +1,14 @@
+/*
+* Copyright 2016 Bull Atos.  All Rights Reserved.
+* DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+* See the NOTICE file distributed with this work for additional information
+* regarding copyright ownership.
+*/
+
+//TODO remove this class when the development end
+// this class is a test in order to show all in information about the topology and know what kind of information
+// we can get thanks to the PaaSTopologyDeploymentContext
+
 package alien4cloud.plugin.Janus.utils;
 
 import alien4cloud.component.CSARRepositorySearchService;

@@ -1,3 +1,9 @@
+/*
+* Copyright 2016 Bull Atos.  All Rights Reserved.
+* DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+* See the NOTICE file distributed with this work for additional information
+* regarding copyright ownership.
+*/
 package alien4cloud.plugin.Janus.workflow;
 
 import alien4cloud.model.components.AbstractPropertyValue;
@@ -18,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created by a628490 on 03/06/2016.
+ * Created by xBD on 03/06/2016.
  */
 @Slf4j
 @Getter

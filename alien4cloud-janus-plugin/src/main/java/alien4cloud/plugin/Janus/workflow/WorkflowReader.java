@@ -1,3 +1,9 @@
+/*
+* Copyright 2016 Bull Atos.  All Rights Reserved.
+* DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+* See the NOTICE file distributed with this work for additional information
+* regarding copyright ownership.
+*/
 package alien4cloud.plugin.Janus.workflow;
 
 import alien4cloud.paas.wf.AbstractStep;
@@ -9,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.*;
 
 /**
- * Created by a628490 on 30/05/2016.
+ * Created by xBD on 30/05/2016.
  */
 @Slf4j
 @Getter
