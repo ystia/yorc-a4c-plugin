@@ -1,5 +1,7 @@
 # Alien4Cloud Janus Plugin
 
+[![Build Status](http://10.197.135.134:8080/job/alien4cloud-janus-plugin/badge/icon)](http://10.197.135.134:8080/job/alien4cloud-janus-plugin/)
+
 Janus plugin allows users to deploy their application in an HPC environment.
 This means that we allocate nodes with Slurm, then deploy component (docker image, for example) on the allocated node.
 
