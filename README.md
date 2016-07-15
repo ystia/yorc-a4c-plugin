@@ -1,7 +1,7 @@
-# Alien4Cloud Janus Plugin 
+# Alien4Cloud Janus Plugin
 
-Janus plugin allow user to deploy their application in an HPC environnement. 
-This mean that we allocate nodes with Slurm, then deploy component (docker image for example) on the allocated node.
+Janus plugin allows users to deploy their application in an HPC environment.
+This means that we allocate nodes with Slurm, then deploy component (docker image, for example) on the allocated node.
 
 
 ## Requirements
@@ -13,7 +13,7 @@ This mean that we allocate nodes with Slurm, then deploy component (docker image
 ## Installation
 ### Alien4Cloud
 * Download: [alien4Cloud not the latest build v1.2](http://fastconnect.org/maven/service/local/artifact/maven/redirect?r=opensource&g=alien4cloud&a=alien4cloud-dist&v=1.2.0-RC1&p=tar.gz&c=dist)
-* Run : 
+* Run :
 * Unix:
 alien4cloud.sh
 * Windows :
@@ -29,6 +29,6 @@ Then go to administration tab -> plugins and here drag and drop your compressed 
 
 
 ## Quick Start
-In this plugin we have a class called JanusPaaSProvider which containe the methode doDeploy. In this methode we can have access to the Topology bean. 
-In the doDeploy in order to deploy the topology, first we use the function workflowReader to create a list of steps, stored in the proper order.
-With this list, we use the function workflowPlayer to parse this list of steps (bean workflowStep) and execute script which follow the step.
+With this plugin we have a class called JanusPaaSProvider which contains the method doDeploy. In this method we can have access to the Topology bean.
+In the doDeploy in order to deploy the topology, we first use the function workflowReader to create a list of steps, stored in the proper order.
+With this list, we use the function workflowPlayer to parse this list of steps (bean workflowStep) and execute scripts which follow the step.
