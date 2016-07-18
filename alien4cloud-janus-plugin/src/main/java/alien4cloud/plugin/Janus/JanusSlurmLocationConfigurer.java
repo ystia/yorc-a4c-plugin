@@ -1,3 +1,6 @@
+/**
+ * Created by a628490 on 11/07/2016.
+ */
 /*
 * Copyright 2016 Bull Atos.  All Rights Reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -6,46 +9,46 @@
 */
 package alien4cloud.plugin.Janus;
 
-import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
+        import java.nio.file.Path;
+        import java.util.List;
+        import java.util.Map;
 
-import javax.inject.Inject;
+        import javax.inject.Inject;
 
-import lombok.extern.slf4j.Slf4j;
+        import lombok.extern.slf4j.Slf4j;
 
-import org.apache.commons.collections4.CollectionUtils;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
+        import org.apache.commons.collections4.CollectionUtils;
+        import org.springframework.context.annotation.Scope;
+        import org.springframework.stereotype.Component;
 
-import alien4cloud.deployment.matching.services.nodes.MatchingConfigurations;
-import alien4cloud.deployment.matching.services.nodes.MatchingConfigurationsParser;
-import alien4cloud.model.deployment.matching.MatchingConfiguration;
-import alien4cloud.model.orchestrators.locations.LocationResourceTemplate;
-import alien4cloud.orchestrators.locations.services.LocationResourceGeneratorService;
-import alien4cloud.orchestrators.locations.services.LocationResourceGeneratorService.ComputeContext;
-import alien4cloud.orchestrators.locations.services.LocationResourceGeneratorService.ImageFlavorContext;
-import alien4cloud.orchestrators.plugin.ILocationConfiguratorPlugin;
-import alien4cloud.orchestrators.plugin.ILocationResourceAccessor;
-import alien4cloud.orchestrators.plugin.model.PluginArchive;
-import alien4cloud.paas.exception.PluginParseException;
-import alien4cloud.plugin.PluginManager;
-import alien4cloud.plugin.model.ManagedPlugin;
-import alien4cloud.tosca.ArchiveParser;
-import alien4cloud.tosca.model.ArchiveRoot;
-import alien4cloud.tosca.parser.ParsingException;
-import alien4cloud.tosca.parser.ParsingResult;
+        import alien4cloud.deployment.matching.services.nodes.MatchingConfigurations;
+        import alien4cloud.deployment.matching.services.nodes.MatchingConfigurationsParser;
+        import alien4cloud.model.deployment.matching.MatchingConfiguration;
+        import alien4cloud.model.orchestrators.locations.LocationResourceTemplate;
+        import alien4cloud.orchestrators.locations.services.LocationResourceGeneratorService;
+        import alien4cloud.orchestrators.locations.services.LocationResourceGeneratorService.ComputeContext;
+        import alien4cloud.orchestrators.locations.services.LocationResourceGeneratorService.ImageFlavorContext;
+        import alien4cloud.orchestrators.plugin.ILocationConfiguratorPlugin;
+        import alien4cloud.orchestrators.plugin.ILocationResourceAccessor;
+        import alien4cloud.orchestrators.plugin.model.PluginArchive;
+        import alien4cloud.paas.exception.PluginParseException;
+        import alien4cloud.plugin.PluginManager;
+        import alien4cloud.plugin.model.ManagedPlugin;
+        import alien4cloud.tosca.ArchiveParser;
+        import alien4cloud.tosca.model.ArchiveRoot;
+        import alien4cloud.tosca.parser.ParsingException;
+        import alien4cloud.tosca.parser.ParsingResult;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+        import com.google.common.collect.Lists;
+        import com.google.common.collect.Maps;
 
 /**
- * Configure resources for the OpenStack location type.
+ * Configure resources for the slurm location type.
  */
 @Slf4j
 @Component
 @Scope("prototype")
-public class JanusOpenStackLocationConfigurer implements ILocationConfiguratorPlugin {
+public class JanusSlurmLocationConfigurer implements ILocationConfiguratorPlugin {
     @Inject
     private ArchiveParser archiveParser;
     @Inject
@@ -77,8 +80,8 @@ public class JanusOpenStackLocationConfigurer implements ILocationConfiguratorPl
 
     private List<PluginArchive> parseArchives() throws ParsingException {
         List<PluginArchive> archives = Lists.newArrayList();
-        addToAchive(archives, "openstack/openstack-resources");
-        addToAchive(archives, "openstack/resources");
+        addToAchive(archives, "slurm/slurm-resources");
+        addToAchive(archives, "slurm/resources");
         return archives;
     }
 
@@ -92,13 +95,13 @@ public class JanusOpenStackLocationConfigurer implements ILocationConfiguratorPl
 
     @Override
     public List<String> getResourcesTypes() {
-        return Lists.newArrayList("janus.nodes.openstack.Image", "janus.nodes.openstack.Flavor", "janus.nodes.openstack.Compute",
-                "janus.nodes.openstack.BlockStorage", "janus.nodes.openstack.Network");
+        return Lists.newArrayList("janus.nodes.slurm.Image", "janus.nodes.slurm.Flavor", "janus.nodes.slurm.Compute",
+                "janus.nodes.slurm.BlockStorage", "janus.nodes.slurm.Network");
     }
 
     @Override
     public Map<String, MatchingConfiguration> getMatchingConfigurations() {
-        Path matchingConfigPath = selfContext.getPluginPath().resolve("openstack/resources-matching-config.yml");
+        Path matchingConfigPath = selfContext.getPluginPath().resolve("slurm/resources-matching-config.yml");
         MatchingConfigurations matchingConfigurations = null;
         try {
             matchingConfigurations = matchingConfigurationsParser.parseFile(matchingConfigPath).getResult();
@@ -110,8 +113,8 @@ public class JanusOpenStackLocationConfigurer implements ILocationConfiguratorPl
 
     @Override
     public List<LocationResourceTemplate> instances(ILocationResourceAccessor resourceAccessor) {
-        ImageFlavorContext imageContext = resourceGeneratorService.buildContext("janus.nodes.openstack.Image", "id", resourceAccessor);
-        ImageFlavorContext flavorContext = resourceGeneratorService.buildContext("janus.nodes.openstack.Flavor", "id", resourceAccessor);
+        ImageFlavorContext imageContext = resourceGeneratorService.buildContext("janus.nodes.slurm.Image", "id", resourceAccessor);
+        ImageFlavorContext flavorContext = resourceGeneratorService.buildContext("janus.nodes.slurm.Flavor", "id", resourceAccessor);
         boolean canProceed = true;
 
         if (CollectionUtils.isEmpty(imageContext.getTemplates())) {
@@ -126,7 +129,7 @@ public class JanusOpenStackLocationConfigurer implements ILocationConfiguratorPl
             log.warn("Skipping auto configuration");
             return null;
         }
-        ComputeContext computeContext = resourceGeneratorService.buildComputeContext("janus.nodes.openstack.Compute", null, IMAGE_ID_PROP, FLAVOR_ID_PROP,
+        ComputeContext computeContext = resourceGeneratorService.buildComputeContext("janus.nodes.slurm.Compute", null, IMAGE_ID_PROP, FLAVOR_ID_PROP,
                 resourceAccessor);
 
         return resourceGeneratorService.generateComputeFromImageAndFlavor(imageContext, flavorContext, computeContext, resourceAccessor);

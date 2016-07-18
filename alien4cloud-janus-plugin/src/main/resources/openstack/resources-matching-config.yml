@@ -1,6 +1,6 @@
 
 matching_configurations:
-  janus.nodes.slurm.Compute:
+  janus.nodes.openstack.Compute:
     capabilities:
       - host:
           properties:

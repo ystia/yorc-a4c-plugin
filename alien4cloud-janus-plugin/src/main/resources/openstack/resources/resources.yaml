@@ -1,16 +1,16 @@
 tosca_definitions_version: tosca_simple_yaml_1_0_0_wd03
 
-template_name: Janus-plugin-slurm-if-types
+template_name: Janus-plugin-openstack-types
 template_author: Alien 4 Cloud
 template_version: ${project.version}
 
-description: "Defines resources for the Janus plugin, slurm configuration."
+description: "Defines resources for the Janus plugin, openstack configuration."
 
 imports:
   - tosca-normative-types:1.0.0-SNAPSHOT
 
 node_types:
-  janus.nodes.slurm.Compute:
+  janus.nodes.openstack.Compute:
     derived_from: tosca.nodes.Compute
     properties:
       imageId:
@@ -19,10 +19,7 @@ node_types:
       flavorId:
         type: string
         required: true
-      gpuType:
-        type: string
-        required: false
-  janus.nodes.slurm.BlockStorage:
+  janus.nodes.openstack.BlockStorage:
     derived_from: tosca.nodes.BlockStorage
-  janus.nodes.slurm.Network:
+  janus.nodes.openstack.Network:
     derived_from: tosca.nodes.Network

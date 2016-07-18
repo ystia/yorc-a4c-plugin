@@ -32,6 +32,7 @@ import com.google.common.collect.Maps;
 @Component("Janus-orchestrator-factory")
 public class JanusOrchestratorFactory implements IOrchestratorPluginFactory<JanusOrchestrator, ProviderConfig> {
     public static final String OPENSTACK = "OpenStack";
+    public static final String SLURM = "Slurm";
     @Resource
     private BeanFactory beanFactory;
     private final Map<String, PropertyDefinition> deploymentProperties = Maps.newHashMap();
@@ -58,7 +59,7 @@ public class JanusOrchestratorFactory implements IOrchestratorPluginFactory<Janu
 
     @Override
     public LocationSupport getLocationSupport() {
-        return new LocationSupport(true, new String[] { OPENSTACK });
+        return new LocationSupport(true, new String[] { OPENSTACK, SLURM });
     }
 
     @Override

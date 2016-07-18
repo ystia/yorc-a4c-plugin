@@ -45,6 +45,9 @@ public class JanusLocationConfigurerFactory {
         if (JanusOrchestratorFactory.OPENSTACK.equals(locationType)) {
             JanusOpenStackLocationConfigurer configurer = applicationContext.getBean(JanusOpenStackLocationConfigurer.class);
             return configurer;
+        }else if (JanusOrchestratorFactory.SLURM.equals(locationType)) {
+            JanusSlurmLocationConfigurer configurer = applicationContext.getBean(JanusSlurmLocationConfigurer.class);
+            return configurer;
         }
         return new ILocationConfiguratorPlugin() {
             @Override

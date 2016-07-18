@@ -68,8 +68,6 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
     private ShowTopology showTopology = new ShowTopology();
 
-    private ExecPython execPython = new ExecPython();
-
     private WorkflowReader workflowReader;
 
     private WorkflowPlayer workflowPlayer = new WorkflowPlayer();

@@ -1,16 +1,16 @@
 tosca_definitions_version: tosca_simple_yaml_1_0_0_wd03
 
-template_name: Janus-plugin-slurm-types
+template_name: Janus-plugin-openstack-if-types
 template_author: Alien 4 Cloud
 template_version: ${project.version}
 
-description: "Defines resources for the Janus plugin, mocking slurm configuration."
+description: "Defines resources for the Janus plugin, openstack configuration."
 
 imports:
   - tosca-normative-types:1.0.0-SNAPSHOT
 
 node_types:
-  janus.nodes.slurm.Image:
+  janus.nodes.openstack.Image:
     abstract: true
     derived_from: tosca.nodes.Root
     properties:
@@ -20,7 +20,7 @@ node_types:
       os:
         type: tosca.capabilities.OperatingSystem
 
-  janus.nodes.slurm.Flavor:
+  janus.nodes.openstack.Flavor:
     abstract: true
     derived_from: tosca.nodes.Root
     properties:
@@ -31,7 +31,7 @@ node_types:
         type: tosca.capabilities.Container
         
 artefact_types:
-  janus.artefacts.slurm.Implementation.Bash:
+  janus.artefacts.openstack.Implementation.Bash:
     description: Mock artefact for sh
     derived_from: tosca.artifacts.Implementation.Bash
   
