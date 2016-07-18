@@ -85,11 +85,16 @@ public class WorkflowPlayer {
             } else if (hosts.contains(workflowStep.getWorkflowId())) {
                 log.info("Compute ID : " + workflowStep.getWorkflowId() + " | Compute Step : " + workflowStep.getWorkflowStep());
                 PaaSNodeTemplate node = getNode(paaSTopology, workflowStep.getWorkflowId());
+                if((node.getTemplate().getProperties().get("gpuType")) != null){
                     if (((ScalarPropertyValue) node.getTemplate().getProperties().get("gpuType")).getValue() != NONE) {
                         setNodeId(execPython.nodeInstall());
                     } else {
                         setNodeId(execPython.nodeInstall());
                     }
+                }else{
+                    log.info("gpuType missing");
+                }
+
             //STEP : other steps like configuring, creating, ... which are not key steps
             }else{
                 log.info(workflowStep.getWorkflowStep() + " : " + workflowStep.getWorkflowId());
