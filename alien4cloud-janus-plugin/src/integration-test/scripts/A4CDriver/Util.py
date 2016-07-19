@@ -23,15 +23,15 @@ class Util():
             "properties": [
                 {
                     "propertyName":"imageId",
-                    "propertyValue":"1"
-                },
-                {
-                    "propertyName":"flavorId",
                     "propertyValue":"2"
                 },
                 {
                     "propertyName":"gpuType",
-                    "propertyValue":"6"
+                    "propertyValue":"3"
+                },
+                {
+                    "propertyName":"flavorId",
+                    "propertyValue":"2"
                 }
             ]
         },

@@ -156,13 +156,18 @@ class AlienDAAPI():
         return response["data"]["resources"]["nodeTemplates"][0]["id"]
 
     def setPropRes(self,oid,lid,rid, properties):
-        try:
-            url = self.urlOrchs+oid +"/locations/"+lid+"/resources/"+rid+"/template/properties"
-            for prop in properties:
-                response = self.util.postJsonObject(self.s, url, prop)
-                printR(response,"setProperty")
-        except:
-            print "Unexpected error but work..."
+
+        url = self.urlOrchs+oid +"/locations/"+lid+"/resources/"+rid+"/template/properties"
+        for prop in properties:
+            print prop
+            response = self.util.postJsonObject(self.s, url, prop)
+            printR(response,"setProperty")
+            if (self.util.vpnOn == "true") :
+                import requesocks as requests
+            else :
+                import requests
+            self.s = requests.Session()
+            self.login()
 
         return response
 

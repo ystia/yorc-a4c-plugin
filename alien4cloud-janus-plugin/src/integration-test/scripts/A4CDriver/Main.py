@@ -149,8 +149,8 @@ def chooseLocation(name):
 
 #init dev mode
 t = "main"
-#chooseLocation("Slurm")
-chooseLocation("OpenStack")
+chooseLocation("Slurm")
+#chooseLocation("OpenStack")
 clean(run("",t)) ;
 adp(run("",t)) ; ado(run("",t)) ; eno(run("",t)); adt(run("",t)); adl(run("",t)) ; adr(run("",t))  ; ada(run("",t))
 deploy(run("",t))
