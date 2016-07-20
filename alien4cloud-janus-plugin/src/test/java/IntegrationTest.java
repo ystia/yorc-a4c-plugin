@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
+import static org.junit.Assert.assertTrue;
+
 
 public class IntegrationTest {
 
@@ -26,15 +28,16 @@ public class IntegrationTest {
             }
 
 
-
+            boolean hasStdError = false;
             while ((s = stdError.readLine()) != null) {
                 System.out.println(s);
-                assert(false);
+                hasStdError = true;
             }
+            assertTrue("StdError from output", !hasStdError);
 
 
-            assert(!result.contains("error"));
-            assert(!result.contains("errno"));
+            assertTrue("Output contains error", !result.contains("error"));
+            assertTrue("Output contains errno", !result.contains("errno"));
 
         } catch (IOException e) {
             e.printStackTrace();
