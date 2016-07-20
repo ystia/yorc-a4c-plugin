@@ -1,7 +1,7 @@
 {
-    "PLUGIN_FILE_PATH": "../../../../target/alien4cloud-janus-plugin-1.2.0-SM2.zip",
+    "PLUGIN_FILE_PATH": "./target/alien4cloud-janus-plugin-1.2.0-SM2.zip",
     "PLUGIN_ID": "alien4cloud-Janus-plugin",
-    "TEMPLATE_FILE_PATH": "assets/topology-template.zip",
+    "TEMPLATE_FILE_PATH": "./src/integration-test/scripts/A4CDriver/assets/topology-template.zip",
     "A4C_HOSTS_PORT": "172.16.118.132:8088",
     "PROXY_USE": "requests will be sent through localhost 20000 socks 5",
     "VPN_ON": "false"
