@@ -16,15 +16,11 @@
 .idea/dynamic.xml
 .idea/uiDesigner.xml
 
-
-# Keep the zip and jar
-!target/*.zip
-!target/*.jar
-
 # Package Files
 *.jar
 *.war
 *.iml
 *.ucls
+!target/
 target/*
-
+!target/*.zip
