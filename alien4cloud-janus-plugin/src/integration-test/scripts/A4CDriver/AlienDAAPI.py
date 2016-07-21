@@ -23,6 +23,8 @@ class AlienDAAPI():
         self.urlTemplate = "http://" + self.util.A4CHostsPort+ "/rest/templates"
         self.urlApplication = "http://" + self.util.A4CHostsPort+ "/rest/applications" #/search
 
+        import os
+        os.environ["http_proxy"] = ""
 
         if (self.util.vpnOn == "true") :
             import requesocks as requests
