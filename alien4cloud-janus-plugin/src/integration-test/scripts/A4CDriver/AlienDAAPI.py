@@ -37,8 +37,8 @@ class AlienDAAPI():
             'https': 'socks5://127.0.0.1:20000',
             }
             self.s.proxies=proxies
-
-
+        else:
+            self.s.proxies = {}
 
 ############ Login #######################
     def login(self):
