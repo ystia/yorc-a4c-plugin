@@ -6,6 +6,12 @@
 */
 package alien4cloud.plugin.Janus;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.Executors;
@@ -17,10 +23,11 @@ import javax.annotation.Resource;
 
 import alien4cloud.model.topology.*;
 import alien4cloud.paas.model.*;
-import alien4cloud.plugin.Janus.utils.ExecPython;
 import alien4cloud.plugin.Janus.utils.ShowTopology;
+import alien4cloud.plugin.Janus.utils.ZipTopology;
 import alien4cloud.plugin.Janus.workflow.WorkflowPlayer;
 import alien4cloud.plugin.Janus.workflow.WorkflowReader;
+import alien4cloud.topology.TopologyService;
 import lombok.extern.slf4j.Slf4j;
 
 import org.elasticsearch.common.collect.Maps;
@@ -71,6 +78,11 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
     private WorkflowReader workflowReader;
 
     private WorkflowPlayer workflowPlayer = new WorkflowPlayer();
+
+    private ZipTopology zipTopology = new ZipTopology();
+
+    @Resource
+    private TopologyService topologyService = new TopologyService();
 
     public JanusPaaSProvider() {
         executorService.scheduleWithFixedDelay( new Runnable() {
@@ -152,6 +164,24 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
             e.printStackTrace();
         }
 
+        //Create the yml of our topology (after substitution)
+        String yaml = topologyService.getYaml(topology);
+        log.info(yaml);
+        List<String> lines = Arrays.asList(yaml);
+        Path file = Paths.get("topology.yml");
+        try {
+            Files.write(file, lines, Charset.forName("UTF-8"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        //Build our zip topology
+        try {
+            File zip = new File("topology.zip");
+            zipTopology.buildZip(zip,deploymentContext);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         if (nodeTemplates == null) {
             nodeTemplates = Maps.newHashMap();
