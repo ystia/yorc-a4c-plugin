@@ -59,7 +59,7 @@ public class RestClient {
         restTemplate.getMessageConverters().add(new StringHttpMessageConverter());
 
 // Make the HTTP POST request, marshaling the request to JSON, and the response to a String
-        ResponseEntity<InputStream> responseEntity = restTemplate.exchange("http://localhost:8800/deployments", HttpMethod.POST, requestEntity, InputStream.class);
+        ResponseEntity<InputStream> responseEntity = restTemplate.exchange("http://10.0.0.4:8800/deployments", HttpMethod.POST, requestEntity, InputStream.class);
         InputStream result = responseEntity.getBody();
     }
 }

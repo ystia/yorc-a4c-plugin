@@ -23,6 +23,7 @@ import javax.annotation.Resource;
 
 import alien4cloud.model.topology.*;
 import alien4cloud.paas.model.*;
+import alien4cloud.plugin.Janus.rest.RestClient;
 import alien4cloud.plugin.Janus.utils.ShowTopology;
 import alien4cloud.plugin.Janus.utils.ZipTopology;
 import alien4cloud.plugin.Janus.workflow.WorkflowPlayer;
@@ -80,6 +81,8 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
     private WorkflowPlayer workflowPlayer = new WorkflowPlayer();
 
     private ZipTopology zipTopology = new ZipTopology();
+
+    private RestClient restClient = new RestClient();
 
     @Resource
     private TopologyService topologyService = new TopologyService();
@@ -155,19 +158,20 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 //      showTopology.topologyInLog(deploymentContext);
         Map<String, NodeTemplate> nodeTemplates = topology.getNodeTemplates();
         //create workflow array
-        workflowReader = new WorkflowReader(topology.getWorkflows());
-        //Read the array
-//      workflowReader.read();
-        try {
-            workflowPlayer.play(deploymentContext, workflowReader.getWorkflowSteps());
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+//        workflowReader = new WorkflowReader(topology.getWorkflows());
+//        //Read the array
+////      workflowReader.read();
+//        try {
+//            workflowPlayer.play(deploymentContext, workflowReader.getWorkflowSteps());
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
 
         //Create the yml of our topology (after substitution)
         String yaml = topologyService.getYaml(topology);
         log.info(yaml);
         List<String> lines = Arrays.asList(yaml);
+        log.info("YML Topology");
         Path file = Paths.get("topology.yml");
         try {
             Files.write(file, lines, Charset.forName("UTF-8"));
@@ -178,10 +182,15 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         //Build our zip topology
         try {
             File zip = new File("topology.zip");
+            log.info("ZIP Topology");
             zipTopology.buildZip(zip,deploymentContext);
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        //post topology zip to Janus
+        log.info("POST Topology");
+        restClient.postTopologyToJanus();
 
         if (nodeTemplates == null) {
             nodeTemplates = Maps.newHashMap();
