@@ -6,18 +6,7 @@
 */
 package alien4cloud.plugin.Janus;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.inject.Inject;
-
 import alien4cloud.model.deployment.matching.MatchingConfiguration;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
-
 import alien4cloud.model.orchestrators.locations.LocationResourceTemplate;
 import alien4cloud.orchestrators.plugin.ILocationConfiguratorPlugin;
 import alien4cloud.orchestrators.plugin.ILocationResourceAccessor;
@@ -25,6 +14,15 @@ import alien4cloud.orchestrators.plugin.model.PluginArchive;
 import alien4cloud.plugin.PluginManager;
 import alien4cloud.plugin.model.ManagedPlugin;
 import alien4cloud.tosca.ArchiveParser;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
+
+import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Component that creates location configurer for a Janus slurm cloud.

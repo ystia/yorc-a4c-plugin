@@ -6,16 +6,6 @@
 */
 package alien4cloud.plugin.Janus;
 
-import java.util.List;
-import java.util.Map;
-
-import javax.annotation.Resource;
-import javax.inject.Inject;
-
-import org.apache.commons.collections4.CollectionUtils;
-
-import com.google.common.collect.Lists;
-
 import alien4cloud.deployment.matching.plugins.ILocationMatcher;
 import alien4cloud.model.deployment.matching.ILocationMatch;
 import alien4cloud.model.deployment.matching.LocationMatch;
@@ -27,7 +17,14 @@ import alien4cloud.orchestrators.services.OrchestratorService;
 import alien4cloud.paas.exception.LocationMatchingException;
 import alien4cloud.plugin.model.ManagedPlugin;
 import alien4cloud.utils.AlienUtils;
+import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+
+import javax.annotation.Resource;
+import javax.inject.Inject;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 // @Component("Janus-location-matcher")

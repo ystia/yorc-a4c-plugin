@@ -6,18 +6,6 @@
 */
 package alien4cloud.plugin.Janus;
 
-import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
-
-import javax.inject.Inject;
-
-import lombok.extern.slf4j.Slf4j;
-
-import org.apache.commons.collections4.CollectionUtils;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
-
 import alien4cloud.deployment.matching.services.nodes.MatchingConfigurations;
 import alien4cloud.deployment.matching.services.nodes.MatchingConfigurationsParser;
 import alien4cloud.model.deployment.matching.MatchingConfiguration;
@@ -35,9 +23,17 @@ import alien4cloud.tosca.ArchiveParser;
 import alien4cloud.tosca.model.ArchiveRoot;
 import alien4cloud.tosca.parser.ParsingException;
 import alien4cloud.tosca.parser.ParsingResult;
-
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
+
+import javax.inject.Inject;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Configure resources for the OpenStack location type.

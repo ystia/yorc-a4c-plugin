@@ -9,38 +9,34 @@
 */
 package alien4cloud.plugin.Janus;
 
-        import java.nio.file.Path;
-        import java.util.List;
-        import java.util.Map;
+import alien4cloud.deployment.matching.services.nodes.MatchingConfigurations;
+import alien4cloud.deployment.matching.services.nodes.MatchingConfigurationsParser;
+import alien4cloud.model.deployment.matching.MatchingConfiguration;
+import alien4cloud.model.orchestrators.locations.LocationResourceTemplate;
+import alien4cloud.orchestrators.locations.services.LocationResourceGeneratorService;
+import alien4cloud.orchestrators.locations.services.LocationResourceGeneratorService.ComputeContext;
+import alien4cloud.orchestrators.locations.services.LocationResourceGeneratorService.ImageFlavorContext;
+import alien4cloud.orchestrators.plugin.ILocationConfiguratorPlugin;
+import alien4cloud.orchestrators.plugin.ILocationResourceAccessor;
+import alien4cloud.orchestrators.plugin.model.PluginArchive;
+import alien4cloud.paas.exception.PluginParseException;
+import alien4cloud.plugin.PluginManager;
+import alien4cloud.plugin.model.ManagedPlugin;
+import alien4cloud.tosca.ArchiveParser;
+import alien4cloud.tosca.model.ArchiveRoot;
+import alien4cloud.tosca.parser.ParsingException;
+import alien4cloud.tosca.parser.ParsingResult;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
-        import javax.inject.Inject;
-
-        import lombok.extern.slf4j.Slf4j;
-
-        import org.apache.commons.collections4.CollectionUtils;
-        import org.springframework.context.annotation.Scope;
-        import org.springframework.stereotype.Component;
-
-        import alien4cloud.deployment.matching.services.nodes.MatchingConfigurations;
-        import alien4cloud.deployment.matching.services.nodes.MatchingConfigurationsParser;
-        import alien4cloud.model.deployment.matching.MatchingConfiguration;
-        import alien4cloud.model.orchestrators.locations.LocationResourceTemplate;
-        import alien4cloud.orchestrators.locations.services.LocationResourceGeneratorService;
-        import alien4cloud.orchestrators.locations.services.LocationResourceGeneratorService.ComputeContext;
-        import alien4cloud.orchestrators.locations.services.LocationResourceGeneratorService.ImageFlavorContext;
-        import alien4cloud.orchestrators.plugin.ILocationConfiguratorPlugin;
-        import alien4cloud.orchestrators.plugin.ILocationResourceAccessor;
-        import alien4cloud.orchestrators.plugin.model.PluginArchive;
-        import alien4cloud.paas.exception.PluginParseException;
-        import alien4cloud.plugin.PluginManager;
-        import alien4cloud.plugin.model.ManagedPlugin;
-        import alien4cloud.tosca.ArchiveParser;
-        import alien4cloud.tosca.model.ArchiveRoot;
-        import alien4cloud.tosca.parser.ParsingException;
-        import alien4cloud.tosca.parser.ParsingResult;
-
-        import com.google.common.collect.Lists;
-        import com.google.common.collect.Maps;
+import javax.inject.Inject;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Configure resources for the slurm location type.

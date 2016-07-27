@@ -6,6 +6,33 @@
 */
 package alien4cloud.plugin.Janus;
 
+import alien4cloud.component.ICSARRepositorySearchService;
+import alien4cloud.model.components.IndexedNodeType;
+import alien4cloud.model.components.IndexedRelationshipType;
+import alien4cloud.model.deployment.Deployment;
+import alien4cloud.model.topology.*;
+import alien4cloud.paas.IPaaSCallback;
+import alien4cloud.paas.exception.PluginConfigurationException;
+import alien4cloud.paas.model.*;
+import alien4cloud.paas.plan.ToscaNodeLifecycleConstants;
+import alien4cloud.plugin.Janus.rest.RestClient;
+import alien4cloud.plugin.Janus.utils.ShowTopology;
+import alien4cloud.plugin.Janus.utils.ZipTopology;
+import alien4cloud.plugin.Janus.workflow.WorkflowPlayer;
+import alien4cloud.plugin.Janus.workflow.WorkflowReader;
+import alien4cloud.rest.utils.JsonUtil;
+import alien4cloud.topology.TopologyService;
+import alien4cloud.topology.TopologyUtils;
+import alien4cloud.tosca.ToscaUtils;
+import alien4cloud.tosca.normative.NormativeBlockStorageConstants;
+import alien4cloud.tosca.normative.NormativeComputeConstants;
+import alien4cloud.tosca.normative.NormativeRelationshipConstants;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import lombok.extern.slf4j.Slf4j;
+import org.elasticsearch.common.collect.Maps;
+
+import javax.annotation.PreDestroy;
+import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -17,37 +44,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
-import javax.annotation.PreDestroy;
-import javax.annotation.Resource;
-
-import alien4cloud.model.topology.*;
-import alien4cloud.paas.model.*;
-import alien4cloud.plugin.Janus.rest.RestClient;
-import alien4cloud.plugin.Janus.utils.ShowTopology;
-import alien4cloud.plugin.Janus.utils.ZipTopology;
-import alien4cloud.plugin.Janus.workflow.WorkflowPlayer;
-import alien4cloud.plugin.Janus.workflow.WorkflowReader;
-import alien4cloud.topology.TopologyService;
-import lombok.extern.slf4j.Slf4j;
-
-import org.elasticsearch.common.collect.Maps;
-
-import alien4cloud.component.ICSARRepositorySearchService;
-import alien4cloud.model.components.IndexedNodeType;
-import alien4cloud.model.components.IndexedRelationshipType;
-import alien4cloud.model.deployment.Deployment;
-import alien4cloud.paas.IPaaSCallback;
-import alien4cloud.paas.exception.PluginConfigurationException;
-import alien4cloud.paas.plan.ToscaNodeLifecycleConstants;
-import alien4cloud.rest.utils.JsonUtil;
-import alien4cloud.topology.TopologyUtils;
-import alien4cloud.tosca.ToscaUtils;
-import alien4cloud.tosca.normative.NormativeBlockStorageConstants;
-import alien4cloud.tosca.normative.NormativeComputeConstants;
-import alien4cloud.tosca.normative.NormativeRelationshipConstants;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
 
 @Slf4j
 public abstract class JanusPaaSProvider extends AbstractPaaSProvider {

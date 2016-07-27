@@ -6,14 +6,14 @@
 */
 package alien4cloud.plugin.Janus;
 
-import java.util.Map;
-
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
 import alien4cloud.paas.model.DeploymentStatus;
 import alien4cloud.paas.model.InstanceInformation;
 import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.util.Map;
 
 @Getter
 @Setter

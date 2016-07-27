@@ -6,18 +6,15 @@
 */
 package alien4cloud.plugin.Janus;
 
-import java.util.List;
-
-import javax.inject.Inject;
-
+import alien4cloud.orchestrators.plugin.ILocationConfiguratorPlugin;
+import alien4cloud.orchestrators.plugin.model.PluginArchive;
+import com.google.common.collect.Lists;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import alien4cloud.orchestrators.plugin.ILocationConfiguratorPlugin;
-import alien4cloud.orchestrators.plugin.model.PluginArchive;
-
-import com.google.common.collect.Lists;
+import javax.inject.Inject;
+import java.util.List;
 
 /**
  * Mock implementation for an orchestrator instance.

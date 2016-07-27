@@ -6,14 +6,14 @@
 */
 package alien4cloud.plugin.Janus;
 
-import java.util.Iterator;
-import java.util.List;
-
 import alien4cloud.deployment.matching.services.location.ILocationMatchFilter;
 import alien4cloud.model.deployment.matching.ILocationMatch;
 import alien4cloud.model.topology.Topology;
 import alien4cloud.plugin.model.ManagedPlugin;
 import lombok.AllArgsConstructor;
+
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * Location match filter that will filter on pluginId.

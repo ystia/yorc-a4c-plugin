@@ -18,7 +18,8 @@ import java.net.URI;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.zip.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import static com.google.common.io.Files.copy;
 

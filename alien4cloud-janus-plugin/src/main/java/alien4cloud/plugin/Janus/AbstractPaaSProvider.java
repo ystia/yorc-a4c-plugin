@@ -6,14 +6,6 @@
 */
 package alien4cloud.plugin.Janus;
 
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import lombok.extern.slf4j.Slf4j;
-
-import org.springframework.web.client.RestClientException;
-
 import alien4cloud.model.deployment.DeploymentTopology;
 import alien4cloud.model.topology.Capability;
 import alien4cloud.model.topology.NodeTemplate;
@@ -21,21 +13,17 @@ import alien4cloud.model.topology.ScalingPolicy;
 import alien4cloud.model.topology.Topology;
 import alien4cloud.orchestrators.plugin.IOrchestratorPlugin;
 import alien4cloud.paas.IPaaSCallback;
-import alien4cloud.paas.exception.IllegalDeploymentStateException;
-import alien4cloud.paas.exception.OperationExecutionException;
-import alien4cloud.paas.exception.PaaSAlreadyDeployedException;
-import alien4cloud.paas.exception.PaaSNotYetDeployedException;
-import alien4cloud.paas.exception.PaaSTechnicalException;
-import alien4cloud.paas.exception.PluginConfigurationException;
-import alien4cloud.paas.model.DeploymentStatus;
-import alien4cloud.paas.model.InstanceInformation;
-import alien4cloud.paas.model.NodeOperationExecRequest;
-import alien4cloud.paas.model.PaaSDeploymentContext;
-import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
+import alien4cloud.paas.exception.*;
+import alien4cloud.paas.model.*;
 import alien4cloud.topology.TopologyUtils;
 import alien4cloud.utils.MapUtil;
-
 import com.google.common.collect.Maps;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.client.RestClientException;
+
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 @Slf4j
 public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
