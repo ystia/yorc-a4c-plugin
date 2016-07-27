@@ -148,12 +148,35 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
     @Override
     protected synchronized void doDeploy(final PaaSTopologyDeploymentContext deploymentContext) {
+
+
         log.info("Deploying deployment [" + deploymentContext.getDeploymentPaaSId() + "]");
         paaSDeploymentIdToAlienDeploymentIdMap.put(deploymentContext.getDeploymentPaaSId(), deploymentContext.getDeploymentId());
         Topology topology = deploymentContext.getDeploymentTopology();
 
 //      showTopology.topologyInLog(deploymentContext);
         Map<String, NodeTemplate> nodeTemplates = topology.getNodeTemplates();
+        if (nodeTemplates == null) {
+            nodeTemplates = Maps.newHashMap();
+        }
+        Map<String, Map<String, InstanceInformation>> currentInformations = Maps.newHashMap();
+        for (Map.Entry<String, NodeTemplate> nodeTemplateEntry : nodeTemplates.entrySet()) {
+            Map<String, InstanceInformation> instanceInformations = Maps.newHashMap();
+            currentInformations.put(nodeTemplateEntry.getKey(), instanceInformations);
+            ScalingPolicy policy = getScalingPolicy(nodeTemplateEntry.getKey(), nodeTemplates);
+            int initialInstances = policy != null ? policy.getInitialInstances() : 1;
+            for (int i = 1; i <= initialInstances; i++) {
+                InstanceInformation newInstanceInformation = newInstance(i);
+                instanceInformations.put(String.valueOf(i), newInstanceInformation);
+                notifyInstanceStateChanged(deploymentContext.getDeploymentPaaSId(), nodeTemplateEntry.getKey(), String.valueOf(i), newInstanceInformation, 1);
+            }
+        }
+
+        runtimeDeploymentInfos.put(deploymentContext.getDeploymentPaaSId(),
+                new JanusRuntimeDeploymentInfo(deploymentContext, DeploymentStatus.DEPLOYMENT_IN_PROGRESS, currentInformations));
+
+        doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.DEPLOYMENT_IN_PROGRESS);
+
         //create workflow array
 //        workflowReader = new WorkflowReader(topology.getWorkflows());
 //        //Read the array
@@ -189,42 +212,8 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         log.info("POST Topology");
         restClient.postTopologyToJanus();
 
-        if (nodeTemplates == null) {
-            nodeTemplates = Maps.newHashMap();
-        }
-        Map<String, Map<String, InstanceInformation>> currentInformations = Maps.newHashMap();
-        for (Map.Entry<String, NodeTemplate> nodeTemplateEntry : nodeTemplates.entrySet()) {
-            Map<String, InstanceInformation> instanceInformations = Maps.newHashMap();
-            currentInformations.put(nodeTemplateEntry.getKey(), instanceInformations);
-            ScalingPolicy policy = getScalingPolicy(nodeTemplateEntry.getKey(), nodeTemplates);
-            int initialInstances = policy != null ? policy.getInitialInstances() : 1;
-            for (int i = 1; i <= initialInstances; i++) {
-                InstanceInformation newInstanceInformation = newInstance(i);
-                instanceInformations.put(String.valueOf(i), newInstanceInformation);
-                notifyInstanceStateChanged(deploymentContext.getDeploymentPaaSId(), nodeTemplateEntry.getKey(), String.valueOf(i), newInstanceInformation, 1);
-            }
-        }
+        doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.DEPLOYED);
 
-        runtimeDeploymentInfos.put(deploymentContext.getDeploymentPaaSId(),
-                new JanusRuntimeDeploymentInfo(deploymentContext, DeploymentStatus.DEPLOYMENT_IN_PROGRESS, currentInformations));
-
-        changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.DEPLOYMENT_IN_PROGRESS);
-
-        executorService.schedule(new Runnable() {
-            @Override
-            public void run() {
-                switch (deploymentContext.getDeployment().getSourceName()) {
-                case BAD_APPLICATION_THAT_NEVER_WORKS:
-                    changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
-                    break;
-                case WARN_APPLICATION_THAT_NEVER_WORKS:
-                    changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.WARNING);
-                    break;
-                default:
-                    changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.DEPLOYED);
-                }
-            }
-        }, 5, TimeUnit.SECONDS);
     }
 
     @Override
@@ -245,14 +234,9 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
             }
         }
 
-        executorService.schedule(new Runnable() {
-            @Override
-            public void run() {
-                changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.UNDEPLOYED);
-                // cleanup deployment cache
-                runtimeDeploymentInfos.remove(deploymentContext.getDeploymentPaaSId());
-            }
-        }, 5, TimeUnit.SECONDS);
+        changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.UNDEPLOYED);
+        // cleanup deployment cache
+        runtimeDeploymentInfos.remove(deploymentContext.getDeploymentPaaSId());
     }
 
     @Override
@@ -261,21 +245,20 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         DeploymentStatus oldDeploymentStatus = runtimeDeploymentInfo.getStatus();
         log.info("Deployment [" + deploymentPaaSId + "] moved from status [" + oldDeploymentStatus + "] to [" + status + "]");
         runtimeDeploymentInfo.setStatus(status);
-        executorService.schedule(new Runnable() {
-            @Override
-            public void run() {
-                PaaSDeploymentStatusMonitorEvent event = new PaaSDeploymentStatusMonitorEvent();
-                event.setDeploymentStatus(status);
-                event.setDate((new Date()).getTime());
-                event.setDeploymentId(paaSDeploymentIdToAlienDeploymentIdMap.get(deploymentPaaSId));
-                toBeDeliveredEvents.add(event);
-                PaaSMessageMonitorEvent messageMonitorEvent = new PaaSMessageMonitorEvent();
-                messageMonitorEvent.setDate((new Date()).getTime());
-                messageMonitorEvent.setDeploymentId(paaSDeploymentIdToAlienDeploymentIdMap.get(deploymentPaaSId));
-                messageMonitorEvent.setMessage("APPLICATIONS.RUNTIME.EVENTS.MESSAGE_EVENT.STATUS_DEPLOYMENT_CHANGED");
-                toBeDeliveredEvents.add(messageMonitorEvent);
-            }
-        }, 2, TimeUnit.SECONDS);
+
+
+
+        PaaSDeploymentStatusMonitorEvent event = new PaaSDeploymentStatusMonitorEvent();
+        event.setDeploymentStatus(status);
+        event.setDate((new Date()).getTime());
+        event.setDeploymentId(paaSDeploymentIdToAlienDeploymentIdMap.get(deploymentPaaSId));
+        toBeDeliveredEvents.add(event);
+        PaaSMessageMonitorEvent messageMonitorEvent = new PaaSMessageMonitorEvent();
+        messageMonitorEvent.setDate((new Date()).getTime());
+        messageMonitorEvent.setDeploymentId(paaSDeploymentIdToAlienDeploymentIdMap.get(deploymentPaaSId));
+        messageMonitorEvent.setMessage("APPLICATIONS.RUNTIME.EVENTS.MESSAGE_EVENT.STATUS_DEPLOYMENT_CHANGED");
+        toBeDeliveredEvents.add(messageMonitorEvent);
+
 
         return oldDeploymentStatus;
     }
