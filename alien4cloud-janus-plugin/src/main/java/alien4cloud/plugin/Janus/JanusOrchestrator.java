@@ -8,6 +8,7 @@ package alien4cloud.plugin.Janus;
 
 import alien4cloud.orchestrators.plugin.ILocationConfiguratorPlugin;
 import alien4cloud.orchestrators.plugin.model.PluginArchive;
+import alien4cloud.plugin.Janus.baseplugin.AbstractLocationConfigurerFactory;
 import com.google.common.collect.Lists;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
@@ -23,7 +24,7 @@ import java.util.List;
 @Scope(BeanDefinition.SCOPE_PROTOTYPE)
 public class JanusOrchestrator extends JanusPaaSProvider {
     @Inject
-    private JanusLocationConfigurerFactory janusLocationConfigurerFactory;
+    private AbstractLocationConfigurerFactory janusLocationConfigurerFactory;
 
     @Override
     public ILocationConfiguratorPlugin getConfigurator(String locationType) {

@@ -24,10 +24,5 @@ public class ProviderConfigurator implements IPluginConfigurator<ProviderConfig>
     @Override
     public void setConfiguration(ProviderConfig configuration) {
         log.info("In the plugin configurator <" + this.getClass().getName() + ">");
-        try {
-            log.info("The config object Tags is: " + JsonUtil.toString(configuration.getTags()));
-        } catch (JsonProcessingException e) {
-            log.error("Fails to serialize configuration object as json string", e);
-        }
     }
 }

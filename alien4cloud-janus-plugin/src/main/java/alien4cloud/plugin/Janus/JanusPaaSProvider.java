@@ -15,6 +15,7 @@ import alien4cloud.paas.IPaaSCallback;
 import alien4cloud.paas.exception.PluginConfigurationException;
 import alien4cloud.paas.model.*;
 import alien4cloud.paas.plan.ToscaNodeLifecycleConstants;
+import alien4cloud.plugin.Janus.baseplugin.AbstractPaaSProvider;
 import alien4cloud.plugin.Janus.rest.RestClient;
 import alien4cloud.plugin.Janus.utils.ShowTopology;
 import alien4cloud.plugin.Janus.utils.ZipTopology;

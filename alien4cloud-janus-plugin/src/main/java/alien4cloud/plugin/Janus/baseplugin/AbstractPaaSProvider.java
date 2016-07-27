@@ -4,7 +4,7 @@
 * See the NOTICE file distributed with this work for additional information
 * regarding copyright ownership.
 */
-package alien4cloud.plugin.Janus;
+package alien4cloud.plugin.Janus.baseplugin;
 
 import alien4cloud.model.deployment.DeploymentTopology;
 import alien4cloud.model.topology.Capability;
@@ -15,6 +15,7 @@ import alien4cloud.orchestrators.plugin.IOrchestratorPlugin;
 import alien4cloud.paas.IPaaSCallback;
 import alien4cloud.paas.exception.*;
 import alien4cloud.paas.model.*;
+import alien4cloud.plugin.Janus.ProviderConfig;
 import alien4cloud.topology.TopologyUtils;
 import alien4cloud.utils.MapUtil;
 import com.google.common.collect.Maps;

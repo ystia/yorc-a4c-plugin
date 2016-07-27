@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * Spring configuration class for the Janus PaaS provider plugin for Alien 4 Cloud.
+ * Entry point for Alien4cloud
  *
  * @author xBD
  */

@@ -17,6 +17,7 @@ import alien4cloud.orchestrators.plugin.ILocationConfiguratorPlugin;
 import alien4cloud.orchestrators.plugin.ILocationResourceAccessor;
 import alien4cloud.orchestrators.plugin.model.PluginArchive;
 import alien4cloud.paas.exception.PluginParseException;
+import alien4cloud.plugin.Janus.baseplugin.AbstractLocationConfigurer;
 import alien4cloud.plugin.PluginManager;
 import alien4cloud.plugin.model.ManagedPlugin;
 import alien4cloud.tosca.ArchiveParser;
@@ -41,49 +42,14 @@ import java.util.Map;
 @Slf4j
 @Component
 @Scope("prototype")
-public class JanusOpenStackLocationConfigurer implements ILocationConfiguratorPlugin {
-    @Inject
-    private ArchiveParser archiveParser;
-    @Inject
-    private MatchingConfigurationsParser matchingConfigurationsParser;
-    @Inject
-    private PluginManager pluginManager;
-    @Inject
-    private ManagedPlugin selfContext;
-    @Inject
-    private LocationResourceGeneratorService resourceGeneratorService;
-
-    private List<PluginArchive> archives;
-
-    private static final String IMAGE_ID_PROP = "imageId";
-    private static final String FLAVOR_ID_PROP = "flavorId";
+public class JanusOpenStackLocationConfigurer extends AbstractLocationConfigurer {
 
     @Override
-    public List<PluginArchive> pluginArchives() throws PluginParseException {
-        if (archives == null) {
-            try {
-                archives = parseArchives();
-            } catch (ParsingException e) {
-                log.error(e.getMessage());
-                throw  new PluginParseException(e.getMessage());
-            }
-        }
-        return archives;
-    }
-
-    private List<PluginArchive> parseArchives() throws ParsingException {
+    protected List<PluginArchive> parseArchives() throws ParsingException {
         List<PluginArchive> archives = Lists.newArrayList();
         addToAchive(archives, "openstack/openstack-resources");
         addToAchive(archives, "openstack/resources");
         return archives;
-    }
-
-    private void addToAchive(List<PluginArchive> archives, String path) throws ParsingException {
-        Path archivePath = selfContext.getPluginPath().resolve(path);
-        // Parse the archives
-        ParsingResult<ArchiveRoot> result = archiveParser.parseDir(archivePath);
-        PluginArchive pluginArchive = new PluginArchive(result.getResult(), archivePath);
-        archives.add(pluginArchive);
     }
 
     @Override
