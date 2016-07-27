@@ -186,7 +186,6 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 //        } catch (InterruptedException e) {
 //            e.printStackTrace();
 //        }
-
         //Create the yml of our topology (after substitution)
         String yaml = topologyService.getYaml(topology);
         log.info(yaml);
@@ -211,6 +210,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         //post topology zip to Janus
         log.info("POST Topology");
         restClient.postTopologyToJanus();
+        sendMesage(deploymentContext.getDeploymentPaaSId(), restClient.postTopologyToJanus());
 
         doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.DEPLOYED);
 
@@ -261,6 +261,14 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
 
         return oldDeploymentStatus;
+    }
+
+    protected synchronized void sendMesage(final String deploymentPaaSId, final String message) {
+        PaaSMessageMonitorEvent messageMonitorEvent = new PaaSMessageMonitorEvent();
+        messageMonitorEvent.setDate((new Date()).getTime());
+        messageMonitorEvent.setDeploymentId(paaSDeploymentIdToAlienDeploymentIdMap.get(deploymentPaaSId));
+        messageMonitorEvent.setMessage(message);
+        toBeDeliveredEvents.add(messageMonitorEvent);
     }
 
     private void notifyInstanceStateChanged(final String deploymentPaaSId, final String nodeId, final String instanceId, final InstanceInformation information,

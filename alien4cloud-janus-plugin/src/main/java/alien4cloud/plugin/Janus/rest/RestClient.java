@@ -12,12 +12,14 @@ import java.net.URL;
 
 public class RestClient {
 
-    public void postTopologyToJanus() {
+    public String postTopologyToJanus() {
         URL location = RestClient.class.getProtectionDomain().getCodeSource().getLocation();
         String pluginPath = location.getFile();
 
         System.out.println(executeCommand("chmod 777 "+ pluginPath + "scripts/curlUploadZipToJanus.sh"));
-        System.out.println(executeCommand(pluginPath + "scripts/curlUploadZipToJanus.sh"));
+        String response = executeCommand(pluginPath + "scripts/curlUploadZipToJanus.sh");
+        System.out.println(response);
+        return response;
     }
 
     private static String executeCommand(String command) {
