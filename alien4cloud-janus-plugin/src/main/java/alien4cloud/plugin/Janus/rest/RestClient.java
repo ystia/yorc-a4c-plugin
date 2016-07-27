@@ -8,11 +8,16 @@ package alien4cloud.plugin.Janus.rest;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.net.URL;
 
 public class RestClient {
 
     public void postTopologyToJanus() {
-        System.out.println(executeCommand("./curlUploadZipToJanus.sh"));
+        URL location = RestClient.class.getProtectionDomain().getCodeSource().getLocation();
+        String pluginPath = location.getFile();
+
+        System.out.println(executeCommand("chmod 777 "+ pluginPath + "scripts/curlUploadZipToJanus.sh"));
+        System.out.println(executeCommand(pluginPath + "scripts/curlUploadZipToJanus.sh"));
     }
 
     private static String executeCommand(String command) {

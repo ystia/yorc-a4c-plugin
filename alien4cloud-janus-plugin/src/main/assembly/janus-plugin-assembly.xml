@@ -14,6 +14,14 @@
 				<include>**/**</include>
 			</includes>
 		</fileSet>
+		<fileSet>
+			<directory>src/main/scripts</directory>
+			<lineEnding>keep</lineEnding>
+			<outputDirectory>/scripts</outputDirectory>
+			<includes>
+				<include>**/**</include>
+			</includes>
+		</fileSet>
 	</fileSets>
 	<dependencySets>
 		<dependencySet>
