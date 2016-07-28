@@ -24,8 +24,8 @@ import java.util.Map;
 @Getter
 @Setter
 @NoArgsConstructor
-@FormProperties({ "firstArgument", "secondArgument", "thirdArgument", "withBadConfiguraton", "tags", "properties", "javaVersion", "provideResourceIds",
-        "resourceIdsCount", "shuffleStateChange" })
+@FormProperties({"firstArgument", "secondArgument", "thirdArgument", "withBadConfiguraton", "tags", "properties", "javaVersion", "provideResourceIds",
+        "resourceIdsCount", "shuffleStateChange"})
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @SuppressWarnings("PMD.UnusedPrivateField")

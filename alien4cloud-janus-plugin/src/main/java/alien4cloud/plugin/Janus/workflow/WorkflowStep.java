@@ -22,7 +22,6 @@ public class WorkflowStep {
 
 
     /**
-     *
      * @param workflowId
      * @param workflowStep
      * @param workflowDone
@@ -33,8 +32,8 @@ public class WorkflowStep {
         this.workflowDone = workflowDone;
     }
 
-    public WorkflowStep get(String id, String step){
-        if (workflowId == id && step == workflowStep){
+    public WorkflowStep get(String id, String step) {
+        if (workflowId == id && step == workflowStep) {
             return new WorkflowStep(workflowId, workflowStep, workflowDone);
         }
         return null;

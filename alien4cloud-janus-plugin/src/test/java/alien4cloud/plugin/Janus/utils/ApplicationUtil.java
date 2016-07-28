@@ -45,7 +45,7 @@ public class ApplicationUtil {
 
     @SneakyThrows
     public Topology createAlienApplication(String applicationName, String topologyFileName, String locationName) {
-        log.info(applicationName,topologyFileName,locationName);
+        log.info(applicationName, topologyFileName, locationName);
         Application application = alienDAO.customFind(Application.class, QueryBuilders.termQuery("name", applicationName));
         if (application != null) {
             applicationService.delete(application.getId());

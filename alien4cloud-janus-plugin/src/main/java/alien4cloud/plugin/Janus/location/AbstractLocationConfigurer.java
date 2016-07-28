@@ -63,7 +63,7 @@ public abstract class AbstractLocationConfigurer implements ILocationConfigurato
                 archives = parseArchives();
             } catch (ParsingException e) {
                 log.error(e.getMessage());
-                throw  new PluginParseException(e.getMessage());
+                throw new PluginParseException(e.getMessage());
             }
         }
         return archives;

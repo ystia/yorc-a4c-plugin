@@ -52,20 +52,20 @@ public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<Provid
 
             DeploymentStatus deploymentStatus = getStatus(deploymentId, false);
             switch (deploymentStatus) {
-            case DEPLOYED:
-            case DEPLOYMENT_IN_PROGRESS:
-            case UNDEPLOYMENT_IN_PROGRESS:
-            case WARNING:
-            case FAILURE:
-                throw new PaaSAlreadyDeployedException("Topology [" + deploymentId + "] is in status [" + deploymentStatus + "] and cannot be deployed");
-            case UNKNOWN:
-                throw new IllegalDeploymentStateException("Topology [" + deploymentId + "] is in status [" + deploymentStatus + "] and cannot be deployed");
-            case UNDEPLOYED:
-                doDeploy(deploymentContext);
-                break;
-            default:
-                throw new IllegalDeploymentStateException("Topology [" + deploymentId + "] is in illegal status [" + deploymentStatus
-                        + "] and cannot be deployed");
+                case DEPLOYED:
+                case DEPLOYMENT_IN_PROGRESS:
+                case UNDEPLOYMENT_IN_PROGRESS:
+                case WARNING:
+                case FAILURE:
+                    throw new PaaSAlreadyDeployedException("Topology [" + deploymentId + "] is in status [" + deploymentStatus + "] and cannot be deployed");
+                case UNKNOWN:
+                    throw new IllegalDeploymentStateException("Topology [" + deploymentId + "] is in status [" + deploymentStatus + "] and cannot be deployed");
+                case UNDEPLOYED:
+                    doDeploy(deploymentContext);
+                    break;
+                default:
+                    throw new IllegalDeploymentStateException("Topology [" + deploymentId + "] is in illegal status [" + deploymentStatus
+                            + "] and cannot be deployed");
             }
         } finally {
             providerLock.writeLock().unlock();
@@ -142,20 +142,20 @@ public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<Provid
             providerLock.writeLock().lock();
             DeploymentStatus deploymentStatus = getStatus(deploymentId, true);
             switch (deploymentStatus) {
-            case UNDEPLOYMENT_IN_PROGRESS:
-            case UNDEPLOYED:
-                throw new PaaSNotYetDeployedException("Application [" + deploymentId + "] is in status [" + deploymentStatus + "] and cannot be undeployed");
-            case UNKNOWN:
-                throw new IllegalDeploymentStateException("Application [" + deploymentId + "] is in status [" + deploymentStatus + "] and cannot be undeployed");
-            case DEPLOYMENT_IN_PROGRESS:
-            case FAILURE:
-            case DEPLOYED:
-            case WARNING:
-                doUndeploy(deploymentContext);
-                break;
-            default:
-                throw new IllegalDeploymentStateException("Application [" + deploymentId + "] is in illegal status [" + deploymentStatus
-                        + "] and cannot be undeployed");
+                case UNDEPLOYMENT_IN_PROGRESS:
+                case UNDEPLOYED:
+                    throw new PaaSNotYetDeployedException("Application [" + deploymentId + "] is in status [" + deploymentStatus + "] and cannot be undeployed");
+                case UNKNOWN:
+                    throw new IllegalDeploymentStateException("Application [" + deploymentId + "] is in status [" + deploymentStatus + "] and cannot be undeployed");
+                case DEPLOYMENT_IN_PROGRESS:
+                case FAILURE:
+                case DEPLOYED:
+                case WARNING:
+                    doUndeploy(deploymentContext);
+                    break;
+                default:
+                    throw new IllegalDeploymentStateException("Application [" + deploymentId + "] is in illegal status [" + deploymentStatus
+                            + "] and cannot be undeployed");
             }
         } finally {
             providerLock.writeLock().unlock();
@@ -194,7 +194,7 @@ public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<Provid
             if (resultException != null) {
                 callback.onFailure(new OperationExecutionException(resultException));
             }
-            callback.onSuccess(MapUtil.newHashMap(new String[] { "1" }, new String[] { doExecuteOperationResult }));
+            callback.onSuccess(MapUtil.newHashMap(new String[]{"1"}, new String[]{doExecuteOperationResult}));
         } finally {
             providerLock.writeLock().unlock();
         }

@@ -90,9 +90,9 @@ public class ExecPython {
         List<String> result = new ArrayList<>();
         try {
             String node;
-            if(gpu.equals("none")){
+            if (gpu.equals("none")) {
                 node = "mo116";
-            }else{
+            } else {
                 node = "mo80";
             }
 

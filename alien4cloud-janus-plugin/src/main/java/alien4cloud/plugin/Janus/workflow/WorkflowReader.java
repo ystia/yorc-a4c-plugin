@@ -32,24 +32,22 @@ public class WorkflowReader {
 
 
     /**
-     *
      * @param workflow
      */
-    public WorkflowReader(Map<String, Workflow> workflow){
+    public WorkflowReader(Map<String, Workflow> workflow) {
         Map<String, AbstractStep> stepsVal = workflow.get(Workflow.INSTALL_WF).getSteps();
         List<AbstractStep> steps = sortList(stepsVal);
         this.workflowSteps = createWorkflow(steps);
     }
 
     /**
-     *
      * @param steps
      * @return
      */
     private List<WorkflowStep> createWorkflow(List<AbstractStep> steps) {
         List<WorkflowStep> workflowSteps = new ArrayList<>();
-        for (AbstractStep step : steps){
-            if(step.getName() != null) {
+        for (AbstractStep step : steps) {
+            if (step.getName() != null) {
                 String nodeName = step.getName().split("_")[0].replace(" ", "");
                 String stepName = step.getName().split("_")[1].replace(" ", "");
 //                log.info("node : " + nodeName + " step : " + stepName);
@@ -66,6 +64,7 @@ public class WorkflowReader {
 
     /**
      * Kahn's algorithm to sort a list with link between steps
+     *
      * @param stepsVal
      * @return
      */
@@ -81,7 +80,7 @@ public class WorkflowReader {
             result.add(n);
             stepInit.remove(n);
             getFollowingNodes(following, allSteps, n);
-            if( following.size() != 0) {
+            if (following.size() != 0) {
                 for (AbstractStep m : following) {
                     AbstractStep stepC = removePrecedingStep(allSteps, n, m);
                     if (allSteps.get(stepC.getName()).getPrecedingSteps().size() == 0) {
@@ -95,7 +94,6 @@ public class WorkflowReader {
     }
 
     /**
-     *
      * @param allSteps
      * @param n
      * @param m
@@ -108,14 +106,13 @@ public class WorkflowReader {
     }
 
     /**
-     *
      * @param following
      * @param allSteps
      * @param n
      */
     private void getFollowingNodes(List<AbstractStep> following, Map<String, AbstractStep> allSteps, AbstractStep n) {
         // all steps following n
-        if(n.getFollowingSteps() != null) {
+        if (n.getFollowingSteps() != null) {
             for (String mFollow : n.getFollowingSteps()) {
                 following.add(allSteps.get(mFollow));
 //                log.info(allSteps.get(mFollow).getName());
@@ -124,15 +121,14 @@ public class WorkflowReader {
     }
 
     /**
-     *
      * @param stepsVal
      * @param stepInit
      * @param allSteps
      */
     private void getStartNodes(Map<String, AbstractStep> stepsVal, List<AbstractStep> stepInit, Map<String, AbstractStep> allSteps) {
         //Step with no preceding steps
-        for (AbstractStep step : stepsVal.values()){
-            if (step.getPrecedingSteps() == null){
+        for (AbstractStep step : stepsVal.values()) {
+            if (step.getPrecedingSteps() == null) {
                 stepInit.add(step);
 //                log.info(" Step : " + allSteps.get(step.getName()));
                 allSteps.remove(step);
@@ -143,9 +139,9 @@ public class WorkflowReader {
     /**
      * show the workflow steps
      */
-    public void read (){
+    public void read() {
         log.info("__________________________________");
-        for (WorkflowStep wf : workflowSteps){
+        for (WorkflowStep wf : workflowSteps) {
             log.info(wf.getWorkflowId() + " | " + wf.getWorkflowStep() + " | " + wf.getWorkflowDone());
             log.info("__________________________________");
         }

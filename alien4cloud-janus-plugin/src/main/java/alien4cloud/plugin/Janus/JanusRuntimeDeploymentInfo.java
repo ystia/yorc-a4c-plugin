@@ -23,7 +23,7 @@ public class JanusRuntimeDeploymentInfo {
     private DeploymentStatus status;
     /**
      * Represents the status of every instance of node templates currently deployed.
-     * 
+     * <p>
      * NodeTemplateId -> InstanceId -> InstanceInformation
      */
     private Map<String, Map<String, InstanceInformation>> instanceInformations;

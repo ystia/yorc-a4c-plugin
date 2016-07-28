@@ -38,7 +38,7 @@ public abstract class AbstractLocationConfigurerFactory {
     public ILocationConfiguratorPlugin newInstance(String locationType) {
 
         ILocationConfiguratorPlugin locationConfigurer = newInstanceBasedOnLocation(locationType);
-        if(locationConfigurer != null) {
+        if (locationConfigurer != null) {
             return locationConfigurer;
         }
 

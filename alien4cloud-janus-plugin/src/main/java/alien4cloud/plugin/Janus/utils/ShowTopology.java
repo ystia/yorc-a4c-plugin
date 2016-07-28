@@ -144,7 +144,7 @@ public class ShowTopology {
         }
     }
 
-    public void topologyInLog(PaaSTopologyDeploymentContext deploymentContext){
+    public void topologyInLog(PaaSTopologyDeploymentContext deploymentContext) {
         Topology topology = deploymentContext.getDeploymentTopology();
         PaaSTopology paaSTopology = deploymentContext.getPaaSTopology();
 
@@ -182,14 +182,14 @@ public class ShowTopology {
 
         for (PaaSNodeTemplate node : deploymentContext.getPaaSTopology().getComputes()) {
 
-            log.info("NODE PROPERTIES GPUTYPE : " + ((ScalarPropertyValue)node.getTemplate().getProperties().get("gpuType")).getValue());
+            log.info("NODE PROPERTIES GPUTYPE : " + ((ScalarPropertyValue) node.getTemplate().getProperties().get("gpuType")).getValue());
             log.info("node id = " + node.getId());
 
             log.info("node CsarPath = " + node.getCsarPath());
             log.info("TYPE = " + node.getTemplate().getType());
             log.info("Nombre de children = " + node.getChildren().size());
             log.info("### Capability ###");
-            for(Map.Entry<String, Capability> capabilite : node.getTemplate().getCapabilities().entrySet()){
+            for (Map.Entry<String, Capability> capabilite : node.getTemplate().getCapabilities().entrySet()) {
                 log.info("Capabilitie value : " + capabilite.getValue());
                 log.info("Capabilitie properties : " + capabilite.getValue().getProperties());
                 log.info("Capabilitie type : " + capabilite.getValue().getType());
@@ -197,7 +197,7 @@ public class ShowTopology {
             }
             log.info("capability : " + node.getTemplate().getCapabilities());
             log.info("### Requirements ###");
-            for(Map.Entry<String, Requirement> requirement : node.getTemplate().getRequirements().entrySet()){
+            for (Map.Entry<String, Requirement> requirement : node.getTemplate().getRequirements().entrySet()) {
                 log.info("Requirement value : " + requirement.getValue());
                 log.info("Requirement properties : " + requirement.getValue().getProperties());
                 log.info("Requirement type : " + requirement.getValue().getType());
@@ -209,8 +209,8 @@ public class ShowTopology {
             log.info("RelationShips : " + node.getTemplate().getRelationships());
             log.info("Attributes : " + node.getTemplate().getAttributes());
             log.info("Interface : " + node.getTemplate().getInterfaces());
-            log.info("Name : " + node.getTemplate().getName() );
-            if((node.getScalingPolicy()) != null){
+            log.info("Name : " + node.getTemplate().getName());
+            if ((node.getScalingPolicy()) != null) {
                 log.info("POLiCY : " + node.getScalingPolicy().getInitialInstances());
             }
             log.info("===== Children ====");
@@ -221,11 +221,11 @@ public class ShowTopology {
                 Map<String, AbstractPropertyValue> properties = child.getTemplate().getProperties();
                 Map<String, DeploymentArtifact> artifs = child.getTemplate().getArtifacts();
 
-             //   log.info(child.getIndexedToscaElement().getArtifacts().get(0).getArtifactRef());
+                //   log.info(child.getIndexedToscaElement().getArtifacts().get(0).getArtifactRef());
                 Map<String, Interface> inter = child.getInterfaces();
-                for (Interface interF : inter.values()){
-                    for(Operation opera : interF.getOperations().values()){
-                        if(opera.getImplementationArtifact()!= null && !opera.getImplementationArtifact().getArtifactRef().isEmpty() ){
+                for (Interface interF : inter.values()) {
+                    for (Operation opera : interF.getOperations().values()) {
+                        if (opera.getImplementationArtifact() != null && !opera.getImplementationArtifact().getArtifactRef().isEmpty()) {
                             log.info(" impl artif : " + opera.getImplementationArtifact().getArtifactRef());
                         }
                     }
@@ -253,9 +253,9 @@ public class ShowTopology {
 //                log.info("SIze artifacts : " + child.getTemplate().getArtifacts().size());
 //                log.info("Artifacts : " + child.getTemplate().getArtifacts().get(0));
                 log.info("######## CHILD PROPERTIES ########");
-                for (AbstractPropertyValue propertieC : properties.values()){
-                    if(propertieC != null){
-                        log.info(((ScalarPropertyValue)propertieC).getValue());
+                for (AbstractPropertyValue propertieC : properties.values()) {
+                    if (propertieC != null) {
+                        log.info(((ScalarPropertyValue) propertieC).getValue());
                     }
                 }
 //                log.info("######## GET CHILD interfaces ########" + child.getInterfaces().size());
@@ -323,14 +323,14 @@ public class ShowTopology {
                 for (PaaSRelationshipTemplate relation : child.getRelationshipTemplates()) {
 
                     if (relation.instanceOf(NormativeRelationshipConstants.CONNECTS_TO)) {
-                        log.info("RelationShip deploymentPaasId : "+deploymentContext.getDeploymentPaaSId()+ " Relation Target : " + relation.getTemplate().getTarget());
+                        log.info("RelationShip deploymentPaasId : " + deploymentContext.getDeploymentPaaSId() + " Relation Target : " + relation.getTemplate().getTarget());
 
                         if (relation.getSource().equals(child.getId())) {
-                            log.info("RelationShip deploymentPaasId : "+deploymentContext.getDeploymentPaaSId()+ " Relation Target : " + relation.getTemplate().getTarget());
+                            log.info("RelationShip deploymentPaasId : " + deploymentContext.getDeploymentPaaSId() + " Relation Target : " + relation.getTemplate().getTarget());
                             log.info("RelationShip isSourceyes");
                         }
                         if (relation.getTemplate().getTarget().equals(child.getId())) {
-                           log.info("Relationship isTarget");
+                            log.info("Relationship isTarget");
                         }
                     }
 

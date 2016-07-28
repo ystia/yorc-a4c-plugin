@@ -16,7 +16,7 @@ public class RestClient {
         URL location = RestClient.class.getProtectionDomain().getCodeSource().getLocation();
         String pluginPath = location.getFile();
 
-        System.out.println(executeCommand("chmod 777 "+ pluginPath + "scripts/curlUploadZipToJanus.sh"));
+        System.out.println(executeCommand("chmod 777 " + pluginPath + "scripts/curlUploadZipToJanus.sh"));
         String response = executeCommand(pluginPath + "scripts/curlUploadZipToJanus.sh");
         System.out.println(response);
         return response;
@@ -33,7 +33,7 @@ public class RestClient {
             //p.waitFor();
             String line = "";
             while ((line = reader.readLine()) != null) {
-                System.out.println("line="+line);
+                System.out.println("line=" + line);
                 output.append(line + "\n");
             }
 

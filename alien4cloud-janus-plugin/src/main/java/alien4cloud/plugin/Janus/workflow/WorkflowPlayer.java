@@ -37,6 +37,7 @@ public class WorkflowPlayer {
 
     /**
      * Scroll down the list of steps in order to deploy our application
+     *
      * @param deploymentContext
      * @param workflowSteps
      */
@@ -55,48 +56,48 @@ public class WorkflowPlayer {
                 PaaSNodeTemplate child = getChild(paaSTopology, workflowStep.getWorkflowId());
                 List<String> properties = getProperties(child);
                 String parentPath = child.getCsarPath().getParent().toString();
-                String artifactPath = getArtifactRef(child,WorkflowReader.CREATE);
+                String artifactPath = getArtifactRef(child, WorkflowReader.CREATE);
                 String scriptPath = getScriptPath(parentPath, artifactPath);
-                String gpu = ((ScalarPropertyValue)child.getParent().getTemplate().getProperties().get("gpuType")).getValue();
+                String gpu = ((ScalarPropertyValue) child.getParent().getTemplate().getProperties().get("gpuType")).getValue();
                 log.info("Property GPU :" + gpu);
 
                 //We looking for a Gpu propertie in the host if any
-                if(gpu.equals(NONE)){
+                if (gpu.equals(NONE)) {
                     log.info("url image docker : " + properties.get(0));
-                   // execPython.componentInstall(getNodeId(), properties.get(0), scriptPath, gpu);
-                }else{
+                    // execPython.componentInstall(getNodeId(), properties.get(0), scriptPath, gpu);
+                } else {
                     log.info("url image docker : " + properties.get(1));
-                   // execPython.componentInstall(getNodeId(), properties.get(1), scriptPath, gpu);
+                    // execPython.componentInstall(getNodeId(), properties.get(1), scriptPath, gpu);
                 }
-            //STEP : CONFIGURE
-            //for this poc we use the HPCDockerContainer component which have only a create step
+                //STEP : CONFIGURE
+                //for this poc we use the HPCDockerContainer component which have only a create step
             } else if (workflowStep.getWorkflowStep().equals(WorkflowReader.CONFIGURE)) {
                 log.info("Configure : " + workflowStep.getWorkflowId());
                 log.info("**Do nothing**");
 
-            //STEP : START
-            //for this poc we use the HPCDockerContainer component which have only a create step
+                //STEP : START
+                //for this poc we use the HPCDockerContainer component which have only a create step
             } else if (workflowStep.getWorkflowStep().equals(WorkflowReader.START)) {
                 log.info("Start : " + workflowStep.getWorkflowId());
                 log.info("**Do nothing**");
 
-            //HOSTS of those components
-            //STEP : INSTALL
+                //HOSTS of those components
+                //STEP : INSTALL
             } else if (hosts.contains(workflowStep.getWorkflowId())) {
                 log.info("Compute ID : " + workflowStep.getWorkflowId() + " | Compute Step : " + workflowStep.getWorkflowStep());
                 PaaSNodeTemplate node = getNode(paaSTopology, workflowStep.getWorkflowId());
-                if((node.getTemplate().getProperties().get("gpuType")) != null){
+                if ((node.getTemplate().getProperties().get("gpuType")) != null) {
                     if (((ScalarPropertyValue) node.getTemplate().getProperties().get("gpuType")).getValue() != NONE) {
                         setNodeId(execPython.nodeInstall());
                     } else {
                         setNodeId(execPython.nodeInstall());
                     }
-                }else{
+                } else {
                     log.info("gpuType missing");
                 }
 
-            //STEP : other steps like configuring, creating, ... which are not key steps
-            }else{
+                //STEP : other steps like configuring, creating, ... which are not key steps
+            } else {
                 log.info(workflowStep.getWorkflowStep() + " : " + workflowStep.getWorkflowId());
                 log.info("**Do nothing**");
             }
@@ -105,28 +106,26 @@ public class WorkflowPlayer {
     }
 
     /**
-     *
      * @param path
      * @param artifactPath
      * @return path of the script in the CSAR folder
      */
     private String getScriptPath(String path, String artifactPath) {
-        if (System.getProperty("os.name").contains("Windows")){
+        if (System.getProperty("os.name").contains("Windows")) {
             return path + "\\expanded\\" + artifactPath;
-        }else{
+        } else {
             return path + "/expanded/" + artifactPath;
         }
     }
 
     /**
-     *
      * @param child
      * @return
      */
     private List<String> getProperties(PaaSNodeTemplate child) {
         Map<String, AbstractPropertyValue> properties = child.getTemplate().getProperties();
         List<String> propertiesChild = new ArrayList<>();
-        for (AbstractPropertyValue propertieChild : properties.values()){
+        for (AbstractPropertyValue propertieChild : properties.values()) {
             if (propertieChild != null)
                 propertiesChild.add(((ScalarPropertyValue) propertieChild).getValue());
         }
@@ -134,14 +133,13 @@ public class WorkflowPlayer {
     }
 
     /**
-     *
      * @param paaSTopology
      * @param nodeId
      * @return node if any
      */
-    public PaaSNodeTemplate getNode(PaaSTopology paaSTopology, String nodeId){
+    public PaaSNodeTemplate getNode(PaaSTopology paaSTopology, String nodeId) {
         for (PaaSNodeTemplate node : paaSTopology.getComputes()) {
-            if (node.getId().equals(nodeId)){
+            if (node.getId().equals(nodeId)) {
                 return node;
             }
         }
@@ -149,16 +147,15 @@ public class WorkflowPlayer {
     }
 
     /**
-     *
      * @param paaSTopology
      * @param childId
      * @return child if any
      */
-    public PaaSNodeTemplate getChild(PaaSTopology paaSTopology, String childId){
+    public PaaSNodeTemplate getChild(PaaSTopology paaSTopology, String childId) {
         for (PaaSNodeTemplate node : paaSTopology.getComputes()) {
             List<PaaSNodeTemplate> children = node.getChildren();
             for (PaaSNodeTemplate child : children) {
-                if(child.getId().equals(childId)){
+                if (child.getId().equals(childId)) {
                     return child;
                 }
             }
@@ -167,12 +164,11 @@ public class WorkflowPlayer {
     }
 
     /**
-     *
-     * @param child (Alien component)
+     * @param child     (Alien component)
      * @param operation (create, configure, create)
      * @return artifactRef (path to the script of the operation)
      */
-    public String getArtifactRef(PaaSNodeTemplate child, String operation){
+    public String getArtifactRef(PaaSNodeTemplate child, String operation) {
         Map<String, Interface> interfacesChild = child.getInterfaces();
         for (Interface interfaceChild : interfacesChild.values()) {
             if (interfaceChild.getOperations() != null && interfaceChild.getOperations().get(operation).getImplementationArtifact() != null && !interfaceChild.getOperations().get(operation).getImplementationArtifact().getArtifactRef().isEmpty()) {

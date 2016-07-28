@@ -28,7 +28,6 @@ public class ZipTopology {
     static final String CSAR = "csar/";
 
     /**
-     *
      * @param deploymentContext
      * @return
      */
@@ -51,7 +50,6 @@ public class ZipTopology {
     }
 
     /**
-     *
      * @param zipfile
      * @param deploymentContext
      * @throws IOException
@@ -72,8 +70,8 @@ public class ZipTopology {
 
             //Get info name path for component
             String[] dirFolders = directory.toString().split("/");
-            String componentName = dirFolders[dirFolders.length-2] + "/";
-            String componentVersion = dirFolders[dirFolders.length-1] + "/";
+            String componentName = dirFolders[dirFolders.length - 2] + "/";
+            String componentVersion = dirFolders[dirFolders.length - 1] + "/";
 
             //create structure of our component folder
             zout.putNextEntry(new ZipEntry(CSAR + componentName));

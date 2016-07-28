@@ -46,10 +46,11 @@ public class BlueprintTest {
         log.info("topology test : " + topology.getDelegateId());
 
     }
+
     @Test
     public void main() {
         log.info("Debut du main ");
-        buildPaaSDeploymentContext(SINGLE_COMPUTE_TOPOLOGY, SINGLE_COMPUTE_TOPOLOGY,"slurm");
+        buildPaaSDeploymentContext(SINGLE_COMPUTE_TOPOLOGY, SINGLE_COMPUTE_TOPOLOGY, "slurm");
     }
 
 }

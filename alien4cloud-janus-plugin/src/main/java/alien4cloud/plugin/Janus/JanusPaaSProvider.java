@@ -85,7 +85,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
     private TopologyService topologyService = new TopologyService();
 
     public JanusPaaSProvider() {
-        executorService.scheduleWithFixedDelay( new Runnable() {
+        executorService.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
                 for (Map.Entry<String, JanusRuntimeDeploymentInfo> runtimeDeloymentInfoEntry : runtimeDeploymentInfos.entrySet()) {
@@ -200,7 +200,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         try {
             File zip = new File("topology.zip");
             log.info("ZIP Topology");
-            zipTopology.buildZip(zip,deploymentContext);
+            zipTopology.buildZip(zip, deploymentContext);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -245,7 +245,6 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         runtimeDeploymentInfo.setStatus(status);
 
 
-
         PaaSDeploymentStatusMonitorEvent event = new PaaSDeploymentStatusMonitorEvent();
         event.setDeploymentStatus(status);
         event.setDate((new Date()).getTime());
@@ -270,7 +269,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
     }
 
     private void notifyInstanceStateChanged(final String deploymentPaaSId, final String nodeId, final String instanceId, final InstanceInformation information,
-            long delay) {
+                                            long delay) {
         final InstanceInformation cloned = new InstanceInformation();
         cloned.setAttributes(information.getAttributes());
         cloned.setInstanceStatus(information.getInstanceStatus());
@@ -341,7 +340,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
     }
 
     private void changeInstanceState(String id, String nodeId, String instanceId, InstanceInformation information,
-            Iterator<Entry<String, InstanceInformation>> iterator) {
+                                     Iterator<Entry<String, InstanceInformation>> iterator) {
         String currentState = information.getState();
         String nextState = getNextState(currentState);
         if (nextState != null) {
@@ -365,26 +364,26 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
             return null;
         }
         switch (currentState) {
-        case ToscaNodeLifecycleConstants.INITIAL:
-            return "creating";
-        case "creating":
-            return "created";
-        case "created":
-            return "configuring";
-        case "configuring":
-            return "configured";
-        case "configured":
-            return "starting";
-        case "starting":
-            return "started";
-        case "stopping":
-            return "stopped";
-        case "stopped":
-            return "uninstalled";
-        case "uninstalled":
-            return "terminated";
-        default:
-            return null;
+            case ToscaNodeLifecycleConstants.INITIAL:
+                return "creating";
+            case "creating":
+                return "created";
+            case "created":
+                return "configuring";
+            case "configuring":
+                return "configured";
+            case "configured":
+                return "starting";
+            case "starting":
+                return "started";
+            case "stopping":
+                return "stopped";
+            case "stopped":
+                return "uninstalled";
+            case "uninstalled":
+                return "terminated";
+            default:
+                return null;
         }
     }
 
@@ -394,7 +393,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
     private IndexedRelationshipType getRelationshipType(String typeName) {
         Map<String, String[]> filters = Maps.newHashMap();
-        filters.put("elementId", new String[] { typeName });
+        filters.put("elementId", new String[]{typeName});
         return (IndexedRelationshipType) csarRepoSearchService.search(IndexedRelationshipType.class, null, 0, 1, filters, false).getData()[0];
     }
 
@@ -473,7 +472,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
     @Override
     public void getInstancesInformation(PaaSTopologyDeploymentContext deploymentContext,
-            IPaaSCallback<Map<String, Map<String, InstanceInformation>>> callback) {
+                                        IPaaSCallback<Map<String, Map<String, InstanceInformation>>> callback) {
         JanusRuntimeDeploymentInfo runtimeDeploymentInfo = runtimeDeploymentInfos.get(deploymentContext.getDeploymentPaaSId());
         if (runtimeDeploymentInfo != null) {
             callback.onSuccess(runtimeDeploymentInfo.getInstanceInformations());
@@ -555,7 +554,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
     }
 
     private void switchInstanceMaintenanceMode(String deploymentPaaSId, String nodeTemplateId, String instanceId, InstanceInformation instanceInformation,
-            boolean maintenanceModeOn) {
+                                               boolean maintenanceModeOn) {
         if (maintenanceModeOn && instanceInformation.getInstanceStatus() == InstanceStatus.SUCCESS) {
             log.info(String.format("switching instance MaintenanceMode ON for node <%s>, instance <%s>", nodeTemplateId, instanceId));
             instanceInformation.setInstanceStatus(InstanceStatus.MAINTENANCE);

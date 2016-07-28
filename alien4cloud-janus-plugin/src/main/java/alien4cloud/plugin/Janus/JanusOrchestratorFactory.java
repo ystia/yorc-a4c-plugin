@@ -56,13 +56,13 @@ public class JanusOrchestratorFactory implements IOrchestratorPluginFactory<Janu
 
     @Override
     public LocationSupport getLocationSupport() {
-        return new LocationSupport(true, new String[] { OPENSTACK, SLURM });
+        return new LocationSupport(true, new String[]{OPENSTACK, SLURM});
     }
 
     @Override
     public ArtifactSupport getArtifactSupport() {
         // support all type of implementations artifacts
-        return new ArtifactSupport(new String[] { "tosca.artifacts.Implementation", "tosca.artifacts.ShellScript" });
+        return new ArtifactSupport(new String[]{"tosca.artifacts.Implementation", "tosca.artifacts.ShellScript"});
     }
 
     @Override
