@@ -52,14 +52,7 @@ public class JanusSlurmLocationConfigurer extends AbstractLocationConfigurer {
 
     @Override
     public Map<String, MatchingConfiguration> getMatchingConfigurations() {
-        Path matchingConfigPath = selfContext.getPluginPath().resolve("slurm/resources-matching-config.yml");
-        MatchingConfigurations matchingConfigurations = null;
-        try {
-            matchingConfigurations = matchingConfigurationsParser.parseFile(matchingConfigPath).getResult();
-        } catch (ParsingException e) {
-            return Maps.newHashMap();
-        }
-        return matchingConfigurations.getMatchingConfigurations();
+        return getMatchingConfigurations("slurm/resources-matching-config.yml");
     }
 
     @Override

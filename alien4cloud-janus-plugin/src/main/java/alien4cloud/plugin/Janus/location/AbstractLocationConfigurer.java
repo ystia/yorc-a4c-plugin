@@ -95,9 +95,8 @@ public abstract class AbstractLocationConfigurer implements ILocationConfigurato
                 "janus.nodes.slurm.BlockStorage", "janus.nodes.slurm.Network");
     }
 
-    @Override
-    public Map<String, MatchingConfiguration> getMatchingConfigurations() {
-        Path matchingConfigPath = selfContext.getPluginPath().resolve("slurm/resources-matching-config.yml");
+    public Map<String, MatchingConfiguration> getMatchingConfigurations(String matchingConfigRelativePath) {
+        Path matchingConfigPath = selfContext.getPluginPath().resolve(matchingConfigRelativePath);
         MatchingConfigurations matchingConfigurations = null;
         try {
             matchingConfigurations = matchingConfigurationsParser.parseFile(matchingConfigPath).getResult();
