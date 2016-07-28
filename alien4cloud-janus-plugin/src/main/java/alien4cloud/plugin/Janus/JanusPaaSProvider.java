@@ -148,8 +148,6 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
     @Override
     protected synchronized void doDeploy(final PaaSTopologyDeploymentContext deploymentContext) {
-
-
         log.info("Deploying deployment [" + deploymentContext.getDeploymentPaaSId() + "]");
         paaSDeploymentIdToAlienDeploymentIdMap.put(deploymentContext.getDeploymentPaaSId(), deploymentContext.getDeploymentId());
         Topology topology = deploymentContext.getDeploymentTopology();

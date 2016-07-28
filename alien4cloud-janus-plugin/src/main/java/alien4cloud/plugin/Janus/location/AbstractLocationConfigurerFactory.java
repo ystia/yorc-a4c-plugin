@@ -15,8 +15,6 @@ import alien4cloud.plugin.PluginManager;
 import alien4cloud.plugin.model.ManagedPlugin;
 import alien4cloud.tosca.ArchiveParser;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
