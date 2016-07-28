@@ -105,28 +105,4 @@ public abstract class AbstractLocationConfigurer implements ILocationConfigurato
         }
         return matchingConfigurations.getMatchingConfigurations();
     }
-
-    @Override
-    public List<LocationResourceTemplate> instances(ILocationResourceAccessor resourceAccessor) {
-        ImageFlavorContext imageContext = resourceGeneratorService.buildContext("janus.nodes.slurm.Image", "id", resourceAccessor);
-        ImageFlavorContext flavorContext = resourceGeneratorService.buildContext("janus.nodes.slurm.Flavor", "id", resourceAccessor);
-        boolean canProceed = true;
-
-        if (CollectionUtils.isEmpty(imageContext.getTemplates())) {
-            log.warn("At least one configured image resource is required for the auto-configuration");
-            canProceed = false;
-        }
-        if (CollectionUtils.isEmpty(flavorContext.getTemplates())) {
-            log.warn("At least one configured flavor resource is required for the auto-configuration");
-            canProceed = false;
-        }
-        if (!canProceed) {
-            log.warn("Skipping auto configuration");
-            return null;
-        }
-        ComputeContext computeContext = resourceGeneratorService.buildComputeContext("janus.nodes.slurm.Compute", null, IMAGE_ID_PROP, FLAVOR_ID_PROP,
-                resourceAccessor);
-
-        return resourceGeneratorService.generateComputeFromImageAndFlavor(imageContext, flavorContext, computeContext, resourceAccessor);
-    }
 }
