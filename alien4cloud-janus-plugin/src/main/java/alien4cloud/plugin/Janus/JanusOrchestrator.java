@@ -8,7 +8,7 @@ package alien4cloud.plugin.Janus;
 
 import alien4cloud.orchestrators.plugin.ILocationConfiguratorPlugin;
 import alien4cloud.orchestrators.plugin.model.PluginArchive;
-import alien4cloud.plugin.Janus.baseplugin.AbstractLocationConfigurerFactory;
+import alien4cloud.plugin.Janus.location.AbstractLocationConfigurerFactory;
 import com.google.common.collect.Lists;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;

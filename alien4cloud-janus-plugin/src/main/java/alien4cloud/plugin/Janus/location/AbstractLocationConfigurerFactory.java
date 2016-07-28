@@ -4,7 +4,7 @@
 * See the NOTICE file distributed with this work for additional information
 * regarding copyright ownership.
 */
-package alien4cloud.plugin.Janus.baseplugin;
+package alien4cloud.plugin.Janus.location;
 
 import alien4cloud.model.deployment.matching.MatchingConfiguration;
 import alien4cloud.model.orchestrators.locations.LocationResourceTemplate;

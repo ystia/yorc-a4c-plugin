@@ -1,7 +1,10 @@
-package alien4cloud.plugin.Janus;
+package alien4cloud.plugin.Janus.location;
 
 import alien4cloud.orchestrators.plugin.ILocationConfiguratorPlugin;
-import alien4cloud.plugin.Janus.baseplugin.AbstractLocationConfigurerFactory;
+import alien4cloud.plugin.Janus.JanusOrchestratorFactory;
+import alien4cloud.plugin.Janus.location.AbstractLocationConfigurerFactory;
+import alien4cloud.plugin.Janus.location.JanusOpenStackLocationConfigurer;
+import alien4cloud.plugin.Janus.location.JanusSlurmLocationConfigurer;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
