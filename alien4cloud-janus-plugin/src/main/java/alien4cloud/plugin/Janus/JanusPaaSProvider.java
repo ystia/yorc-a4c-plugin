@@ -207,8 +207,9 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
         //post topology zip to Janus
         log.info("POST Topology");
-        restClient.postTopologyToJanus();
-        sendMesage(deploymentContext.getDeploymentPaaSId(), restClient.postTopologyToJanus());
+        String output = restClient.postTopologyToJanus();
+        System.out.println(output);
+        sendMesage(deploymentContext.getDeploymentPaaSId(), output);
 
         doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.DEPLOYED);
 
