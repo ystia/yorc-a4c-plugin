@@ -1,1 +1,0 @@
-curl -X POST localhost:8800/deployments -v --data-binary @welcome.zip -H "Content-Type: application/zip" 2>&1

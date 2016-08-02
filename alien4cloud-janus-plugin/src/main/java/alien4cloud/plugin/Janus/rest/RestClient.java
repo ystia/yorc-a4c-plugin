@@ -6,42 +6,63 @@
 */
 package alien4cloud.plugin.Janus.rest;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.URL;
+import com.mashape.unirest.http.HttpResponse;
+import com.mashape.unirest.http.JsonNode;
+import com.mashape.unirest.http.Unirest;
+import com.mashape.unirest.http.exceptions.UnirestException;
+
+import java.io.*;
 
 public class RestClient {
 
+    final String janusUrl = "http://localhost:8800";
+
     public String postTopologyToJanus() {
-        URL location = RestClient.class.getProtectionDomain().getCodeSource().getLocation();
-        String pluginPath = location.getFile();
-
-        System.out.println(executeCommand("chmod 777 " + pluginPath + "scripts/curlUploadZipToJanus.sh"));
-        String response = executeCommand(pluginPath + "scripts/curlUploadZipToJanus.sh");
-        System.out.println(response);
-        return response;
-    }
-
-    private static String executeCommand(String command) {
-        StringBuffer output = new StringBuffer();
-
-        Process p;
+        final InputStream stream;
         try {
-            p = Runtime.getRuntime().exec(command);
+            stream = new FileInputStream(new File("welcome.zip"));
+            final byte[] bytes = new byte[stream.available()];
+            stream.read(bytes);
+            stream.close();
 
-            BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-            //p.waitFor();
-            String line = "";
-            while ((line = reader.readLine()) != null) {
-                System.out.println("line=" + line);
-                output.append(line + "\n");
-            }
+            HttpResponse<JsonNode> postResponse = Unirest.post(janusUrl + "/deployments")
+                    .header("accept", "application/json")
+                    .header("Content-Type", "application/zip")
+                    .body(bytes)
+                    .asJson();
 
-        } catch (Exception e) {
+            return postResponse.getStatusText();
+
+        } catch (FileNotFoundException e) {
             e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (UnirestException e) {
+            System.out.println(e.getMessage());
         }
 
-        return output.toString();
+        return "error";
 
     }
+
+
+    public String getStatusFromJanus(String id) {
+        try {
+            return Unirest.get(janusUrl + "/deployments/" + id).asJson().getStatusText();
+        } catch (UnirestException e) {
+            e.printStackTrace();
+            return "error";
+        }
+    }
+
+    public String undeployJanus(String id) {
+        try {
+            return Unirest.delete(janusUrl + "/deployments/" + id).asJson().getStatusText();
+        } catch (UnirestException e) {
+            e.printStackTrace();
+            return "error";
+        }
+    }
+
+
 }
