@@ -28,4 +28,7 @@ public class JanusRuntimeDeploymentInfo {
      */
     private Map<String, Map<String, InstanceInformation>> instanceInformations;
 
+
+    private String deploymentUrl;
+
 }

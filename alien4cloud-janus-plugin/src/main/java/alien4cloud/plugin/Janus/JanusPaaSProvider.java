@@ -29,6 +29,7 @@ import alien4cloud.tosca.normative.NormativeBlockStorageConstants;
 import alien4cloud.tosca.normative.NormativeComputeConstants;
 import alien4cloud.tosca.normative.NormativeRelationshipConstants;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.mashape.unirest.http.exceptions.UnirestException;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.common.collect.Maps;
 
@@ -170,8 +171,9 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
             }
         }
 
-        runtimeDeploymentInfos.put(deploymentContext.getDeploymentPaaSId(),
-                new JanusRuntimeDeploymentInfo(deploymentContext, DeploymentStatus.DEPLOYMENT_IN_PROGRESS, currentInformations));
+
+        JanusRuntimeDeploymentInfo janusDeploymentInfo = new JanusRuntimeDeploymentInfo(deploymentContext, DeploymentStatus.DEPLOYMENT_IN_PROGRESS, currentInformations, "");
+        runtimeDeploymentInfos.put(deploymentContext.getDeploymentPaaSId(), janusDeploymentInfo);
 
         doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.DEPLOYMENT_IN_PROGRESS);
 
@@ -207,18 +209,50 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
         //post topology zip to Janus
         log.info("POST Topology");
-        String output = restClient.postTopologyToJanus();
-        System.out.println(output);
-        sendMesage(deploymentContext.getDeploymentPaaSId(), output);
 
-        doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.DEPLOYED);
+        try {
+            String deploymentUrl = restClient.postTopologyToJanus();
+            janusDeploymentInfo.setDeploymentUrl(deploymentUrl);
+            log.info("Deployment Url : " + deploymentUrl);
+            sendMesage(deploymentContext.getDeploymentPaaSId(), deploymentUrl);
 
+            checkJanusStatusUntil("DEPLOYED", deploymentUrl);
+
+            doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.DEPLOYED);
+
+
+        } catch (Exception e) {
+            //e.printStackTrace();
+            doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
+            sendMesage(deploymentContext.getDeploymentPaaSId(), e.getMessage());
+
+        }
+
+    }
+
+    private void checkJanusStatusUntil(String aimStatus, String deploymentUrl) throws Exception {
+        String status = "";
+        while(!status.equals(aimStatus)) {
+            status = restClient.getStatusFromJanus(deploymentUrl);
+            log.info(status);
+            Thread.sleep(2000);
+        }
     }
 
     @Override
     protected synchronized void doUndeploy(final PaaSDeploymentContext deploymentContext) {
         log.info("Undeploying deployment [" + deploymentContext.getDeploymentPaaSId() + "]");
         changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.UNDEPLOYMENT_IN_PROGRESS);
+
+        try {
+            String deploymentUrl = runtimeDeploymentInfos.get(deploymentContext.getDeploymentPaaSId()).getDeploymentUrl();
+            restClient.undeployJanus(deploymentUrl);
+            checkJanusStatusUntil("UNDEPLOYED", deploymentUrl);
+        } catch (Exception e) {
+            sendMesage(deploymentContext.getDeploymentPaaSId(), e.getMessage());
+            changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
+            return;
+        }
 
         JanusRuntimeDeploymentInfo runtimeDeploymentInfo = runtimeDeploymentInfos.get(deploymentContext.getDeploymentPaaSId());
         if (runtimeDeploymentInfo != null) {
