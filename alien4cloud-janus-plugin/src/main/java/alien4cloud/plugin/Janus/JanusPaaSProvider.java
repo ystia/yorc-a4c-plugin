@@ -209,6 +209,8 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         //post topology zip to Janus
         log.info("POST Topology");
 
+
+
         try {
             String deploymentUrl = restClient.postTopologyToJanus();
             janusDeploymentInfo.setDeploymentUrl(deploymentUrl);
@@ -394,7 +396,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
     private Random randomSkipStateChange = new Random();
 
     private String getNextState(String currentState) {
-        if (providerConfiguration != null && providerConfiguration.isShuffleStateChange() && randomSkipStateChange.nextBoolean()) {
+        if (providerConfiguration != null && randomSkipStateChange.nextBoolean()) {
             return null;
         }
         switch (currentState) {
@@ -544,11 +546,6 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         log.info("In the plugin configurator <" + this.getClass().getName() + ">");
         try {
             log.info("The config object Tags is : {}", JsonUtil.toString(configuration.getTags()));
-            log.info("The config object with error : {}", configuration.isWithBadConfiguraton());
-            if (configuration.isWithBadConfiguraton()) {
-                log.info("Throwing error for bad configuration");
-                throw new PluginConfigurationException("Failed to configure Mock PaaS Provider Plugin error.");
-            }
             this.providerConfiguration = configuration;
         } catch (JsonProcessingException e) {
             log.error("Fails to serialize configuration object as json string", e);

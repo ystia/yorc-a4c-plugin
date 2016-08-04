@@ -6,6 +6,7 @@
 */
 package alien4cloud.plugin.Janus.rest;
 
+import alien4cloud.plugin.Janus.ProviderConfig;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
@@ -18,7 +19,7 @@ import java.io.InputStream;
 
 public class RestClient {
 
-    final String janusUrl = "http://localhost:8800";
+    private ProviderConfig providerConfiguration;
 
     public String postTopologyToJanus() throws Exception {
         final InputStream stream;
@@ -28,7 +29,7 @@ public class RestClient {
         stream.read(bytes);
         stream.close();
 
-        HttpResponse<JsonNode> postResponse = Unirest.post(janusUrl + "/deployments")
+        HttpResponse<JsonNode> postResponse = Unirest.post(providerConfiguration.getUrlJanus() + "/deployments")
                 .header("accept", "application/json")
                 .header("Content-Type", "application/zip")
                 .body(bytes)
@@ -44,7 +45,7 @@ public class RestClient {
 
 
     public String getStatusFromJanus(String deploymentUrl) throws Exception {
-        HttpResponse<JsonNode> res = Unirest.get(janusUrl + deploymentUrl)
+        HttpResponse<JsonNode> res = Unirest.get(providerConfiguration.getUrlJanus() + deploymentUrl)
                 .header("accept", "application/json")
                 .asJson();
 
@@ -59,7 +60,7 @@ public class RestClient {
     }
 
     public String undeployJanus(String deploymentUrl) throws UnirestException {
-        return Unirest.delete(janusUrl + deploymentUrl)
+        return Unirest.delete(providerConfiguration.getUrlJanus() + deploymentUrl)
                 .header("accept", "application/json")
                 .asJson()
                 .getStatusText();

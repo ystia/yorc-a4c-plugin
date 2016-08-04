@@ -24,20 +24,13 @@ import java.util.Map;
 @Getter
 @Setter
 @NoArgsConstructor
-@FormProperties({"firstArgument", "secondArgument", "thirdArgument", "withBadConfiguraton", "tags", "properties", "javaVersion", "provideResourceIds",
-        "resourceIdsCount", "shuffleStateChange"})
+@FormProperties({"urlJanus", "tags", "properties", "javaVersion"})
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @SuppressWarnings("PMD.UnusedPrivateField")
 public class ProviderConfig {
 
-    private String firstArgument;
-
-    private String secondArgument;
-
-    private String thirdArgument;
-
-    private boolean withBadConfiguraton;
+    private String urlJanus;
 
     private List<Tag> tags;
 
@@ -46,9 +39,4 @@ public class ProviderConfig {
     @FormPropertyDefinition(type = ToscaType.VERSION, defaultValue = "1.7", constraints = @FormPropertyConstraint(greaterOrEqual = "1.6"))
     private String javaVersion;
 
-    private boolean provideResourceIds;
-
-    private int resourceIdsCount;
-
-    private boolean shuffleStateChange;
 }
