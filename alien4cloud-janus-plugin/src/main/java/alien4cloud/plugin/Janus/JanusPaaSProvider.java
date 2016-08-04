@@ -223,7 +223,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
 
         } catch (Exception e) {
-            //e.printStackTrace();
+            e.printStackTrace();
             doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
             sendMesage(deploymentContext.getDeploymentPaaSId(), e.getMessage());
 
@@ -547,6 +547,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         try {
             log.info("The config object Tags is : {}", JsonUtil.toString(configuration.getTags()));
             this.providerConfiguration = configuration;
+            this.restClient.setProviderConfiguration(this.providerConfiguration);
         } catch (JsonProcessingException e) {
             log.error("Fails to serialize configuration object as json string", e);
         }
