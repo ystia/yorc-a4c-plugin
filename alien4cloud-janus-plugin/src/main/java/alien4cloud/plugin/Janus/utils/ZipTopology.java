@@ -12,17 +12,22 @@ package alien4cloud.plugin.Janus.utils;
 
 import alien4cloud.paas.model.PaaSNodeTemplate;
 import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
+import com.google.common.io.Files;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.compress.utils.Charsets;
 
 import java.io.*;
 import java.net.URI;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Scanner;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import static com.google.common.io.Files.copy;
 
+@Slf4j
 public class ZipTopology {
 
     static final String CSAR = "csar/";
@@ -91,8 +96,16 @@ public class ZipTopology {
                         name = name.endsWith("/") ? struct + name : struct + name + "/";
                         zout.putNextEntry(new ZipEntry(name));
                     } else {
+                        File file;
+                        //we check if the file is a tosca file or not (because there are also json file for example)
+                        //MAPPING TOSCA ALIEN -> TOSCA JANUS
+                        if (name.endsWith(".yml") || name.endsWith(".yaml")) {
+                            file = mappingTosca(kid);
+                        } else {
+                            file = kid;
+                        }
                         zout.putNextEntry(new ZipEntry(struct + name));
-                        copy(kid, zout);
+                        copy(file, zout);
                     }
                 }
             }
@@ -100,5 +113,49 @@ public class ZipTopology {
         zout.putNextEntry(new ZipEntry("topology.yml"));
         zout.closeEntry();
         res.close();
+    }
+
+    /**
+     *
+     * @param yml
+     * @return TOSCA file for janus
+     * @throws IOException
+     */
+    public File mappingTosca(File yml) throws IOException {
+        File file = new File("tmp.yml");
+        // creates the file
+        file.createNewFile();
+        int cpt = 0;
+        log.info("[ZIP]MAPPING TOSCA");
+        try (FileWriter fw = new FileWriter(file);
+             BufferedWriter bw = new BufferedWriter(fw);
+             PrintWriter out = new PrintWriter(bw)) {
+
+            Scanner sc = new Scanner(yml);
+            String scriptRepo = null;
+            while (sc.hasNextLine()) {
+                String entry = sc.nextLine();
+                if(cpt == 2){
+                    out.println("      scripts:");
+                    scriptRepo = entry;
+                    cpt--;
+                }else if(cpt == 1){
+                    out.println("        file:"+scriptRepo.split(":")[1]);
+                    cpt--;
+                }
+                if(entry.contains("artifacts:")){
+                    cpt = 2;
+                    out.println(entry);
+                }
+                if (cpt == 0){
+                    out.println(entry);
+                }
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return file;
     }
 }
