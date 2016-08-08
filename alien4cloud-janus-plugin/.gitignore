@@ -9,6 +9,5 @@
 *.war
 *.iml
 *.ucls
-!target/
-target/*
-!target/*.zip
+
+target
