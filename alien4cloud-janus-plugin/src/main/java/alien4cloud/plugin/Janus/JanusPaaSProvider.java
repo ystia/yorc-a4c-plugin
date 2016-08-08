@@ -227,7 +227,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
             doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
             sendMesage(deploymentContext.getDeploymentPaaSId(), e.getMessage());
             doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.UNDEPLOYED);
-
+            runtimeDeploymentInfos.remove(deploymentContext.getDeploymentPaaSId());
         }
 
     }
