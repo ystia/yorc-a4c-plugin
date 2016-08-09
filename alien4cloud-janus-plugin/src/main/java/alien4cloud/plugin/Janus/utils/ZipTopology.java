@@ -12,9 +12,7 @@ package alien4cloud.plugin.Janus.utils;
 
 import alien4cloud.paas.model.PaaSNodeTemplate;
 import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
-import com.google.common.io.Files;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.compress.utils.Charsets;
 
 import java.io.*;
 import java.net.URI;
