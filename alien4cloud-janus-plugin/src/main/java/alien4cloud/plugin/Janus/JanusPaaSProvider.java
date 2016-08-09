@@ -228,6 +228,8 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
             sendMesage(deploymentContext.getDeploymentPaaSId(), e.getMessage());
             doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.UNDEPLOYED);
             runtimeDeploymentInfos.remove(deploymentContext.getDeploymentPaaSId());
+
+            throw new RuntimeException(e.getMessage()); // TODO : Refactor, For detecting error deploy rest API A4C, when integrationt test
         }
 
     }
@@ -253,7 +255,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         } catch (Exception e) {
             sendMesage(deploymentContext.getDeploymentPaaSId(), e.getMessage());
             changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
-            return;
+            throw new RuntimeException(e.getMessage()); // TODO : Refactor, For detecting error deploy rest API A4C, when integrationt test
         }
 
         JanusRuntimeDeploymentInfo runtimeDeploymentInfo = runtimeDeploymentInfos.get(deploymentContext.getDeploymentPaaSId());
