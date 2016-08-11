@@ -28,8 +28,6 @@ import static com.google.common.io.Files.copy;
 @Slf4j
 public class ZipTopology {
 
-    static final String CSAR = "csar/";
-
     /**
      * @param deploymentContext
      * @return
@@ -68,19 +66,21 @@ public class ZipTopology {
 //        zout.setMethod(ZipOutputStream.DEFLATED);
 //        zout.setLevel(9);
         res = zout;
-        zout.putNextEntry(new ZipEntry(CSAR));
+
+        //clean import topology (delete all precedent import)
+        cleanImportInTopology();
+
         for (File directory : folders) {
 
             //Get info name path for component
+            log.info("PATH DIRECToRY !!!" + directory.toString());
             String[] dirFolders = directory.toString().split("/");
             String componentName = dirFolders[dirFolders.length - 2] + "/";
-            String componentVersion = dirFolders[dirFolders.length - 1] + "/";
 
             //create structure of our component folder
-            zout.putNextEntry(new ZipEntry(CSAR + componentName));
-            zout.putNextEntry(new ZipEntry(CSAR + componentName + componentVersion));
+            zout.putNextEntry(new ZipEntry(componentName));
 
-            String struct = CSAR + componentName + componentVersion;
+            String struct = componentName;
 
             URI base = directory.toURI();
             Deque<File> queue = new LinkedList<>();
@@ -98,6 +98,7 @@ public class ZipTopology {
                         //we check if the file is a tosca file or not (because there are also json file for example)
                         //MAPPING TOSCA ALIEN -> TOSCA JANUS
                         if (name.endsWith(".yml") || name.endsWith(".yaml")) {
+                            addImportInTopology(kid.getPath());
                             file = mappingTosca(kid);
                         } else {
                             file = kid;
@@ -149,11 +150,108 @@ public class ZipTopology {
                     out.println(entry);
                 }
             }
+            fw.close();
+            bw.close();
+            out.close();
 
         } catch (IOException e) {
             e.printStackTrace();
         }
 
+
         return file;
+    }
+
+    public void addImportInTopology(String ymlPath){
+        String oldFileName = "topology.yml";
+        String tmpFileName = "tmp_topology.yml";
+
+        BufferedReader br = null;
+        BufferedWriter bw = null;
+
+        try {
+            bw = new BufferedWriter(new FileWriter(tmpFileName));
+            br = new BufferedReader(new FileReader(oldFileName));
+            String line;
+            while ((line = br.readLine()) != null) {
+                bw.append(line);
+                if (line.contains("imports:")){
+                    bw.newLine();
+                    bw.append("  - test: "+ymlPath);
+                }
+            }
+        } catch (Exception e) {
+            return;
+        } finally {
+            try {
+                if(br != null)
+                    br.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                if(bw != null)
+                    bw.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        // Once everything is complete, delete old file..
+        File oldFile = new File(oldFileName);
+        oldFile.delete();
+
+        // And rename tmp file's name to old file name
+        File newFile = new File(tmpFileName);
+        newFile.renameTo(oldFile);
+
+    }
+
+    public void cleanImportInTopology(){
+        String oldFileName = "topology.yml";
+        String tmpFileName = "tmp_topology.yml";
+
+        BufferedReader br = null;
+        BufferedWriter bw = null;
+
+        try {
+            bw = new BufferedWriter(new FileWriter(tmpFileName));
+            br = new BufferedReader(new FileReader(oldFileName));
+            String line;
+            boolean clean = false;
+            while ((line = br.readLine()) != null) {
+                if (!clean){
+                    bw.append(line);
+                }
+                if (line.contains("imports:")){
+                    clean = true;
+                }else if (line.contains("topology_template:")){
+                    clean = false;
+                }
+
+            }
+        } catch (Exception e) {
+            return;
+        } finally {
+            try {
+                if(br != null)
+                    br.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                if(bw != null)
+                    bw.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        // Once everything is complete, delete old file..
+        File oldFile = new File(oldFileName);
+        oldFile.delete();
+
+        // And rename tmp file's name to old file name
+        File newFile = new File(tmpFileName);
+        newFile.renameTo(oldFile);
+
     }
 }
