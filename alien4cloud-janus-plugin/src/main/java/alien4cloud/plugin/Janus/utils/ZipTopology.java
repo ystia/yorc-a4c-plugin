@@ -98,7 +98,8 @@ public class ZipTopology {
                         //we check if the file is a tosca file or not (because there are also json file for example)
                         //MAPPING TOSCA ALIEN -> TOSCA JANUS
                         if (name.endsWith(".yml") || name.endsWith(".yaml")) {
-                            addImportInTopology(kid.getPath());
+                            String[] parts = kid.getPath().split("runtime/csar/");
+                            addImportInTopology(parts[1]);
                             file = mappingTosca(kid);
                         } else {
                             file = kid;
@@ -110,6 +111,7 @@ public class ZipTopology {
             }
         }
         zout.putNextEntry(new ZipEntry("topology.yml"));
+        copy(new File("topology.yml"), zout);
         zout.closeEntry();
         res.close();
     }
@@ -150,9 +152,6 @@ public class ZipTopology {
                     out.println(entry);
                 }
             }
-            fw.close();
-            bw.close();
-            out.close();
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -161,8 +160,8 @@ public class ZipTopology {
 
         return file;
     }
-
-    public void addImportInTopology(String ymlPath){
+    /*TODO REFACTOR cleanImportInTopology AND addImportInTopology => DUPLICATED CODE */
+    private void addImportInTopology(String ymlPath){
         String oldFileName = "topology.yml";
         String tmpFileName = "tmp_topology.yml";
 
@@ -174,10 +173,9 @@ public class ZipTopology {
             br = new BufferedReader(new FileReader(oldFileName));
             String line;
             while ((line = br.readLine()) != null) {
-                bw.append(line);
+                bw.append(line + "\n");
                 if (line.contains("imports:")){
-                    bw.newLine();
-                    bw.append("  - test: "+ymlPath);
+                    bw.append("  - test: "+ymlPath + "\n");
                 }
             }
         } catch (Exception e) {
@@ -220,7 +218,7 @@ public class ZipTopology {
             boolean clean = false;
             while ((line = br.readLine()) != null) {
                 if (!clean){
-                    bw.append(line);
+                    bw.append(line + "\n");
                 }
                 if (line.contains("imports:")){
                     clean = true;
