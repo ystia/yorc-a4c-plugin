@@ -185,9 +185,6 @@
               <descriptors>
                 <descriptor>src/main/assembly/janus-plugin-assembly.xml</descriptor>
               </descriptors>
-              <filters>
-                <filter>${basedir}/src/main/assembly/1.0-filter.properties</filter>
-              </filters>
             </configuration>
           </execution>
         </executions>
