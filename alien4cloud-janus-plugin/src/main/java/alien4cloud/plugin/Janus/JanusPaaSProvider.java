@@ -236,7 +236,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
     private void checkJanusStatusUntil(String aimStatus, String deploymentUrl) throws Exception {
         String status = "";
-        while(!status.equals(aimStatus)) {
+        while(!status.equals(aimStatus) && !status.equals("DEPLOYMENT_FAILED")) {
             status = restClient.getStatusFromJanus(deploymentUrl);
             log.info(status);
             Thread.sleep(2000);
