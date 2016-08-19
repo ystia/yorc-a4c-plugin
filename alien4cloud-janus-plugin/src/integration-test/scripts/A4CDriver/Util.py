@@ -40,12 +40,36 @@ class Util():
             "resType": "janus.nodes.openstack.Compute",
             "properties": [
                 {
-                    "propertyName":"imageId",
-                    "propertyValue":"1"
+                    "propertyName":"image",
+                    "propertyValue":"89ec515c-3251-4c2f-8402-bda280c31650"
                 },
                 {
-                    "propertyName":"flavorId",
+                    "propertyName":"imageName",
+                    "propertyValue":"blablabla52528"
+                },
+                {
+                    "propertyName":"flavor",
                     "propertyValue":"2"
+                },
+                {
+                    "propertyName":"flavorName",
+                    "propertyValue":"blablabla52528"
+                },
+                {
+                    "propertyName":"availability_zone",
+                    "propertyValue":"nova"
+                },
+                {
+                    "propertyName":"region",
+                    "propertyValue":"blablabla52528"
+                },
+                {
+                    "propertyName":"key_pair",
+                    "propertyValue":"cloudify"
+                },
+                {
+                    "propertyName":"user",
+                    "propertyValue":"cloud-user"
                 }
             ]
         }
