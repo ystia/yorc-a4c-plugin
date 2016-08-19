@@ -45,7 +45,7 @@ class Util():
                 },
                 {
                     "propertyName":"imageName",
-                    "propertyValue":"blablabla52528"
+                    "propertyValue":""
                 },
                 {
                     "propertyName":"flavor",
@@ -53,7 +53,7 @@ class Util():
                 },
                 {
                     "propertyName":"flavorName",
-                    "propertyValue":"blablabla52528"
+                    "propertyValue":""
                 },
                 {
                     "propertyName":"availability_zone",
@@ -61,7 +61,7 @@ class Util():
                 },
                 {
                     "propertyName":"region",
-                    "propertyValue":"blablabla52528"
+                    "propertyValue":"RegionOne"
                 },
                 {
                     "propertyName":"key_pair",
