@@ -75,12 +75,14 @@ public class ZipTopology {
             //Get info name path for component
             log.info("PATH DIRECToRY !!!" + directory.toString());
             String[] dirFolders = directory.toString().split("/");
-            String componentName = dirFolders[dirFolders.length - 2] + "/";
+            String componentName = dirFolders[dirFolders.length-2] + "/";
+            String componentVersion = dirFolders[dirFolders.length-1] + "/";
 
             //create structure of our component folder
             zout.putNextEntry(new ZipEntry(componentName));
+            zout.putNextEntry(new ZipEntry(componentName + componentVersion));
 
-            String struct = componentName;
+            String struct = componentName + componentVersion;
 
             URI base = directory.toURI();
             Deque<File> queue = new LinkedList<>();
