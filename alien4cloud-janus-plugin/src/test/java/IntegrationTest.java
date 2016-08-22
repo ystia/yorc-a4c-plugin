@@ -13,7 +13,7 @@ public class IntegrationTest {
     public void integrationTest() {
         String result = "";
         try {
-            String cmd = "python ./src/integration-test/scripts/A4CDriver/Main.py ./src/integration-test/scripts/A4CDriver/A4CDriverConf_Template.json";
+            String cmd = "python ./src/integration-test/scripts/integration-test.py";
 
             Process p = Runtime.getRuntime().exec(cmd);
 

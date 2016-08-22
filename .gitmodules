@@ -1,0 +1,3 @@
+[submodule "alien4cloud-janus-plugin/src/integration-test/a4c-api-wrapper"]
+	path = alien4cloud-janus-plugin/src/integration-test/a4c-api-wrapper
+	url = https://novaforge.bull.com/gitlab-default/gitlab/starlings-a4capiwrapper/a4capiwrapper.git
