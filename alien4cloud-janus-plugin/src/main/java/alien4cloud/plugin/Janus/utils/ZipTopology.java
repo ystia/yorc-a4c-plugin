@@ -75,8 +75,8 @@ public class ZipTopology {
             //Get info name path for component
             log.info("PATH DIRECToRY !!!" + directory.toString());
             String[] dirFolders = directory.toString().split("/");
-            String componentName = dirFolders[dirFolders.length-2] + "/";
-            String componentVersion = dirFolders[dirFolders.length-1] + "/";
+            String componentName = dirFolders[dirFolders.length - 2] + "/";
+            String componentVersion = dirFolders[dirFolders.length - 1] + "/";
 
             //create structure of our component folder
             zout.putNextEntry(new ZipEntry(componentName));
@@ -119,6 +119,7 @@ public class ZipTopology {
     }
 
     /**
+     * change the artifact part in Yml to follow Tosca's normative
      *
      * @param yml
      * @return TOSCA file for janus
@@ -135,35 +136,28 @@ public class ZipTopology {
              PrintWriter out = new PrintWriter(bw)) {
 
             Scanner sc = new Scanner(yml);
-            String scriptRepo = null;
             while (sc.hasNextLine()) {
                 String entry = sc.nextLine();
-                if(cpt == 2){
+                //we check if this is the artifact section
+                if (entry.contains("- scripts:")) {
                     out.println("      scripts:");
-                    scriptRepo = entry;
+                    out.println("        file:" + entry.split(":")[1]);
                     cpt--;
-                }else if(cpt == 1){
-                    out.println("        file:"+scriptRepo.split(":")[1]);
-                    cpt--;
-                }
-                if(entry.contains("artifacts:")){
-                    cpt = 2;
-                    out.println(entry);
-                }
-                if (cpt == 0){
+                } else if (entry.contains("- utils_scripts:")) {
+                    out.println("      utils_scripts:");
+                    out.println("        file:" + entry.split(":")[1]);
+                } else {
                     out.println(entry);
                 }
             }
-
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-
         return file;
     }
+
     /*TODO REFACTOR cleanImportInTopology AND addImportInTopology => DUPLICATED CODE */
-    private void addImportInTopology(String ymlPath){
+    private void addImportInTopology(String ymlPath) {
         String oldFileName = "topology.yml";
         String tmpFileName = "tmp_topology.yml";
 
@@ -176,21 +170,21 @@ public class ZipTopology {
             String line;
             while ((line = br.readLine()) != null) {
                 bw.append(line + "\n");
-                if (line.contains("imports:")){
-                    bw.append("  - test: "+ymlPath + "\n");
+                if (line.contains("imports:")) {
+                    bw.append("  - test: " + ymlPath + "\n");
                 }
             }
         } catch (Exception e) {
             return;
         } finally {
             try {
-                if(br != null)
+                if (br != null)
                     br.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
             try {
-                if(bw != null)
+                if (bw != null)
                     bw.close();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -206,7 +200,7 @@ public class ZipTopology {
 
     }
 
-    public void cleanImportInTopology(){
+    public void cleanImportInTopology() {
         String oldFileName = "topology.yml";
         String tmpFileName = "tmp_topology.yml";
 
@@ -219,12 +213,12 @@ public class ZipTopology {
             String line;
             boolean clean = false;
             while ((line = br.readLine()) != null) {
-                if (!clean){
+                if (!clean) {
                     bw.append(line + "\n");
                 }
-                if (line.contains("imports:")){
+                if (line.contains("imports:")) {
                     clean = true;
-                }else if (line.contains("topology_template:")){
+                } else if (line.contains("topology_template:")) {
                     clean = false;
                 }
 
@@ -233,13 +227,13 @@ public class ZipTopology {
             return;
         } finally {
             try {
-                if(br != null)
+                if (br != null)
                     br.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
             try {
-                if(bw != null)
+                if (bw != null)
                     bw.close();
             } catch (IOException e) {
                 e.printStackTrace();
