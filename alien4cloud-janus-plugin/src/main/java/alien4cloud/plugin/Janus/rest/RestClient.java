@@ -26,7 +26,7 @@ public class RestClient {
     public String postTopologyToJanus() throws Exception {
         final InputStream stream;
 
-        stream = new FileInputStream(new File("welcome.zip"));
+        stream = new FileInputStream(new File("topology.zip"));
         final byte[] bytes = new byte[stream.available()];
         stream.read(bytes);
         stream.close();

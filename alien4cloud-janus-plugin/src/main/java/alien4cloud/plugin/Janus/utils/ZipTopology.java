@@ -218,10 +218,10 @@ public class ZipTopology {
                 }
                 if (line.contains("imports:")) {
                     clean = true;
-                } else if (line.contains("topology_template:")) {
+                }else if (line.contains("topology_template:")){
+                    bw.append(line + "\n");
                     clean = false;
                 }
-
             }
         } catch (Exception e) {
             return;
