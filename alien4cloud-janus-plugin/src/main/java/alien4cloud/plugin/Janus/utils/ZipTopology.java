@@ -129,7 +129,6 @@ public class ZipTopology {
         File file = new File("tmp.yml");
         // creates the file
         file.createNewFile();
-        int cpt = 0;
         log.info("[ZIP]MAPPING TOSCA");
         try (FileWriter fw = new FileWriter(file);
              BufferedWriter bw = new BufferedWriter(fw);
@@ -142,11 +141,12 @@ public class ZipTopology {
                 if (entry.contains("- scripts:")) {
                     out.println("      scripts:");
                     out.println("        file:" + entry.split(":")[1]);
-                    cpt--;
                 } else if (entry.contains("- utils_scripts:")) {
                     out.println("      utils_scripts:");
                     out.println("        file:" + entry.split(":")[1]);
-                } else {
+                } else if(entry.contains("tosca-normative-types:")) {
+                    out.println("  - normative-types: <normative-types.yml>");
+                }else {
                     out.println(entry);
                 }
             }
@@ -171,7 +171,11 @@ public class ZipTopology {
             while ((line = br.readLine()) != null) {
                 bw.append(line + "\n");
                 if (line.contains("imports:")) {
-                    bw.append("  - test: " + ymlPath + "\n");
+                    if(ymlPath.contains("janus-openstack-types")){
+                        bw.append("  - openstack-types: <janus-openstack-types.yml>\n");
+                    }else{
+                        bw.append("  - path: " + ymlPath + "\n");
+                    }
                 }
             }
         } catch (Exception e) {
