@@ -9,14 +9,22 @@ package alien4cloud.plugin.Janus;
 import alien4cloud.component.ICSARRepositorySearchService;
 import alien4cloud.model.components.IndexedNodeType;
 import alien4cloud.model.components.IndexedRelationshipType;
+import alien4cloud.model.components.Interface;
+import alien4cloud.model.components.Operation;
 import alien4cloud.model.deployment.Deployment;
 import alien4cloud.model.topology.*;
 import alien4cloud.paas.IPaaSCallback;
 import alien4cloud.paas.exception.PluginConfigurationException;
 import alien4cloud.paas.model.*;
 import alien4cloud.paas.plan.ToscaNodeLifecycleConstants;
+import alien4cloud.paas.wf.AbstractStep;
+import alien4cloud.paas.wf.NodeActivityStep;
+import alien4cloud.paas.wf.OperationCallActivity;
+import alien4cloud.paas.wf.Workflow;
+import alien4cloud.paas.wf.util.WorkflowUtils;
 import alien4cloud.plugin.Janus.baseplugin.AbstractPaaSProvider;
 import alien4cloud.plugin.Janus.rest.RestClient;
+import alien4cloud.plugin.Janus.utils.MappingTosca;
 import alien4cloud.plugin.Janus.utils.ShowTopology;
 import alien4cloud.plugin.Janus.utils.ZipTopology;
 import alien4cloud.plugin.Janus.workflow.WorkflowPlayer;
@@ -152,7 +160,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         paaSDeploymentIdToAlienDeploymentIdMap.put(deploymentContext.getDeploymentPaaSId(), deploymentContext.getDeploymentId());
         Topology topology = deploymentContext.getDeploymentTopology();
 
-//      showTopology.topologyInLog(deploymentContext);
+//showTopology.topologyInLog(deploymentContext);
         Map<String, NodeTemplate> nodeTemplates = topology.getNodeTemplates();
         if (nodeTemplates == null) {
             nodeTemplates = Maps.newHashMap();
@@ -176,18 +184,11 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
         doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.DEPLOYMENT_IN_PROGRESS);
 
-        //create workflow array
-//        workflowReader = new WorkflowReader(topology.getWorkflows());
-//        //Read the array
-////      workflowReader.read();
-//        try {
-//            workflowPlayer.play(deploymentContext, workflowReader.getWorkflowSteps());
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
+        MappingTosca.addPreConfigureSteps(topology, deploymentContext.getPaaSTopology());
+
         //Create the yml of our topology (after substitution)
         String yaml = topologyService.getYaml(topology);
-        log.info(yaml);
+        //log.info(yaml);
         List<String> lines = Arrays.asList(yaml);
         log.info("YML Topology");
         Path file = Paths.get("topology.yml");
@@ -208,9 +209,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
         //post topology zip to Janus
         log.info("POST Topology");
-
-
-
+        /*
         try {
             String deploymentUrl = restClient.postTopologyToJanus();
             janusDeploymentInfo.setDeploymentUrl(deploymentUrl);
@@ -231,6 +230,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
             throw new RuntimeException(e.getMessage()); // TODO : Refactor, For detecting error deploy rest API A4C, when integrationt test
         }
+        */
 
     }
 
@@ -247,7 +247,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
     protected synchronized void doUndeploy(final PaaSDeploymentContext deploymentContext) {
         log.info("Undeploying deployment [" + deploymentContext.getDeploymentPaaSId() + "]");
         changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.UNDEPLOYMENT_IN_PROGRESS);
-
+        /*
         try {
             String deploymentUrl = runtimeDeploymentInfos.get(deploymentContext.getDeploymentPaaSId()).getDeploymentUrl();
             restClient.undeployJanus(deploymentUrl);
@@ -270,7 +270,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
                 }
             }
         }
-
+        */
         changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.UNDEPLOYED);
         // cleanup deployment cache
         runtimeDeploymentInfos.remove(deploymentContext.getDeploymentPaaSId());
