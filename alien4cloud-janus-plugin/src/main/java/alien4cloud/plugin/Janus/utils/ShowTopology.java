@@ -148,73 +148,73 @@ public class ShowTopology {
         Topology topology = deploymentContext.getDeploymentTopology();
         PaaSTopology paaSTopology = deploymentContext.getPaaSTopology();
 
-        log.info("*********** VERSION 1 *****************");
-        log.info("############################################");
-        Map<String, NodeTemplate> nodeTemplates = topology.getNodeTemplates();
-        Map<String, Workflow> workflows = topology.getWorkflows();
-        log.info("Workflow install : " + workflows.get(Workflow.INSTALL_WF).getSteps().keySet().toString());
-        log.info("Workflow host : " + workflows.get(Workflow.INSTALL_WF).getHosts().toString());
-        log.info("Workflow name : " + workflows.get(Workflow.INSTALL_WF).getName().toString());
-        workflows.get(Workflow.INSTALL_WF).getHosts();
-
-
-        log.info("===== TOPOLOGY DEPLOY ====");
-        log.info("############################################");
-        String delegateID = topology.getDelegateId();
-        Map<String, NodeGroup> groups = topology.getGroups();
-        log.info("DELEGATE ID :" + delegateID);
-        log.info("GROUPS : " + groups);
-        log.info("WORKFLOWS : " + workflows);
-        log.info("NODE TEMPLATE values :" + nodeTemplates.values());
-        log.info("NODE TEMPLATE entrySet :" + nodeTemplates.entrySet());
-        log.info("NODE TEMPLATE keySet :" + nodeTemplates.keySet());
-
-        log.info("===== Paas TOPOLOGY ====");
-        log.info("############################################");
-        log.info("Groups :" + paaSTopology.getGroups().entrySet());
-        log.info("AllNodes :" + paaSTopology.getAllNodes());
-        log.info("Computes :" + paaSTopology.getComputes());
-        log.info("Networks :" + paaSTopology.getNetworks());
-        log.info("Volumes :" + paaSTopology.getVolumes());
+//        log.info("*********** VERSION 1 *****************");
+//        log.info("############################################");
+//        Map<String, NodeTemplate> nodeTemplates = topology.getNodeTemplates();
+//        Map<String, Workflow> workflows = topology.getWorkflows();
+//        log.info("Workflow install : " + workflows.get(Workflow.INSTALL_WF).getSteps().keySet().toString());
+//        log.info("Workflow host : " + workflows.get(Workflow.INSTALL_WF).getHosts().toString());
+//        log.info("Workflow name : " + workflows.get(Workflow.INSTALL_WF).getName().toString());
+//        workflows.get(Workflow.INSTALL_WF).getHosts();
+//
+//
+//        log.info("===== TOPOLOGY DEPLOY ====");
+//        log.info("############################################");
+//        String delegateID = topology.getDelegateId();
+//        Map<String, NodeGroup> groups = topology.getGroups();
+//        log.info("DELEGATE ID :" + delegateID);
+//        log.info("GROUPS : " + groups);
+//        log.info("WORKFLOWS : " + workflows);
+//        log.info("NODE TEMPLATE values :" + nodeTemplates.values());
+//        log.info("NODE TEMPLATE entrySet :" + nodeTemplates.entrySet());
+//        log.info("NODE TEMPLATE keySet :" + nodeTemplates.keySet());
+//
+//        log.info("===== Paas TOPOLOGY ====");
+//        log.info("############################################");
+//        log.info("Groups :" + paaSTopology.getGroups().entrySet());
+//        log.info("AllNodes :" + paaSTopology.getAllNodes());
+//        log.info("Computes :" + paaSTopology.getComputes());
+//        log.info("Networks :" + paaSTopology.getNetworks());
+//        log.info("Volumes :" + paaSTopology.getVolumes());
 
         log.info("===== NODES ====");
         log.info("############################################");
 
         for (PaaSNodeTemplate node : deploymentContext.getPaaSTopology().getComputes()) {
 
-            log.info("NODE PROPERTIES GPUTYPE : " + ((ScalarPropertyValue) node.getTemplate().getProperties().get("gpuType")).getValue());
+            //log.info("NODE PROPERTIES GPUTYPE : " + ((ScalarPropertyValue) node.getTemplate().getProperties().get("gpuType")).getValue());
             log.info("node id = " + node.getId());
-
-            log.info("node CsarPath = " + node.getCsarPath());
-            log.info("TYPE = " + node.getTemplate().getType());
-            log.info("Nombre de children = " + node.getChildren().size());
-            log.info("### Capability ###");
-            for (Map.Entry<String, Capability> capabilite : node.getTemplate().getCapabilities().entrySet()) {
-                log.info("Capabilitie value : " + capabilite.getValue());
-                log.info("Capabilitie properties : " + capabilite.getValue().getProperties());
-                log.info("Capabilitie type : " + capabilite.getValue().getType());
-                log.info("Capabilitie KEY : " + capabilite.getKey());
-            }
-            log.info("capability : " + node.getTemplate().getCapabilities());
-            log.info("### Requirements ###");
-            for (Map.Entry<String, Requirement> requirement : node.getTemplate().getRequirements().entrySet()) {
-                log.info("Requirement value : " + requirement.getValue());
-                log.info("Requirement properties : " + requirement.getValue().getProperties());
-                log.info("Requirement type : " + requirement.getValue().getType());
-                log.info("Requirement Key : " + requirement.getKey());
-            }
-            log.info("Requirements : " + node.getTemplate().getRequirements());
-            log.info("Properties : " + node.getTemplate().getProperties());
-            log.info("Artifacts : " + node.getTemplate().getArtifacts());
-            log.info("RelationShips : " + node.getTemplate().getRelationships());
-            log.info("Attributes : " + node.getTemplate().getAttributes());
-            log.info("Interface : " + node.getTemplate().getInterfaces());
-            log.info("Name : " + node.getTemplate().getName());
-            if ((node.getScalingPolicy()) != null) {
-                log.info("POLiCY : " + node.getScalingPolicy().getInitialInstances());
-            }
-            log.info("===== Children ====");
-            log.info("############################################");
+//
+//            log.info("node CsarPath = " + node.getCsarPath());
+//            log.info("TYPE = " + node.getTemplate().getType());
+//            log.info("Nombre de children = " + node.getChildren().size());
+//            log.info("### Capability ###");
+//            for (Map.Entry<String, Capability> capabilite : node.getTemplate().getCapabilities().entrySet()) {
+//                log.info("Capabilitie value : " + capabilite.getValue());
+//                log.info("Capabilitie properties : " + capabilite.getValue().getProperties());
+//                log.info("Capabilitie type : " + capabilite.getValue().getType());
+//                log.info("Capabilitie KEY : " + capabilite.getKey());
+//            }
+//            log.info("capability : " + node.getTemplate().getCapabilities());
+//            log.info("### Requirements ###");
+//            for (Map.Entry<String, Requirement> requirement : node.getTemplate().getRequirements().entrySet()) {
+//                log.info("Requirement value : " + requirement.getValue());
+//                log.info("Requirement properties : " + requirement.getValue().getProperties());
+//                log.info("Requirement type : " + requirement.getValue().getType());
+//                log.info("Requirement Key : " + requirement.getKey());
+//            }
+//            log.info("Requirements : " + node.getTemplate().getRequirements());
+//            log.info("Properties : " + node.getTemplate().getProperties());
+//            log.info("Artifacts : " + node.getTemplate().getArtifacts());
+//            log.info("RelationShips : " + node.getTemplate().getRelationships());
+//            log.info("Attributes : " + node.getTemplate().getAttributes());
+//            log.info("Interface : " + node.getTemplate().getInterfaces());
+//            log.info("Name : " + node.getTemplate().getName());
+//            if ((node.getScalingPolicy()) != null) {
+//                log.info("POLiCY : " + node.getScalingPolicy().getInitialInstances());
+//            }
+//            log.info("===== Children ====");
+//            log.info("############################################");
 
             List<PaaSNodeTemplate> children = node.getChildren();
             for (PaaSNodeTemplate child : children) {
@@ -300,17 +300,17 @@ public class ShowTopology {
 //                    }
 //                }
 
-                log.info("################$$$$$##########################################$");
-                log.info("Child ID : " + child.getId());
-                log.info("Child csarPath : " + child.getCsarPath());
-                log.info("Child getFileName : " + child.getCsarPath().getFileName());
-                log.info("Child getFileSystem : " + child.getCsarPath().getFileSystem());
-                log.info("Child getParent : " + child.getCsarPath().getParent());
-                log.info("Child getRoot : " + child.getCsarPath().getRoot());
-                log.info("################$$$$$##########################################$");
-                log.info("Child template : " + child.getTemplate());
-                log.info("Child networknodes : " + child.getNetworkNodes());
-                log.info("Child relationship template : " + child.getRelationshipTemplates());
+//                log.info("################$$$$$##########################################$");
+//                log.info("Child ID : " + child.getId());
+//                log.info("Child csarPath : " + child.getCsarPath());
+//                log.info("Child getFileName : " + child.getCsarPath().getFileName());
+//                log.info("Child getFileSystem : " + child.getCsarPath().getFileSystem());
+//                log.info("Child getParent : " + child.getCsarPath().getParent());
+//                log.info("Child getRoot : " + child.getCsarPath().getRoot());
+//                log.info("################$$$$$##########################################$");
+//                log.info("Child template : " + child.getTemplate());
+//                log.info("Child networknodes : " + child.getNetworkNodes());
+//                log.info("Child relationship template : " + child.getRelationshipTemplates());
 
 //                if(child.getTemplate().getArtifacts() != null) {
 //                    log.info("atifacts size:" + child.getTemplate().getArtifacts().size());
@@ -319,76 +319,104 @@ public class ShowTopology {
 //                }else
 //                    log.info("No artifacts");
 
+
+                log.info("################ RELATION ##################$");
+
                 // for each relationship we prepare the env variables which will be given to the container
                 for (PaaSRelationshipTemplate relation : child.getRelationshipTemplates()) {
-
                     if (relation.instanceOf(NormativeRelationshipConstants.CONNECTS_TO)) {
                         log.info("RelationShip deploymentPaasId : " + deploymentContext.getDeploymentPaaSId() + " Relation Target : " + relation.getTemplate().getTarget());
 
                         if (relation.getSource().equals(child.getId())) {
                             log.info("RelationShip deploymentPaasId : " + deploymentContext.getDeploymentPaaSId() + " Relation Target : " + relation.getTemplate().getTarget());
                             log.info("RelationShip isSourceyes");
+                            log.info("Relation Source : " + relation.getSource());
                         }
                         if (relation.getTemplate().getTarget().equals(child.getId())) {
                             log.info("Relationship isTarget");
                         }
                     }
 
-                }
 
-                ArrayList<Path> artifacts = new ArrayList<>();
-                log.info("######## CSAR TEST ########");
-                log.info("############################################");
-                // if the node has some artifacts, we need to retrieve them
-                // TODO remove BOOL param when the artifact notion is clear
-                if (child.getTemplate().getArtifacts() != null && BOOL) {
+                    log.info("Relation Template : " + relation.getTemplate());
+                    this.printRelationTemplate(relation.getTemplate());
 
-                    String home = System.getProperty("user.home");
-                    File f = new File(home, child.getId());
-                    try {
-                        FileUtils.mkdir(f, true);
-                    } catch (IOException e) {
-                        log.info(e.getMessage() + e.getStackTrace().toString());
-                        e.printStackTrace();
-                    }
-
-                    log.info("artifacts:" + child.getTemplate().getArtifacts().size());
-
-                    Map<String, DeploymentArtifact> map = child.getTemplate().getArtifacts();
-                    for (Map.Entry<String, DeploymentArtifact> e : map.entrySet()) {
-                        File f2 = new File(home, child.getId() + "/" + e.getKey());
-                        if (f2.exists()) {
-                            f2.delete();
-                        }
-                        log.info("artifact: " + e.getKey() + " " + e.getValue().toString());
-                        log.info("path = " + child.getCsarPath() + " " + e.getValue().getArtifactRepository()
-                                + " " + e.getValue().getArchiveName() + " " + e.getValue().getArtifactRef());
-
-                        if (ArtifactRepositoryConstants.ALIEN_ARTIFACT_REPOSITORY.equals(e.getValue().getArtifactRepository())) {
-                            log.info("ART ALIEN ");
-                            try {
-                                Files.copy(localRepository.resolveFile(e.getValue().getArtifactRef()), Paths.get(home, child.getId() + "/" + e.getKey()));
-                            } catch (IOException e1) {
-                                e1.printStackTrace();
-                            }
-                            artifacts.add(Paths.get(home, child.getId() + "/" + e.getKey()));
-                        } else {
-                            log.info("ART PAS ALIEN ");
-
-                            String nodeTypeRelativePath = child.getIndexedToscaElement().getElementId() + "-" + child.getIndexedToscaElement().getArchiveVersion();
-                            try {
-                                log.info("COPY ART ");
-
-                                copyArtifactFromCsar(child.getCsarPath(), e.getValue().getArtifactRef(), nodeTypeRelativePath, home + "/" + child.getId() + "/" + e.getKey(), e.getValue(), child.getIndexedToscaElement());
-                                artifacts.add(Paths.get(home + "/" + child.getId() + "/" + e.getKey()));
-
-                            } catch (IOException e1) {
-                                log.info(e1.getStackTrace().toString());
-                            }
+                    Map<String, Interface> interfacesMap = relation.getIndexedToscaElement().getInterfaces();
+                    for (Map.Entry<String, Interface> entry : interfacesMap.entrySet()) {
+                        for (Map.Entry<String, Operation> entry2 : entry.getValue().getOperations().entrySet()) {
+                            log.info(entry2.getKey() + "/" + entry2.getValue().getImplementationArtifact());
                         }
                     }
+
                 }
+
+//                ArrayList<Path> artifacts = new ArrayList<>();
+//                log.info("######## CSAR TEST ########");
+//                log.info("############################################");
+//                // if the node has some artifacts, we need to retrieve them
+//                // TODO remove BOOL param when the artifact notion is clear
+//                if (child.getTemplate().getArtifacts() != null && BOOL) {
+//
+//                    String home = System.getProperty("user.home");
+//                    File f = new File(home, child.getId());
+//                    try {
+//                        FileUtils.mkdir(f, true);
+//                    } catch (IOException e) {
+//                        log.info(e.getMessage() + e.getStackTrace().toString());
+//                        e.printStackTrace();
+//                    }
+//
+//                    log.info("artifacts:" + child.getTemplate().getArtifacts().size());
+//
+//                    Map<String, DeploymentArtifact> map = child.getTemplate().getArtifacts();
+//                    for (Map.Entry<String, DeploymentArtifact> e : map.entrySet()) {
+//                        File f2 = new File(home, child.getId() + "/" + e.getKey());
+//                        if (f2.exists()) {
+//                            f2.delete();
+//                        }
+//                        log.info("artifact: " + e.getKey() + " " + e.getValue().toString());
+//                        log.info("path = " + child.getCsarPath() + " " + e.getValue().getArtifactRepository()
+//                                + " " + e.getValue().getArchiveName() + " " + e.getValue().getArtifactRef());
+//
+//                        if (ArtifactRepositoryConstants.ALIEN_ARTIFACT_REPOSITORY.equals(e.getValue().getArtifactRepository())) {
+//                            log.info("ART ALIEN ");
+//                            try {
+//                                Files.copy(localRepository.resolveFile(e.getValue().getArtifactRef()), Paths.get(home, child.getId() + "/" + e.getKey()));
+//                            } catch (IOException e1) {
+//                                e1.printStackTrace();
+//                            }
+//                            artifacts.add(Paths.get(home, child.getId() + "/" + e.getKey()));
+//                        } else {
+//                            log.info("ART PAS ALIEN ");
+//
+//                            String nodeTypeRelativePath = child.getIndexedToscaElement().getElementId() + "-" + child.getIndexedToscaElement().getArchiveVersion();
+//                            try {
+//                                log.info("COPY ART ");
+//
+//                                copyArtifactFromCsar(child.getCsarPath(), e.getValue().getArtifactRef(), nodeTypeRelativePath, home + "/" + child.getId() + "/" + e.getKey(), e.getValue(), child.getIndexedToscaElement());
+//                                artifacts.add(Paths.get(home + "/" + child.getId() + "/" + e.getKey()));
+//
+//                            } catch (IOException e1) {
+//                                log.info(e1.getStackTrace().toString());
+//                            }
+//                        }
+//                    }
+//                }
             }
         }
+    }
+
+
+
+    public void printRelationTemplate(RelationshipTemplate relation) {
+        log.info("----Printing relation Template----");
+        log.info("Relation Template getRequirementName : " + relation.getRequirementName());
+        log.info("Relation Template getRequirementType : " + relation.getRequirementType());
+        log.info("Relation Template getTarget : " + relation.getTarget());
+        log.info("Relation Template getTargetedCapabilityName : " + relation.getTargetedCapabilityName());
+        log.info("Relation Template getType : " + relation.getType());
+        log.info("----   END  ----");
+
+
     }
 }
