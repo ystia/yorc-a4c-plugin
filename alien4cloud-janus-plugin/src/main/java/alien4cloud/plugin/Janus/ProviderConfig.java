@@ -30,7 +30,8 @@ import java.util.Map;
 @SuppressWarnings("PMD.UnusedPrivateField")
 public class ProviderConfig {
 
-    private String urlJanus = "http://localhost:8800";
+    //http://localhost:8900
+    private String urlJanus;
 
     private List<Tag> tags;
 
