@@ -247,7 +247,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
     protected synchronized void doUndeploy(final PaaSDeploymentContext deploymentContext) {
         log.info("Undeploying deployment [" + deploymentContext.getDeploymentPaaSId() + "]");
         changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.UNDEPLOYMENT_IN_PROGRESS);
-        /*
+
         try {
             String deploymentUrl = runtimeDeploymentInfos.get(deploymentContext.getDeploymentPaaSId()).getDeploymentUrl();
             restClient.undeployJanus(deploymentUrl);
@@ -270,7 +270,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
                 }
             }
         }
-        */
+
         changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.UNDEPLOYED);
         // cleanup deployment cache
         runtimeDeploymentInfos.remove(deploymentContext.getDeploymentPaaSId());
