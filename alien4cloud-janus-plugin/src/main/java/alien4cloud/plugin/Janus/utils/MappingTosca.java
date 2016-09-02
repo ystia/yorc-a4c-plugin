@@ -18,6 +18,8 @@ import java.util.Map;
 @Slf4j
 public class MappingTosca {
 
+    // TODO : Not working when multiple pre_conf
+    // TODO : Support post_conf
     public static void addPreConfigureSteps(Topology topology, PaaSTopology paaSTopology) {
 
         Workflow installWorkflow = topology.getWorkflows().get("install");
