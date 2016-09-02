@@ -79,38 +79,47 @@ public class ZipTopology {
             String componentVersion = dirFolders[dirFolders.length - 1] + "/";
 
             //create structure of our component folder
-            zout.putNextEntry(new ZipEntry(componentName));
-            zout.putNextEntry(new ZipEntry(componentName + componentVersion));
+            log.info(componentName);
+            try {
+                zout.putNextEntry(new ZipEntry(componentName));
+                zout.putNextEntry(new ZipEntry(componentName + componentVersion));
 
-            String struct = componentName + componentVersion;
+                String struct = componentName + componentVersion;
 
-            URI base = directory.toURI();
-            Deque<File> queue = new LinkedList<>();
-            queue.push(directory);
-            while (!queue.isEmpty()) {
-                directory = queue.pop();
-                for (File kid : directory.listFiles()) {
-                    String name = base.relativize(kid.toURI()).getPath();
-                    if (kid.isDirectory()) {
-                        queue.push(kid);
-                        name = name.endsWith("/") ? struct + name : struct + name + "/";
-                        zout.putNextEntry(new ZipEntry(name));
-                    } else {
-                        File file;
-                        //we check if the file is a tosca file or not (because there are also json file for example)
-                        //MAPPING TOSCA ALIEN -> TOSCA JANUS
-                        if (name.endsWith(".yml") || name.endsWith(".yaml")) {
-                            String[] parts = kid.getPath().split("runtime/csar/");
-                            addImportInTopology(parts[1]);
-                            file = mappingTosca(kid);
+                URI base = directory.toURI();
+                Deque<File> queue = new LinkedList<>();
+                queue.push(directory);
+                while (!queue.isEmpty()) {
+                    directory = queue.pop();
+                    for (File kid : directory.listFiles()) {
+                        String name = base.relativize(kid.toURI()).getPath();
+                        if (kid.isDirectory()) {
+                            queue.push(kid);
+                            name = name.endsWith("/") ? struct + name : struct + name + "/";
+                            zout.putNextEntry(new ZipEntry(name));
                         } else {
-                            file = kid;
+                            File file;
+                            //we check if the file is a tosca file or not (because there are also json file for example)
+                            //MAPPING TOSCA ALIEN -> TOSCA JANUS
+                            if (name.endsWith(".yml") || name.endsWith(".yaml")) {
+                                String[] parts = kid.getPath().split("runtime/csar/");
+                                addImportInTopology(parts[1]);
+                                file = mappingTosca(kid);
+                            } else {
+                                file = kid;
+                            }
+                            zout.putNextEntry(new ZipEntry(struct + name));
+                            copy(file, zout);
                         }
-                        zout.putNextEntry(new ZipEntry(struct + name));
-                        copy(file, zout);
                     }
                 }
+
+
+            }catch(Exception e)  {
+                log.info(e.getMessage());
             }
+
+
         }
         zout.putNextEntry(new ZipEntry("topology.yml"));
         copy(new File("topology.yml"), zout);

@@ -209,7 +209,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
         //post topology zip to Janus
         log.info("POST Topology");
-        /*
+
         try {
             String deploymentUrl = restClient.postTopologyToJanus();
             janusDeploymentInfo.setDeploymentUrl(deploymentUrl);
@@ -230,7 +230,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
             throw new RuntimeException(e.getMessage()); // TODO : Refactor, For detecting error deploy rest API A4C, when integrationt test
         }
-        */
+
 
     }
 
