@@ -7,6 +7,7 @@ import alien4cloud.model.topology.Topology;
 import alien4cloud.paas.model.PaaSNodeTemplate;
 import alien4cloud.paas.model.PaaSRelationshipTemplate;
 import alien4cloud.paas.model.PaaSTopology;
+import alien4cloud.paas.wf.AbstractStep;
 import alien4cloud.paas.wf.NodeActivityStep;
 import alien4cloud.paas.wf.OperationCallActivity;
 import alien4cloud.paas.wf.Workflow;
@@ -75,9 +76,41 @@ public class MappingTosca {
         preConfStep.setActivity(operation);
 
         workflow.addStep(preConfStep);
-        workflow.getSteps().get("create_" + node).removeFollowing(node + "_created");
-        WorkflowUtils.linkSteps(workflow.getSteps().get("create_" + node), preConfStep);
-        WorkflowUtils.linkSteps(preConfStep, workflow.getSteps().get(node + "_created"));
+
+        if(operationName.equals("pre_configure_source")) {
+            addConfigure_source(workflow.getSteps().get("create_" + node), workflow.getSteps().get(node + "_created"), preConfStep, workflow.getSteps().get("pre_configure_target_" + node));
+        } else if(operationName.equals("pre_configure_target")) {
+            addConfigure_target(workflow.getSteps().get("create_" + node), workflow.getSteps().get(node + "_created"), workflow.getSteps().get("pre_configure_source_" + node), preConfStep);
+        } else if(operationName.equals("post_configure_source")) {
+            addConfigure_source(workflow.getSteps().get("configure_" + node), workflow.getSteps().get(node + "_configured"), preConfStep, workflow.getSteps().get("post_configure_target_" + node));
+        } else if(operationName.equals("post_configure_target")) {
+            addConfigure_target(workflow.getSteps().get("configure_" + node), workflow.getSteps().get(node + "_configured"), workflow.getSteps().get("post_configure_source_" + node), preConfStep);
+        }
+
+
+    }
+
+    private static void addConfigure_source(AbstractStep create, AbstractStep created, AbstractStep preConfSource, AbstractStep preConfTarget) {
+        if(preConfTarget != null) {
+            create.removeFollowing(preConfTarget.getName());
+            WorkflowUtils.linkSteps(create, preConfSource);
+            WorkflowUtils.linkSteps(preConfSource, preConfTarget);
+
+        } else {
+            create.removeFollowing(created.getName());
+            WorkflowUtils.linkSteps(create, preConfSource);
+            WorkflowUtils.linkSteps(preConfSource, created);
+        }
+    }
+    private static void addConfigure_target(AbstractStep create, AbstractStep created, AbstractStep preConfSource, AbstractStep preConfTarget) {
+        if(preConfSource != null) {
+            preConfSource.removeFollowing(created.getName());
+            WorkflowUtils.linkSteps(preConfSource, preConfTarget);
+        } else {
+            create.removeFollowing(created.getName());
+            WorkflowUtils.linkSteps(create, preConfTarget);
+        }
+        WorkflowUtils.linkSteps(preConfTarget, created);
     }
 
 
