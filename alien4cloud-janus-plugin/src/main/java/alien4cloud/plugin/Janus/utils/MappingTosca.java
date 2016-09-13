@@ -45,8 +45,9 @@ public class MappingTosca {
                             log.info("[addPreConfigureSteps] RelationType : " + relationType);
                             log.info("[addPreConfigureSteps] Target : " + relation.getTemplate().getTarget());
                             log.info("[addPreConfigureSteps] Step to add : " + entryOperation.getKey());
+                            log.info("[addPreConfigureSteps] RequirementName : " + relation.getTemplate().getRequirementName());
 
-                            addOneStepInWorkflow(installWorkflow, entryOperation.getKey() + "_" + node.getId(),node.getId(), entryOperation.getKey());
+                            addOneStepInWorkflow(installWorkflow, entryOperation.getKey() + "_" + node.getId(),node.getId(), entryOperation.getKey() + "/" + relation.getTemplate().getRequirementName());
                         }
                     }
                 }
@@ -95,7 +96,6 @@ public class MappingTosca {
             create.removeFollowing(preConfTarget.getName());
             WorkflowUtils.linkSteps(create, preConfSource);
             WorkflowUtils.linkSteps(preConfSource, preConfTarget);
-
         } else {
             create.removeFollowing(created.getName());
             WorkflowUtils.linkSteps(create, preConfSource);
