@@ -14,10 +14,7 @@ import alien4cloud.paas.wf.Workflow;
 import alien4cloud.paas.wf.util.WorkflowUtils;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Slf4j
 public class MappingTosca {
@@ -66,14 +63,26 @@ public class MappingTosca {
                     }
                 }
             }
-            // TODO : sort the list to respect step order
+
+            // sort in alphabetical order, since source is before target
+            Comparator<AbstractStep> alphabeticalComp = new Comparator<AbstractStep>() {
+                @Override
+                public int compare(AbstractStep step1, AbstractStep step2)
+                {
+                    return step1.getName().compareTo(step2.getName());
+                }
+            };
+
             if(!preConfSteps.isEmpty()) {
+                Collections.sort(preConfSteps, alphabeticalComp);
                 linkSteps(installWorkflow, installWorkflow.getSteps().get("create_" + nodeName), installWorkflow.getSteps().get(nodeName + "_created"), preConfSteps);
             }
             if(!postConfSteps.isEmpty()) {
+                Collections.sort(postConfSteps, alphabeticalComp);
                 linkSteps(installWorkflow, installWorkflow.getSteps().get("configure_" + nodeName), installWorkflow.getSteps().get(nodeName + "_configured"), postConfSteps);
             }
             if(!postStartSteps.isEmpty()) {
+                Collections.sort(postStartSteps, alphabeticalComp);
                 linkSteps(installWorkflow, installWorkflow.getSteps().get("start_" + nodeName), installWorkflow.getSteps().get(nodeName + "_started"), postStartSteps);
             }
 
