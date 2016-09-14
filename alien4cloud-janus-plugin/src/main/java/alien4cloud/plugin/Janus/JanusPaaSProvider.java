@@ -210,26 +210,26 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         //post topology zip to Janus
         log.info("POST Topology");
 
-//        try {
-//            String deploymentUrl = restClient.postTopologyToJanus();
-//            janusDeploymentInfo.setDeploymentUrl(deploymentUrl);
-//            log.info("Deployment Url : " + deploymentUrl);
-//            sendMesage(deploymentContext.getDeploymentPaaSId(), deploymentUrl);
-//
-//            checkJanusStatusUntil("DEPLOYED", deploymentUrl);
-//
-//            doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.DEPLOYED);
-//
-//
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
-//            sendMesage(deploymentContext.getDeploymentPaaSId(), e.getMessage());
-//            doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.UNDEPLOYED);
-//            runtimeDeploymentInfos.remove(deploymentContext.getDeploymentPaaSId());
-//
-//            throw new RuntimeException(e.getMessage()); // TODO : Refactor, For detecting error deploy rest API A4C, when integrationt test
-//        }
+        try {
+            String deploymentUrl = restClient.postTopologyToJanus();
+            janusDeploymentInfo.setDeploymentUrl(deploymentUrl);
+            log.info("Deployment Url : " + deploymentUrl);
+            sendMesage(deploymentContext.getDeploymentPaaSId(), deploymentUrl);
+
+            checkJanusStatusUntil("DEPLOYED", deploymentUrl);
+
+            doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.DEPLOYED);
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
+            sendMesage(deploymentContext.getDeploymentPaaSId(), e.getMessage());
+            doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.UNDEPLOYED);
+            runtimeDeploymentInfos.remove(deploymentContext.getDeploymentPaaSId());
+
+            throw new RuntimeException(e.getMessage()); // TODO : Refactor, For detecting error deploy rest API A4C, when integrationt test
+        }
 
 
     }
@@ -248,15 +248,15 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         log.info("Undeploying deployment [" + deploymentContext.getDeploymentPaaSId() + "]");
         changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.UNDEPLOYMENT_IN_PROGRESS);
 
-//        try {
-//            String deploymentUrl = runtimeDeploymentInfos.get(deploymentContext.getDeploymentPaaSId()).getDeploymentUrl();
-//            restClient.undeployJanus(deploymentUrl);
-//            checkJanusStatusUntil("UNDEPLOYED", deploymentUrl);
-//        } catch (Exception e) {
-//            sendMesage(deploymentContext.getDeploymentPaaSId(), e.getMessage());
-//            changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
-//            throw new RuntimeException(e.getMessage()); // TODO : Refactor, For detecting error deploy rest API A4C, when integrationt test
-//        }
+        try {
+            String deploymentUrl = runtimeDeploymentInfos.get(deploymentContext.getDeploymentPaaSId()).getDeploymentUrl();
+            restClient.undeployJanus(deploymentUrl);
+            checkJanusStatusUntil("UNDEPLOYED", deploymentUrl);
+        } catch (Exception e) {
+            sendMesage(deploymentContext.getDeploymentPaaSId(), e.getMessage());
+            changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
+            throw new RuntimeException(e.getMessage()); // TODO : Refactor, For detecting error deploy rest API A4C, when integrationt test
+        }
 
         JanusRuntimeDeploymentInfo runtimeDeploymentInfo = runtimeDeploymentInfos.get(deploymentContext.getDeploymentPaaSId());
         if (runtimeDeploymentInfo != null) {
