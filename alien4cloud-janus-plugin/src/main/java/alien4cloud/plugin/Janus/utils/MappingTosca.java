@@ -14,26 +14,30 @@ import alien4cloud.paas.wf.Workflow;
 import alien4cloud.paas.wf.util.WorkflowUtils;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
 public class MappingTosca {
 
-    // TODO : Not working when multiple pre_conf
-    // TODO : Support post_conf
     public static void addPreConfigureSteps(Topology topology, PaaSTopology paaSTopology) {
 
         Workflow installWorkflow = topology.getWorkflows().get("install");
 
-
         for (Map.Entry<String, PaaSNodeTemplate> entryNode : paaSTopology.getAllNodes().entrySet()) {
             PaaSNodeTemplate node = entryNode.getValue();
+            String nodeName = node.getId();
+            List<AbstractStep> preConfSteps = new ArrayList<>();
+            List<AbstractStep> postConfSteps = new ArrayList<>();
+            List<AbstractStep> postStartSteps = new ArrayList<>();
             for (PaaSRelationshipTemplate relation : node.getRelationshipTemplates()) {
                 String relationType = relation.getTemplate().getType();
                 if(relationType.contains("tosca.relationships")) {
                     continue;
                 }
-                if(!node.getId().equals(relation.getSource())) {
+                if(!nodeName.equals(relation.getSource())) {
                     continue;
                 }
 
@@ -41,18 +45,40 @@ public class MappingTosca {
                 for (Map.Entry<String, Interface> entryInterface : interfacesMap.entrySet()) {
                     for (Map.Entry<String, Operation> entryOperation : entryInterface.getValue().getOperations().entrySet()) {
                         if(entryOperation.getValue().getImplementationArtifact() != null) {
-                            log.info("[addPreConfigureSteps] NodeId : " + node.getId());
+                            String requirementName = relation.getTemplate().getRequirementName();
+                            log.info("[addPreConfigureSteps] NodeId : " + nodeName);
                             log.info("[addPreConfigureSteps] RelationType : " + relationType);
                             log.info("[addPreConfigureSteps] Target : " + relation.getTemplate().getTarget());
                             log.info("[addPreConfigureSteps] Step to add : " + entryOperation.getKey());
-                            log.info("[addPreConfigureSteps] RequirementName : " + relation.getTemplate().getRequirementName());
+                            log.info("[addPreConfigureSteps] RequirementName : " + requirementName);
 
-                            addOneStepInWorkflow(installWorkflow, entryOperation.getKey() + "_" + node.getId(),node.getId(), entryOperation.getKey() + "/" + relation.getTemplate().getRequirementName());
+                            AbstractStep step = newStep(entryOperation.getKey() + "_" + nodeName + "/" + requirementName, nodeName, entryOperation.getKey() + "/" + requirementName);
+
+                            if(step.getName().contains("pre")) {
+                                preConfSteps.add(step);
+                            } else if(step.getName().contains("post")) {
+                                postConfSteps.add(step);
+                            } else {
+                                postStartSteps.add(step);
+                            }
+
                         }
                     }
                 }
             }
+            // TODO : sort the list to respect step order
+            if(!preConfSteps.isEmpty()) {
+                linkSteps(installWorkflow, installWorkflow.getSteps().get("create_" + nodeName), installWorkflow.getSteps().get(nodeName + "_created"), preConfSteps);
+            }
+            if(!postConfSteps.isEmpty()) {
+                linkSteps(installWorkflow, installWorkflow.getSteps().get("configure_" + nodeName), installWorkflow.getSteps().get(nodeName + "_configured"), postConfSteps);
+            }
+            if(!postStartSteps.isEmpty()) {
+                linkSteps(installWorkflow, installWorkflow.getSteps().get("start_" + nodeName), installWorkflow.getSteps().get(nodeName + "_started"), postStartSteps);
+            }
+
         }
+
 
         // Parcours with "topology" instead of "PaasTopology", but cannot get the node type definition
 //        for (Map.Entry<String, NodeTemplate> entry : topology.getNodeTemplates().entrySet()) {
@@ -67,7 +93,28 @@ public class MappingTosca {
 
     }
 
-    private static void addOneStepInWorkflow(Workflow workflow, String stepName, String node, String operationName) {
+
+    private static void linkSteps(Workflow workflow, AbstractStep first, AbstractStep last, List<AbstractStep> middle) {
+        log.info(first.toString());
+        log.info(last.toString());
+
+        first.removeFollowing(last.getName());
+
+        Iterator<AbstractStep> it = middle.iterator();
+        AbstractStep prev = first;
+        AbstractStep step = first;
+
+        while(it.hasNext()){
+            step = it.next();
+            WorkflowUtils.linkSteps(prev, step);
+
+            workflow.addStep(step);
+        }
+
+        WorkflowUtils.linkSteps(step, last);
+    }
+
+    private static AbstractStep newStep(String stepName, String node, String operationName) {
         NodeActivityStep preConfStep = new NodeActivityStep();
         preConfStep.setName(stepName);
         preConfStep.setNodeId(node);
@@ -76,42 +123,7 @@ public class MappingTosca {
         operation.setInterfaceName("tosca.interfaces.node.lifecycle.Configure");
         preConfStep.setActivity(operation);
 
-        workflow.addStep(preConfStep);
-
-        if(operationName.equals("pre_configure_source")) {
-            addConfigure_source(workflow.getSteps().get("create_" + node), workflow.getSteps().get(node + "_created"), preConfStep, workflow.getSteps().get("pre_configure_target_" + node));
-        } else if(operationName.equals("pre_configure_target")) {
-            addConfigure_target(workflow.getSteps().get("create_" + node), workflow.getSteps().get(node + "_created"), workflow.getSteps().get("pre_configure_source_" + node), preConfStep);
-        } else if(operationName.equals("post_configure_source")) {
-            addConfigure_source(workflow.getSteps().get("configure_" + node), workflow.getSteps().get(node + "_configured"), preConfStep, workflow.getSteps().get("post_configure_target_" + node));
-        } else if(operationName.equals("post_configure_target")) {
-            addConfigure_target(workflow.getSteps().get("configure_" + node), workflow.getSteps().get(node + "_configured"), workflow.getSteps().get("post_configure_source_" + node), preConfStep);
-        }
-
-
+        return preConfStep;
     }
-
-    private static void addConfigure_source(AbstractStep create, AbstractStep created, AbstractStep preConfSource, AbstractStep preConfTarget) {
-        if(preConfTarget != null) {
-            create.removeFollowing(preConfTarget.getName());
-            WorkflowUtils.linkSteps(create, preConfSource);
-            WorkflowUtils.linkSteps(preConfSource, preConfTarget);
-        } else {
-            create.removeFollowing(created.getName());
-            WorkflowUtils.linkSteps(create, preConfSource);
-            WorkflowUtils.linkSteps(preConfSource, created);
-        }
-    }
-    private static void addConfigure_target(AbstractStep create, AbstractStep created, AbstractStep preConfSource, AbstractStep preConfTarget) {
-        if(preConfSource != null) {
-            preConfSource.removeFollowing(created.getName());
-            WorkflowUtils.linkSteps(preConfSource, preConfTarget);
-        } else {
-            create.removeFollowing(created.getName());
-            WorkflowUtils.linkSteps(create, preConfTarget);
-        }
-        WorkflowUtils.linkSteps(preConfTarget, created);
-    }
-
 
 }
