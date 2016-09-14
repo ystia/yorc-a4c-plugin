@@ -104,9 +104,6 @@ public class MappingTosca {
 
 
     private static void linkSteps(Workflow workflow, AbstractStep first, AbstractStep last, List<AbstractStep> middle) {
-        log.info(first.toString());
-        log.info(last.toString());
-
         first.removeFollowing(last.getName());
 
         Iterator<AbstractStep> it = middle.iterator();
