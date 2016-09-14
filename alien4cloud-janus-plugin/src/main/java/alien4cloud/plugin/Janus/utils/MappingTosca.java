@@ -115,7 +115,9 @@ public class MappingTosca {
 
         while(it.hasNext()){
             step = it.next();
+
             WorkflowUtils.linkSteps(prev, step);
+            prev = step;
 
             workflow.addStep(step);
         }
