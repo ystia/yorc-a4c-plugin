@@ -75,15 +75,15 @@ public class MappingTosca {
 
             if(!preConfSteps.isEmpty()) {
                 Collections.sort(preConfSteps, alphabeticalComp);
-                linkSteps(installWorkflow, installWorkflow.getSteps().get("create_" + nodeName), installWorkflow.getSteps().get(nodeName + "_created"), preConfSteps);
+                linkStepsParallel(installWorkflow, installWorkflow.getSteps().get("create_" + nodeName), installWorkflow.getSteps().get(nodeName + "_created"), preConfSteps);
             }
             if(!postConfSteps.isEmpty()) {
                 Collections.sort(postConfSteps, alphabeticalComp);
-                linkSteps(installWorkflow, installWorkflow.getSteps().get("configure_" + nodeName), installWorkflow.getSteps().get(nodeName + "_configured"), postConfSteps);
+                linkStepsParallel(installWorkflow, installWorkflow.getSteps().get("configure_" + nodeName), installWorkflow.getSteps().get(nodeName + "_configured"), postConfSteps);
             }
             if(!postStartSteps.isEmpty()) {
                 Collections.sort(postStartSteps, alphabeticalComp);
-                linkSteps(installWorkflow, installWorkflow.getSteps().get("start_" + nodeName), installWorkflow.getSteps().get(nodeName + "_started"), postStartSteps);
+                linkStepsParallel(installWorkflow, installWorkflow.getSteps().get("start_" + nodeName), installWorkflow.getSteps().get(nodeName + "_started"), postStartSteps);
             }
 
         }
@@ -102,6 +102,20 @@ public class MappingTosca {
 
     }
 
+    private static void linkStepsParallel(Workflow workflow, AbstractStep first, AbstractStep last, List<AbstractStep> middle) {
+        first.removeFollowing(last.getName());
+
+        Iterator<AbstractStep> it = middle.iterator();
+        while(it.hasNext()){
+            AbstractStep step = it.next();
+
+            WorkflowUtils.linkSteps(first, step);
+            WorkflowUtils.linkSteps(step, last);
+
+            workflow.addStep(step);
+        }
+
+    }
 
     private static void linkSteps(Workflow workflow, AbstractStep first, AbstractStep last, List<AbstractStep> middle) {
         first.removeFollowing(last.getName());
