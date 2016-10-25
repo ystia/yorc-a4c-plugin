@@ -7,5 +7,5 @@
   "VPN_ON": "false"
   "COMPONENT_CSAR_ID" : "ambari-types:1.0.0",
   "TEMPLATE_CSAR_ID" : "ambari:1.0.0",
-  "COMPONENT_CSAR_FILE_PATH" : "/cygdrive/r/eclipse/py_wse/ambari-component/target/hortonworks-hpc-1.0.zip"
+  "COMPONENT_CSAR_FILE_PATH" : "COMPONENT_CSAR_FILE_PATH"
 }
