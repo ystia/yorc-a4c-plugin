@@ -19,6 +19,11 @@ Main.ado(Main.run("", t))
 
 Main.eno(Main.run("", t))
 
+#If a component must be updated
+#Main.rmc(Main.run("", t))
+#Main.adc(Main.run("", t))
+
+
 Main.adl(Main.run("", t))
 Main.adr(Main.run("", t))
 Main.adt(Main.run("", t))
