@@ -5,7 +5,7 @@
   "A4C_HOSTS_PORT": "172.16.118.132:8088",
   "PROXY_USE": "requests will be sent through localhost 20000 socks 5",
   "VPN_ON": "false"
-  "COMPONENT_CSAR_ID" : "ambari-types:1.0.0",
-  "TEMPLATE_CSAR_ID" : "ambari:1.0.0",
+  "COMPONENT_CSAR_ID" : "COMPONENT_CSAR_ID",
+  "TEMPLATE_CSAR_ID" : "TEMPLATE_CSAR_ID",
   "COMPONENT_CSAR_FILE_PATH" : "COMPONENT_CSAR_FILE_PATH"
 }
