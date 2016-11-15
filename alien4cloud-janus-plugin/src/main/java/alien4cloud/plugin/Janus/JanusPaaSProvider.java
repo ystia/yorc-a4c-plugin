@@ -87,7 +87,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
     private ZipTopology zipTopology = new ZipTopology();
 
-    private RestClient restClient = new RestClient();
+    private RestClient restClient = RestClient.getInstance();
 
     @Resource
     private TopologyService topologyService = new TopologyService();

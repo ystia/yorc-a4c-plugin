@@ -7,8 +7,10 @@
 package alien4cloud.plugin.Janus.rest;
 
 import alien4cloud.plugin.Janus.ProviderConfig;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
+import com.mashape.unirest.http.ObjectMapper;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import lombok.Setter;
@@ -16,12 +18,47 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 
 @Setter
 public class RestClient {
 
     private ProviderConfig providerConfiguration;
+
+
+    private static RestClient instance;
+
+    public static synchronized RestClient getInstance() {
+        if (instance == null) {
+            instance = new RestClient();
+            RestClient.initObjectMapper();
+        }
+        return instance;
+    }
+
+    private static void initObjectMapper() {
+        Unirest.setObjectMapper(new ObjectMapper() {
+            private com.fasterxml.jackson.databind.ObjectMapper jacksonObjectMapper
+                    = new com.fasterxml.jackson.databind.ObjectMapper();
+
+            public <T> T readValue(String value, Class<T> valueType) {
+                try {
+                    return jacksonObjectMapper.readValue(value, valueType);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            public String writeValue(Object value) {
+                try {
+                    return jacksonObjectMapper.writeValueAsString(value);
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+    }
 
     public String postTopologyToJanus() throws Exception {
         final InputStream stream;
@@ -44,7 +81,6 @@ public class RestClient {
 
         return postResponse.getHeaders().getFirst("Location");
     }
-
 
     public String getStatusFromJanus(String deploymentUrl) throws Exception {
         HttpResponse<JsonNode> res = Unirest.get(providerConfiguration.getUrlJanus() + deploymentUrl)
