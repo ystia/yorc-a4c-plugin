@@ -250,6 +250,11 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
     @Override
     protected synchronized void doUndeploy(final PaaSDeploymentContext deploymentContext) {
+        log.info(this.doGetStatus(deploymentContext.getDeploymentPaaSId(), false).toString());
+        if(this.doGetStatus(deploymentContext.getDeploymentPaaSId(), false) == DeploymentStatus.DEPLOYMENT_IN_PROGRESS ) {
+            return;
+        }
+
         log.info("Undeploying deployment [" + deploymentContext.getDeploymentPaaSId() + "]");
         changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.UNDEPLOYMENT_IN_PROGRESS);
 
