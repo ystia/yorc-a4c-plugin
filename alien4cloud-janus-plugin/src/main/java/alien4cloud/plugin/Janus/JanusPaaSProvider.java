@@ -250,7 +250,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
                     TimeUnit.SECONDS.sleep(1);
 
                     LogResponse logResponse = this.restClient.getLogFromJanus(deploymentUrl, prevIndex);
-                    if(logResponse == null || logResponse.getLogs().isEmpty()) {
+                    if(logResponse == null || logResponse.getLogs() == null || logResponse.getLogs().isEmpty()) {
                         continue;
                     }
                     prevIndex = logResponse.getLast_index();
