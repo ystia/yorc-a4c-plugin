@@ -16,6 +16,7 @@ import alien4cloud.paas.exception.PluginConfigurationException;
 import alien4cloud.paas.model.*;
 import alien4cloud.paas.plan.ToscaNodeLifecycleConstants;
 import alien4cloud.plugin.Janus.baseplugin.AbstractPaaSProvider;
+import alien4cloud.plugin.Janus.rest.Response.LogEvent;
 import alien4cloud.plugin.Janus.rest.Response.LogResponse;
 import alien4cloud.plugin.Janus.rest.RestClient;
 import alien4cloud.plugin.Janus.utils.MappingTosca;
@@ -248,13 +249,15 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
                 try {
                     TimeUnit.SECONDS.sleep(1);
 
-                    LogResponse log = this.restClient.getLogFromJanus(deploymentUrl, prevIndex);
-                    if(log == null) {
+                    LogResponse logResponse = this.restClient.getLogFromJanus(deploymentUrl, prevIndex);
+                    if(logResponse == null || logResponse.getLogs().isEmpty()) {
                         continue;
                     }
-                    prevIndex = log.getLast_index();
-                    System.out.println(prevIndex);
-                    this.sendMesage(deploymentPaaSId, log.toString());
+                    prevIndex = logResponse.getLast_index();
+                    System.out.println("[listenJanusLog] " + prevIndex);
+                    for (LogEvent logEvent : logResponse.getLogs()) {
+                        this.sendMesage(deploymentPaaSId, logEvent.getLogs());
+                    }
 
                 } catch (Exception e) {
                     e.printStackTrace();
