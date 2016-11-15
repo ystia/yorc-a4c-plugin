@@ -9,26 +9,32 @@ package alien4cloud.plugin.Janus;
 import alien4cloud.paas.model.DeploymentStatus;
 import alien4cloud.paas.model.InstanceInformation;
 import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Getter
 @Setter
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class JanusRuntimeDeploymentInfo {
+    @NonNull
     private PaaSTopologyDeploymentContext deploymentContext;
+    @NonNull
     private DeploymentStatus status;
     /**
      * Represents the status of every instance of node templates currently deployed.
      * <p>
      * NodeTemplateId -> InstanceId -> InstanceInformation
      */
+    @NonNull
     private Map<String, Map<String, InstanceInformation>> instanceInformations;
 
-
+    @NonNull
     private String deploymentUrl;
+
+    // Used to execute event check thread
+    private ExecutorService executor = Executors.newSingleThreadExecutor();
 
 }

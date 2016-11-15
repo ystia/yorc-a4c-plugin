@@ -54,16 +54,26 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
     public static final String PUBLIC_IP = "ip_address";
     public static final String TOSCA_ID = "tosca_id";
     public static final String TOSCA_NAME = "tosca_name";
-    private static final String BAD_APPLICATION_THAT_NEVER_WORKS = "BAD-APPLICATION";
-    private static final String WARN_APPLICATION_THAT_NEVER_WORKS = "WARN-APPLICATION";
-    private static final String BLOCKSTORAGE_APPLICATION = "BLOCKSTORAGE-APPLICATION";
+
     private final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
-    private final Map<String, JanusRuntimeDeploymentInfo> runtimeDeploymentInfos = Maps.newConcurrentMap();
-    private final List<AbstractMonitorEvent> toBeDeliveredEvents = Collections.synchronizedList(new ArrayList<AbstractMonitorEvent>());
+
     private ProviderConfig providerConfiguration;
+
+    private final Map<String, JanusRuntimeDeploymentInfo> runtimeDeploymentInfos = Maps.newConcurrentMap();
+
     private Map<String, String> paaSDeploymentIdToAlienDeploymentIdMap = Maps.newHashMap();
+
+    private final List<AbstractMonitorEvent> toBeDeliveredEvents = Collections.synchronizedList(new ArrayList<AbstractMonitorEvent>());
+
     @Resource
     private ICSARRepositorySearchService csarRepoSearchService;
+
+    private static final String BAD_APPLICATION_THAT_NEVER_WORKS = "BAD-APPLICATION";
+
+    private static final String WARN_APPLICATION_THAT_NEVER_WORKS = "WARN-APPLICATION";
+
+    private static final String BLOCKSTORAGE_APPLICATION = "BLOCKSTORAGE-APPLICATION";
+
     private ShowTopology showTopology = new ShowTopology();
 
     private WorkflowReader workflowReader;
@@ -76,7 +86,6 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
     @Resource
     private TopologyService topologyService = new TopologyService();
-    private Random randomSkipStateChange = new Random();
 
     public JanusPaaSProvider() {
         executorService.scheduleWithFixedDelay(() -> {
@@ -245,19 +254,20 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
                         continue;
                     }
                     prevIndex = logResponse.getLast_index();
-                    System.out.println("[listenJanusLog] " + prevIndex);
                     for (LogEvent logEvent : logResponse.getLogs()) {
                         this.sendMesage(deploymentPaaSId, logEvent.getLogs());
                     }
-
+                } catch (InterruptedException e) {
+                    String threadName = Thread.currentThread().getName();
+                    System.out.println("[listenJanusLog] Stopped " + threadName + " " + deploymentPaaSId);
+                    return;
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
 
         };
-        Thread thread = new Thread(task);
-        thread.start();
+        this.runtimeDeploymentInfos.get(deploymentPaaSId).getExecutor().submit(task);
     }
 
     private void checkJanusStatusUntil(String aimStatus, String deploymentUrl) throws Exception {
@@ -304,6 +314,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
         changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.UNDEPLOYED);
         // cleanup deployment cache
+        runtimeDeploymentInfos.get(deploymentContext.getDeploymentPaaSId()).getExecutor().shutdownNow();
         runtimeDeploymentInfos.remove(deploymentContext.getDeploymentPaaSId());
     }
 
@@ -419,6 +430,8 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         }
     }
 
+    private Random randomSkipStateChange = new Random();
+
     private String getNextState(String currentState) {
         if (providerConfiguration != null && randomSkipStateChange.nextBoolean()) {
             return null;
@@ -445,6 +458,10 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
             default:
                 return null;
         }
+    }
+
+    private interface ScalingVisitor {
+        void visit(String nodeTemplateId);
     }
 
     private IndexedRelationshipType getRelationshipType(String typeName) {
@@ -629,10 +646,6 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
             InstanceInformation instanceInformation = existingInformations.get(nodeTemplateId).get(instanceId);
             switchInstanceMaintenanceMode(deploymentContext.getDeploymentPaaSId(), nodeTemplateId, instanceId, instanceInformation, maintenanceModeOn);
         }
-    }
-
-    private interface ScalingVisitor {
-        void visit(String nodeTemplateId);
     }
 
 }
