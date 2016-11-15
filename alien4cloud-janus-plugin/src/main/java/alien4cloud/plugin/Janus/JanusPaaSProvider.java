@@ -23,6 +23,7 @@ import alien4cloud.paas.wf.OperationCallActivity;
 import alien4cloud.paas.wf.Workflow;
 import alien4cloud.paas.wf.util.WorkflowUtils;
 import alien4cloud.plugin.Janus.baseplugin.AbstractPaaSProvider;
+import alien4cloud.plugin.Janus.rest.Response.LogResponse;
 import alien4cloud.plugin.Janus.rest.RestClient;
 import alien4cloud.plugin.Janus.utils.MappingTosca;
 import alien4cloud.plugin.Janus.utils.ShowTopology;
@@ -210,20 +211,28 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         //post topology zip to Janus
         log.info("POST Topology");
 
+
+        String deploymentUrl;
+        try {
+            deploymentUrl = restClient.postTopologyToJanus();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
+        janusDeploymentInfo.setDeploymentUrl(deploymentUrl);
+        log.info("Deployment Url : " + deploymentUrl);
+        sendMesage(deploymentContext.getDeploymentPaaSId(), deploymentUrl);
+
+
         Runnable task = () -> {
             String threadName = Thread.currentThread().getName();
             log.info("Running another thread for event check " + threadName);
 
             try {
-                String deploymentUrl = restClient.postTopologyToJanus();
-                janusDeploymentInfo.setDeploymentUrl(deploymentUrl);
-                log.info("Deployment Url : " + deploymentUrl);
-                sendMesage(deploymentContext.getDeploymentPaaSId(), deploymentUrl);
 
                 checkJanusStatusUntil("DEPLOYED", deploymentUrl);
 
                 doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.DEPLOYED);
-
 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -234,6 +243,34 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
                 throw new RuntimeException(e.getMessage()); // TODO : Refactor, For detecting error deploy rest API A4C, when integrationt test
             }
+        };
+
+        Thread thread = new Thread(task);
+        thread.start();
+
+        this.listenJanusLog(deploymentUrl, deploymentContext.getDeploymentPaaSId());
+    }
+
+    private void listenJanusLog(String deploymentUrl, String deploymentPaaSId) {
+        Runnable task = () -> {
+            int prevIndex = 1;
+            while(true) {
+                try {
+                    TimeUnit.SECONDS.sleep(1);
+
+                    LogResponse log = this.restClient.getLogFromJanus(deploymentUrl, prevIndex);
+                    if(log == null) {
+                        continue;
+                    }
+                    prevIndex = log.getLast_index();
+                    System.out.println(prevIndex);
+                    this.sendMesage(deploymentPaaSId, log.toString());
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
         };
         Thread thread = new Thread(task);
         thread.start();
