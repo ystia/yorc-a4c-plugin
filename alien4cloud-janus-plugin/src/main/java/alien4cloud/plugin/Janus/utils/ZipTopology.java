@@ -111,7 +111,7 @@ public class ZipTopology {
                 }
 
 
-            }catch(Exception e)  {
+            } catch (Exception e) {
                 log.info(e.getMessage());
             }
 
@@ -149,9 +149,9 @@ public class ZipTopology {
                 } else if (entry.contains("- utils_scripts:")) {
                     out.println("      utils_scripts:");
                     out.println("        file:" + entry.split(":")[1]);
-                } else if(entry.contains("tosca-normative-types:")) {
+                } else if (entry.contains("tosca-normative-types:")) {
                     out.println("  - normative-types: <normative-types.yml>");
-                }else {
+                } else {
                     out.println(entry);
                 }
             }
@@ -176,9 +176,9 @@ public class ZipTopology {
             while ((line = br.readLine()) != null) {
                 bw.append(line).append("\n");
                 if (line.contains("imports:")) {
-                    if(ymlPath.contains("janus-openstack-types")){
+                    if (ymlPath.contains("janus-openstack-types")) {
                         bw.append("  - openstack-types: <janus-openstack-types.yml>\n");
-                    }else{
+                    } else {
                         bw.append("  - path: ").append(ymlPath).append("\n");
                     }
                 }
@@ -227,7 +227,7 @@ public class ZipTopology {
                 }
                 if (line.contains("imports:")) {
                     clean = true;
-                }else if (line.contains("topology_template:")){
+                } else if (line.contains("topology_template:")) {
                     bw.append(line).append("\n");
                     clean = false;
                 }

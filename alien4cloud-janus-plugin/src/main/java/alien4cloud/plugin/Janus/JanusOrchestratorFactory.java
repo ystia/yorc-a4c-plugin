@@ -20,7 +20,6 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 
@@ -31,9 +30,9 @@ import java.util.Map;
 public class JanusOrchestratorFactory implements IOrchestratorPluginFactory<JanusOrchestrator, ProviderConfig> {
     public static final String OPENSTACK = "OpenStack";
     public static final String SLURM = "Slurm";
+    private final Map<String, PropertyDefinition> deploymentProperties = Maps.newHashMap();
     @Resource
     private BeanFactory beanFactory;
-    private final Map<String, PropertyDefinition> deploymentProperties = Maps.newHashMap();
 
     @Override
     public JanusOrchestrator newInstance() {
@@ -109,7 +108,7 @@ public class JanusOrchestratorFactory implements IOrchestratorPluginFactory<Janu
         return deploymentProperties;
     }
 
-//    @Override
+    //    @Override
     public String getType() {
         return "Janus Orchestrator";
     }

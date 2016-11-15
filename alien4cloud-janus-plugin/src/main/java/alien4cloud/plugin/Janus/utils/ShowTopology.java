@@ -16,7 +16,8 @@ import alien4cloud.component.repository.ArtifactLocalRepository;
 import alien4cloud.component.repository.CsarFileRepository;
 import alien4cloud.component.repository.exception.CSARVersionNotFoundException;
 import alien4cloud.model.components.*;
-import alien4cloud.model.topology.*;
+import alien4cloud.model.topology.RelationshipTemplate;
+import alien4cloud.model.topology.Topology;
 import alien4cloud.paas.exception.PaaSDeploymentException;
 import alien4cloud.paas.model.PaaSNodeTemplate;
 import alien4cloud.paas.model.PaaSRelationshipTemplate;
@@ -40,18 +41,15 @@ import java.util.Map;
 @Slf4j
 public class ShowTopology {
 
-    @Resource
-    private CsarFileRepository fileRepository;
-
-    @Resource
-    ArtifactLocalRepository localRepository;
-
-    @Resource
-    protected CSARRepositorySearchService csarRepositorySearchService;
-
     private static final String FILE_TYPE = "tosca.artifacts.File";
     private static final String DIRECTORY_ARTIFACT_TYPE = "fastconnect.artifacts.ResourceDirectory";
     private static final Boolean BOOL = false;
+    @Resource
+    protected CSARRepositorySearchService csarRepositorySearchService;
+    @Resource
+    ArtifactLocalRepository localRepository;
+    @Resource
+    private CsarFileRepository fileRepository;
 
     private void copyArtifactFromCsar(final Path csarPath, final String source, final String nodeTypeRelativePath, final String target,
                                       final DeploymentArtifact artifact, IndexedArtifactToscaElement indexedToscaElement) throws IOException {
@@ -401,7 +399,6 @@ public class ShowTopology {
             }
         }
     }
-
 
 
     public void printRelationTemplate(RelationshipTemplate relation) {

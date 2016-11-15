@@ -31,9 +31,9 @@ import java.util.Map;
 @Setter
 public class WorkflowPlayer {
 
+    private static final String NONE = "none";
     private ExecPython execPython = new ExecPython();
     private List<String> NodeId;
-    private static final String NONE = "none";
 
     /**
      * Scroll down the list of steps in order to deploy our application

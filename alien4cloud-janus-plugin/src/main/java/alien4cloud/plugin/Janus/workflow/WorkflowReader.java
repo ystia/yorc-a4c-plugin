@@ -25,10 +25,10 @@ import java.util.Map;
 @Setter
 public class WorkflowReader {
 
-    private List<WorkflowStep> workflowSteps;
     public static final String START = "start";
     public static final String CREATE = "create";
     public static final String CONFIGURE = "configure";
+    private List<WorkflowStep> workflowSteps;
 
 
     /**

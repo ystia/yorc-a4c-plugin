@@ -31,17 +31,17 @@ public class MappingTosca {
             List<AbstractStep> postStartSteps = new ArrayList<>();
             for (PaaSRelationshipTemplate relation : node.getRelationshipTemplates()) {
                 String relationType = relation.getTemplate().getType();
-                if(relationType.contains("tosca.relationships")) {
+                if (relationType.contains("tosca.relationships")) {
                     continue;
                 }
-                if(!nodeName.equals(relation.getSource())) {
+                if (!nodeName.equals(relation.getSource())) {
                     continue;
                 }
 
                 Map<String, Interface> interfacesMap = relation.getIndexedToscaElement().getInterfaces();
                 for (Map.Entry<String, Interface> entryInterface : interfacesMap.entrySet()) {
                     for (Map.Entry<String, Operation> entryOperation : entryInterface.getValue().getOperations().entrySet()) {
-                        if(entryOperation.getValue().getImplementationArtifact() != null) {
+                        if (entryOperation.getValue().getImplementationArtifact() != null) {
                             String requirementName = relation.getTemplate().getRequirementName();
                             log.info("[addPreConfigureSteps] NodeId : " + nodeName);
                             log.info("[addPreConfigureSteps] RelationType : " + relationType);
@@ -51,9 +51,9 @@ public class MappingTosca {
 
                             AbstractStep step = newStep(entryOperation.getKey() + "_" + nodeName + "/" + requirementName, nodeName, entryOperation.getKey() + "/" + requirementName);
 
-                            if(step.getName().contains("pre")) {
+                            if (step.getName().contains("pre")) {
                                 preConfSteps.add(step);
-                            } else if(step.getName().contains("post")) {
+                            } else if (step.getName().contains("post")) {
                                 postConfSteps.add(step);
                             } else {
                                 postStartSteps.add(step);
@@ -67,15 +67,15 @@ public class MappingTosca {
             // sort in alphabetical order, since source is before target
             Comparator<AbstractStep> alphabeticalComp = (step1, step2) -> step1.getName().compareTo(step2.getName());
 
-            if(!preConfSteps.isEmpty()) {
+            if (!preConfSteps.isEmpty()) {
                 Collections.sort(preConfSteps, alphabeticalComp);
                 linkStepsParallel(installWorkflow, installWorkflow.getSteps().get("create_" + nodeName), installWorkflow.getSteps().get(nodeName + "_created"), preConfSteps);
             }
-            if(!postConfSteps.isEmpty()) {
+            if (!postConfSteps.isEmpty()) {
                 Collections.sort(postConfSteps, alphabeticalComp);
                 linkStepsParallel(installWorkflow, installWorkflow.getSteps().get("configure_" + nodeName), installWorkflow.getSteps().get(nodeName + "_configured"), postConfSteps);
             }
-            if(!postStartSteps.isEmpty()) {
+            if (!postStartSteps.isEmpty()) {
                 Collections.sort(postStartSteps, alphabeticalComp);
                 linkStepsParallel(installWorkflow, installWorkflow.getSteps().get("start_" + nodeName), installWorkflow.getSteps().get(nodeName + "_started"), postStartSteps);
             }
@@ -115,7 +115,7 @@ public class MappingTosca {
         AbstractStep prev = first;
         AbstractStep step = first;
 
-        while(it.hasNext()){
+        while (it.hasNext()) {
             step = it.next();
 
             WorkflowUtils.linkSteps(prev, step);

@@ -37,6 +37,8 @@ import java.util.Map;
 @Component
 @Scope("prototype")
 public abstract class AbstractLocationConfigurer implements ILocationConfiguratorPlugin {
+    protected static final String IMAGE_ID_PROP = "imageId";
+    protected static final String FLAVOR_ID_PROP = "flavorId";
     @Inject
     protected ArchiveParser archiveParser;
     @Inject
@@ -47,11 +49,7 @@ public abstract class AbstractLocationConfigurer implements ILocationConfigurato
     protected ManagedPlugin selfContext;
     @Inject
     protected LocationResourceGeneratorService resourceGeneratorService;
-
     protected List<PluginArchive> archives;
-
-    protected static final String IMAGE_ID_PROP = "imageId";
-    protected static final String FLAVOR_ID_PROP = "flavorId";
 
     @Override
     public List<PluginArchive> pluginArchives() throws PluginParseException {

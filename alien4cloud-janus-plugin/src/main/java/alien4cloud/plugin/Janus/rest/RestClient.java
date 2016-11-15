@@ -25,10 +25,8 @@ import java.io.InputStream;
 @Setter
 public class RestClient {
 
-    private ProviderConfig providerConfiguration;
-
-
     private static RestClient instance;
+    private ProviderConfig providerConfiguration;
 
     public static synchronized RestClient getInstance() {
         if (instance == null) {
@@ -76,7 +74,7 @@ public class RestClient {
                 .asJson();
 
 
-        if(!postResponse.getStatusText().equals("Created")) {
+        if (!postResponse.getStatusText().equals("Created")) {
             throw new Exception("Janus returned an error ?");
         }
 
@@ -91,7 +89,7 @@ public class RestClient {
 
         JSONObject obj = res.getBody().getObject();
 
-        if(!obj.has("status")) {
+        if (!obj.has("status")) {
             throw new Exception("getStatusFromJanus : Janus returned an error");
         }
 
@@ -99,8 +97,8 @@ public class RestClient {
     }
 
 
-    public LogResponse getLogFromJanus(String deploymentUrl, int index) throws  Exception{
-        HttpResponse<LogResponse> logRes = Unirest.get(providerConfiguration.getUrlJanus() + deploymentUrl + "/" + "logs?index="+ index + "&wait=5s&filter=")
+    public LogResponse getLogFromJanus(String deploymentUrl, int index) throws Exception {
+        HttpResponse<LogResponse> logRes = Unirest.get(providerConfiguration.getUrlJanus() + deploymentUrl + "/" + "logs?index=" + index + "&wait=5s&filter=")
                 .header("accept", "application/json")
                 .asObject(LogResponse.class);
         return logRes.getBody();
