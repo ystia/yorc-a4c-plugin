@@ -65,13 +65,7 @@ public class MappingTosca {
             }
 
             // sort in alphabetical order, since source is before target
-            Comparator<AbstractStep> alphabeticalComp = new Comparator<AbstractStep>() {
-                @Override
-                public int compare(AbstractStep step1, AbstractStep step2)
-                {
-                    return step1.getName().compareTo(step2.getName());
-                }
-            };
+            Comparator<AbstractStep> alphabeticalComp = (step1, step2) -> step1.getName().compareTo(step2.getName());
 
             if(!preConfSteps.isEmpty()) {
                 Collections.sort(preConfSteps, alphabeticalComp);
@@ -105,10 +99,7 @@ public class MappingTosca {
     private static void linkStepsParallel(Workflow workflow, AbstractStep first, AbstractStep last, List<AbstractStep> middle) {
         first.removeFollowing(last.getName());
 
-        Iterator<AbstractStep> it = middle.iterator();
-        while(it.hasNext()){
-            AbstractStep step = it.next();
-
+        for (AbstractStep step : middle) {
             WorkflowUtils.linkSteps(first, step);
             WorkflowUtils.linkSteps(step, last);
 

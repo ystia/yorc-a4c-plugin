@@ -13,7 +13,6 @@ package alien4cloud.plugin.Janus.utils;
 
 import alien4cloud.component.CSARRepositorySearchService;
 import alien4cloud.component.repository.ArtifactLocalRepository;
-import alien4cloud.component.repository.ArtifactRepositoryConstants;
 import alien4cloud.component.repository.CsarFileRepository;
 import alien4cloud.component.repository.exception.CSARVersionNotFoundException;
 import alien4cloud.model.components.*;
@@ -23,18 +22,15 @@ import alien4cloud.paas.model.PaaSNodeTemplate;
 import alien4cloud.paas.model.PaaSRelationshipTemplate;
 import alien4cloud.paas.model.PaaSTopology;
 import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
-import alien4cloud.paas.wf.Workflow;
 import alien4cloud.tosca.normative.NormativeRelationshipConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.eclipse.jgit.util.FileUtils;
 
 import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 

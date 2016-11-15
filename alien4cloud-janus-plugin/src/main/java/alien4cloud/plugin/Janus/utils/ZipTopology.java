@@ -6,10 +6,6 @@
 */
 package alien4cloud.plugin.Janus.utils;
 
-/**
- * Created by a628490 on 22/07/2016.
- */
-
 import alien4cloud.paas.model.PaaSNodeTemplate;
 import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
 import lombok.extern.slf4j.Slf4j;
@@ -178,12 +174,12 @@ public class ZipTopology {
             br = new BufferedReader(new FileReader(oldFileName));
             String line;
             while ((line = br.readLine()) != null) {
-                bw.append(line + "\n");
+                bw.append(line).append("\n");
                 if (line.contains("imports:")) {
                     if(ymlPath.contains("janus-openstack-types")){
                         bw.append("  - openstack-types: <janus-openstack-types.yml>\n");
                     }else{
-                        bw.append("  - path: " + ymlPath + "\n");
+                        bw.append("  - path: ").append(ymlPath).append("\n");
                     }
                 }
             }
@@ -227,12 +223,12 @@ public class ZipTopology {
             boolean clean = false;
             while ((line = br.readLine()) != null) {
                 if (!clean) {
-                    bw.append(line + "\n");
+                    bw.append(line).append("\n");
                 }
                 if (line.contains("imports:")) {
                     clean = true;
                 }else if (line.contains("topology_template:")){
-                    bw.append(line + "\n");
+                    bw.append(line).append("\n");
                     clean = false;
                 }
             }

@@ -1,6 +1,3 @@
-/**
- * Created by a628490 on 11/07/2016.
- */
 /*
 * Copyright 2016 Bull Atos.  All Rights Reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.

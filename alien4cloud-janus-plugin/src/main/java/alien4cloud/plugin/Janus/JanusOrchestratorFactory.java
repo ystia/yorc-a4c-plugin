@@ -21,6 +21,7 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -70,18 +71,18 @@ public class JanusOrchestratorFactory implements IOrchestratorPluginFactory<Janu
 
         // Field 1 : managerUrl as string
         PropertyDefinition managerUrl = new PropertyDefinition();
-        managerUrl.setType(ToscaType.STRING.toString());
+        managerUrl.setType(ToscaType.STRING);
         managerUrl.setDefault("http://localhost:4242");
         managerUrl.setRequired(false);
         managerUrl.setDescription("PaaS manager URL");
         managerUrl.setConstraints(null);
         PatternConstraint manageUrlConstraint = new PatternConstraint();
         manageUrlConstraint.setPattern("http://.+");
-        managerUrl.setConstraints(Arrays.asList((PropertyConstraint) manageUrlConstraint));
+        managerUrl.setConstraints(Collections.singletonList((PropertyConstraint) manageUrlConstraint));
 
         // Field 2 : number backup with constraint
         PropertyDefinition numberBackup = new PropertyDefinition();
-        numberBackup.setType(ToscaType.INTEGER.toString());
+        numberBackup.setType(ToscaType.INTEGER);
         numberBackup.setDefault("0606060606");
         numberBackup.setRequired(false);
         numberBackup.setDescription("Number of backup");
@@ -92,14 +93,14 @@ public class JanusOrchestratorFactory implements IOrchestratorPluginFactory<Janu
 
         // Field 3 : email manager
         PropertyDefinition managerEmail = new PropertyDefinition();
-        managerEmail.setType(ToscaType.STRING.toString());
+        managerEmail.setType(ToscaType.STRING);
         managerEmail.setDefault("xBD@yopmail.com");
         managerEmail.setRequired(false);
         managerEmail.setDescription("PaaS manager email");
         managerEmail.setConstraints(null);
         PatternConstraint managerEmailConstraint = new PatternConstraint();
         managerEmailConstraint.setPattern(".+@.+");
-        managerEmail.setConstraints(Arrays.asList((PropertyConstraint) managerEmailConstraint));
+        managerEmail.setConstraints(Collections.singletonList((PropertyConstraint) managerEmailConstraint));
 
         deploymentProperties.put("managementUrl", managerUrl);
         deploymentProperties.put("numberBackup", numberBackup);
