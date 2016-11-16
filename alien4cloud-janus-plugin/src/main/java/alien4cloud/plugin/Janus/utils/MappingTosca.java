@@ -22,6 +22,7 @@ public class MappingTosca {
     public static void addPreConfigureSteps(Topology topology, PaaSTopology paaSTopology) {
 
         Workflow installWorkflow = topology.getWorkflows().get("install");
+        Workflow uninstallWorkflow = topology.getWorkflows().get("uninstall");
 
         for (Map.Entry<String, PaaSNodeTemplate> entryNode : paaSTopology.getAllNodes().entrySet()) {
             PaaSNodeTemplate node = entryNode.getValue();
@@ -29,6 +30,8 @@ public class MappingTosca {
             List<AbstractStep> preConfSteps = new ArrayList<>();
             List<AbstractStep> postConfSteps = new ArrayList<>();
             List<AbstractStep> postStartSteps = new ArrayList<>();
+            List<AbstractStep> deleteSteps = new ArrayList<>();
+
             for (PaaSRelationshipTemplate relation : node.getRelationshipTemplates()) {
                 String relationType = relation.getTemplate().getType();
                 if (relationType.contains("tosca.relationships")) {
@@ -55,6 +58,8 @@ public class MappingTosca {
                                 preConfSteps.add(step);
                             } else if (step.getName().contains("post")) {
                                 postConfSteps.add(step);
+                            } else if (step.getName().contains("remove")) {
+                                deleteSteps.add(step);
                             } else {
                                 postStartSteps.add(step);
                             }
@@ -78,6 +83,10 @@ public class MappingTosca {
             if (!postStartSteps.isEmpty()) {
                 Collections.sort(postStartSteps, alphabeticalComp);
                 linkStepsParallel(installWorkflow, installWorkflow.getSteps().get("start_" + nodeName), installWorkflow.getSteps().get(nodeName + "_started"), postStartSteps);
+            }
+            if (!deleteSteps.isEmpty()) {
+                log.info("delete_" + nodeName);
+                linkStepsParallel(uninstallWorkflow, uninstallWorkflow.getSteps().get("delete_" + nodeName), uninstallWorkflow.getSteps().get(nodeName + "_deleted"), deleteSteps);
             }
 
         }
