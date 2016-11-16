@@ -142,7 +142,7 @@ public class MappingTosca {
         preConfStep.setNodeId(node);
         OperationCallActivity operation = new OperationCallActivity();
         operation.setOperationName(operationName);
-        operation.setInterfaceName("tosca.interfaces.node.lifecycle.Configure");
+        operation.setInterfaceName("tosca.interfaces.relationship.configure");
         preConfStep.setActivity(operation);
 
         return preConfStep;
