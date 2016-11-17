@@ -7,6 +7,7 @@
 package alien4cloud.plugin.Janus.rest;
 
 import alien4cloud.plugin.Janus.ProviderConfig;
+import alien4cloud.plugin.Janus.rest.Response.EventResponse;
 import alien4cloud.plugin.Janus.rest.Response.LogResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.mashape.unirest.http.HttpResponse;
@@ -102,6 +103,13 @@ public class RestClient {
                 .header("accept", "application/json")
                 .asObject(LogResponse.class);
         return logRes.getBody();
+    }
+
+    public EventResponse getEventFromJanus(String deploymentUrl, int index) throws Exception {
+        HttpResponse<EventResponse> eventResponse = Unirest.get(providerConfiguration.getUrlJanus() + deploymentUrl + "/" + "events?index=" + index + "&wait=5s&filter=")
+                .header("accept", "application/json")
+                .asObject(EventResponse.class);
+        return eventResponse.getBody();
     }
 
     public String undeployJanus(String deploymentUrl) throws UnirestException {

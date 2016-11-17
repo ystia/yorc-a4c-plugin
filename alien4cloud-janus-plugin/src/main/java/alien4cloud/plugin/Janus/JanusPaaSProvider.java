@@ -16,6 +16,8 @@ import alien4cloud.paas.exception.PluginConfigurationException;
 import alien4cloud.paas.model.*;
 import alien4cloud.paas.plan.ToscaNodeLifecycleConstants;
 import alien4cloud.plugin.Janus.baseplugin.AbstractPaaSProvider;
+import alien4cloud.plugin.Janus.rest.Response.Event;
+import alien4cloud.plugin.Janus.rest.Response.EventResponse;
 import alien4cloud.plugin.Janus.rest.Response.LogEvent;
 import alien4cloud.plugin.Janus.rest.Response.LogResponse;
 import alien4cloud.plugin.Janus.rest.RestClient;
@@ -239,7 +241,37 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         Thread thread = new Thread(task);
         thread.start();
 
+        this.listenDeploymentEvent(deploymentUrl, deploymentContext.getDeploymentPaaSId());
         this.listenJanusLog(deploymentUrl, deploymentContext.getDeploymentPaaSId());
+    }
+
+    private void listenDeploymentEvent(String deploymentUrl, String deploymentPaaSId) {
+        Runnable task = () -> {
+            int prevIndex = 1;
+            while (true) {
+                try {
+                    TimeUnit.SECONDS.sleep(1);
+
+                    EventResponse eventResponse = this.restClient.getEventFromJanus(deploymentUrl, prevIndex);
+                    if (eventResponse == null || eventResponse.getEvents() == null || eventResponse.getEvents().isEmpty()) {
+                        continue;
+                    }
+                    prevIndex = eventResponse.getLast_index();
+                    for (Event event : eventResponse.getEvents()) {
+                        this.sendMesage(deploymentPaaSId, "[Event]" + event.getNode() +  " "  +event.getStatus());
+                        System.out.println("[Event]" + event.getNode() +  " "  +event.getStatus());
+                    }
+                } catch (InterruptedException e) {
+                    String threadName = Thread.currentThread().getName();
+                    System.out.println("[listenDeploymentEvent] Stopped " + threadName + " " + deploymentPaaSId);
+                    return;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+        };
+        this.runtimeDeploymentInfos.get(deploymentPaaSId).getExecutor().submit(task);
     }
 
     private void listenJanusLog(String deploymentUrl, String deploymentPaaSId) {

@@ -35,6 +35,6 @@ public class JanusRuntimeDeploymentInfo {
     private String deploymentUrl;
 
     // Used to execute event check thread
-    private ExecutorService executor = Executors.newSingleThreadExecutor();
+    private ExecutorService executor = Executors.newFixedThreadPool(2);
 
 }
