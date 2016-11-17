@@ -175,7 +175,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
     protected synchronized void doDeploy(final PaaSTopologyDeploymentContext deploymentContext) {
         log.info("Deploying deployment [" + deploymentContext.getDeploymentPaaSId() + "]");
         this.paaSDeploymentIdToAlienDeploymentIdMap.put(deploymentContext.getDeploymentPaaSId(), deploymentContext.getDeploymentId());
-        
+
         Topology topology = deploymentContext.getDeploymentTopology();
 
         Map<String, Map<String, InstanceInformation>> currentInformations = this.setupInstanceInformations(deploymentContext, topology);
@@ -254,6 +254,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
     }
 
     private void listenDeploymentEvent(String deploymentUrl, String deploymentPaaSId) {
+        Map<String, Map<String, InstanceInformation>> intancesInfos =  this.runtimeDeploymentInfos.get(deploymentPaaSId).getInstanceInformations();
         Runnable task = () -> {
             int prevIndex = 1;
             while (true) {
@@ -266,8 +267,14 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
                     }
                     prevIndex = eventResponse.getLast_index();
                     for (Event event : eventResponse.getEvents()) {
-                        this.sendMesage(deploymentPaaSId, "[Event]" + event.getNode() +  " "  +event.getStatus());
-                        System.out.println("[Event]" + event.getNode() +  " "  +event.getStatus());
+                        this.sendMesage(deploymentPaaSId, "[listenDeploymentEvent] " + event.getNode() +  " "  +event.getStatus());
+                        System.out.println("[listenDeploymentEvent] " + event.getNode() +  " "  +event.getStatus());
+
+                        String instanceId = "1"; // Need to change when Janus api change
+                        InstanceInformation infos = intancesInfos.get(event.getNode()).get(instanceId);
+                        infos.setState(event.getStatus());
+                        if(event.getStatus().equals("started")) { infos.setInstanceStatus(InstanceStatus.SUCCESS); }
+                        this.notifyInstanceStateChanged(deploymentPaaSId, event.getNode(), instanceId, infos, 0);
                     }
                 } catch (InterruptedException e) {
                     String threadName = Thread.currentThread().getName();
