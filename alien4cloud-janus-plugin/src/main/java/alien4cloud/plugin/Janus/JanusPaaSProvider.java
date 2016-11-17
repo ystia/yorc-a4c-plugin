@@ -154,7 +154,6 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
             for (int i = 1; i <= initialInstances; i++) {
                 InstanceInformation newInstanceInformation = this.newInstance(i);
                 instanceInformations.put(String.valueOf(i), newInstanceInformation);
-                this.notifyInstanceStateChanged(deploymentContext.getDeploymentPaaSId(), nodeTemplateEntry.getKey(), String.valueOf(i), newInstanceInformation, 1);
             }
         }
 
@@ -173,6 +172,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
         JanusRuntimeDeploymentInfo janusDeploymentInfo = new JanusRuntimeDeploymentInfo(deploymentContext, DeploymentStatus.DEPLOYMENT_IN_PROGRESS, currentInformations, "");
         runtimeDeploymentInfos.put(deploymentContext.getDeploymentPaaSId(), janusDeploymentInfo);
+
 
         doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.DEPLOYMENT_IN_PROGRESS);
 
@@ -264,7 +264,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
                         InstanceInformation infos = intancesInfos.get(event.getNode()).get(instanceId);
                         infos.setState(event.getStatus());
                         if(event.getStatus().equals("started")) { infos.setInstanceStatus(InstanceStatus.SUCCESS); }
-                        this.notifyInstanceStateChanged(deploymentPaaSId, event.getNode(), instanceId, infos, 0);
+                        this.notifyInstanceStateChanged(deploymentPaaSId, event.getNode(), instanceId, infos);
                     }
                 } catch (InterruptedException e) {
                     String threadName = Thread.currentThread().getName();
@@ -343,8 +343,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
                 for (Map.Entry<String, InstanceInformation> instanceEntry : nodeEntry.getValue().entrySet()) {
                     instanceEntry.getValue().setState("stopping");
                     instanceEntry.getValue().setInstanceStatus(InstanceStatus.PROCESSING);
-                    notifyInstanceStateChanged(deploymentContext.getDeploymentPaaSId(), nodeEntry.getKey(), instanceEntry.getKey(), instanceEntry.getValue(),
-                            1);
+                    notifyInstanceStateChanged(deploymentContext.getDeploymentPaaSId(), nodeEntry.getKey(), instanceEntry.getKey(), instanceEntry.getValue());
                 }
             }
         }
@@ -386,41 +385,38 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         toBeDeliveredEvents.add(messageMonitorEvent);
     }
 
-    private void notifyInstanceStateChanged(final String deploymentPaaSId, final String nodeId, final String instanceId, final InstanceInformation information,
-                                            long delay) {
+    private void notifyInstanceStateChanged(final String deploymentPaaSId, final String nodeId, final String instanceId, final InstanceInformation information){
         final InstanceInformation cloned = new InstanceInformation();
         cloned.setAttributes(information.getAttributes());
         cloned.setInstanceStatus(information.getInstanceStatus());
         cloned.setRuntimeProperties(information.getRuntimeProperties());
         cloned.setState(information.getState());
 
-        executorService.schedule(() -> {
-            final JanusRuntimeDeploymentInfo deploymentInfo = runtimeDeploymentInfos.get(deploymentPaaSId);
-            Deployment deployment = deploymentInfo.getDeploymentContext().getDeployment();
-            PaaSInstanceStateMonitorEvent event;
-            event = new PaaSInstanceStateMonitorEvent();
-            event.setInstanceId(instanceId.toString());
-            event.setInstanceState(cloned.getState());
-            event.setInstanceStatus(cloned.getInstanceStatus());
-            event.setNodeTemplateId(nodeId);
-            event.setDate((new Date()).getTime());
-            event.setDeploymentId(paaSDeploymentIdToAlienDeploymentIdMap.get(deploymentPaaSId));
-            event.setRuntimeProperties(cloned.getRuntimeProperties());
-            event.setAttributes(cloned.getAttributes());
-            toBeDeliveredEvents.add(event);
+        final JanusRuntimeDeploymentInfo deploymentInfo = runtimeDeploymentInfos.get(deploymentPaaSId);
+        Deployment deployment = deploymentInfo.getDeploymentContext().getDeployment();
+        PaaSInstanceStateMonitorEvent event;
+        event = new PaaSInstanceStateMonitorEvent();
+        event.setInstanceId(instanceId.toString());
+        event.setInstanceState(cloned.getState());
+        event.setInstanceStatus(cloned.getInstanceStatus());
+        event.setNodeTemplateId(nodeId);
+        event.setDate((new Date()).getTime());
+        event.setDeploymentId(paaSDeploymentIdToAlienDeploymentIdMap.get(deploymentPaaSId));
+        event.setRuntimeProperties(cloned.getRuntimeProperties());
+        event.setAttributes(cloned.getAttributes());
+        toBeDeliveredEvents.add(event);
 
-            if (deployment.getSourceName().equals(BLOCKSTORAGE_APPLICATION) && cloned.getState().equalsIgnoreCase("created")) {
-                PaaSInstancePersistentResourceMonitorEvent prme = new PaaSInstancePersistentResourceMonitorEvent(nodeId, instanceId.toString(),
-                        NormativeBlockStorageConstants.VOLUME_ID, UUID.randomUUID().toString());
-                toBeDeliveredEvents.add(prme);
-            }
+        if (deployment.getSourceName().equals(BLOCKSTORAGE_APPLICATION) && cloned.getState().equalsIgnoreCase("created")) {
+            PaaSInstancePersistentResourceMonitorEvent prme = new PaaSInstancePersistentResourceMonitorEvent(nodeId, instanceId.toString(),
+                    NormativeBlockStorageConstants.VOLUME_ID, UUID.randomUUID().toString());
+            toBeDeliveredEvents.add(prme);
+        }
 
-            PaaSMessageMonitorEvent messageMonitorEvent = new PaaSMessageMonitorEvent();
-            messageMonitorEvent.setDate((new Date()).getTime());
-            messageMonitorEvent.setDeploymentId(paaSDeploymentIdToAlienDeploymentIdMap.get(deploymentPaaSId));
-            messageMonitorEvent.setMessage("APPLICATIONS.RUNTIME.EVENTS.MESSAGE_EVENT.INSTANCE_STATE_CHANGED");
-            toBeDeliveredEvents.add(messageMonitorEvent);
-        }, delay, TimeUnit.SECONDS);
+        PaaSMessageMonitorEvent messageMonitorEvent = new PaaSMessageMonitorEvent();
+        messageMonitorEvent.setDate((new Date()).getTime());
+        messageMonitorEvent.setDeploymentId(paaSDeploymentIdToAlienDeploymentIdMap.get(deploymentPaaSId));
+        messageMonitorEvent.setMessage("APPLICATIONS.RUNTIME.EVENTS.MESSAGE_EVENT.INSTANCE_STATE_CHANGED");
+        toBeDeliveredEvents.add(messageMonitorEvent);
     }
 
     private interface ScalingVisitor {
@@ -585,12 +581,12 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
             log.info(String.format("switching instance MaintenanceMode ON for node <%s>, instance <%s>", nodeTemplateId, instanceId));
             instanceInformation.setInstanceStatus(InstanceStatus.MAINTENANCE);
             instanceInformation.setState("maintenance");
-            notifyInstanceStateChanged(deploymentPaaSId, nodeTemplateId, instanceId, instanceInformation, 2);
+            notifyInstanceStateChanged(deploymentPaaSId, nodeTemplateId, instanceId, instanceInformation);
         } else if (!maintenanceModeOn && instanceInformation.getInstanceStatus() == InstanceStatus.MAINTENANCE) {
             log.info(String.format("switching instance MaintenanceMode OFF for node <%s>, instance <%s>", nodeTemplateId, instanceId));
             instanceInformation.setInstanceStatus(InstanceStatus.SUCCESS);
             instanceInformation.setState("started");
-            notifyInstanceStateChanged(deploymentPaaSId, nodeTemplateId, instanceId, instanceInformation, 2);
+            notifyInstanceStateChanged(deploymentPaaSId, nodeTemplateId, instanceId, instanceInformation);
         }
     }
 
