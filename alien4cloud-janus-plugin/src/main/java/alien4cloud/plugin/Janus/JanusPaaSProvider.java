@@ -89,16 +89,6 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
     @Resource
     private TopologyService topologyService = new TopologyService();
 
-    public JanusPaaSProvider() {
-        executorService.scheduleWithFixedDelay(() -> {
-            for (Entry<String, JanusRuntimeDeploymentInfo> runtimeDeloymentInfoEntry : runtimeDeploymentInfos.entrySet()) {
-                // Call this just to change update every deployment instance state so it performs simulation of deployment.
-                doChangeInstanceInformations(runtimeDeloymentInfoEntry.getKey(), runtimeDeloymentInfoEntry.getValue().getInstanceInformations());
-            }
-        }, 2L, 2L, TimeUnit.SECONDS);
-
-    }
-
     @PreDestroy
     public void destroy() {
         executorService.shutdown();
@@ -431,80 +421,6 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
             messageMonitorEvent.setMessage("APPLICATIONS.RUNTIME.EVENTS.MESSAGE_EVENT.INSTANCE_STATE_CHANGED");
             toBeDeliveredEvents.add(messageMonitorEvent);
         }, delay, TimeUnit.SECONDS);
-    }
-
-    private void notifyInstanceRemoved(final String deploymentPaaSId, final String nodeId, final String instanceId, long delay) {
-        executorService.schedule(() -> {
-            PaaSInstanceStateMonitorEvent event = new PaaSInstanceStateMonitorEvent();
-            event.setInstanceId(instanceId.toString());
-            event.setNodeTemplateId(nodeId);
-            event.setDate((new Date()).getTime());
-            event.setDeploymentId(paaSDeploymentIdToAlienDeploymentIdMap.get(deploymentPaaSId));
-            toBeDeliveredEvents.add(event);
-        }, delay, TimeUnit.SECONDS);
-    }
-
-    private synchronized void doChangeInstanceInformations(String applicationId, Map<String, Map<String, InstanceInformation>> currentInformations) {
-        Iterator<Entry<String, Map<String, InstanceInformation>>> appIterator = currentInformations.entrySet().iterator();
-        while (appIterator.hasNext()) {
-            Entry<String, Map<String, InstanceInformation>> iStatuses = appIterator.next();
-            Iterator<Entry<String, InstanceInformation>> iterator = iStatuses.getValue().entrySet().iterator();
-            while (iterator.hasNext()) {
-                Map.Entry<String, InstanceInformation> iStatus = iterator.next();
-                changeInstanceState(applicationId, iStatuses.getKey(), iStatus.getKey(), iStatus.getValue(), iterator);
-            }
-            if (iStatuses.getValue().isEmpty()) {
-                appIterator.remove();
-            }
-        }
-    }
-
-    private void changeInstanceState(String id, String nodeId, String instanceId, InstanceInformation information,
-                                     Iterator<Entry<String, InstanceInformation>> iterator) {
-        String currentState = information.getState();
-        String nextState = getNextState(currentState);
-        if (nextState != null) {
-            information.setState(nextState);
-            if ("started".equals(nextState)) {
-                information.setInstanceStatus(InstanceStatus.SUCCESS);
-            }
-            if ("terminated".equals(nextState)) {
-                iterator.remove();
-                notifyInstanceRemoved(id, nodeId, instanceId, 2);
-            } else {
-                notifyInstanceStateChanged(id, nodeId, instanceId, information, 2);
-            }
-        }
-    }
-
-    private Random randomSkipStateChange = new Random();
-
-    private String getNextState(String currentState) {
-        if (providerConfiguration != null && randomSkipStateChange.nextBoolean()) {
-            return null;
-        }
-        switch (currentState) {
-            case ToscaNodeLifecycleConstants.INITIAL:
-                return "creating";
-            case "creating":
-                return "created";
-            case "created":
-                return "configuring";
-            case "configuring":
-                return "configured";
-            case "configured":
-                return "starting";
-            case "starting":
-                return "started";
-            case "stopping":
-                return "stopped";
-            case "stopped":
-                return "uninstalled";
-            case "uninstalled":
-                return "terminated";
-            default:
-                return null;
-        }
     }
 
     private interface ScalingVisitor {
