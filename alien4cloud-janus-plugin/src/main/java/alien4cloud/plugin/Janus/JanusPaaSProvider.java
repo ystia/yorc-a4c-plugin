@@ -148,13 +148,9 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         return null;
     }
 
-    @Override
-    protected synchronized void doDeploy(final PaaSTopologyDeploymentContext deploymentContext) {
-        log.info("Deploying deployment [" + deploymentContext.getDeploymentPaaSId() + "]");
-        paaSDeploymentIdToAlienDeploymentIdMap.put(deploymentContext.getDeploymentPaaSId(), deploymentContext.getDeploymentId());
-        Topology topology = deploymentContext.getDeploymentTopology();
 
-//showTopology.topologyInLog(deploymentContext);
+    private Map<String, Map<String, InstanceInformation>> setupInstanceInformations(final PaaSTopologyDeploymentContext deploymentContext, Topology topology) {
+
         Map<String, NodeTemplate> nodeTemplates = topology.getNodeTemplates();
         if (nodeTemplates == null) {
             nodeTemplates = Maps.newHashMap();
@@ -166,11 +162,23 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
             ScalingPolicy policy = getScalingPolicy(nodeTemplateEntry.getKey(), nodeTemplates);
             int initialInstances = policy != null ? policy.getInitialInstances() : 1;
             for (int i = 1; i <= initialInstances; i++) {
-                InstanceInformation newInstanceInformation = newInstance(i);
+                InstanceInformation newInstanceInformation = this.newInstance(i);
                 instanceInformations.put(String.valueOf(i), newInstanceInformation);
-                notifyInstanceStateChanged(deploymentContext.getDeploymentPaaSId(), nodeTemplateEntry.getKey(), String.valueOf(i), newInstanceInformation, 1);
+                this.notifyInstanceStateChanged(deploymentContext.getDeploymentPaaSId(), nodeTemplateEntry.getKey(), String.valueOf(i), newInstanceInformation, 1);
             }
         }
+
+        return currentInformations;
+    }
+
+    @Override
+    protected synchronized void doDeploy(final PaaSTopologyDeploymentContext deploymentContext) {
+        log.info("Deploying deployment [" + deploymentContext.getDeploymentPaaSId() + "]");
+        this.paaSDeploymentIdToAlienDeploymentIdMap.put(deploymentContext.getDeploymentPaaSId(), deploymentContext.getDeploymentId());
+        
+        Topology topology = deploymentContext.getDeploymentTopology();
+
+        Map<String, Map<String, InstanceInformation>> currentInformations = this.setupInstanceInformations(deploymentContext, topology);
 
 
         JanusRuntimeDeploymentInfo janusDeploymentInfo = new JanusRuntimeDeploymentInfo(deploymentContext, DeploymentStatus.DEPLOYMENT_IN_PROGRESS, currentInformations, "");
