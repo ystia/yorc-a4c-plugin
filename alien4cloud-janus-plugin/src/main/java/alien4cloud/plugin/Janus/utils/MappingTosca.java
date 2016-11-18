@@ -74,7 +74,7 @@ public class MappingTosca {
 
             if (!preConfSteps.isEmpty()) {
                 Collections.sort(preConfSteps, alphabeticalComp);
-                linkStepsParallel(installWorkflow, installWorkflow.getSteps().get("create_" + nodeName), installWorkflow.getSteps().get(nodeName + "_created"), preConfSteps);
+                linkStepsParallel(installWorkflow, installWorkflow.getSteps().get(nodeName + "_configuring"), installWorkflow.getSteps().get("configure_" + nodeName), preConfSteps);
             }
             if (!postConfSteps.isEmpty()) {
                 Collections.sort(postConfSteps, alphabeticalComp);
