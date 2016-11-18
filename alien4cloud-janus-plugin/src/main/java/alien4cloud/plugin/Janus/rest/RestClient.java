@@ -99,14 +99,14 @@ public class RestClient {
 
 
     public LogResponse getLogFromJanus(String deploymentUrl, int index) throws Exception {
-        HttpResponse<LogResponse> logRes = Unirest.get(providerConfiguration.getUrlJanus() + deploymentUrl + "/" + "logs?index=" + index + "&wait=5s&filter=")
+        HttpResponse<LogResponse> logRes = Unirest.get(providerConfiguration.getUrlJanus() + deploymentUrl + "/" + "logs?index=" + index + "&filter=")
                 .header("accept", "application/json")
                 .asObject(LogResponse.class);
         return logRes.getBody();
     }
 
     public EventResponse getEventFromJanus(String deploymentUrl, int index) throws Exception {
-        HttpResponse<EventResponse> eventResponse = Unirest.get(providerConfiguration.getUrlJanus() + deploymentUrl + "/" + "events?index=" + index + "&wait=5s&filter=")
+        HttpResponse<EventResponse> eventResponse = Unirest.get(providerConfiguration.getUrlJanus() + deploymentUrl + "/" + "events?index=" + index + "&filter=")
                 .header("accept", "application/json")
                 .asObject(EventResponse.class);
         return eventResponse.getBody();
