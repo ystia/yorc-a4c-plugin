@@ -326,32 +326,37 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         log.info("Undeploying deployment [" + deploymentContext.getDeploymentPaaSId() + "]");
         changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.UNDEPLOYMENT_IN_PROGRESS);
 
-        try {
-            String deploymentUrl = runtimeDeploymentInfos.get(deploymentContext.getDeploymentPaaSId()).getDeploymentUrl();
-            restClient.undeployJanus(deploymentUrl);
-            checkJanusStatusUntil("UNDEPLOYED", deploymentUrl);
-        } catch (Exception e) {
-            sendMesage(deploymentContext.getDeploymentPaaSId(), e.getMessage());
-            changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
-            throw new RuntimeException(e.getMessage()); // TODO : Refactor, For detecting error deploy rest API A4C, when integrationt test
-        }
+        Runnable task = () -> {
+            try {
+                String deploymentUrl = runtimeDeploymentInfos.get(deploymentContext.getDeploymentPaaSId()).getDeploymentUrl();
+                restClient.undeployJanus(deploymentUrl);
+                checkJanusStatusUntil("UNDEPLOYED", deploymentUrl);
+            } catch (Exception e) {
+                sendMesage(deploymentContext.getDeploymentPaaSId(), e.getMessage());
+                changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
+                throw new RuntimeException(e.getMessage()); // TODO : Refactor, For detecting error deploy rest API A4C, when integrationt test
+            }
 
-        JanusRuntimeDeploymentInfo runtimeDeploymentInfo = runtimeDeploymentInfos.get(deploymentContext.getDeploymentPaaSId());
-        if (runtimeDeploymentInfo != null) {
-            Map<String, Map<String, InstanceInformation>> appInfo = runtimeDeploymentInfo.getInstanceInformations();
-            for (Map.Entry<String, Map<String, InstanceInformation>> nodeEntry : appInfo.entrySet()) {
-                for (Map.Entry<String, InstanceInformation> instanceEntry : nodeEntry.getValue().entrySet()) {
-                    instanceEntry.getValue().setState("stopping");
-                    instanceEntry.getValue().setInstanceStatus(InstanceStatus.PROCESSING);
-                    notifyInstanceStateChanged(deploymentContext.getDeploymentPaaSId(), nodeEntry.getKey(), instanceEntry.getKey(), instanceEntry.getValue());
+            JanusRuntimeDeploymentInfo runtimeDeploymentInfo = runtimeDeploymentInfos.get(deploymentContext.getDeploymentPaaSId());
+            if (runtimeDeploymentInfo != null) {
+                Map<String, Map<String, InstanceInformation>> appInfo = runtimeDeploymentInfo.getInstanceInformations();
+                for (Map.Entry<String, Map<String, InstanceInformation>> nodeEntry : appInfo.entrySet()) {
+                    for (Map.Entry<String, InstanceInformation> instanceEntry : nodeEntry.getValue().entrySet()) {
+                        instanceEntry.getValue().setState("stopping");
+                        instanceEntry.getValue().setInstanceStatus(InstanceStatus.PROCESSING);
+                        notifyInstanceStateChanged(deploymentContext.getDeploymentPaaSId(), nodeEntry.getKey(), instanceEntry.getKey(), instanceEntry.getValue());
+                    }
                 }
             }
-        }
 
-        changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.UNDEPLOYED);
-        // cleanup deployment cache
-        runtimeDeploymentInfos.get(deploymentContext.getDeploymentPaaSId()).getExecutor().shutdownNow();
-        runtimeDeploymentInfos.remove(deploymentContext.getDeploymentPaaSId());
+            changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.UNDEPLOYED);
+            // cleanup deployment cache
+            runtimeDeploymentInfos.get(deploymentContext.getDeploymentPaaSId()).getExecutor().shutdownNow();
+            runtimeDeploymentInfos.remove(deploymentContext.getDeploymentPaaSId());
+        };
+
+        Thread thread = new Thread(task);
+        thread.start();
     }
 
     @Override
