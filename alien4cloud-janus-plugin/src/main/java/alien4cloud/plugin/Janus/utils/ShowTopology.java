@@ -11,33 +11,23 @@
 
 package alien4cloud.plugin.Janus.utils;
 
-import alien4cloud.component.CSARRepositorySearchService;
 import alien4cloud.component.repository.ArtifactLocalRepository;
-import alien4cloud.component.repository.CsarFileRepository;
-import alien4cloud.component.repository.exception.CSARVersionNotFoundException;
-import alien4cloud.model.components.*;
-import alien4cloud.model.topology.RelationshipTemplate;
-import alien4cloud.model.topology.Topology;
-import alien4cloud.paas.exception.PaaSDeploymentException;
 import alien4cloud.paas.model.PaaSNodeTemplate;
 import alien4cloud.paas.model.PaaSRelationshipTemplate;
 import alien4cloud.paas.model.PaaSTopology;
 import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
 import alien4cloud.tosca.normative.NormativeRelationshipConstants;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
+import org.alien4cloud.tosca.catalog.index.ToscaTypeSearchService;
+import org.alien4cloud.tosca.catalog.repository.CsarFileRepository;
+import org.alien4cloud.tosca.model.definitions.*;
+import org.alien4cloud.tosca.model.templates.RelationshipTemplate;
+import org.alien4cloud.tosca.model.templates.Topology;
 
 import javax.annotation.Resource;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Created by a628490 on 15/04/2016.
- */
 @Slf4j
 public class ShowTopology {
 
@@ -45,98 +35,11 @@ public class ShowTopology {
     private static final String DIRECTORY_ARTIFACT_TYPE = "fastconnect.artifacts.ResourceDirectory";
     private static final Boolean BOOL = false;
     @Resource
-    protected CSARRepositorySearchService csarRepositorySearchService;
+    protected ToscaTypeSearchService csarRepositorySearchService;
     @Resource
     ArtifactLocalRepository localRepository;
     @Resource
     private CsarFileRepository fileRepository;
-
-    private void copyArtifactFromCsar(final Path csarPath, final String source, final String nodeTypeRelativePath, final String target,
-                                      final DeploymentArtifact artifact, IndexedArtifactToscaElement indexedToscaElement) throws IOException {
-        // try copy from direct parent first
-        boolean processed = false;
-
-        log.info("---//// IN COPYARTIFACTFROMCSAR ///----");
-        while (CollectionUtils.isNotEmpty(indexedToscaElement.getDerivedFrom()) && !processed) {
-            log.info("Dans la while ");
-            log.info("indexedToscaElement GET : " + indexedToscaElement.getDerivedFrom().get(0));
-            log.info("CLASS : " + IndexedArtifactToscaElement.class.toString());
-            log.info("indexedToscaElement : " + indexedToscaElement.toString());
-
-            IndexedArtifactToscaElement directParent = csarRepositorySearchService.getParentOfElement(IndexedArtifactToscaElement.class, indexedToscaElement,
-                    indexedToscaElement.getDerivedFrom().get(0));
-
-            log.info("Après index parent : ");
-
-            Path directParentCsarPath;
-            try {
-                directParentCsarPath = fileRepository.getCSAR(directParent.getArchiveName(), directParent.getArchiveVersion());
-            } catch (CSARVersionNotFoundException e) {
-                throw new PaaSDeploymentException("Failed to copy artifact.", e);
-            }
-            log.info("Befor copy again ");
-
-            copyArtifactFromCsar(directParentCsarPath, source, nodeTypeRelativePath, target, artifact, directParent);
-            processed = true;
-        }
-        FileSystem csarFileSystem = null;
-        try {
-            log.info("csarpath = " + csarPath);
-            csarFileSystem = FileSystems.newFileSystem(csarPath, null);
-            // the artifact is expected to be in the archive. if not, do nothing
-            Path artifactPath = csarFileSystem.getPath(source);
-            log.info("path = " + artifactPath);
-            //return artifactPath;
-            for (Path f : csarFileSystem.getRootDirectories()) {
-                log.info(f.toAbsolutePath().toString());
-                DirectoryStream<Path> stream = Files.newDirectoryStream(f);
-                for (Path f2 : stream) {
-                    log.info(f2.toAbsolutePath().toString());
-                }
-            }
-
-            if (Files.exists(artifactPath)) {
-                log.info("entered");
-                // this may be actually a folder...
-                // TODO refactor this in the FileUtils maybe.
-                if (FILE_TYPE.equals(artifact.getArtifactType()) || DIRECTORY_ARTIFACT_TYPE.equals(artifact.getArtifactType())) {
-                    Files.walkFileTree(artifactPath, new SimpleFileVisitor<Path>() {
-                        @Override
-                        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                            Path destFile = null;
-                            if (Paths.get(file.toString()).toString().startsWith(File.separator)) {
-                                destFile = Paths.get(target);
-                            } else {
-                                destFile = Paths.get(target);
-                            }
-                            File dest = destFile.toFile();
-                            dest.mkdirs();
-                            dest.createNewFile();
-
-                            log.info(String.format("Extracting file %s to %s", file, destFile.toAbsolutePath()));
-
-                            Files.copy(file, destFile, StandardCopyOption.REPLACE_EXISTING);
-                            return FileVisitResult.CONTINUE;
-                        }
-
-                        @Override
-                        public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                            return FileVisitResult.CONTINUE;
-                        }
-                    });
-                } else {
-                    log.info(String.format("Extracting file %s to %s", artifactPath, Paths.get(target)));
-                    Files.copy(artifactPath, Paths.get(target), StandardCopyOption.REPLACE_EXISTING);
-                }
-            } else {
-                log.info("artifact doesn't exist");
-            }
-        } finally {
-            if (csarFileSystem != null) {
-                csarFileSystem.close();
-            }
-        }
-    }
 
     public void topologyInLog(PaaSTopologyDeploymentContext deploymentContext) {
         Topology topology = deploymentContext.getDeploymentTopology();

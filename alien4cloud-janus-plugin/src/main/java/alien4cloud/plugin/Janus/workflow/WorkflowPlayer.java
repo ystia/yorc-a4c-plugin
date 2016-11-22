@@ -6,10 +6,6 @@
 */
 package alien4cloud.plugin.Janus.workflow;
 
-import alien4cloud.model.components.AbstractPropertyValue;
-import alien4cloud.model.components.Interface;
-import alien4cloud.model.components.ScalarPropertyValue;
-import alien4cloud.model.topology.Topology;
 import alien4cloud.paas.model.PaaSNodeTemplate;
 import alien4cloud.paas.model.PaaSTopology;
 import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
@@ -18,6 +14,10 @@ import alien4cloud.plugin.Janus.utils.ExecPython;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.alien4cloud.tosca.model.definitions.AbstractPropertyValue;
+import org.alien4cloud.tosca.model.definitions.Interface;
+import org.alien4cloud.tosca.model.definitions.ScalarPropertyValue;
+import org.alien4cloud.tosca.model.templates.Topology;
 
 import java.util.ArrayList;
 import java.util.List;

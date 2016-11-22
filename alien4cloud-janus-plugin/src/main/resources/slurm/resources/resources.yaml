@@ -7,7 +7,7 @@ template_version: 1.0.0
 description: "Defines resources for the Janus plugin, slurm configuration."
 
 imports:
-  - tosca-normative-types:1.0.0-SNAPSHOT
+  - tosca-normative-types:1.0.0-ALIEN12
 
 node_types:
   janus.nodes.slurm.Compute:

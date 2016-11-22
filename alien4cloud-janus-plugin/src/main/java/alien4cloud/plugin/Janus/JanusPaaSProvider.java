@@ -6,11 +6,7 @@
 */
 package alien4cloud.plugin.Janus;
 
-import alien4cloud.component.ICSARRepositorySearchService;
-import alien4cloud.model.components.IndexedNodeType;
-import alien4cloud.model.components.IndexedRelationshipType;
 import alien4cloud.model.deployment.Deployment;
-import alien4cloud.model.topology.*;
 import alien4cloud.paas.IPaaSCallback;
 import alien4cloud.paas.exception.PluginConfigurationException;
 import alien4cloud.paas.model.*;
@@ -27,7 +23,6 @@ import alien4cloud.plugin.Janus.utils.ZipTopology;
 import alien4cloud.plugin.Janus.workflow.WorkflowPlayer;
 import alien4cloud.plugin.Janus.workflow.WorkflowReader;
 import alien4cloud.rest.utils.JsonUtil;
-import alien4cloud.topology.TopologyService;
 import alien4cloud.topology.TopologyUtils;
 import alien4cloud.tosca.ToscaUtils;
 import alien4cloud.tosca.normative.NormativeBlockStorageConstants;
@@ -35,10 +30,16 @@ import alien4cloud.tosca.normative.NormativeComputeConstants;
 import alien4cloud.tosca.normative.NormativeRelationshipConstants;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
+import org.alien4cloud.tosca.catalog.index.IToscaTypeSearchService;
+import org.alien4cloud.tosca.exporter.ArchiveExportService;
+import org.alien4cloud.tosca.model.Csar;
+import org.alien4cloud.tosca.model.templates.*;
+import org.alien4cloud.tosca.model.types.NodeType;
+import org.alien4cloud.tosca.model.types.RelationshipType;
 import org.elasticsearch.common.collect.Maps;
 
 import javax.annotation.PreDestroy;
-import javax.annotation.Resource;
+import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -67,8 +68,8 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
     private final List<AbstractMonitorEvent> toBeDeliveredEvents = Collections.synchronizedList(new ArrayList<AbstractMonitorEvent>());
 
-    @Resource
-    private ICSARRepositorySearchService csarRepoSearchService;
+    @Inject
+    private IToscaTypeSearchService toscaTypeSearchService;
 
     private static final String BAD_APPLICATION_THAT_NEVER_WORKS = "BAD-APPLICATION";
 
@@ -86,8 +87,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
     private RestClient restClient = RestClient.getInstance();
 
-    @Resource
-    private TopologyService topologyService = new TopologyService();
+    private ArchiveExportService archiveExportService = new ArchiveExportService ();
 
     @PreDestroy
     public void destroy() {
@@ -124,7 +124,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         if (scalableCapability == null) {
             if (nodeTemplates.get(id).getRelationships() != null) {
                 for (RelationshipTemplate rel : nodeTemplates.get(id).getRelationships().values()) {
-                    IndexedRelationshipType relType = getRelationshipType(rel.getType());
+                    RelationshipType relType = getRelationshipType(rel.getType());
                     if (ToscaUtils.isFromType(NormativeRelationshipConstants.HOSTED_ON, relType)) {
                         return getScalingPolicy(rel.getTarget(), nodeTemplates);
                     }
@@ -179,7 +179,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         MappingTosca.addPreConfigureSteps(topology, deploymentContext.getPaaSTopology());
 
         //Create the yml of our topology (after substitution)
-        String yaml = topologyService.getYaml(topology);
+        String yaml = archiveExportService.getYaml(new Csar(), topology);
         //log.info(yaml);
         List<String> lines = Collections.singletonList(yaml);
         log.info("YML Topology");
@@ -428,10 +428,8 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         void visit(String nodeTemplateId);
     }
 
-    private IndexedRelationshipType getRelationshipType(String typeName) {
-        Map<String, String[]> filters = Maps.newHashMap();
-        filters.put("elementId", new String[]{typeName});
-        return (IndexedRelationshipType) csarRepoSearchService.search(IndexedRelationshipType.class, null, 0, 1, filters, false).getData()[0];
+    private RelationshipType getRelationshipType(String typeName) {
+        return toscaTypeSearchService.findMostRecent(RelationshipType.class, typeName);
     }
 
     private void doScaledUpNode(ScalingVisitor scalingVisitor, String nodeTemplateId, Map<String, NodeTemplate> nodeTemplates) {
@@ -439,7 +437,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         for (Entry<String, NodeTemplate> nEntry : nodeTemplates.entrySet()) {
             if (nEntry.getValue().getRelationships() != null) {
                 for (Entry<String, RelationshipTemplate> rt : nEntry.getValue().getRelationships().entrySet()) {
-                    IndexedRelationshipType relType = getRelationshipType(rt.getValue().getType());
+                    RelationshipType relType = getRelationshipType(rt.getValue().getType());
                     if (nodeTemplateId.equals(rt.getValue().getTarget()) && ToscaUtils.isFromType(NormativeRelationshipConstants.HOSTED_ON, relType)) {
                         doScaledUpNode(scalingVisitor, nEntry.getKey(), nodeTemplates);
                     }
@@ -565,7 +563,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
             Map<String, InstanceInformation> nodeInstances = nodeEntry.getValue();
             if (nodeInstances != null && !nodeInstances.isEmpty()) {
                 NodeTemplate nodeTemplate = topology.getNodeTemplates().get(nodeTemplateId);
-                IndexedNodeType nodeType = csarRepoSearchService.getRequiredElementInDependencies(IndexedNodeType.class, nodeTemplate.getType(),
+                NodeType nodeType = toscaTypeSearchService.getRequiredElementInDependencies(NodeType.class, nodeTemplate.getType(),
                         topology.getDependencies());
                 if (ToscaUtils.isFromType(NormativeComputeConstants.COMPUTE_TYPE, nodeType)) {
                     for (Entry<String, InstanceInformation> nodeInstanceEntry : nodeInstances.entrySet()) {

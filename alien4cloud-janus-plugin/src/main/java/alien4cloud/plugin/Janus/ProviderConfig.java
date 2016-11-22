@@ -7,7 +7,6 @@
 package alien4cloud.plugin.Janus;
 
 import alien4cloud.model.common.Tag;
-import alien4cloud.model.components.PropertyDefinition;
 import alien4cloud.tosca.normative.ToscaType;
 import alien4cloud.ui.form.annotation.FormProperties;
 import alien4cloud.ui.form.annotation.FormPropertyConstraint;
@@ -17,6 +16,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.alien4cloud.tosca.model.definitions.PropertyDefinition;
 
 import java.util.List;
 import java.util.Map;
@@ -30,7 +30,6 @@ import java.util.Map;
 @SuppressWarnings("PMD.UnusedPrivateField")
 public class ProviderConfig {
 
-    //http://localhost:8900
     private String urlJanus;
 
     private List<Tag> tags;

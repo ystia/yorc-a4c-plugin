@@ -7,10 +7,6 @@
 package alien4cloud.plugin.Janus.baseplugin;
 
 import alien4cloud.model.deployment.DeploymentTopology;
-import alien4cloud.model.topology.Capability;
-import alien4cloud.model.topology.NodeTemplate;
-import alien4cloud.model.topology.ScalingPolicy;
-import alien4cloud.model.topology.Topology;
 import alien4cloud.orchestrators.plugin.IOrchestratorPlugin;
 import alien4cloud.paas.IPaaSCallback;
 import alien4cloud.paas.exception.*;
@@ -20,6 +16,10 @@ import alien4cloud.topology.TopologyUtils;
 import alien4cloud.utils.MapUtil;
 import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
+import org.alien4cloud.tosca.model.templates.Capability;
+import org.alien4cloud.tosca.model.templates.NodeTemplate;
+import org.alien4cloud.tosca.model.templates.ScalingPolicy;
+import org.alien4cloud.tosca.model.templates.Topology;
 import org.springframework.web.client.RestClientException;
 
 import java.util.Map;

@@ -33,6 +33,7 @@ public class RestClient {
         if (instance == null) {
             instance = new RestClient();
             RestClient.initObjectMapper();
+            Unirest.setTimeouts(10000, 300000);
         }
         return instance;
     }

@@ -6,10 +6,10 @@
 */
 package alien4cloud.plugin.Janus;
 
-import alien4cloud.model.topology.NodeTemplate;
-import alien4cloud.model.topology.Topology;
 import alien4cloud.plugin.Janus.utils.ApplicationUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.alien4cloud.tosca.model.templates.NodeTemplate;
+import org.alien4cloud.tosca.model.templates.Topology;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.stereotype.Component;
@@ -43,7 +43,7 @@ public class BlueprintTest {
         Map<String, NodeTemplate> nodeTemplates = topology.getNodeTemplates();
 
         log.info("topology nodeTemplate : " + nodeTemplates.keySet());
-        log.info("topology test : " + topology.getDelegateId());
+        log.info("topology test : " + topology.getId());
 
     }
 
