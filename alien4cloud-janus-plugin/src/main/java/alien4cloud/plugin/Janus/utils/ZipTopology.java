@@ -31,19 +31,20 @@ public class ZipTopology {
     public List<File> createListTopology(PaaSTopologyDeploymentContext deploymentContext) {
         List<File> files = new LinkedList();
         for (PaaSNodeTemplate node : deploymentContext.getPaaSTopology().getComputes()) {
-            String parentPathNode = node.getCsarPath().getParent().toString();
-            File fileN = new File(parentPathNode);
-            files.add(fileN);
-            List<PaaSNodeTemplate> children = node.getChildren();
-            for (PaaSNodeTemplate child : children) {
-                String parentPathChild = child.getCsarPath().getParent().toString();
-//                int index=parentPath.lastIndexOf('/');
-//                System.out.println(parentPath.substring(0,index));
-                File fileC = new File(parentPathChild);
-                files.add(fileC);
-            }
+            putCsarPathChildrenIntoFiles(node, files);
         }
         return files;
+    }
+
+
+    private void putCsarPathChildrenIntoFiles(PaaSNodeTemplate node, List<File> files) {
+        List<PaaSNodeTemplate> children = node.getChildren();
+        for (PaaSNodeTemplate child : children) {
+            String parentPathChild = child.getCsarPath().getParent().toString();
+            System.out.println(parentPathChild);
+            files.add(new File(parentPathChild));
+            putCsarPathChildrenIntoFiles(child, files);
+        }
     }
 
     /**
@@ -69,7 +70,7 @@ public class ZipTopology {
         for (File directory : folders) {
 
             //Get info name path for component
-            log.info("PATH DIRECToRY !!!" + directory.toString());
+            log.info("Path directory : " + directory.toString());
             String[] dirFolders = directory.toString().split("/");
             String componentName = dirFolders[dirFolders.length - 2] + "/";
             String componentVersion = dirFolders[dirFolders.length - 1] + "/";
