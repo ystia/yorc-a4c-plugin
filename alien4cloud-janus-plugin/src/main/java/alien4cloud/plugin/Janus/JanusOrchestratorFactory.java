@@ -67,42 +67,7 @@ public class JanusOrchestratorFactory implements IOrchestratorPluginFactory<Janu
 
     @Override
     public Map<String, PropertyDefinition> getDeploymentPropertyDefinitions() {
-
-        // Field 1 : managerUrl as string
-        PropertyDefinition managerUrl = new PropertyDefinition();
-        managerUrl.setType(ToscaType.STRING.toString());
-        managerUrl.setRequired(true);
-        managerUrl.setDescription("PaaS manager URL");
-        managerUrl.setConstraints(null);
-        PatternConstraint manageUrlConstraint = new PatternConstraint();
-        manageUrlConstraint.setPattern("http://.+");
-        managerUrl.setConstraints(Arrays.asList((PropertyConstraint) manageUrlConstraint));
-
-        // Field 2 : number backup with constraint
-        PropertyDefinition numberBackup = new PropertyDefinition();
-        numberBackup.setType(ToscaType.INTEGER.toString());
-        numberBackup.setRequired(true);
-        numberBackup.setDescription("Number of backup");
-        numberBackup.setConstraints(null);
-        GreaterOrEqualConstraint greaterOrEqualConstraint = new GreaterOrEqualConstraint();
-        greaterOrEqualConstraint.setGreaterOrEqual(String.valueOf("1"));
-        numberBackup.setConstraints(Lists.newArrayList((PropertyConstraint) greaterOrEqualConstraint));
-
-        // Field 3 : email manager
-        PropertyDefinition managerEmail = new PropertyDefinition();
-        managerEmail.setType(ToscaType.STRING.toString());
-        managerEmail.setRequired(true);
-        managerEmail.setDescription("PaaS manager email");
-        managerEmail.setConstraints(null);
-        PatternConstraint managerEmailConstraint = new PatternConstraint();
-        managerEmailConstraint.setPattern(".+@.+");
-        managerEmail.setConstraints(Arrays.asList((PropertyConstraint) managerEmailConstraint));
-
-        deploymentProperties.put("managementUrl", managerUrl);
-        deploymentProperties.put("numberBackup", numberBackup);
-        deploymentProperties.put("managerEmail", managerEmail);
-
-        return deploymentProperties;
+        return this.deploymentProperties;
     }
 
     //    @Override
