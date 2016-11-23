@@ -3,11 +3,15 @@
     <parent>
       <groupId>alien4cloud</groupId>
       <artifactId>alien4cloud-parent</artifactId>
-      <version>1.3.0-SNAPSHOT</version>
-        <relativePath>./pomAlien.xml</relativePath>
+      <version>1.3.0-RC4</version>
+
     </parent>
     <artifactId>alien4cloud-Janus-plugin</artifactId>
     <name>Alien 4 Cloud HPC PaaS provider Janus</name>
+
+      <properties>
+          <httpclient.version>4.4.1</httpclient.version>
+</properties>
 
     <dependencies>
       <dependency>
@@ -75,4 +79,14 @@
         </plugin>
       </plugins>
     </build>
+      <repositories>
+          <repository>
+              <id>repo.opensource.fastconnect.org</id>
+              <url>http://fastconnect.org/maven/content/repositories/opensource</url>
+          </repository>
+          <repository>
+              <id>repo.opensource.snapshot.fastconnect.org</id>
+              <url>http://fastconnect.org/maven/content/repositories/opensource-snapshot</url>
+          </repository>
+      </repositories>
   </project>
