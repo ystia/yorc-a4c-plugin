@@ -66,6 +66,7 @@ public class ZipTopology {
 
         //clean import topology (delete all precedent import)
         cleanImportInTopology();
+        addImportInTopology("janus-openstack-types");
 
         for (File directory : folders) {
 
@@ -101,7 +102,7 @@ public class ZipTopology {
                             if (name.endsWith(".yml") || name.endsWith(".yaml")) {
                                 String[] parts = kid.getPath().split("runtime/csar/");
                                 addImportInTopology(parts[1]);
-                                file = mappingTosca(kid);
+                                file = removeLineBetween(kid, "imports:", "node_types:");
                             } else {
                                 file = kid;
                             }
@@ -124,45 +125,7 @@ public class ZipTopology {
         res.close();
     }
 
-    /**
-     * change the artifact part in Yml to follow Tosca's normative
-     *
-     * @param yml
-     * @return TOSCA file for janus
-     * @throws IOException
-     */
-    public File mappingTosca(File yml) throws IOException {
-        File file = new File("tmp.yml");
-        // creates the file
-        file.createNewFile();
-        log.info("[ZIP]MAPPING TOSCA");
-        try (FileWriter fw = new FileWriter(file);
-             BufferedWriter bw = new BufferedWriter(fw);
-             PrintWriter out = new PrintWriter(bw)) {
-
-            Scanner sc = new Scanner(yml);
-            while (sc.hasNextLine()) {
-                String entry = sc.nextLine();
-                //we check if this is the artifact section
-                if (entry.contains("- scripts:")) {
-                    out.println("      scripts:");
-                    out.println("        file:" + entry.split(":")[1]);
-                } else if (entry.contains("- utils_scripts:")) {
-                    out.println("      utils_scripts:");
-                    out.println("        file:" + entry.split(":")[1]);
-                } else if (entry.contains("tosca-normative-types:")) {
-                    out.println("  - normative-types: <normative-types.yml>");
-                } else {
-                    out.println(entry);
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return file;
-    }
-
-    /*TODO REFACTOR cleanImportInTopology AND addImportInTopology => DUPLICATED CODE */
+     /*TODO REFACTOR cleanImportInTopology AND addImportInTopology => DUPLICATED CODE */
     private void addImportInTopology(String ymlPath) {
         String oldFileName = "topology.yml";
         String tmpFileName = "tmp_topology.yml";
@@ -256,6 +219,36 @@ public class ZipTopology {
         // And rename tmp file's name to old file name
         File newFile = new File(tmpFileName);
         newFile.renameTo(oldFile);
+
+    }
+
+    private File removeLineBetween(File fileToRead, String begin, String end) throws IOException {
+        File file = new File("tmp.yml");
+        file.createNewFile();
+
+        try (FileWriter fw = new FileWriter(file);
+             BufferedWriter bw = new BufferedWriter(fw);
+             PrintWriter out = new PrintWriter(bw)) {
+
+            boolean clean = false;
+            Scanner sc = new Scanner(fileToRead);
+            while (sc.hasNextLine()) {
+                String line = sc.nextLine();
+                if (!clean) {
+                    out.println(line);
+                }
+                if (line.contains(begin)) {
+                    clean = true;
+                } else if (line.contains(end)) {
+                    out.println(line);
+                    clean = false;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return file;
 
     }
 }
