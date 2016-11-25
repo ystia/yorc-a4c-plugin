@@ -9,9 +9,11 @@ import alien4cloud.paas.wf.OperationCallActivity;
 import alien4cloud.paas.wf.Workflow;
 import alien4cloud.paas.wf.util.WorkflowUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.alien4cloud.tosca.editor.operations.relationshiptemplate.AbstractRelationshipOperation;
 import org.alien4cloud.tosca.model.definitions.Interface;
 import org.alien4cloud.tosca.model.definitions.Operation;
 import org.alien4cloud.tosca.model.templates.Topology;
+import org.springframework.data.util.Pair;
 
 import java.util.*;
 
@@ -22,6 +24,8 @@ public class MappingTosca {
 
         Workflow installWorkflow = topology.getWorkflows().get("install");
         Workflow uninstallWorkflow = topology.getWorkflows().get("uninstall");
+
+        List<Pair<String, AbstractStep>> targetSteps = new ArrayList<>();
 
         for (Map.Entry<String, PaaSNodeTemplate> entryNode : paaSTopology.getAllNodes().entrySet()) {
             PaaSNodeTemplate node = entryNode.getValue();
@@ -50,17 +54,30 @@ public class MappingTosca {
                             log.info("[addPreConfigureSteps] Target : " + relation.getTemplate().getTarget());
                             log.info("[addPreConfigureSteps] Step to add : " + entryOperation.getKey());
                             log.info("[addPreConfigureSteps] RequirementName : " + requirementName);
+                            log.info("");
 
-                            AbstractStep step = newStep(entryOperation.getKey() + "_" + nodeName + "/" + requirementName, nodeName, entryOperation.getKey() + "/" + requirementName);
+                            AbstractStep step = newStep(entryOperation.getKey() + "_" + nodeName + "/" + requirementName + "/" + relation.getTemplate().getTarget(), nodeName, entryOperation.getKey() + "/" + requirementName + "/" + relation.getTemplate().getTarget());
 
-                            if (step.getName().contains("pre")) {
+                            if (step.getName().contains("pre_configure_target") || step.getName().contains("post_configure_target") ||step.getName().contains("add_source")) {
+                                targetSteps.add(Pair.of(relation.getTemplate().getTarget(), step));
+                                log.info("TARGET : " + step.getName());
+                                log.info("");
+                            } else if (step.getName().contains("pre")) {
                                 preConfSteps.add(step);
+                                log.info("PRE : " + step.getName());
+                                log.info("");
                             } else if (step.getName().contains("post")) {
                                 postConfSteps.add(step);
+                                log.info("POST : " + step.getName());
+                                log.info("");
                             } else if (step.getName().contains("remove")) {
                                 deleteSteps.add(step);
+                                log.info("REMOVE : " + step.getName());
+                                log.info("");
                             } else {
                                 postStartSteps.add(step);
+                                log.info("OTHERS : " + step.getName());
+                                log.info("");
                             }
 
                         }
@@ -84,10 +101,39 @@ public class MappingTosca {
                 linkStepsParallel(installWorkflow, installWorkflow.getSteps().get("start_" + nodeName), installWorkflow.getSteps().get(nodeName + "_started"), postStartSteps);
             }
             if (!deleteSteps.isEmpty()) {
-                log.info("delete_" + nodeName);
                 linkStepsParallel(uninstallWorkflow, uninstallWorkflow.getSteps().get("delete_" + nodeName), uninstallWorkflow.getSteps().get(nodeName + "_deleted"), deleteSteps);
             }
 
+        }
+
+
+        for (Pair<String, AbstractStep> pair : targetSteps) {
+
+            String nodeName = pair.getFirst();
+            AbstractStep step = pair.getSecond();
+
+            List<AbstractStep> steps = new ArrayList<>();
+            steps.add(step);
+
+            String startStep;
+            String endStep;
+
+            if(step.getStepAsString().contains("pre_")) {
+                startStep = nodeName + "_configuring";
+                endStep = "configure_" + nodeName;
+            } else if (step.getStepAsString().contains("post_")) {
+                startStep = "configure_" + nodeName;
+                endStep = nodeName + "_configured";
+            } else if (step.getStepAsString().contains("add_")) {
+                startStep = "start_" + nodeName;
+                endStep = nodeName + "_started";
+            } else {
+                System.out.println("Error step target : " + step.getStepAsString());
+                return;
+            }
+
+            linkStepsParallel(installWorkflow, installWorkflow.getSteps().get(startStep), installWorkflow.getSteps().get(endStep), steps);
+            System.out.println(nodeName + " " + step.getStepAsString());
         }
 
 
