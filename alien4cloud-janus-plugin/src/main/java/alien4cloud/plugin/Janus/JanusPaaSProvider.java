@@ -151,7 +151,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
             currentInformations.put(nodeTemplateEntry.getKey(), instanceInformations);
             ScalingPolicy policy = getScalingPolicy(nodeTemplateEntry.getKey(), nodeTemplates);
             int initialInstances = policy != null ? policy.getInitialInstances() : 1;
-            for (int i = 1; i <= initialInstances; i++) {
+            for (int i = 0; i < initialInstances; i++) {
                 InstanceInformation newInstanceInformation = this.newInstance(i);
                 instanceInformations.put(String.valueOf(i), newInstanceInformation);
             }
@@ -260,11 +260,15 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
                         this.sendMesage(deploymentPaaSId, "[listenDeploymentEvent] " + event.getNode() +  " "  +event.getStatus());
                         System.out.println("[listenDeploymentEvent] " + event.getNode() +  " "  +event.getStatus());
 
-                        String instanceId = "1"; // Need to change when Janus api change
-                        InstanceInformation infos = intancesInfos.get(event.getNode()).get(instanceId);
-                        infos.setState(event.getStatus());
-                        if(event.getStatus().equals("started")) { infos.setInstanceStatus(InstanceStatus.SUCCESS); }
-                        this.notifyInstanceStateChanged(deploymentPaaSId, event.getNode(), instanceId, infos);
+                        //String instanceId = "1"; // Need to change when Janus api change
+                        int instanceCount = intancesInfos.get(event.getNode()).size();
+                        for (int instanceIndex = 0; instanceIndex < instanceCount; instanceIndex++) {
+                            InstanceInformation infos = intancesInfos.get(event.getNode()).get(String.valueOf(instanceIndex));
+                            infos.setState(event.getStatus());
+                            if(event.getStatus().equals("started")) { infos.setInstanceStatus(InstanceStatus.SUCCESS); }
+                            this.notifyInstanceStateChanged(deploymentPaaSId, event.getNode(), String.valueOf(instanceIndex), infos);
+                        }
+
                     }
                 } catch (InterruptedException e) {
                     String threadName = Thread.currentThread().getName();
@@ -467,11 +471,11 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
                 if (nodeInformations != null) {
                     int currentSize = nodeInformations.size();
                     if (instances > 0) {
-                        for (int i = currentSize + 1; i < currentSize + instances + 1; i++) {
+                        for (int i = currentSize; i < currentSize + instances; i++) {
                             nodeInformations.put(String.valueOf(i), newInstance(i));
                         }
                     } else {
-                        for (int i = currentSize + instances + 1; i < currentSize + 1; i++) {
+                        for (int i = currentSize + instances; i < currentSize; i++) {
                             if (nodeInformations.containsKey(String.valueOf(i))) {
                                 nodeInformations.get(String.valueOf(i)).setState("stopping");
                                 nodeInformations.get(String.valueOf(i)).setInstanceStatus(InstanceStatus.PROCESSING);
