@@ -66,7 +66,12 @@ public class ZipTopology {
 
         //clean import topology (delete all precedent import)
         cleanImportInTopology();
-        addImportInTopology("janus-openstack-types");
+
+        if(deploymentContext.getLocations().get("_A4C_ALL").getDependencies().stream().filter(csar -> csar.getName().contains(("slurm"))).findFirst() != null) {
+            addImportInTopology("<janus-slurm-types.yml>");
+        } else {
+            addImportInTopology("<janus-openstack-types.yml>");
+        }
 
         for (File directory : folders) {
 
@@ -140,11 +145,7 @@ public class ZipTopology {
             while ((line = br.readLine()) != null) {
                 bw.append(line).append("\n");
                 if (line.contains("imports:")) {
-                    if (ymlPath.contains("janus-openstack-types")) {
-                        bw.append("  - openstack-types: <janus-openstack-types.yml>\n");
-                    } else {
-                        bw.append("  - path: ").append(ymlPath).append("\n");
-                    }
+                    bw.append("  - path: ").append(ymlPath).append("\n");
                 }
             }
         } catch (Exception e) {
