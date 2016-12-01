@@ -6,6 +6,7 @@
 */
 package alien4cloud.plugin.Janus;
 
+import alien4cloud.dao.IGenericSearchDAO;
 import alien4cloud.model.deployment.Deployment;
 import alien4cloud.paas.IPaaSCallback;
 import alien4cloud.paas.exception.PluginConfigurationException;
@@ -39,6 +40,7 @@ import org.alien4cloud.tosca.model.types.RelationshipType;
 import org.elasticsearch.common.collect.Maps;
 
 import javax.annotation.PreDestroy;
+import javax.annotation.Resource;
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
@@ -46,6 +48,8 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.Executors;
@@ -88,6 +92,10 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
     private RestClient restClient = RestClient.getInstance();
 
     private ArchiveExportService archiveExportService = new ArchiveExportService ();
+
+    @Resource(name = "alien-monitor-es-dao")
+    private IGenericSearchDAO alienMonitorDao;
+
 
     @PreDestroy
     public void destroy() {
@@ -199,6 +207,8 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
             e.printStackTrace();
         }
 
+        //doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.UNDEPLOYED);
+
         //post topology zip to Janus
         log.info("POST Topology");
 
@@ -240,7 +250,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         thread.start();
 
         this.listenDeploymentEvent(deploymentUrl, deploymentContext.getDeploymentPaaSId());
-        this.listenJanusLog(deploymentUrl, deploymentContext.getDeploymentPaaSId());
+        this.listenJanusLog(deploymentUrl, deploymentContext);
     }
 
     private void listenDeploymentEvent(String deploymentUrl, String deploymentPaaSId) {
@@ -283,7 +293,19 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         this.runtimeDeploymentInfos.get(deploymentPaaSId).getExecutor().submit(task);
     }
 
-    private void listenJanusLog(String deploymentUrl, String deploymentPaaSId) {
+
+    private void addPremiumLog(PaaSDeploymentContext deploymentContext, String log, Date date, PaaSDeploymentLogLevel level) {
+        Deployment deployment = deploymentContext.getDeployment();
+        PaaSDeploymentLog deploymentLog = new PaaSDeploymentLog();
+        deploymentLog.setDeploymentId(deployment.getId());
+        deploymentLog.setDeploymentPaaSId(deployment.getOrchestratorDeploymentId());
+        deploymentLog.setContent(log);
+        deploymentLog.setLevel(level);
+        deploymentLog.setTimestamp(date);
+        alienMonitorDao.save(deploymentLog);
+    }
+    private void listenJanusLog(String deploymentUrl, PaaSDeploymentContext deploymentContext) {
+        String deploymentPaaSId = deploymentContext.getDeploymentPaaSId();
         Runnable task = () -> {
             int prevIndex = 1;
             while (true) {
@@ -297,6 +319,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
                     prevIndex = logResponse.getLast_index();
                     for (LogEvent logEvent : logResponse.getLogs()) {
                         this.sendMesage(deploymentPaaSId, logEvent.getLogs());
+                        addPremiumLog(deploymentContext, logEvent.getLogs(),  logEvent.getDate(),PaaSDeploymentLogLevel.INFO);
                     }
                 } catch (InterruptedException e) {
                     String threadName = Thread.currentThread().getName();
