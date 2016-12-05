@@ -83,7 +83,7 @@ public abstract class AbstractLocationConfigurer implements ILocationConfigurato
     @Override
     public List<String> getResourcesTypes() {
         return Lists.newArrayList("janus.nodes.slurm.Image", "janus.nodes.slurm.Flavor", "janus.nodes.slurm.Compute",
-                "janus.nodes.slurm.BlockStorage", "janus.nodes.slurm.Network");
+                "janus.nodes.slurm.BlockStorage", "janus.nodes.slurm.Network", "janus.nodes.slurm.Job");
     }
 
     public Map<String, MatchingConfiguration> getMatchingConfigurations(String matchingConfigRelativePath) {
