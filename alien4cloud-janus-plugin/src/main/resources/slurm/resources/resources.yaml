@@ -34,7 +34,10 @@ node_types:
   janus.nodes.slurm.Job:
     derived_from: tosca.nodes.Compute
     properties:
-      scriptPath:
+      modelPath:
+        type: string
+        required: true
+      modelFile:
         type: string
         required: true
       imgPath:
