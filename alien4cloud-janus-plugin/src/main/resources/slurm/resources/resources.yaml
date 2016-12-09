@@ -22,6 +22,11 @@ node_types:
       gpuType:
         type: string
         required: false
+      user:
+        type: string
+        description: >
+          The user name used to connect to the Compute and provision it.
+        required: true
   janus.nodes.slurm.BlockStorage:
     derived_from: tosca.nodes.BlockStorage
   janus.nodes.slurm.Network:
