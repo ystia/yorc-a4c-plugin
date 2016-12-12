@@ -41,7 +41,7 @@ public class JanusSlurmLocationConfigurer extends AbstractLocationConfigurer {
     @Override
     public List<String> getResourcesTypes() {
         return Lists.newArrayList("janus.nodes.slurm.Image", "janus.nodes.slurm.Flavor", "janus.nodes.slurm.Compute",
-                "janus.nodes.slurm.BlockStorage", "janus.nodes.slurm.Network", "janus.nodes.slurm.Job");
+                "janus.nodes.slurm.BlockStorage", "janus.nodes.slurm.Network", "janus.nodes.slurm.Cntk");
     }
 
     @Override
