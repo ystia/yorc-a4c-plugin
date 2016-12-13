@@ -13,10 +13,7 @@ import alien4cloud.paas.exception.PluginConfigurationException;
 import alien4cloud.paas.model.*;
 import alien4cloud.paas.plan.ToscaNodeLifecycleConstants;
 import alien4cloud.plugin.Janus.baseplugin.AbstractPaaSProvider;
-import alien4cloud.plugin.Janus.rest.Response.Event;
-import alien4cloud.plugin.Janus.rest.Response.EventResponse;
-import alien4cloud.plugin.Janus.rest.Response.LogEvent;
-import alien4cloud.plugin.Janus.rest.Response.LogResponse;
+import alien4cloud.plugin.Janus.rest.Response.*;
 import alien4cloud.plugin.Janus.rest.RestClient;
 import alien4cloud.plugin.Janus.utils.MappingTosca;
 import alien4cloud.plugin.Janus.utils.ShowTopology;
@@ -37,6 +34,7 @@ import org.alien4cloud.tosca.model.Csar;
 import org.alien4cloud.tosca.model.templates.*;
 import org.alien4cloud.tosca.model.types.NodeType;
 import org.alien4cloud.tosca.model.types.RelationshipType;
+import org.elasticsearch.action.admin.cluster.node.info.NodeInfo;
 import org.elasticsearch.common.collect.Maps;
 
 import javax.annotation.PreDestroy;
@@ -55,6 +53,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Slf4j
 public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
@@ -235,6 +234,8 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
                 doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.DEPLOYED);
 
+                this.setAttributes(deploymentUrl, deploymentContext);
+
             } catch (Exception e) {
                 e.printStackTrace();
                 doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
@@ -251,6 +252,35 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
         this.listenDeploymentEvent(deploymentUrl, deploymentContext.getDeploymentPaaSId());
         this.listenJanusLog(deploymentUrl, deploymentContext);
+    }
+
+    private void setAttributes(String deploymentUrl, PaaSDeploymentContext deploymentContext) throws Exception {
+        Map<String, Map<String, InstanceInformation>> intancesInfos =  this.runtimeDeploymentInfos.get(deploymentContext.getDeploymentPaaSId()).getInstanceInformations();
+        DeployInfosResponse deployRes =  this.restClient.getDeploymentInfosFromJanus(deploymentUrl);
+
+        List<Link> nodes = deployRes.getLinks().stream().filter(link -> link.getRel().equals("node")).collect(Collectors.toList());
+        for(Link nodeLink : nodes) {
+            NodeInfosResponse nodeInfosRes = this.restClient.getNodesInfosFromJanus(nodeLink.getHref());
+
+            for(Link instanceLink : nodeInfosRes.getLinks()) {
+                if(instanceLink.getRel().equals("instance")) {
+
+                    InstanceInfosResponse instInfoRes = this.restClient.getInstanceInfosFromJanus(instanceLink.getHref());
+                    instInfoRes.getLinks().stream().filter(attributeLink -> attributeLink.getRel().equals("attribute")).forEach(attributeLink -> {
+                        try {
+                            AttributeResponse attrRes = this.restClient.getAttributeFromJanus(attributeLink.getHref());
+                            System.out.println("--------------------------------");
+                            System.out.println(attrRes);
+
+                            intancesInfos.get(nodeInfosRes.getName()).get(instInfoRes.getId()).getAttributes().put(attrRes.getName(), attrRes.getValue());
+                        } catch (Exception e) { // Response could be : [PANIC]yaml: mapping values are not allowed in this context
+
+                        }
+                    });
+                    this.notifyInstanceStateChanged(deploymentContext.getDeploymentPaaSId(), nodeInfosRes.getName(), instInfoRes.getId(), intancesInfos.get(nodeInfosRes.getName()).get(instInfoRes.getId()));
+                }
+            }
+        }
     }
 
     private void listenDeploymentEvent(String deploymentUrl, String deploymentPaaSId) {

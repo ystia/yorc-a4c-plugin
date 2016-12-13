@@ -7,8 +7,7 @@
 package alien4cloud.plugin.Janus.rest;
 
 import alien4cloud.plugin.Janus.ProviderConfig;
-import alien4cloud.plugin.Janus.rest.Response.EventResponse;
-import alien4cloud.plugin.Janus.rest.Response.LogResponse;
+import alien4cloud.plugin.Janus.rest.Response.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
@@ -98,6 +97,34 @@ public class RestClient {
         return obj.getString("status");
     }
 
+
+    public DeployInfosResponse getDeploymentInfosFromJanus(String deploymentUrl) throws Exception {
+        HttpResponse<DeployInfosResponse> deployRes = Unirest.get(providerConfiguration.getUrlJanus() + deploymentUrl)
+                .header("accept", "application/json")
+                .asObject(DeployInfosResponse.class);
+        return deployRes.getBody();
+    }
+
+    public NodeInfosResponse getNodesInfosFromJanus(String nodeInfoUrl) throws Exception {
+        HttpResponse<NodeInfosResponse> deployRes = Unirest.get(providerConfiguration.getUrlJanus() + nodeInfoUrl)
+                .header("accept", "application/json")
+                .asObject(NodeInfosResponse.class);
+        return deployRes.getBody();
+    }
+
+    public InstanceInfosResponse getInstanceInfosFromJanus(String nodeInfoUrl) throws Exception {
+        HttpResponse<InstanceInfosResponse> deployRes = Unirest.get(providerConfiguration.getUrlJanus() + nodeInfoUrl)
+                .header("accept", "application/json")
+                .asObject(InstanceInfosResponse.class);
+        return deployRes.getBody();
+    }
+
+    public AttributeResponse getAttributeFromJanus(String nodeInfoUrl) throws Exception {
+        HttpResponse<AttributeResponse> deployRes = Unirest.get(providerConfiguration.getUrlJanus() + nodeInfoUrl)
+                .header("accept", "application/json")
+                .asObject(AttributeResponse.class);
+        return deployRes.getBody();
+    }
 
     public LogResponse getLogFromJanus(String deploymentUrl, int index) throws Exception {
         HttpResponse<LogResponse> logRes = Unirest.get(providerConfiguration.getUrlJanus() + deploymentUrl + "/" + "logs?index=" + index + "&filter=")
