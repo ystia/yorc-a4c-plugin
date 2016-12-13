@@ -57,10 +57,6 @@ import java.util.stream.Collectors;
 
 @Slf4j
 public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
-    public static final String PUBLIC_IP = "ip_address";
-    public static final String TOSCA_ID = "tosca_id";
-    public static final String TOSCA_NAME = "tosca_name";
-
     private final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
 
     private ProviderConfig providerConfiguration;
@@ -73,10 +69,6 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
     @Inject
     private IToscaTypeSearchService toscaTypeSearchService;
-
-    private static final String BAD_APPLICATION_THAT_NEVER_WORKS = "BAD-APPLICATION";
-
-    private static final String WARN_APPLICATION_THAT_NEVER_WORKS = "WARN-APPLICATION";
 
     private static final String BLOCKSTORAGE_APPLICATION = "BLOCKSTORAGE-APPLICATION";
 
@@ -116,11 +108,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
     private InstanceInformation newInstance(int i) {
         Map<String, String> attributes = Maps.newHashMap();
-        attributes.put(PUBLIC_IP, "10.52.0." + i);
-        attributes.put(TOSCA_ID, "1.0-wd03");
-        attributes.put(TOSCA_NAME, "TOSCA-Simple-Profile-YAML");
         Map<String, String> runtimeProperties = Maps.newHashMap();
-        runtimeProperties.put(PUBLIC_IP, "10.52.0." + i);
         Map<String, String> outputs = Maps.newHashMap();
         return new InstanceInformation(ToscaNodeLifecycleConstants.INITIAL, InstanceStatus.PROCESSING, attributes, runtimeProperties, outputs);
     }
