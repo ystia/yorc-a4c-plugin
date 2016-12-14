@@ -65,8 +65,8 @@ node_types:
           The Openstack Region. Defaults to 'RegionOne'
         required: false
 
-  janus.nodes.openstack.FloatingIP:
-    derived_from: tosca.nodes.Root
+  janus.nodes.openstack.PublicNetwork:
+    derived_from: tosca.nodes.Network
     properties:
       ip:
         type: string

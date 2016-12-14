@@ -14,7 +14,7 @@ node_types:
     abstract: true
     derived_from: tosca.nodes.Root
     properties:
-      id:
+      imageId:
         type: string
     capabilities:
       os:
@@ -24,14 +24,8 @@ node_types:
     abstract: true
     derived_from: tosca.nodes.Root
     properties:
-      id:
+      flavorId:
         type: string
     capabilities:
       host:
         type: tosca.capabilities.Container
-        
-artefact_types:
-  janus.artefacts.slurm.Implementation.Bash:
-    description: Mock artefact for sh
-    derived_from: tosca.artifacts.Implementation.Bash
-  

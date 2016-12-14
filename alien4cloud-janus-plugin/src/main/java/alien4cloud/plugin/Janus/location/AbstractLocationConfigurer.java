@@ -6,6 +6,12 @@
 */
 package alien4cloud.plugin.Janus.location;
 
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
+
+import javax.inject.Inject;
+
 import alien4cloud.common.AlienConstants;
 import alien4cloud.deployment.matching.services.nodes.MatchingConfigurations;
 import alien4cloud.deployment.matching.services.nodes.MatchingConfigurationsParser;
@@ -14,6 +20,7 @@ import alien4cloud.orchestrators.locations.services.LocationResourceGeneratorSer
 import alien4cloud.orchestrators.plugin.ILocationConfiguratorPlugin;
 import alien4cloud.orchestrators.plugin.model.PluginArchive;
 import alien4cloud.paas.exception.PluginParseException;
+import alien4cloud.plugin.Janus.service.PluginArchiveService;
 import alien4cloud.plugin.PluginManager;
 import alien4cloud.plugin.model.ManagedPlugin;
 import alien4cloud.tosca.model.ArchiveRoot;
@@ -26,11 +33,6 @@ import org.alien4cloud.tosca.catalog.ArchiveParser;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
-
 /**
  * Configure resources for the location type.
  */
@@ -38,8 +40,7 @@ import java.util.Map;
 @Component
 @Scope("prototype")
 public abstract class AbstractLocationConfigurer implements ILocationConfiguratorPlugin {
-    protected static final String IMAGE_ID_PROP = "imageId";
-    protected static final String FLAVOR_ID_PROP = "flavorId";
+
     @Inject
     protected ArchiveParser archiveParser;
     @Inject
@@ -52,24 +53,15 @@ public abstract class AbstractLocationConfigurer implements ILocationConfigurato
     protected LocationResourceGeneratorService resourceGeneratorService;
     protected List<PluginArchive> archives;
 
+    @Inject
+     private PluginArchiveService archiveService;
+
     @Override
     public List<PluginArchive> pluginArchives() throws PluginParseException {
-        if (archives == null) {
-            try {
-                archives = parseArchives();
-            } catch (ParsingException e) {
-                log.error(e.getMessage());
-                throw new PluginParseException(e.getMessage());
-            }
-        }
-        return archives;
-    }
-
-    protected List<PluginArchive> parseArchives() throws ParsingException {
-        List<PluginArchive> archives = Lists.newArrayList();
-        addToAchive(archives, "slurm/slurm-resources");
-        addToAchive(archives, "slurm/resources");
-        return archives;
+        if (this.archives == null) {
+                    parseLocationArchives(getLocationArchivePaths());
+                }
+                return this.archives;
     }
 
     protected void addToAchive(List<PluginArchive> archives, String path) throws ParsingException {
@@ -80,11 +72,23 @@ public abstract class AbstractLocationConfigurer implements ILocationConfigurato
         archives.add(pluginArchive);
     }
 
-    @Override
-    public List<String> getResourcesTypes() {
-        return Lists.newArrayList("janus.nodes.slurm.Image", "janus.nodes.slurm.Flavor", "janus.nodes.slurm.Compute",
-                "janus.nodes.slurm.BlockStorage", "janus.nodes.slurm.Network", "janus.nodes.slurm.Job");
+    public List<String> getAllResourcesTypes() {
+        List<String> resourcesTypes = Lists.newArrayList();
+        for (PluginArchive pluginArchive : this.pluginArchives()) {
+            for (String nodeType : pluginArchive.getArchive().getNodeTypes().keySet()) {
+                resourcesTypes.add(nodeType);
+            }
+        }
+        return resourcesTypes;
     }
+
+    private void parseLocationArchives(String[] paths) {
+        this.archives = Lists.newArrayList();
+        for (String path : paths) {
+            this.archives.add(archiveService.parsePluginArchives(path));
+        }
+    }
+
 
     public Map<String, MatchingConfiguration> getMatchingConfigurations(String matchingConfigRelativePath) {
         Path matchingConfigPath = selfContext.getPluginPath().resolve(matchingConfigRelativePath);
@@ -96,4 +100,6 @@ public abstract class AbstractLocationConfigurer implements ILocationConfigurato
         }
         return matchingConfigurations.getMatchingConfigurations();
     }
+
+    protected abstract String[] getLocationArchivePaths();
 }

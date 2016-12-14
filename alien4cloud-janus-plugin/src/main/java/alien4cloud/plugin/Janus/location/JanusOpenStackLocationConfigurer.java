@@ -6,21 +6,18 @@
 */
 package alien4cloud.plugin.Janus.location;
 
+import java.util.List;
+import java.util.Map;
+
 import alien4cloud.model.deployment.matching.MatchingConfiguration;
 import alien4cloud.model.orchestrators.locations.LocationResourceTemplate;
 import alien4cloud.orchestrators.locations.services.LocationResourceGeneratorService.ComputeContext;
 import alien4cloud.orchestrators.locations.services.LocationResourceGeneratorService.ImageFlavorContext;
 import alien4cloud.orchestrators.plugin.ILocationResourceAccessor;
-import alien4cloud.orchestrators.plugin.model.PluginArchive;
-import alien4cloud.tosca.parser.ParsingException;
-import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * Configure resources for the OpenStack location type.
@@ -29,20 +26,18 @@ import java.util.Map;
 @Component
 @Scope("prototype")
 public class JanusOpenStackLocationConfigurer extends AbstractLocationConfigurer {
-
+    private static final String IMAGE_ID_PROP = "image";
+    private static final String FLAVOR_ID_PROP = "flavor";
     @Override
-    protected List<PluginArchive> parseArchives() throws ParsingException {
-        List<PluginArchive> archives = Lists.newArrayList();
-        addToAchive(archives, "openstack/openstack-resources");
-        addToAchive(archives, "openstack/resources");
-        return archives;
+    protected String[] getLocationArchivePaths() {
+        return new String[]{"openstack/resources", "openstack/openstack-resources"};
     }
 
     @Override
     public List<String> getResourcesTypes() {
-        return Lists.newArrayList("janus.nodes.openstack.Image", "janus.nodes.openstack.Flavor", "janus.nodes.openstack.Compute",
-                "janus.nodes.openstack.BlockStorage", "janus.nodes.openstack.Network");
+        return getAllResourcesTypes();
     }
+
 
     @Override
     public Map<String, MatchingConfiguration> getMatchingConfigurations() {
@@ -67,7 +62,9 @@ public class JanusOpenStackLocationConfigurer extends AbstractLocationConfigurer
             log.warn("Skipping auto configuration");
             return null;
         }
-        ComputeContext computeContext = resourceGeneratorService.buildComputeContext("janus.nodes.openstack.Compute", null, IMAGE_ID_PROP, FLAVOR_ID_PROP,
+        ComputeContext computeContext = resourceGeneratorService
+                .buildComputeContext("janus.nodes.openstack.Compute", null, JanusOpenStackLocationConfigurer.IMAGE_ID_PROP,
+                        JanusOpenStackLocationConfigurer.FLAVOR_ID_PROP,
                 resourceAccessor);
 
         return resourceGeneratorService.generateComputeFromImageAndFlavor(imageContext, flavorContext, computeContext, resourceAccessor);

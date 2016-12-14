@@ -30,18 +30,12 @@ import java.util.Map;
 @Scope("prototype")
 public class JanusSlurmLocationConfigurer extends AbstractLocationConfigurer {
 
-    @Override
-    protected List<PluginArchive> parseArchives() throws ParsingException {
-        List<PluginArchive> archives = Lists.newArrayList();
-        addToAchive(archives, "slurm/slurm-resources");
-        addToAchive(archives, "slurm/resources");
-        return archives;
-    }
+    private static final String IMAGE_ID_PROP = "imageId";
+    private static final String FLAVOR_ID_PROP = "flavorId";
 
     @Override
     public List<String> getResourcesTypes() {
-        return Lists.newArrayList("janus.nodes.slurm.Image", "janus.nodes.slurm.Flavor", "janus.nodes.slurm.Compute",
-                "janus.nodes.slurm.BlockStorage", "janus.nodes.slurm.Network", "janus.nodes.slurm.Job");
+        return getAllResourcesTypes();
     }
 
     @Override
@@ -50,9 +44,14 @@ public class JanusSlurmLocationConfigurer extends AbstractLocationConfigurer {
     }
 
     @Override
+       protected String[] getLocationArchivePaths() {
+           return new String[] { "slurm/resources", "slurm/slurm-resources" };
+       }
+
+    @Override
     public List<LocationResourceTemplate> instances(ILocationResourceAccessor resourceAccessor) {
-        ImageFlavorContext imageContext = resourceGeneratorService.buildContext("janus.nodes.slurm.Image", "id", resourceAccessor);
-        ImageFlavorContext flavorContext = resourceGeneratorService.buildContext("janus.nodes.slurm.Flavor", "id", resourceAccessor);
+        ImageFlavorContext imageContext = resourceGeneratorService.buildContext("janus.nodes.slurm.Image", JanusSlurmLocationConfigurer.IMAGE_ID_PROP, resourceAccessor);
+        ImageFlavorContext flavorContext = resourceGeneratorService.buildContext("janus.nodes.slurm.Flavor", JanusSlurmLocationConfigurer.FLAVOR_ID_PROP, resourceAccessor);
         boolean canProceed = true;
 
         if (CollectionUtils.isEmpty(imageContext.getTemplates())) {
@@ -67,7 +66,7 @@ public class JanusSlurmLocationConfigurer extends AbstractLocationConfigurer {
             log.warn("Skipping auto configuration");
             return null;
         }
-        ComputeContext computeContext = resourceGeneratorService.buildComputeContext("janus.nodes.slurm.Compute", null, IMAGE_ID_PROP, FLAVOR_ID_PROP,
+        ComputeContext computeContext = resourceGeneratorService.buildComputeContext("janus.nodes.slurm.Compute", null, JanusSlurmLocationConfigurer.IMAGE_ID_PROP, JanusSlurmLocationConfigurer.FLAVOR_ID_PROP,
                 resourceAccessor);
 
         return resourceGeneratorService.generateComputeFromImageAndFlavor(imageContext, flavorContext, computeContext, resourceAccessor);
