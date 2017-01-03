@@ -6,13 +6,48 @@
 */
 package alien4cloud.plugin.Janus;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import javax.annotation.PreDestroy;
+import javax.annotation.Resource;
+import javax.inject.Inject;
+
 import alien4cloud.dao.IGenericSearchDAO;
 import alien4cloud.model.deployment.Deployment;
 import alien4cloud.paas.IPaaSCallback;
 import alien4cloud.paas.exception.PluginConfigurationException;
-import alien4cloud.paas.model.*;
+import alien4cloud.paas.model.AbstractMonitorEvent;
+import alien4cloud.paas.model.DeploymentStatus;
+import alien4cloud.paas.model.InstanceInformation;
+import alien4cloud.paas.model.InstanceStatus;
+import alien4cloud.paas.model.NodeOperationExecRequest;
+import alien4cloud.paas.model.PaaSDeploymentContext;
+import alien4cloud.paas.model.PaaSDeploymentLog;
+import alien4cloud.paas.model.PaaSDeploymentLogLevel;
+import alien4cloud.paas.model.PaaSDeploymentStatusMonitorEvent;
+import alien4cloud.paas.model.PaaSInstancePersistentResourceMonitorEvent;
+import alien4cloud.paas.model.PaaSInstanceStateMonitorEvent;
+import alien4cloud.paas.model.PaaSMessageMonitorEvent;
+import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
 import alien4cloud.paas.plan.ToscaNodeLifecycleConstants;
 import alien4cloud.plugin.Janus.baseplugin.AbstractPaaSProvider;
+import alien4cloud.plugin.Janus.rest.JanusRestException;
 import alien4cloud.plugin.Janus.rest.Response.Event;
 import alien4cloud.plugin.Janus.rest.Response.EventResponse;
 import alien4cloud.plugin.Janus.rest.Response.LogEvent;
@@ -34,27 +69,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.alien4cloud.tosca.catalog.index.IToscaTypeSearchService;
 import org.alien4cloud.tosca.exporter.ArchiveExportService;
 import org.alien4cloud.tosca.model.Csar;
-import org.alien4cloud.tosca.model.templates.*;
+import org.alien4cloud.tosca.model.templates.Capability;
+import org.alien4cloud.tosca.model.templates.NodeTemplate;
+import org.alien4cloud.tosca.model.templates.RelationshipTemplate;
+import org.alien4cloud.tosca.model.templates.ScalingPolicy;
+import org.alien4cloud.tosca.model.templates.Topology;
 import org.alien4cloud.tosca.model.types.NodeType;
 import org.alien4cloud.tosca.model.types.RelationshipType;
 import org.elasticsearch.common.collect.Maps;
-
-import javax.annotation.PreDestroy;
-import javax.annotation.Resource;
-import javax.inject.Inject;
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
@@ -182,9 +204,11 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         runtimeDeploymentInfos.put(deploymentContext.getDeploymentPaaSId(), janusDeploymentInfo);
 
 
-        doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.DEPLOYMENT_IN_PROGRESS);
+        this.changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.DEPLOYMENT_IN_PROGRESS);
 
         MappingTosca.addPreConfigureSteps(topology, deploymentContext.getPaaSTopology());
+
+        MappingTosca.generateOpenstackFIP(deploymentContext);
 
         //Create the yml of our topology (after substitution)
         String yaml = archiveExportService.getYaml(new Csar(), topology);
@@ -233,13 +257,13 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
                 checkJanusStatusUntil("DEPLOYED", deploymentUrl);
 
-                doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.DEPLOYED);
+                this.changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.DEPLOYED);
 
             } catch (Exception e) {
                 e.printStackTrace();
-                doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
+                this.changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
                 sendMesage(deploymentContext.getDeploymentPaaSId(), e.getMessage());
-                doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.UNDEPLOYED);
+                this.changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.UNDEPLOYED);
                 runtimeDeploymentInfos.remove(deploymentContext.getDeploymentPaaSId());
 
                 throw new RuntimeException(e.getMessage()); // TODO : Refactor, For detecting error deploy rest API A4C, when integrationt test
@@ -284,6 +308,12 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
                     String threadName = Thread.currentThread().getName();
                     System.out.println("[listenDeploymentEvent] Stopped " + threadName + " " + deploymentPaaSId);
                     return;
+                } catch (JanusRestException e) {
+                    if (e.getHttpStatusCode() == 404) {
+                        System.out.println("[listenDeploymentEvent] Stopped got 404 exception " + deploymentPaaSId);
+                        return;
+                    }
+                    e.printStackTrace();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -325,6 +355,12 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
                     String threadName = Thread.currentThread().getName();
                     System.out.println("[listenJanusLog] Stopped " + threadName + " " + deploymentPaaSId);
                     return;
+                } catch (JanusRestException e) {
+                    if (e.getHttpStatusCode() == 404) {
+                        System.out.println("[listenJanusLog] Stopped got 404 exception " + deploymentPaaSId);
+                        return;
+                    }
+                    e.printStackTrace();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -336,7 +372,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
     private void checkJanusStatusUntil(String aimStatus, String deploymentUrl) throws Exception {
         String status = "";
-        while (!status.equals(aimStatus) && !status.equals("DEPLOYMENT_FAILED")) {
+        while (!status.equals(aimStatus) && !status.contains("FAILED")) {
             status = restClient.getStatusFromJanus(deploymentUrl);
             log.info(status);
             Thread.sleep(2000);
