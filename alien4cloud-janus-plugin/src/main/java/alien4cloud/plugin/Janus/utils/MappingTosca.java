@@ -102,18 +102,22 @@ public class MappingTosca {
 
             if (!preConfSteps.isEmpty()) {
                 Collections.sort(preConfSteps, alphabeticalComp);
-                linkStepsParallel(installWorkflow, installWorkflow.getSteps().get(nodeName + "_configuring"), installWorkflow.getSteps().get("configure_" + nodeName), preConfSteps);
+                linkStepsParallel(installWorkflow, getNodeStepWithNameMatching(installWorkflow, nodeName, "_configuring"),
+                        getNodeStepWithNameMatching(installWorkflow, nodeName, "configure_"), preConfSteps);
             }
             if (!postConfSteps.isEmpty()) {
                 Collections.sort(postConfSteps, alphabeticalComp);
-                linkStepsParallel(installWorkflow, installWorkflow.getSteps().get("configure_" + nodeName), installWorkflow.getSteps().get(nodeName + "_configured"), postConfSteps);
+                linkStepsParallel(installWorkflow, getNodeStepWithNameMatching(installWorkflow, nodeName, "configure_"),
+                        getNodeStepWithNameMatching(installWorkflow, nodeName, "_configured"), postConfSteps);
             }
             if (!postStartSteps.isEmpty()) {
                 Collections.sort(postStartSteps, alphabeticalComp);
-                linkStepsParallel(installWorkflow, installWorkflow.getSteps().get("start_" + nodeName), installWorkflow.getSteps().get(nodeName + "_started"), postStartSteps);
+                linkStepsParallel(installWorkflow, getNodeStepWithNameMatching(installWorkflow, nodeName, "start_"),
+                        getNodeStepWithNameMatching(installWorkflow, nodeName, "_started"), postStartSteps);
             }
             if (!deleteSteps.isEmpty()) {
-                linkStepsParallel(uninstallWorkflow, uninstallWorkflow.getSteps().get("delete_" + nodeName), uninstallWorkflow.getSteps().get(nodeName + "_deleted"), deleteSteps);
+                linkStepsParallel(uninstallWorkflow, getNodeStepWithNameMatching(uninstallWorkflow, nodeName, "delete_"),
+                        getNodeStepWithNameMatching(uninstallWorkflow, nodeName, "_deleted"), deleteSteps);
             }
 
         }
@@ -127,24 +131,25 @@ public class MappingTosca {
             List<AbstractStep> steps = new ArrayList<>();
             steps.add(step);
 
-            String startStep;
-            String endStep;
+            String startStepMatch;
+            String endStepMatch;
 
             if(step.getStepAsString().contains("pre_")) {
-                startStep = nodeName + "_configuring";
-                endStep = "configure_" + nodeName;
+                startStepMatch = "_configuring";
+                endStepMatch = "configure_";
             } else if (step.getStepAsString().contains("post_")) {
-                startStep = "configure_" + nodeName;
-                endStep = nodeName + "_configured";
+                startStepMatch = "configure_";
+                endStepMatch = "_configured";
             } else if (step.getStepAsString().contains("add_")) {
-                startStep = "start_" + nodeName;
-                endStep = nodeName + "_started";
+                startStepMatch = "start_";
+                endStepMatch = "_started";
             } else {
                 System.out.println("Error step target : " + step.getStepAsString());
                 return;
             }
 
-            linkStepsParallel(installWorkflow, installWorkflow.getSteps().get(startStep), installWorkflow.getSteps().get(endStep), steps);
+            linkStepsParallel(installWorkflow, getNodeStepWithNameMatching(installWorkflow, nodeName, startStepMatch),
+                    getNodeStepWithNameMatching(installWorkflow, nodeName, endStepMatch), steps);
             System.out.println(nodeName + " " + step.getStepAsString());
         }
 
@@ -160,6 +165,20 @@ public class MappingTosca {
 //            }
 //        }
 
+    }
+
+    private static AbstractStep getNodeStepWithNameMatching(Workflow workflow, String nodeName, String match) {
+        for (Map.Entry<String, AbstractStep> stepEntry : workflow.getSteps().entrySet()) {
+            if (stepEntry.getValue() instanceof NodeActivityStep) {
+                NodeActivityStep nodeActivityStep = (NodeActivityStep) stepEntry.getValue();
+                if (nodeActivityStep.getNodeId().equals(nodeName) && stepEntry.getKey().contains(match)) {
+                    return stepEntry.getValue();
+                }
+            }
+
+        }
+        log.warn("Unable to found a step with name matching {} for node named {}.", match, nodeName);
+        return null;
     }
 
     private static void linkStepsParallel(Workflow workflow, AbstractStep first, AbstractStep last, List<AbstractStep> middle) {
@@ -261,18 +280,21 @@ public class MappingTosca {
                     fipUninstallStep.setActivity(fipUninstallActivity);
                     fipUninstallStep.setNodeId(fipName);
                     fipUninstallStep.setName(fipName + "_uninstall");
-                    uninstallWorkflow.getSteps().get(sourceName + "_uninstall").addFollowing(fipName + "_uninstall");
+                    AbstractStep sourceUninstallStep = getNodeStepWithNameMatching(uninstallWorkflow, sourceName, "_uninstall");
+                    sourceUninstallStep.addFollowing(fipName + "_uninstall");
                     fipUninstallStep.addFollowing(nodeTemplate.getId() + "_uninstall");
 
                     uninstallWorkflow.addStep(fipUninstallStep);
 
-                    NodeActivityStep nodeUninstallStep = (NodeActivityStep) uninstallWorkflow.getSteps().get(nodeTemplate.getId() + "_uninstall");
+                    NodeActivityStep nodeUninstallStep =
+                            (NodeActivityStep) getNodeStepWithNameMatching(uninstallWorkflow, nodeTemplate.getId(), "_uninstall");
                     SetStateActivity configuredActivity = new SetStateActivity();
                                         configuredActivity.setNodeId(nodeTemplate.getId());
                                         configuredActivity.setStateName("configured");
                     nodeUninstallStep.setActivity(configuredActivity);
 
-                    NodeActivityStep nodeInstallStep = (NodeActivityStep)installWorkflow.getSteps().get(nodeTemplate.getId() + "_install");
+                    NodeActivityStep nodeInstallStep =
+                            (NodeActivityStep) getNodeStepWithNameMatching(installWorkflow, nodeTemplate.getId(), "_install");
                     SetStateActivity startedActivity = new SetStateActivity();
                                         startedActivity.setNodeId(nodeTemplate.getId());
                                         startedActivity.setStateName("started");
