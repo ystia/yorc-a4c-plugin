@@ -308,26 +308,27 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
             int prevIndex = 1;
             while (true) {
                 try {
-                    TimeUnit.SECONDS.sleep(1);
-
                     EventResponse eventResponse = this.restClient.getEventFromJanus(deploymentUrl, prevIndex);
-                    if (eventResponse == null || eventResponse.getEvents() == null || eventResponse.getEvents().isEmpty()) {
+                    if (eventResponse == null) {
+                        TimeUnit.SECONDS.sleep(1);
                         continue;
                     }
                     prevIndex = eventResponse.getLast_index();
-                    for (Event event : eventResponse.getEvents()) {
-                        this.sendMesage(deploymentPaaSId, "[listenDeploymentEvent] " + event.getNode() +  " "  +event.getStatus());
-                        System.out.println("[listenDeploymentEvent] " + event.getNode() +  " "  +event.getStatus());
+                    if (eventResponse.getEvents() != null) {
+                        for (Event event : eventResponse.getEvents()) {
+                            this.sendMesage(deploymentPaaSId, "[listenDeploymentEvent] " + event.getNode() +  " "  +event.getStatus());
+                            System.out.println("[listenDeploymentEvent] " + event.getNode() +  " "  +event.getStatus());
 
-                        //String instanceId = "1"; // Need to change when Janus api change
-                        int instanceCount = intancesInfos.get(event.getNode()).size();
-                        for (int instanceIndex = 0; instanceIndex < instanceCount; instanceIndex++) {
-                            InstanceInformation infos = intancesInfos.get(event.getNode()).get(String.valueOf(instanceIndex));
-                            infos.setState(event.getStatus());
-                            if(event.getStatus().equals("started")) { infos.setInstanceStatus(InstanceStatus.SUCCESS); }
-                            this.notifyInstanceStateChanged(deploymentPaaSId, event.getNode(), String.valueOf(instanceIndex), infos);
+                            //String instanceId = "1"; // Need to change when Janus api change
+                            int instanceCount = intancesInfos.get(event.getNode()).size();
+                            for (int instanceIndex = 0; instanceIndex < instanceCount; instanceIndex++) {
+                                InstanceInformation infos = intancesInfos.get(event.getNode()).get(String.valueOf(instanceIndex));
+                                infos.setState(event.getStatus());
+                                if(event.getStatus().equals("started")) { infos.setInstanceStatus(InstanceStatus.SUCCESS); }
+                                this.notifyInstanceStateChanged(deploymentPaaSId, event.getNode(), String.valueOf(instanceIndex), infos);
+                            }
+
                         }
-
                     }
                 } catch (InterruptedException e) {
                     String threadName = Thread.currentThread().getName();
@@ -365,16 +366,17 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
             int prevIndex = 1;
             while (true) {
                 try {
-                    TimeUnit.SECONDS.sleep(1);
-
                     LogResponse logResponse = this.restClient.getLogFromJanus(deploymentUrl, prevIndex);
-                    if (logResponse == null || logResponse.getLogs() == null || logResponse.getLogs().isEmpty()) {
+                    if (logResponse == null) {
+                        TimeUnit.SECONDS.sleep(1);
                         continue;
                     }
                     prevIndex = logResponse.getLast_index();
-                    for (LogEvent logEvent : logResponse.getLogs()) {
-                        this.sendMesage(deploymentPaaSId, logEvent.getLogs());
-                        addPremiumLog(deploymentContext, logEvent.getLogs(),  logEvent.getDate(),PaaSDeploymentLogLevel.INFO);
+                    if (logResponse.getLogs() != null) {
+                        for (LogEvent logEvent : logResponse.getLogs()) {
+                            this.sendMesage(deploymentPaaSId, logEvent.getLogs());
+                            addPremiumLog(deploymentContext, logEvent.getLogs(),  logEvent.getDate(),PaaSDeploymentLogLevel.INFO);
+                        }
                     }
                 } catch (InterruptedException e) {
                     String threadName = Thread.currentThread().getName();
