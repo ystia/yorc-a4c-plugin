@@ -268,8 +268,10 @@ public class MappingTosca {
                     fipInstallStep.setActivity(fipInstallActivity);
                     fipInstallStep.setNodeId(fipName);
                     fipInstallStep.setName(fipName + "_install");
-                    fipInstallStep.addFollowing(sourceName + "_install");
-                    fipInstallStep.addFollowing(nodeTemplate.getId() + "_install");
+                    AbstractStep sourceInstallStep = getNodeStepWithNameMatching(installWorkflow, sourceName, "_install");
+                    fipInstallStep.addFollowing(sourceInstallStep.getName());
+                    AbstractStep nodeTemplateInstallStep = getNodeStepWithNameMatching(installWorkflow, nodeTemplate.getId(), "_install");
+                    fipInstallStep.addFollowing(nodeTemplateInstallStep.getName());
 
                     installWorkflow.addStep(fipInstallStep);
 
@@ -282,7 +284,8 @@ public class MappingTosca {
                     fipUninstallStep.setName(fipName + "_uninstall");
                     AbstractStep sourceUninstallStep = getNodeStepWithNameMatching(uninstallWorkflow, sourceName, "_uninstall");
                     sourceUninstallStep.addFollowing(fipName + "_uninstall");
-                    fipUninstallStep.addFollowing(nodeTemplate.getId() + "_uninstall");
+                    AbstractStep nodeTemplateUninstallStep = getNodeStepWithNameMatching(uninstallWorkflow, nodeTemplate.getId(), "_uninstall");
+                    fipUninstallStep.addFollowing(nodeTemplateUninstallStep.getName());
 
                     uninstallWorkflow.addStep(fipUninstallStep);
 
