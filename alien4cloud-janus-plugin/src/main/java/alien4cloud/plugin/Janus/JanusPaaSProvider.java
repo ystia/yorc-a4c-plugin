@@ -23,6 +23,7 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
@@ -48,10 +49,15 @@ import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
 import alien4cloud.paas.plan.ToscaNodeLifecycleConstants;
 import alien4cloud.plugin.Janus.baseplugin.AbstractPaaSProvider;
 import alien4cloud.plugin.Janus.rest.JanusRestException;
+import alien4cloud.plugin.Janus.rest.Response.AttributeResponse;
+import alien4cloud.plugin.Janus.rest.Response.DeployInfosResponse;
 import alien4cloud.plugin.Janus.rest.Response.Event;
 import alien4cloud.plugin.Janus.rest.Response.EventResponse;
+import alien4cloud.plugin.Janus.rest.Response.InstanceInfosResponse;
+import alien4cloud.plugin.Janus.rest.Response.Link;
 import alien4cloud.plugin.Janus.rest.Response.LogEvent;
 import alien4cloud.plugin.Janus.rest.Response.LogResponse;
+import alien4cloud.plugin.Janus.rest.Response.NodeInfosResponse;
 import alien4cloud.plugin.Janus.rest.RestClient;
 import alien4cloud.plugin.Janus.utils.MappingTosca;
 import alien4cloud.plugin.Janus.utils.ShowTopology;
@@ -80,10 +86,6 @@ import org.elasticsearch.common.collect.Maps;
 
 @Slf4j
 public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
-    public static final String PUBLIC_IP = "ip_address";
-    public static final String TOSCA_ID = "tosca_id";
-    public static final String TOSCA_NAME = "tosca_name";
-
     private final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
 
     private ProviderConfig providerConfiguration;
@@ -96,10 +98,6 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
     @Inject
     private IToscaTypeSearchService toscaTypeSearchService;
-
-    private static final String BAD_APPLICATION_THAT_NEVER_WORKS = "BAD-APPLICATION";
-
-    private static final String WARN_APPLICATION_THAT_NEVER_WORKS = "WARN-APPLICATION";
 
     private static final String BLOCKSTORAGE_APPLICATION = "BLOCKSTORAGE-APPLICATION";
 
@@ -139,11 +137,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
     private InstanceInformation newInstance(int i) {
         Map<String, String> attributes = Maps.newHashMap();
-        attributes.put(PUBLIC_IP, "10.52.0." + i);
-        attributes.put(TOSCA_ID, "1.0-wd03");
-        attributes.put(TOSCA_NAME, "TOSCA-Simple-Profile-YAML");
         Map<String, String> runtimeProperties = Maps.newHashMap();
-        runtimeProperties.put(PUBLIC_IP, "10.52.0." + i);
         Map<String, String> outputs = Maps.newHashMap();
         return new InstanceInformation(ToscaNodeLifecycleConstants.INITIAL, InstanceStatus.PROCESSING, attributes, runtimeProperties, outputs);
     }
@@ -259,6 +253,8 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
                 this.changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.DEPLOYED);
 
+                this.setAttributes(deploymentUrl, deploymentContext);
+
             } catch (Exception e) {
                 e.printStackTrace();
                 this.changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
@@ -275,6 +271,35 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
         this.listenDeploymentEvent(deploymentUrl, deploymentContext.getDeploymentPaaSId());
         this.listenJanusLog(deploymentUrl, deploymentContext);
+    }
+
+    private void setAttributes(String deploymentUrl, PaaSDeploymentContext deploymentContext) throws Exception {
+        Map<String, Map<String, InstanceInformation>> intancesInfos =  this.runtimeDeploymentInfos.get(deploymentContext.getDeploymentPaaSId()).getInstanceInformations();
+        DeployInfosResponse deployRes =  this.restClient.getDeploymentInfosFromJanus(deploymentUrl);
+
+        List<Link> nodes = deployRes.getLinks().stream().filter(link -> link.getRel().equals("node")).collect(Collectors.toList());
+        for(Link nodeLink : nodes) {
+            NodeInfosResponse nodeInfosRes = this.restClient.getNodesInfosFromJanus(nodeLink.getHref());
+
+            for(Link instanceLink : nodeInfosRes.getLinks()) {
+                if(instanceLink.getRel().equals("instance")) {
+
+                    InstanceInfosResponse instInfoRes = this.restClient.getInstanceInfosFromJanus(instanceLink.getHref());
+                    instInfoRes.getLinks().stream().filter(attributeLink -> attributeLink.getRel().equals("attribute")).forEach(attributeLink -> {
+                        try {
+                            AttributeResponse attrRes = this.restClient.getAttributeFromJanus(attributeLink.getHref());
+                            System.out.println("--------------------------------");
+                            System.out.println(attrRes);
+
+                            intancesInfos.get(nodeInfosRes.getName()).get(instInfoRes.getId()).getAttributes().put(attrRes.getName(), attrRes.getValue());
+                        } catch (Exception e) { // Response could be : [PANIC]yaml: mapping values are not allowed in this context
+
+                        }
+                    });
+                    this.notifyInstanceStateChanged(deploymentContext.getDeploymentPaaSId(), nodeInfosRes.getName(), instInfoRes.getId(), intancesInfos.get(nodeInfosRes.getName()).get(instInfoRes.getId()));
+                }
+            }
+        }
     }
 
     private void listenDeploymentEvent(String deploymentUrl, String deploymentPaaSId) {
