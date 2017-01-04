@@ -23,6 +23,7 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import javax.annotation.PreDestroy;
@@ -283,20 +284,32 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
             for(Link instanceLink : nodeInfosRes.getLinks()) {
                 if(instanceLink.getRel().equals("instance")) {
-
+                    AtomicBoolean nodeFound = new AtomicBoolean(true);
                     InstanceInfosResponse instInfoRes = this.restClient.getInstanceInfosFromJanus(instanceLink.getHref());
                     instInfoRes.getLinks().stream().filter(attributeLink -> attributeLink.getRel().equals("attribute")).forEach(attributeLink -> {
                         try {
                             AttributeResponse attrRes = this.restClient.getAttributeFromJanus(attributeLink.getHref());
                             log.info("--------------------------------");
                             log.info("{}",attrRes);
-
-                            intancesInfos.get(nodeInfosRes.getName()).get(instInfoRes.getId()).getAttributes().put(attrRes.getName(), attrRes.getValue());
+                            Map<String, InstanceInformation> nodeInstancesInfos = intancesInfos.get(nodeInfosRes.getName());
+                            if (nodeInstancesInfos == null) {
+                                nodeFound.set(false);
+                                return;
+                            }
+                            InstanceInformation instanceInfo = nodeInstancesInfos.get(instInfoRes.getId());
+                            if (nodeInstancesInfos == null) {
+                                nodeFound.set(false);
+                                return;
+                            }
+                            instanceInfo.getAttributes().put(attrRes.getName(), attrRes.getValue());
                         } catch (Exception e) { // Response could be : [PANIC]yaml: mapping values are not allowed in this context
 
                         }
                     });
-                    this.notifyInstanceStateChanged(deploymentContext.getDeploymentPaaSId(), nodeInfosRes.getName(), instInfoRes.getId(), intancesInfos.get(nodeInfosRes.getName()).get(instInfoRes.getId()));
+                    if (nodeFound.get()) {
+                        this.notifyInstanceStateChanged(deploymentContext.getDeploymentPaaSId(), nodeInfosRes.getName(),
+                                instInfoRes.getId(), intancesInfos.get(nodeInfosRes.getName()).get(instInfoRes.getId()));
+                    }
                 }
             }
         }
@@ -312,7 +325,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
                 for(Link instanceLink : nodeInfosRes.getLinks()) {
                     if(instanceLink.getRel().equals("instance")) {
-
+                        AtomicBoolean nodeFound = new AtomicBoolean(true);
                         InstanceInfosResponse instInfoRes = this.restClient.getInstanceInfosFromJanus(instanceLink.getHref());
                         instInfoRes.getLinks().stream().filter(attributeLink -> attributeLink.getRel().equals("attribute")).forEach(attributeLink -> {
                             try {
@@ -320,12 +333,25 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
                                 log.info("--------------------------------");
                                 log.info("{}", attrRes);
 
-                                intancesInfos.get(nodeInfosRes.getName()).get(instInfoRes.getId()).getAttributes().put(attrRes.getName(), attrRes.getValue());
+                                Map<String, InstanceInformation> nodeInstancesInfos = intancesInfos.get(nodeInfosRes.getName());
+                                if (nodeInstancesInfos == null) {
+                                    nodeFound.set(false);
+                                    return;
+                                }
+                                InstanceInformation instanceInfo = nodeInstancesInfos.get(instInfoRes.getId());
+                                if (nodeInstancesInfos == null) {
+                                    nodeFound.set(false);
+                                    return;
+                                }
+                                instanceInfo.getAttributes().put(attrRes.getName(), attrRes.getValue());
                             } catch (Exception e) { // Response could be : [PANIC]yaml: mapping values are not allowed in this context
 
                             }
                         });
-                        this.notifyInstanceStateChanged(deploymentPaaSId, nodeInfosRes.getName(), instInfoRes.getId(), intancesInfos.get(nodeInfosRes.getName()).get(instInfoRes.getId()));
+                        if (nodeFound.get()) {
+                            this.notifyInstanceStateChanged(deploymentPaaSId, nodeInfosRes.getName(), instInfoRes.getId(),
+                                    intancesInfos.get(nodeInfosRes.getName()).get(instInfoRes.getId()));
+                        }
                     }
                 }
             }
@@ -345,17 +371,22 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
                     prevIndex = eventResponse.getLast_index();
                     if (eventResponse.getEvents() != null) {
                         for (Event event : eventResponse.getEvents()) {
-                            this.sendMesage(deploymentPaaSId, "[listenDeploymentEvent] " + event.getNode() +  " "  +event.getStatus());
                             log.info("[listenDeploymentEvent] " + event.getNode() +  " "  +event.getStatus());
+                            this.sendMesage(deploymentPaaSId, "[listenDeploymentEvent] " + event.getNode() + " " + event.getStatus());
+
+                            Map<String, InstanceInformation> nodeInstancesInfos = intancesInfos.get(event.getNode());
+                            if (nodeInstancesInfos == null) {
+                                continue;
+                            }
 
                             //String instanceId = "1"; // Need to change when Janus api change
                             if(event.getStatus().equals("started")) {
                                 this.setNodeAttributes(deploymentUrl, deploymentPaaSId, event.getNode());
                             }
 
-                            int instanceCount = intancesInfos.get(event.getNode()).size();
+                            int instanceCount = nodeInstancesInfos.size();
                             for (int instanceIndex = 0; instanceIndex < instanceCount; instanceIndex++) {
-                                InstanceInformation infos = intancesInfos.get(event.getNode()).get(String.valueOf(instanceIndex));
+                                InstanceInformation infos = nodeInstancesInfos.get(String.valueOf(instanceIndex));
                                 infos.setState(event.getStatus());
                                 if(event.getStatus().equals("started")) {
                                     infos.setInstanceStatus(InstanceStatus.SUCCESS);
@@ -528,7 +559,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         Deployment deployment = deploymentInfo.getDeploymentContext().getDeployment();
         PaaSInstanceStateMonitorEvent event;
         event = new PaaSInstanceStateMonitorEvent();
-        event.setInstanceId(instanceId.toString());
+        event.setInstanceId(instanceId);
         event.setInstanceState(cloned.getState());
         event.setInstanceStatus(cloned.getInstanceStatus());
         event.setNodeTemplateId(nodeId);
@@ -539,7 +570,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         toBeDeliveredEvents.add(event);
 
         if (deployment.getSourceName().equals(BLOCKSTORAGE_APPLICATION) && cloned.getState().equalsIgnoreCase("created")) {
-            PaaSInstancePersistentResourceMonitorEvent prme = new PaaSInstancePersistentResourceMonitorEvent(nodeId, instanceId.toString(),
+            PaaSInstancePersistentResourceMonitorEvent prme = new PaaSInstancePersistentResourceMonitorEvent(nodeId, instanceId,
                     NormativeBlockStorageConstants.VOLUME_ID, UUID.randomUUID().toString());
             toBeDeliveredEvents.add(prme);
         }
