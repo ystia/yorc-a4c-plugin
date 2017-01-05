@@ -6,14 +6,59 @@
 */
 package alien4cloud.plugin.Janus;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+
+import javax.annotation.PreDestroy;
+import javax.annotation.Resource;
+import javax.inject.Inject;
+
 import alien4cloud.dao.IGenericSearchDAO;
 import alien4cloud.model.deployment.Deployment;
 import alien4cloud.paas.IPaaSCallback;
 import alien4cloud.paas.exception.PluginConfigurationException;
-import alien4cloud.paas.model.*;
+import alien4cloud.paas.model.AbstractMonitorEvent;
+import alien4cloud.paas.model.DeploymentStatus;
+import alien4cloud.paas.model.InstanceInformation;
+import alien4cloud.paas.model.InstanceStatus;
+import alien4cloud.paas.model.NodeOperationExecRequest;
+import alien4cloud.paas.model.PaaSDeploymentContext;
+import alien4cloud.paas.model.PaaSDeploymentLog;
+import alien4cloud.paas.model.PaaSDeploymentLogLevel;
+import alien4cloud.paas.model.PaaSDeploymentStatusMonitorEvent;
+import alien4cloud.paas.model.PaaSInstancePersistentResourceMonitorEvent;
+import alien4cloud.paas.model.PaaSInstanceStateMonitorEvent;
+import alien4cloud.paas.model.PaaSMessageMonitorEvent;
+import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
 import alien4cloud.paas.plan.ToscaNodeLifecycleConstants;
 import alien4cloud.plugin.Janus.baseplugin.AbstractPaaSProvider;
-import alien4cloud.plugin.Janus.rest.Response.*;
+import alien4cloud.plugin.Janus.rest.JanusRestException;
+import alien4cloud.plugin.Janus.rest.Response.AttributeResponse;
+import alien4cloud.plugin.Janus.rest.Response.DeployInfosResponse;
+import alien4cloud.plugin.Janus.rest.Response.Event;
+import alien4cloud.plugin.Janus.rest.Response.EventResponse;
+import alien4cloud.plugin.Janus.rest.Response.InstanceInfosResponse;
+import alien4cloud.plugin.Janus.rest.Response.Link;
+import alien4cloud.plugin.Janus.rest.Response.LogEvent;
+import alien4cloud.plugin.Janus.rest.Response.LogResponse;
+import alien4cloud.plugin.Janus.rest.Response.NodeInfosResponse;
 import alien4cloud.plugin.Janus.rest.RestClient;
 import alien4cloud.plugin.Janus.utils.MappingTosca;
 import alien4cloud.plugin.Janus.utils.ShowTopology;
@@ -31,29 +76,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.alien4cloud.tosca.catalog.index.IToscaTypeSearchService;
 import org.alien4cloud.tosca.exporter.ArchiveExportService;
 import org.alien4cloud.tosca.model.Csar;
-import org.alien4cloud.tosca.model.templates.*;
+import org.alien4cloud.tosca.model.templates.Capability;
+import org.alien4cloud.tosca.model.templates.NodeTemplate;
+import org.alien4cloud.tosca.model.templates.RelationshipTemplate;
+import org.alien4cloud.tosca.model.templates.ScalingPolicy;
+import org.alien4cloud.tosca.model.templates.Topology;
 import org.alien4cloud.tosca.model.types.NodeType;
 import org.alien4cloud.tosca.model.types.RelationshipType;
-import org.elasticsearch.action.admin.cluster.node.info.NodeInfo;
 import org.elasticsearch.common.collect.Maps;
-
-import javax.annotation.PreDestroy;
-import javax.annotation.Resource;
-import javax.inject.Inject;
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Slf4j
 public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
@@ -169,9 +199,11 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         runtimeDeploymentInfos.put(deploymentContext.getDeploymentPaaSId(), janusDeploymentInfo);
 
 
-        doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.DEPLOYMENT_IN_PROGRESS);
+        this.changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.DEPLOYMENT_IN_PROGRESS);
 
         MappingTosca.addPreConfigureSteps(topology, deploymentContext.getPaaSTopology());
+
+        MappingTosca.generateOpenstackFIP(deploymentContext);
 
         //Create the yml of our topology (after substitution)
         String yaml = archiveExportService.getYaml(new Csar(), topology);
@@ -220,15 +252,15 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
                 checkJanusStatusUntil("DEPLOYED", deploymentUrl);
 
-                doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.DEPLOYED);
+                this.changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.DEPLOYED);
 
                 this.setAttributes(deploymentUrl, deploymentContext);
 
             } catch (Exception e) {
                 e.printStackTrace();
-                doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
+                this.changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
                 sendMesage(deploymentContext.getDeploymentPaaSId(), e.getMessage());
-                doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.UNDEPLOYED);
+                this.changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.UNDEPLOYED);
                 runtimeDeploymentInfos.remove(deploymentContext.getDeploymentPaaSId());
 
                 throw new RuntimeException(e.getMessage()); // TODO : Refactor, For detecting error deploy rest API A4C, when integrationt test
@@ -252,24 +284,78 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
             for(Link instanceLink : nodeInfosRes.getLinks()) {
                 if(instanceLink.getRel().equals("instance")) {
-
+                    AtomicBoolean nodeFound = new AtomicBoolean(true);
                     InstanceInfosResponse instInfoRes = this.restClient.getInstanceInfosFromJanus(instanceLink.getHref());
                     instInfoRes.getLinks().stream().filter(attributeLink -> attributeLink.getRel().equals("attribute")).forEach(attributeLink -> {
                         try {
                             AttributeResponse attrRes = this.restClient.getAttributeFromJanus(attributeLink.getHref());
-                            System.out.println("--------------------------------");
-                            System.out.println(attrRes);
-
-                            intancesInfos.get(nodeInfosRes.getName()).get(instInfoRes.getId()).getAttributes().put(attrRes.getName(), attrRes.getValue());
+                            log.info("--------------------------------");
+                            log.info("{}",attrRes);
+                            Map<String, InstanceInformation> nodeInstancesInfos = intancesInfos.get(nodeInfosRes.getName());
+                            if (nodeInstancesInfos == null) {
+                                nodeFound.set(false);
+                                return;
+                            }
+                            InstanceInformation instanceInfo = nodeInstancesInfos.get(instInfoRes.getId());
+                            if (nodeInstancesInfos == null) {
+                                nodeFound.set(false);
+                                return;
+                            }
+                            instanceInfo.getAttributes().put(attrRes.getName(), attrRes.getValue());
                         } catch (Exception e) { // Response could be : [PANIC]yaml: mapping values are not allowed in this context
 
                         }
                     });
-                    this.notifyInstanceStateChanged(deploymentContext.getDeploymentPaaSId(), nodeInfosRes.getName(), instInfoRes.getId(), intancesInfos.get(nodeInfosRes.getName()).get(instInfoRes.getId()));
+                    if (nodeFound.get()) {
+                        this.notifyInstanceStateChanged(deploymentContext.getDeploymentPaaSId(), nodeInfosRes.getName(),
+                                instInfoRes.getId(), intancesInfos.get(nodeInfosRes.getName()).get(instInfoRes.getId()));
+                    }
                 }
             }
         }
     }
+
+    private void setNodeAttributes(String deploymentUrl, String deploymentPaaSId, final String nodeName) throws Exception {
+            Map<String, Map<String, InstanceInformation>> intancesInfos =  this.runtimeDeploymentInfos.get(deploymentPaaSId).getInstanceInformations();
+            DeployInfosResponse deployRes =  this.restClient.getDeploymentInfosFromJanus(deploymentUrl);
+
+            List<Link> nodes = deployRes.getLinks().stream().filter(link -> link.getRel().equals("node") && link.getHref().endsWith(nodeName)).collect(Collectors.toList());
+            for(Link nodeLink : nodes) {
+                NodeInfosResponse nodeInfosRes = this.restClient.getNodesInfosFromJanus(nodeLink.getHref());
+
+                for(Link instanceLink : nodeInfosRes.getLinks()) {
+                    if(instanceLink.getRel().equals("instance")) {
+                        AtomicBoolean nodeFound = new AtomicBoolean(true);
+                        InstanceInfosResponse instInfoRes = this.restClient.getInstanceInfosFromJanus(instanceLink.getHref());
+                        instInfoRes.getLinks().stream().filter(attributeLink -> attributeLink.getRel().equals("attribute")).forEach(attributeLink -> {
+                            try {
+                                AttributeResponse attrRes = this.restClient.getAttributeFromJanus(attributeLink.getHref());
+                                log.info("--------------------------------");
+                                log.info("{}", attrRes);
+
+                                Map<String, InstanceInformation> nodeInstancesInfos = intancesInfos.get(nodeInfosRes.getName());
+                                if (nodeInstancesInfos == null) {
+                                    nodeFound.set(false);
+                                    return;
+                                }
+                                InstanceInformation instanceInfo = nodeInstancesInfos.get(instInfoRes.getId());
+                                if (nodeInstancesInfos == null) {
+                                    nodeFound.set(false);
+                                    return;
+                                }
+                                instanceInfo.getAttributes().put(attrRes.getName(), attrRes.getValue());
+                            } catch (Exception e) { // Response could be : [PANIC]yaml: mapping values are not allowed in this context
+
+                            }
+                        });
+                        if (nodeFound.get()) {
+                            this.notifyInstanceStateChanged(deploymentPaaSId, nodeInfosRes.getName(), instInfoRes.getId(),
+                                    intancesInfos.get(nodeInfosRes.getName()).get(instInfoRes.getId()));
+                        }
+                    }
+                }
+            }
+        }
 
     private void listenDeploymentEvent(String deploymentUrl, String deploymentPaaSId) {
         Map<String, Map<String, InstanceInformation>> intancesInfos =  this.runtimeDeploymentInfos.get(deploymentPaaSId).getInstanceInformations();
@@ -277,31 +363,51 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
             int prevIndex = 1;
             while (true) {
                 try {
-                    TimeUnit.SECONDS.sleep(1);
-
                     EventResponse eventResponse = this.restClient.getEventFromJanus(deploymentUrl, prevIndex);
-                    if (eventResponse == null || eventResponse.getEvents() == null || eventResponse.getEvents().isEmpty()) {
+                    if (eventResponse == null) {
+                        TimeUnit.SECONDS.sleep(1);
                         continue;
                     }
                     prevIndex = eventResponse.getLast_index();
-                    for (Event event : eventResponse.getEvents()) {
-                        this.sendMesage(deploymentPaaSId, "[listenDeploymentEvent] " + event.getNode() +  " "  +event.getStatus());
-                        System.out.println("[listenDeploymentEvent] " + event.getNode() +  " "  +event.getStatus());
+                    if (eventResponse.getEvents() != null) {
+                        for (Event event : eventResponse.getEvents()) {
+                            log.info("[listenDeploymentEvent] " + event.getNode() +  " "  +event.getStatus());
+                            this.sendMesage(deploymentPaaSId, "[listenDeploymentEvent] " + event.getNode() + " " + event.getStatus());
 
-                        //String instanceId = "1"; // Need to change when Janus api change
-                        int instanceCount = intancesInfos.get(event.getNode()).size();
-                        for (int instanceIndex = 0; instanceIndex < instanceCount; instanceIndex++) {
-                            InstanceInformation infos = intancesInfos.get(event.getNode()).get(String.valueOf(instanceIndex));
-                            infos.setState(event.getStatus());
-                            if(event.getStatus().equals("started")) { infos.setInstanceStatus(InstanceStatus.SUCCESS); }
-                            this.notifyInstanceStateChanged(deploymentPaaSId, event.getNode(), String.valueOf(instanceIndex), infos);
+                            Map<String, InstanceInformation> nodeInstancesInfos = intancesInfos.get(event.getNode());
+                            if (nodeInstancesInfos == null) {
+                                continue;
+                            }
+
+                            //String instanceId = "1"; // Need to change when Janus api change
+                            if(event.getStatus().equals("started")) {
+                                this.setNodeAttributes(deploymentUrl, deploymentPaaSId, event.getNode());
+                            }
+
+                            int instanceCount = nodeInstancesInfos.size();
+                            for (int instanceIndex = 0; instanceIndex < instanceCount; instanceIndex++) {
+                                InstanceInformation infos = nodeInstancesInfos.get(String.valueOf(instanceIndex));
+                                infos.setState(event.getStatus());
+                                if(event.getStatus().equals("started")) {
+                                    infos.setInstanceStatus(InstanceStatus.SUCCESS);
+                                } else if (event.getStatus().equals("error")) {
+                                    infos.setInstanceStatus(InstanceStatus.FAILURE);
+                                }
+                                this.notifyInstanceStateChanged(deploymentPaaSId, event.getNode(), String.valueOf(instanceIndex), infos);
+                            }
+
                         }
-
                     }
                 } catch (InterruptedException e) {
                     String threadName = Thread.currentThread().getName();
-                    System.out.println("[listenDeploymentEvent] Stopped " + threadName + " " + deploymentPaaSId);
+                    log.info("[listenDeploymentEvent] Stopped " + threadName + " " + deploymentPaaSId);
                     return;
+                } catch (JanusRestException e) {
+                    if (e.getHttpStatusCode() == 404) {
+                        log.info("[listenDeploymentEvent] Stopped got 404 exception " + deploymentPaaSId);
+                        return;
+                    }
+                    e.printStackTrace();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -328,21 +434,28 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
             int prevIndex = 1;
             while (true) {
                 try {
-                    TimeUnit.SECONDS.sleep(1);
-
                     LogResponse logResponse = this.restClient.getLogFromJanus(deploymentUrl, prevIndex);
-                    if (logResponse == null || logResponse.getLogs() == null || logResponse.getLogs().isEmpty()) {
+                    if (logResponse == null) {
+                        TimeUnit.SECONDS.sleep(1);
                         continue;
                     }
                     prevIndex = logResponse.getLast_index();
-                    for (LogEvent logEvent : logResponse.getLogs()) {
-                        this.sendMesage(deploymentPaaSId, logEvent.getLogs());
-                        addPremiumLog(deploymentContext, logEvent.getLogs(),  logEvent.getDate(),PaaSDeploymentLogLevel.INFO);
+                    if (logResponse.getLogs() != null) {
+                        for (LogEvent logEvent : logResponse.getLogs()) {
+                            this.sendMesage(deploymentPaaSId, logEvent.getLogs());
+                            addPremiumLog(deploymentContext, logEvent.getLogs(),  logEvent.getDate(),PaaSDeploymentLogLevel.INFO);
+                        }
                     }
                 } catch (InterruptedException e) {
                     String threadName = Thread.currentThread().getName();
-                    System.out.println("[listenJanusLog] Stopped " + threadName + " " + deploymentPaaSId);
+                    log.info("[listenJanusLog] Stopped " + threadName + " " + deploymentPaaSId);
                     return;
+                } catch (JanusRestException e) {
+                    if (e.getHttpStatusCode() == 404) {
+                        log.info("[listenJanusLog] Stopped got 404 exception " + deploymentPaaSId);
+                        return;
+                    }
+                    e.printStackTrace();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -354,7 +467,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
     private void checkJanusStatusUntil(String aimStatus, String deploymentUrl) throws Exception {
         String status = "";
-        while (!status.equals(aimStatus) && !status.equals("DEPLOYMENT_FAILED")) {
+        while (!status.equals(aimStatus) && !status.contains("FAILED")) {
             status = restClient.getStatusFromJanus(deploymentUrl);
             log.info(status);
             Thread.sleep(2000);
@@ -446,7 +559,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         Deployment deployment = deploymentInfo.getDeploymentContext().getDeployment();
         PaaSInstanceStateMonitorEvent event;
         event = new PaaSInstanceStateMonitorEvent();
-        event.setInstanceId(instanceId.toString());
+        event.setInstanceId(instanceId);
         event.setInstanceState(cloned.getState());
         event.setInstanceStatus(cloned.getInstanceStatus());
         event.setNodeTemplateId(nodeId);
@@ -457,7 +570,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         toBeDeliveredEvents.add(event);
 
         if (deployment.getSourceName().equals(BLOCKSTORAGE_APPLICATION) && cloned.getState().equalsIgnoreCase("created")) {
-            PaaSInstancePersistentResourceMonitorEvent prme = new PaaSInstancePersistentResourceMonitorEvent(nodeId, instanceId.toString(),
+            PaaSInstancePersistentResourceMonitorEvent prme = new PaaSInstancePersistentResourceMonitorEvent(nodeId, instanceId,
                     NormativeBlockStorageConstants.VOLUME_ID, UUID.randomUUID().toString());
             toBeDeliveredEvents.add(prme);
         }

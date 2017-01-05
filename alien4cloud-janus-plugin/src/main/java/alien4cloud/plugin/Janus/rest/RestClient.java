@@ -6,39 +6,56 @@
 */
 package alien4cloud.plugin.Janus.rest;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
 import alien4cloud.plugin.Janus.ProviderConfig;
-import alien4cloud.plugin.Janus.rest.Response.*;
+import alien4cloud.plugin.Janus.rest.Response.AttributeResponse;
+import alien4cloud.plugin.Janus.rest.Response.DeployInfosResponse;
+import alien4cloud.plugin.Janus.rest.Response.ErrorsResponse;
+import alien4cloud.plugin.Janus.rest.Response.EventResponse;
+import alien4cloud.plugin.Janus.rest.Response.InstanceInfosResponse;
+import alien4cloud.plugin.Janus.rest.Response.JanusError;
+import alien4cloud.plugin.Janus.rest.Response.LogResponse;
+import alien4cloud.plugin.Janus.rest.Response.NodeInfosResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.ObjectMapper;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
-import lombok.Setter;
+import org.apache.commons.io.IOUtils;
 import org.json.JSONObject;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-
-@Setter
 public class RestClient {
 
     private static RestClient instance;
     private ProviderConfig providerConfiguration;
+    private static ObjectMapper objectMapper;
+    private static final String CHARSET = "UTF-8";
+
+    // Default long pooling duration on Janus endpoints is 5min
+    private static final long SOCKET_TIMEOUT = 300060;
+    private static final long CONNECTION_TIMEOUT = 10000;
+
 
     public static synchronized RestClient getInstance() {
         if (instance == null) {
             instance = new RestClient();
             RestClient.initObjectMapper();
-            Unirest.setTimeouts(10000, 300000);
+            Unirest.setTimeouts(CONNECTION_TIMEOUT, SOCKET_TIMEOUT);
         }
         return instance;
     }
 
+    public void setProviderConfiguration(ProviderConfig providerConfiguration) {
+        this.providerConfiguration = providerConfiguration;
+    }
+
     private static void initObjectMapper() {
-        Unirest.setObjectMapper(new ObjectMapper() {
+        RestClient.objectMapper = new ObjectMapper() {
             private com.fasterxml.jackson.databind.ObjectMapper jacksonObjectMapper
                     = new com.fasterxml.jackson.databind.ObjectMapper();
 
@@ -57,7 +74,9 @@ public class RestClient {
                     throw new RuntimeException(e);
                 }
             }
-        });
+        };
+
+        Unirest.setObjectMapper(RestClient.objectMapper);
     }
 
     public String postTopologyToJanus() throws Exception {
@@ -127,17 +146,21 @@ public class RestClient {
     }
 
     public LogResponse getLogFromJanus(String deploymentUrl, int index) throws Exception {
-        HttpResponse<LogResponse> logRes = Unirest.get(providerConfiguration.getUrlJanus() + deploymentUrl + "/" + "logs?index=" + index + "&filter=")
-                .header("accept", "application/json")
-                .asObject(LogResponse.class);
-        return logRes.getBody();
+        HttpResponse<JsonNode> logRes =
+                Unirest.get(providerConfiguration.getUrlJanus() + deploymentUrl + "/" + "logs?index=" + index + "&filter=")
+                        .header("accept", "application/json")
+                        .asJson();
+        this.checkRestErrors(logRes);
+        return objectMapper.readValue(new String(IOUtils.toByteArray(logRes.getRawBody()), CHARSET), LogResponse.class);
     }
 
     public EventResponse getEventFromJanus(String deploymentUrl, int index) throws Exception {
-        HttpResponse<EventResponse> eventResponse = Unirest.get(providerConfiguration.getUrlJanus() + deploymentUrl + "/" + "events?index=" + index + "&filter=")
-                .header("accept", "application/json")
-                .asObject(EventResponse.class);
-        return eventResponse.getBody();
+        HttpResponse<JsonNode> eventResponse =
+                Unirest.get(providerConfiguration.getUrlJanus() + deploymentUrl + "/" + "events?index=" + index + "&filter=")
+                        .header("accept", "application/json")
+                        .asJson();
+        this.checkRestErrors(eventResponse);
+        return objectMapper.readValue(new String(IOUtils.toByteArray(eventResponse.getRawBody()), CHARSET), EventResponse.class);
     }
 
     public String undeployJanus(String deploymentUrl) throws UnirestException {
@@ -148,5 +171,16 @@ public class RestClient {
 
     }
 
+    private static boolean isStatusCodeOk(int statusCode) {
+        return statusCode >= 200 && statusCode < 300;
+    }
 
+    private void checkRestErrors(HttpResponse<?> httpResponse) throws Exception {
+        if (!isStatusCodeOk(httpResponse.getStatus())) {
+            ErrorsResponse errors =
+                    this.objectMapper.readValue(new String(IOUtils.toByteArray(httpResponse.getRawBody()), CHARSET), ErrorsResponse.class);
+            JanusError error = errors.getErrors().iterator().next();
+            throw JanusRestException.fromJanusError(error);
+        }
+    }
 }

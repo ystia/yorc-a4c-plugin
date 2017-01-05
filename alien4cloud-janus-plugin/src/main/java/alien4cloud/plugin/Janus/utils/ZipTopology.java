@@ -67,7 +67,7 @@ public class ZipTopology {
         //clean import topology (delete all precedent import)
         cleanImportInTopology();
 
-        if(deploymentContext.getLocations().get("_A4C_ALL").getDependencies().stream().filter(csar -> csar.getName().contains(("slurm"))).findFirst() != null) {
+        if(deploymentContext.getLocations().get("_A4C_ALL").getDependencies().stream().filter(csar -> csar.getName().contains(("slurm"))).findFirst().isPresent()) {
             addImportInTopology("<janus-slurm-types.yml>");
         } else {
             addImportInTopology("<janus-openstack-types.yml>");

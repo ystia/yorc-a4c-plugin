@@ -29,9 +29,4 @@ node_types:
     capabilities:
       host:
         type: tosca.capabilities.Container
-        
-artefact_types:
-  janus.artefacts.openstack.Implementation.Bash:
-    description: Mock artefact for sh
-    derived_from: tosca.artifacts.Implementation.Bash
-  
+
