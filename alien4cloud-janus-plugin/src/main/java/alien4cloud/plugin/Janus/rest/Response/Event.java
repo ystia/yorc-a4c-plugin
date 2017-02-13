@@ -11,6 +11,7 @@ public class Event {
 
     private String timestamp;
     private String node;
+    private String instance;
     private String status;
 
 }

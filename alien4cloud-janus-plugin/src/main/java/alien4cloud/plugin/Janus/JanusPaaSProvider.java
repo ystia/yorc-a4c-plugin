@@ -315,15 +315,15 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         }
     }
 
-    private void setNodeAttributes(String deploymentUrl, String deploymentPaaSId, final String nodeName) throws Exception {
+    private void setNodeAttributes(String deploymentUrl, String deploymentPaaSId, final String nodeName, final String instanceName) throws Exception {
             Map<String, Map<String, InstanceInformation>> intancesInfos =  this.runtimeDeploymentInfos.get(deploymentPaaSId).getInstanceInformations();
             DeployInfosResponse deployRes =  this.restClient.getDeploymentInfosFromJanus(deploymentUrl);
 
             List<Link> nodes = deployRes.getLinks().stream().filter(link -> link.getRel().equals("node") && link.getHref().endsWith(nodeName)).collect(Collectors.toList());
             for(Link nodeLink : nodes) {
                 NodeInfosResponse nodeInfosRes = this.restClient.getNodesInfosFromJanus(nodeLink.getHref());
-
-                for(Link instanceLink : nodeInfosRes.getLinks()) {
+                List<Link> instances = nodeInfosRes.getLinks().stream().filter(link -> link.getRel().equals("instance") && link.getHref().endsWith(instanceName)).collect(Collectors.toList());
+                for(Link instanceLink : instances) {
                     if(instanceLink.getRel().equals("instance")) {
                         AtomicBoolean nodeFound = new AtomicBoolean(true);
                         InstanceInfosResponse instInfoRes = this.restClient.getInstanceInfosFromJanus(instanceLink.getHref());
@@ -379,22 +379,19 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
                                 continue;
                             }
 
-                            //String instanceId = "1"; // Need to change when Janus api change
-                            if(event.getStatus().equals("started")) {
-                                this.setNodeAttributes(deploymentUrl, deploymentPaaSId, event.getNode());
+                            String instanceId = event.getInstance(); // Need to change when Janus api change
+                            if (event.getStatus().equals("started")) {
+                                this.setNodeAttributes(deploymentUrl, deploymentPaaSId, event.getNode(), instanceId);
                             }
 
-                            int instanceCount = nodeInstancesInfos.size();
-                            for (int instanceIndex = 0; instanceIndex < instanceCount; instanceIndex++) {
-                                InstanceInformation infos = nodeInstancesInfos.get(String.valueOf(instanceIndex));
-                                infos.setState(event.getStatus());
-                                if(event.getStatus().equals("started")) {
-                                    infos.setInstanceStatus(InstanceStatus.SUCCESS);
-                                } else if (event.getStatus().equals("error")) {
-                                    infos.setInstanceStatus(InstanceStatus.FAILURE);
-                                }
-                                this.notifyInstanceStateChanged(deploymentPaaSId, event.getNode(), String.valueOf(instanceIndex), infos);
+                            InstanceInformation infos = nodeInstancesInfos.get(instanceId);
+                            infos.setState(event.getStatus());
+                            if (event.getStatus().equals("started")) {
+                                infos.setInstanceStatus(InstanceStatus.SUCCESS);
+                            } else if (event.getStatus().equals("error")) {
+                                infos.setInstanceStatus(InstanceStatus.FAILURE);
                             }
+                            this.notifyInstanceStateChanged(deploymentPaaSId, event.getNode(), instanceId, infos);
 
                         }
                     }
