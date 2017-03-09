@@ -106,8 +106,15 @@ public class ZipTopology {
                             //MAPPING TOSCA ALIEN -> TOSCA JANUS
                             if (name.endsWith(".yml") || name.endsWith(".yaml")) {
                                 String[] parts = kid.getPath().split("runtime/csar/");
-                                addImportInTopology(parts[1]);
-                                file = removeLineBetween(kid, "imports:", "node_types:");
+                                // Only add imports for component types
+                                if (name.endsWith("-types.yaml")) {
+                                    // This is a BDCF compoent type, treate it !!
+                                    addImportInTopology(parts[1]);
+                                    file = removeLineBetween(kid, "imports:", "node_types:");
+                                } else {
+                                    // Do not treat this
+                                    file = kid;
+                                }
                             } else {
                                 file = kid;
                             }
@@ -145,6 +152,8 @@ public class ZipTopology {
             while ((line = br.readLine()) != null) {
                 bw.append(line).append("\n");
                 if (line.contains("imports:")) {
+                    log.debug("add an import to topology.yml :");
+                    log.debug("  - path: " + ymlPath);
                     bw.append("  - path: ").append(ymlPath).append("\n");
                 }
             }

@@ -195,6 +195,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         Map<String, Map<String, InstanceInformation>> currentInformations = this.setupInstanceInformations(deploymentContext, topology);
 
 
+        // Why DeploymentStatus.DEPLOYMENT_IN_PROGRESS and not DeploymentStatus.INIT_DEPLOYMENT ??
         JanusRuntimeDeploymentInfo janusDeploymentInfo = new JanusRuntimeDeploymentInfo(deploymentContext, DeploymentStatus.DEPLOYMENT_IN_PROGRESS, currentInformations, "");
         runtimeDeploymentInfos.put(deploymentContext.getDeploymentPaaSId(), janusDeploymentInfo);
 
