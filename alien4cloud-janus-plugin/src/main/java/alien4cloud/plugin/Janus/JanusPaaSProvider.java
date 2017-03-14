@@ -274,6 +274,49 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         this.listenJanusLog(deploymentUrl, deploymentContext);
     }
 
+    /**
+     * Scale a Node
+     * @param ctx the deployment context
+     * @param nodeId id of the compute node to scale up
+     * @param nbi the number of instances to be added (if positive) or removed (if negative)
+     */
+    @Override
+    public void doScale(PaaSDeploymentContext ctx, String nodeId, int nbi) {
+        log.info("scaling " + nodeId + " delta=" + nbi);
+        String paasId = ctx.getDeploymentPaaSId();
+        JanusRuntimeDeploymentInfo rdinfo = runtimeDeploymentInfos.get(paasId);
+        String deploymentUrl = rdinfo.getDeploymentUrl();
+        Map<String, Map<String, InstanceInformation>> einfo = rdinfo.getInstanceInformations();
+        Map<String, InstanceInformation> nodeInfo = einfo.get(nodeId);
+        if (nodeInfo != null) {
+            int currentSize = nodeInfo.size();
+            log.info("current size : " + currentSize);
+        }
+        String taskUrl = null;
+        try {
+            taskUrl = this.restClient.scaleNodeInJanus(deploymentUrl, nodeId, nbi);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // Check status DONE after scaling
+        final String url = taskUrl;
+        Runnable task = () -> {
+            String threadName = Thread.currentThread().getName();
+            log.info("Running another thread for event check " + threadName);
+            try {
+                checkJanusStatusUntil("DONE", url);
+            } catch (Exception e) {
+                e.printStackTrace();
+                this.changeStatus(ctx.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
+                sendMesage(ctx.getDeploymentPaaSId(), e.getMessage());
+                throw new RuntimeException(e.getMessage());
+            }
+        };
+        Thread thread = new Thread(task);
+        thread.start();
+    }
+
     private void setAttributes(String deploymentUrl, PaaSDeploymentContext deploymentContext) throws Exception {
         Map<String, Map<String, InstanceInformation>> intancesInfos =  this.runtimeDeploymentInfos.get(deploymentContext.getDeploymentPaaSId()).getInstanceInformations();
         DeployInfosResponse deployRes =  this.restClient.getDeploymentInfosFromJanus(deploymentUrl);
@@ -385,6 +428,10 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
                             }
 
                             InstanceInformation infos = nodeInstancesInfos.get(instanceId);
+                            if (infos == null) {
+                                log.info("No instance info for " + instanceId);
+                                continue;
+                            }
                             infos.setState(event.getStatus());
                             if (event.getStatus().equals("started")) {
                                 infos.setInstanceStatus(InstanceStatus.SUCCESS);
@@ -454,7 +501,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
                     }
                     e.printStackTrace();
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    log.info("getLogFromJanus raise exception: " + e);
                 }
             }
 
@@ -547,6 +594,10 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
     private void notifyInstanceStateChanged(final String deploymentPaaSId, final String nodeId, final String instanceId, final InstanceInformation information){
         final InstanceInformation cloned = new InstanceInformation();
+        if (information == null) {
+            log.error("NULL information");
+            return;
+        }
         cloned.setAttributes(information.getAttributes());
         cloned.setInstanceStatus(information.getInstanceStatus());
         cloned.setRuntimeProperties(information.getRuntimeProperties());
@@ -579,65 +630,16 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         toBeDeliveredEvents.add(messageMonitorEvent);
     }
 
-    private interface ScalingVisitor {
-        void visit(String nodeTemplateId);
-    }
-
     private RelationshipType getRelationshipType(String typeName) {
         return toscaTypeSearchService.findMostRecent(RelationshipType.class, typeName);
     }
 
-    private void doScaledUpNode(ScalingVisitor scalingVisitor, String nodeTemplateId, Map<String, NodeTemplate> nodeTemplates) {
-        scalingVisitor.visit(nodeTemplateId);
-        for (Entry<String, NodeTemplate> nEntry : nodeTemplates.entrySet()) {
-            if (nEntry.getValue().getRelationships() != null) {
-                for (Entry<String, RelationshipTemplate> rt : nEntry.getValue().getRelationships().entrySet()) {
-                    RelationshipType relType = getRelationshipType(rt.getValue().getType());
-                    if (nodeTemplateId.equals(rt.getValue().getTarget()) && ToscaUtils.isFromType(NormativeRelationshipConstants.HOSTED_ON, relType)) {
-                        doScaledUpNode(scalingVisitor, nEntry.getKey(), nodeTemplates);
-                    }
-                }
-            }
-        }
-    }
 
     @Override
     public void init(Map<String, PaaSTopologyDeploymentContext> activeDeployments) {
 
     }
 
-    @Override
-    public void scale(PaaSDeploymentContext deploymentContext, String nodeTemplateId, final int instances, IPaaSCallback<?> callback) {
-        JanusRuntimeDeploymentInfo runtimeDeploymentInfo = runtimeDeploymentInfos.get(deploymentContext.getDeploymentPaaSId());
-
-        if (runtimeDeploymentInfo == null) {
-            return;
-        }
-
-        Topology topology = runtimeDeploymentInfo.getDeploymentContext().getDeploymentTopology();
-        final Map<String, Map<String, InstanceInformation>> existingInformations = runtimeDeploymentInfo.getInstanceInformations();
-        if (existingInformations != null && existingInformations.containsKey(nodeTemplateId)) {
-            ScalingVisitor scalingVisitor = nodeTemplateId1 -> {
-                Map<String, InstanceInformation> nodeInformations = existingInformations.get(nodeTemplateId1);
-                if (nodeInformations != null) {
-                    int currentSize = nodeInformations.size();
-                    if (instances > 0) {
-                        for (int i = currentSize; i < currentSize + instances; i++) {
-                            nodeInformations.put(String.valueOf(i), newInstance(i));
-                        }
-                    } else {
-                        for (int i = currentSize + instances; i < currentSize; i++) {
-                            if (nodeInformations.containsKey(String.valueOf(i))) {
-                                nodeInformations.get(String.valueOf(i)).setState("stopping");
-                                nodeInformations.get(String.valueOf(i)).setInstanceStatus(InstanceStatus.PROCESSING);
-                            }
-                        }
-                    }
-                }
-            };
-            doScaledUpNode(scalingVisitor, nodeTemplateId, topology.getNodeTemplates());
-        }
-    }
 
     @Override
     public void launchWorkflow(PaaSDeploymentContext deploymentContext, final String workflowName, Map<String, Object> inputs, final IPaaSCallback<?> callback) {

@@ -72,6 +72,39 @@ public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<Provid
         }
     }
 
+    /**
+     * Scale a node
+     * @param ctx the deployment context
+     * @param nodeId id of the compute node to scale up
+     * @param nbi the number of instances to be added (if positive) or removed (if negative)
+     * @param callback
+     */
+    @Override
+    public void scale(PaaSDeploymentContext ctx, String nodeId, int nbi, IPaaSCallback<?> callback) {
+        String deploymentId = ctx.getDeploymentPaaSId();
+        try {
+            providerLock.writeLock().lock();
+            DeploymentStatus deploymentStatus = getStatus(deploymentId, false);
+            switch (deploymentStatus) {
+                case UNDEPLOYED:
+                case DEPLOYMENT_IN_PROGRESS:
+                case UNDEPLOYMENT_IN_PROGRESS:
+                case WARNING:
+                case FAILURE:
+                case UNKNOWN:
+                    throw new IllegalDeploymentStateException("Topology [" + deploymentId + "] is in status [" + deploymentStatus + "] and cannot be scaled");
+                case DEPLOYED:
+                    doScale(ctx, nodeId, nbi);
+                    break;
+                default:
+                    throw new IllegalDeploymentStateException("Topology [" + deploymentId + "] is in illegal status [" + deploymentStatus
+                            + "] and cannot be deployed");
+            }
+        } finally {
+            providerLock.writeLock().unlock();
+        }
+    }
+
     @Override
     public void getInstancesInformation(PaaSTopologyDeploymentContext deploymentContext, IPaaSCallback<Map<String, Map<String, InstanceInformation>>> callback) {
         callback.onSuccess(getInstancesInformation(deploymentContext.getDeploymentPaaSId(), deploymentContext.getDeploymentTopology()));
@@ -205,6 +238,8 @@ public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<Provid
     protected abstract DeploymentStatus doGetStatus(String deploymentId, boolean triggerEventIfUndeployed);
 
     protected abstract void doDeploy(PaaSTopologyDeploymentContext deploymentContext);
+
+    protected abstract void doScale(PaaSDeploymentContext deploymentContext, String nodeId, int nbi);
 
     protected abstract void doUndeploy(PaaSDeploymentContext deploymentContext);
 
