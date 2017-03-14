@@ -88,6 +88,10 @@ public class ZipTopology {
                 zout.putNextEntry(new ZipEntry(componentName + componentVersion));
 
                 String struct = componentName + componentVersion;
+                // Set it to true after adding imports into the TOSCA definition file
+                // corresponding to the component.
+                // Normally the TOSCA definition file is the first yaml or yml encountered (its at the highest level in the tree)
+                boolean addedImports = false;
 
                 URI base = directory.toURI();
                 Deque<File> queue = new LinkedList<>();
@@ -106,8 +110,14 @@ public class ZipTopology {
                             //MAPPING TOSCA ALIEN -> TOSCA JANUS
                             if (name.endsWith(".yml") || name.endsWith(".yaml")) {
                                 String[] parts = kid.getPath().split("runtime/csar/");
-                                addImportInTopology(parts[1]);
-                                file = removeLineBetween(kid, "imports:", "node_types:");
+                                if (addedImports) {
+                                    file = kid;
+                                } else {
+                                    // This is the TOSCA definition, treate it !!
+                                    addImportInTopology(parts[1]);
+                                    file = removeLineBetween(kid, "imports:", "node_types:");
+                                    addedImports = true;
+                                }
                             } else {
                                 file = kid;
                             }
@@ -145,6 +155,8 @@ public class ZipTopology {
             while ((line = br.readLine()) != null) {
                 bw.append(line).append("\n");
                 if (line.contains("imports:")) {
+                    log.debug("add an import to topology.yml :");
+                    log.debug("  - path: " + ymlPath);
                     bw.append("  - path: ").append(ymlPath).append("\n");
                 }
             }
