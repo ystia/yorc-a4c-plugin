@@ -10,6 +10,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.Map;
+import java.util.Iterator;
 
 import alien4cloud.plugin.Janus.ProviderConfig;
 import alien4cloud.plugin.Janus.rest.Response.AttributeResponse;
@@ -20,6 +24,8 @@ import alien4cloud.plugin.Janus.rest.Response.InstanceInfosResponse;
 import alien4cloud.plugin.Janus.rest.Response.JanusError;
 import alien4cloud.plugin.Janus.rest.Response.LogResponse;
 import alien4cloud.plugin.Janus.rest.Response.NodeInfosResponse;
+import alien4cloud.paas.model.NodeOperationExecRequest;
+import alien4cloud.rest.utils.JsonUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
@@ -29,6 +35,7 @@ import com.mashape.unirest.http.exceptions.UnirestException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.json.JSONObject;
+import lombok.extern.slf4j.Slf4j;
 
 import static org.springframework.http.HttpStatus.CREATED;
 
@@ -196,6 +203,38 @@ public class RestClient {
                 .asJson()
                 .getStatusText();
 
+    }
+
+    public String postCustomCommandToJanus(String deploymentUrl, NodeOperationExecRequest request) throws Exception {
+        final InputStream stream;
+
+
+        JSONObject jobject = new JSONObject();
+        jobject.put("node", request.getNodeTemplateName());
+        jobject.put("name", request.getOperationName());
+        jobject.put("inputs", request.getParameters());
+
+        System.out.println(">>> JSON Body :");
+        System.out.println(">>>>>>>>>>>>>>>");
+        System.out.println(jobject.toString());
+        System.out.println(">>>>>>>>>>>>>>>");
+
+        final byte[] bytes = jobject.toString().getBytes();
+
+        HttpResponse<JsonNode> postResponse = Unirest.post(providerConfiguration.getUrlJanus() + deploymentUrl + "/custom")
+                .header("accept", "application/json")
+                .header("Content-Type", "application/json")
+                .body(bytes)
+                .asJson();
+
+        System.out.println(">>> Response status for custom POST is : " + postResponse.getStatusText());
+        if (!postResponse.getStatusText().equals("Accepted")) {
+            throw new Exception("Janus returned an error :" + postResponse.getStatus());
+        }
+
+        String ret = postResponse.getHeaders().getFirst("Location");
+        //log.info("Custom operation accepted : " + ret);
+        return ret;
     }
 
     private static boolean isStatusCodeOk(int statusCode) {
