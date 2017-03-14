@@ -180,21 +180,36 @@ public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<Provid
         }
     }
 
+    /**
+     * Execute an operation (custom command) on a node within a deployment
+     * @param deploymentContext the deployment context
+     * @param request An object of type {@link NodeOperationExecRequest} describing the operation's execution request
+     * @param callback
+     * @throws OperationExecutionException
+     */
     @Override
     public void executeOperation(PaaSTopologyDeploymentContext deploymentContext, NodeOperationExecRequest request, IPaaSCallback<Map<String, String>> callback)
             throws OperationExecutionException {
+        String deploymentId = deploymentContext.getDeploymentPaaSId();
+        String node = request.getNodeTemplateName();
+        String name = request.getOperationName();
         try {
             providerLock.writeLock().lock();
-            String doExecuteOperationResult = doExecuteOperation(request);
-            String resultException = null;
-            if (doExecuteOperationResult.equals("KO")) {
-                resultException = "Operation execution message when failing...";
+            DeploymentStatus deploymentStatus = getStatus(deploymentId, false);
+            switch (deploymentStatus) {
+                case UNDEPLOYED:
+                case DEPLOYMENT_IN_PROGRESS:
+                case UNDEPLOYMENT_IN_PROGRESS:
+                case WARNING:
+                case FAILURE:
+                case UNKNOWN:
+                    throw new IllegalDeploymentStateException("Topology [" + deploymentId + "] is in status [" + deploymentStatus + "] and operation " + name + " cannot be executed on node " + node);
+                case DEPLOYED:
+                    doExecuteOperation(deploymentContext, request);
+                    break;
+                default:
+                    throw new IllegalDeploymentStateException("Topology [" + deploymentId + "] is in illegal status [" + deploymentStatus + "] and cannot be deployed");
             }
-            // Raise operation exception
-            if (resultException != null) {
-                callback.onFailure(new OperationExecutionException(resultException));
-            }
-            callback.onSuccess(MapUtil.newHashMap(new String[]{"1"}, new String[]{doExecuteOperationResult}));
         } finally {
             providerLock.writeLock().unlock();
         }
@@ -208,5 +223,7 @@ public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<Provid
 
     protected abstract void doUndeploy(PaaSDeploymentContext deploymentContext);
 
-    protected abstract String doExecuteOperation(NodeOperationExecRequest request);
+    protected abstract void doExecuteOperation(PaaSDeploymentContext deploymentContext, NodeOperationExecRequest request);
+
+
 }

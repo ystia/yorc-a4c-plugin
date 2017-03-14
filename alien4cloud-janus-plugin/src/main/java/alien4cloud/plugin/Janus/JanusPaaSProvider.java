@@ -195,7 +195,6 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         Map<String, Map<String, InstanceInformation>> currentInformations = this.setupInstanceInformations(deploymentContext, topology);
 
 
-        // Why DeploymentStatus.DEPLOYMENT_IN_PROGRESS and not DeploymentStatus.INIT_DEPLOYMENT ??
         JanusRuntimeDeploymentInfo janusDeploymentInfo = new JanusRuntimeDeploymentInfo(deploymentContext, DeploymentStatus.DEPLOYMENT_IN_PROGRESS, currentInformations, "");
         runtimeDeploymentInfos.put(deploymentContext.getDeploymentPaaSId(), janusDeploymentInfo);
 
@@ -386,6 +385,10 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
                             }
 
                             InstanceInformation infos = nodeInstancesInfos.get(instanceId);
+                            if (infos == null) {
+                                log.info("No instance info for " + instanceId);
+                                continue;
+                            }
                             infos.setState(event.getStatus());
                             if (event.getStatus().equals("started")) {
                                 infos.setInstanceStatus(InstanceStatus.SUCCESS);
@@ -407,7 +410,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
                     }
                     e.printStackTrace();
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    log.info("getLogFromJanus raise exception: " + e);
                 }
             }
 
@@ -671,23 +674,38 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         eventsCallback.onSuccess(events);
     }
 
+    /**
+     * Execute an operation (custom command)
+     * @param deploymentContext the deployment context in which operation is to be executed
+     * @param request containes operation description and parameters
+     */
     @Override
-    protected String doExecuteOperation(NodeOperationExecRequest request) {
-        List<String> allowedOperation = Arrays.asList("success", "success_param");
-        String result = null;
+    protected void doExecuteOperation(PaaSDeploymentContext deploymentContext, NodeOperationExecRequest request) {
+        log.info("Do execute " + request.getOperationName() + " on node " + request.getOperationName());
+
+        String deploymentUrl = runtimeDeploymentInfos.get(deploymentContext.getDeploymentPaaSId()).getDeploymentUrl();
+        String taskUrl = null;
         try {
-            log.info("TRIGGERING OPERATION : {}", request.getOperationName());
-            Thread.sleep(3000);
-            log.info(" COMMAND REQUEST IS: " + JsonUtil.toString(request));
-        } catch (JsonProcessingException | InterruptedException e) {
-            log.error("OPERATION execution failled!", e);
-            log.info("RESULT IS: KO");
-            return "KO";
+            taskUrl = restClient.postCustomCommandToJanus(deploymentUrl, request);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        // only 2 operations in allowedOperation will return OK
-        result = allowedOperation.contains(request.getOperationName()) ? "OK" : "KO";
-        log.info("RESULT IS : {}", result);
-        return result;
+        // Check status DONE after executing operation
+        final String url = taskUrl;
+        Runnable task = () -> {
+            String threadName = Thread.currentThread().getName();
+            log.info("Running another thread for event check " + threadName);
+            try {
+                checkJanusStatusUntil("DONE", url);
+            } catch (Exception e) {
+                e.printStackTrace();
+                this.changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
+                sendMesage(deploymentContext.getDeploymentPaaSId(), e.getMessage());
+                throw new RuntimeException(e.getMessage());
+            }
+        };
+        Thread thread = new Thread(task);
+        thread.start();
     }
 
     @Override
