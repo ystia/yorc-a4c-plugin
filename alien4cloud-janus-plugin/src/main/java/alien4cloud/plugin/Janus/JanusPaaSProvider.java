@@ -87,21 +87,14 @@ import org.elasticsearch.common.collect.Maps;
 
 @Slf4j
 public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
+    private static final String BLOCKSTORAGE_APPLICATION = "BLOCKSTORAGE-APPLICATION";
     private final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
-
-    private ProviderConfig providerConfiguration;
-
     private final Map<String, JanusRuntimeDeploymentInfo> runtimeDeploymentInfos = Maps.newConcurrentMap();
-
-    private Map<String, String> paaSDeploymentIdToAlienDeploymentIdMap = Maps.newHashMap();
-
     private final List<AbstractMonitorEvent> toBeDeliveredEvents = Collections.synchronizedList(new ArrayList<AbstractMonitorEvent>());
-
+    private ProviderConfig providerConfiguration;
+    private Map<String, String> paaSDeploymentIdToAlienDeploymentIdMap = Maps.newHashMap();
     @Inject
     private IToscaTypeSearchService toscaTypeSearchService;
-
-    private static final String BLOCKSTORAGE_APPLICATION = "BLOCKSTORAGE-APPLICATION";
-
     private ShowTopology showTopology = new ShowTopology();
 
     private WorkflowReader workflowReader;
@@ -238,6 +231,8 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
             deploymentUrl = restClient.postTopologyToJanus();
         } catch (Exception e) {
             e.printStackTrace();
+            this.changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
+            sendMesage(deploymentContext.getDeploymentPaaSId(), e.getMessage());
             return;
         }
         janusDeploymentInfo.setDeploymentUrl(deploymentUrl);
@@ -580,10 +575,6 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         toBeDeliveredEvents.add(messageMonitorEvent);
     }
 
-    private interface ScalingVisitor {
-        void visit(String nodeTemplateId);
-    }
-
     private RelationshipType getRelationshipType(String typeName) {
         return toscaTypeSearchService.findMostRecent(RelationshipType.class, typeName);
     }
@@ -693,13 +684,8 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
     @Override
     public void setConfiguration(ProviderConfig configuration) throws PluginConfigurationException {
         log.info("In the plugin configurator <" + this.getClass().getName() + ">");
-        try {
-            log.info("The config object Tags is : {}", JsonUtil.toString(configuration.getTags()));
-            this.providerConfiguration = configuration;
-            this.restClient.setProviderConfiguration(this.providerConfiguration);
-        } catch (JsonProcessingException e) {
-            log.error("Fails to serialize configuration object as json string", e);
-        }
+        this.providerConfiguration = configuration;
+        this.restClient.setProviderConfiguration(this.providerConfiguration);
     }
 
     @Override
@@ -764,6 +750,10 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
             InstanceInformation instanceInformation = existingInformations.get(nodeTemplateId).get(instanceId);
             switchInstanceMaintenanceMode(deploymentContext.getDeploymentPaaSId(), nodeTemplateId, instanceId, instanceInformation, maintenanceModeOn);
         }
+    }
+
+    private interface ScalingVisitor {
+        void visit(String nodeTemplateId);
     }
 
 }

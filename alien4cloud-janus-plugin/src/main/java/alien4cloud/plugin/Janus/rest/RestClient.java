@@ -10,7 +10,13 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 
+import javax.net.ssl.SSLContext;
+
+import alien4cloud.paas.exception.PluginConfigurationException;
 import alien4cloud.plugin.Janus.ProviderConfig;
 import alien4cloud.plugin.Janus.rest.Response.AttributeResponse;
 import alien4cloud.plugin.Janus.rest.Response.DeployInfosResponse;
@@ -27,19 +33,23 @@ import com.mashape.unirest.http.ObjectMapper;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.ssl.SSLContexts;
 import org.json.JSONObject;
 
 public class RestClient {
 
-    private static RestClient instance;
-    private ProviderConfig providerConfiguration;
-    private static ObjectMapper objectMapper;
     private static final String CHARSET = "UTF-8";
-
     // Default long pooling duration on Janus endpoints is 5min
     private static final long SOCKET_TIMEOUT = 300060;
     private static final long CONNECTION_TIMEOUT = 10000;
-
+    private static RestClient instance;
+    private static ObjectMapper objectMapper;
+    private ProviderConfig providerConfiguration;
 
     public static synchronized RestClient getInstance() {
         if (instance == null) {
@@ -48,10 +58,6 @@ public class RestClient {
             Unirest.setTimeouts(CONNECTION_TIMEOUT, SOCKET_TIMEOUT);
         }
         return instance;
-    }
-
-    public void setProviderConfiguration(ProviderConfig providerConfiguration) {
-        this.providerConfiguration = providerConfiguration;
     }
 
     private static void initObjectMapper() {
@@ -77,6 +83,39 @@ public class RestClient {
         };
 
         Unirest.setObjectMapper(RestClient.objectMapper);
+    }
+
+    private static boolean isStatusCodeOk(int statusCode) {
+        return statusCode >= 200 && statusCode < 300;
+    }
+
+    public void setProviderConfiguration(ProviderConfig providerConfiguration) throws PluginConfigurationException {
+        this.providerConfiguration = providerConfiguration;
+        if (Boolean.TRUE.equals(providerConfiguration.getInsecureTLS())) {
+            SSLContext sslContext;
+            try {
+                sslContext = SSLContexts.custom()
+                        .loadTrustMaterial(null, (chain, authType) -> true)
+                        .build();
+            } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException e) {
+                e.printStackTrace();
+                throw new PluginConfigurationException("Failed to create SSL socket factory", e);
+            }
+            SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
+                    sslContext,
+                    NoopHostnameVerifier.INSTANCE);
+            RequestConfig clientConfig = RequestConfig.custom().setConnectTimeout(((Long) CONNECTION_TIMEOUT).intValue())
+                    .setSocketTimeout(((Long) SOCKET_TIMEOUT).intValue()).setConnectionRequestTimeout(((Long) SOCKET_TIMEOUT).intValue())
+                    .build();
+            CloseableHttpClient httpClient = HttpClients
+                    .custom()
+                    .setDefaultRequestConfig(clientConfig)
+                    //                    .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
+                    .setSSLSocketFactory(sslsf)
+                    .build();
+            Unirest.setHttpClient(httpClient);
+        }
+
     }
 
     public String postTopologyToJanus() throws Exception {
@@ -115,7 +154,6 @@ public class RestClient {
 
         return obj.getString("status");
     }
-
 
     public DeployInfosResponse getDeploymentInfosFromJanus(String deploymentUrl) throws Exception {
         HttpResponse<DeployInfosResponse> deployRes = Unirest.get(providerConfiguration.getUrlJanus() + deploymentUrl)
@@ -169,10 +207,6 @@ public class RestClient {
                 .asJson()
                 .getStatusText();
 
-    }
-
-    private static boolean isStatusCodeOk(int statusCode) {
-        return statusCode >= 200 && statusCode < 300;
     }
 
     private void checkRestErrors(HttpResponse<?> httpResponse) throws Exception {
