@@ -94,7 +94,7 @@ public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<Provid
                 case UNKNOWN:
                     throw new IllegalDeploymentStateException("Topology [" + deploymentId + "] is in status [" + deploymentStatus + "] and cannot be scaled");
                 case DEPLOYED:
-                    doScale(ctx, nodeId, nbi);
+                    doScale(ctx, nodeId, nbi, callback);
                     break;
                 default:
                     throw new IllegalDeploymentStateException("Topology [" + deploymentId + "] is in illegal status [" + deploymentStatus
@@ -103,54 +103,6 @@ public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<Provid
         } finally {
             providerLock.writeLock().unlock();
         }
-    }
-
-    @Override
-    public void getInstancesInformation(PaaSTopologyDeploymentContext deploymentContext, IPaaSCallback<Map<String, Map<String, InstanceInformation>>> callback) {
-        callback.onSuccess(getInstancesInformation(deploymentContext.getDeploymentPaaSId(), deploymentContext.getDeploymentTopology()));
-    }
-
-    public Map<String, Map<String, InstanceInformation>> getInstancesInformation(String deploymentId, Topology topology) {
-        Map<String, Map<String, InstanceInformation>> instanceInformations = instanceInformationsFromTopology(topology);
-
-        try {
-            // TODO :
-            // fillInstanceStates(deploymentId, instanceInformations, restEventEndpoint);
-
-            // fillRuntimeInformations(deploymentId, instanceInformations);
-
-            // parseAttributes(instanceInformations, statusByDeployments.get(deploymentId));
-            log.debug("------------------------------", instanceInformations);
-            return instanceInformations;
-        } catch (RestClientException e) {
-            log.warn("Error getting " + deploymentId + " deployment informations. \n\t Cause: " + e.getMessage());
-            return Maps.newHashMap();
-        } catch (Exception e) {
-            throw new PaaSTechnicalException("Error getting " + deploymentId + " deployment informations", e);
-        }
-    }
-
-    private Map<String, Map<String, InstanceInformation>> instanceInformationsFromTopology(Topology topology) {
-        Map<String, Map<String, InstanceInformation>> instanceInformations = Maps.newHashMap();
-        // fill instance informations based on the topology
-        for (Entry<String, NodeTemplate> nodeTempalteEntry : topology.getNodeTemplates().entrySet()) {
-            Map<String, InstanceInformation> nodeInstanceInfos = Maps.newHashMap();
-            // get the current number of instances
-            int currentPlannedInstances = getPlannedInstancesCount(nodeTempalteEntry.getKey(), topology);
-            for (int i = 1; i <= currentPlannedInstances; i++) {
-                // Map<String, AbstractPropertyValue> properties = nodeTempalteEntry.getValue().getProperties() == null ? null
-                // : Maps.newHashMap(nodeTempalteEntry.getValue().getProperties());
-                // Map<String, String> attributes = nodeTempalteEntry.getValue().getAttributes() == null ? null
-                // : Maps.newHashMap(nodeTempalteEntry.getValue().getAttributes());
-                // Map<String, String> runtimeProperties = Maps.newHashMap();
-                // TODO remove thoses infos
-                // InstanceInformation instanceInfo = new InstanceInformation(ToscaNodeLifecycleConstants.INITIAL, InstanceStatus.PROCESSING, properties,
-                // attributes, null);
-                // nodeInstanceInfos.put(String.valueOf(i), instanceInfo);
-            }
-            instanceInformations.put(nodeTempalteEntry.getKey(), nodeInstanceInfos);
-        }
-        return instanceInformations;
     }
 
     private int getPlannedInstancesCount(String nodeTemplateId, Topology topology) {
@@ -239,7 +191,7 @@ public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<Provid
 
     protected abstract void doDeploy(PaaSTopologyDeploymentContext deploymentContext);
 
-    protected abstract void doScale(PaaSDeploymentContext deploymentContext, String nodeId, int nbi);
+    protected abstract void doScale(PaaSDeploymentContext deploymentContext, String nodeId, int nbi, IPaaSCallback<?> callback);
 
     protected abstract void doUndeploy(PaaSDeploymentContext deploymentContext);
 
