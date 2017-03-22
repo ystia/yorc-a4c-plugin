@@ -256,7 +256,9 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
                 this.changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.DEPLOYED);
 
-                this.setAttributes(deploymentUrl, deploymentContext);
+                // PhD this.setAttributes(deploymentUrl, deploymentContext);
+                // TODO either call updateNodeInfo or do nothing
+                // TODO The work should be done in listenDeploymentEvent
 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -487,33 +489,36 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
                 try {
                     EventResponse eventResponse = this.restClient.getEventFromJanus(deploymentUrl, prevIndex);
                     if (eventResponse == null) {
-                        TimeUnit.SECONDS.sleep(1);
+                        TimeUnit.SECONDS.sleep(2);
                         continue;
                     }
                     prevIndex = eventResponse.getLast_index();
                     if (eventResponse.getEvents() != null) {
                         // Recompute instance information map
+                        // TODO put this at beginning since it does never change
                         Map<String, Map<String, InstanceInformation>> instanceInfo =  jrdi.getInstanceInformations();
 
                         for (Event event : eventResponse.getEvents()) {
-                            log.debug("[listenDeploymentEvent] " + event.getNode() +  " "  +event.getStatus());
-                            this.sendMessage(deploymentPaaSId, "[listenDeploymentEvent] " + event.getNode() + " " + event.getStatus());
+                            String nodeName = event.getNode();
+                            log.debug("[listenDeploymentEvent] " + nodeName +  " "  +event.getStatus());
+                            this.sendMessage(deploymentPaaSId, "[listenDeploymentEvent] " + nodeName + " " + event.getStatus());
 
-                            Map<String, InstanceInformation> nodeInstancesInfos = instanceInfo.get(event.getNode());
+                            Map<String, InstanceInformation> nodeInstancesInfos = instanceInfo.get(nodeName);
                             if (nodeInstancesInfos == null) {
-                                // TODO create it
-                                log.info("[listenDeploymentEvent] nodeInstancesInfos == null");
-                                continue;
+                                // Add a new Node in JanusRuntimeDeploymentInfo
+                                log.debug("[listenDeploymentEvent] nodeInstancesInfos == null");
+                                nodeInstancesInfos = Maps.newHashMap();
+                                instanceInfo.put(nodeName, nodeInstancesInfos);
                             }
 
-                            String inb = event.getInstance(); // Need to change when Janus api change
+                            String inb = event.getInstance();
                             if (event.getStatus().equals("started")) {
                                 this.setNodeAttributes(deploymentUrl, deploymentPaaSId, event.getNode(), inb);
                             }
 
                             InstanceInformation infos = nodeInstancesInfos.get(inb);
                             if (infos == null) {
-                                // Must create information for the newly created instance.
+                                // Add a new Instance for this node in JanusRuntimeDeploymentInfo
                                 log.debug("[listenDeploymentEvent] creating instance info for " + inb);
                                 infos = newInstance(new Integer(inb));
                                 nodeInstancesInfos.put(inb, infos);
@@ -523,6 +528,10 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
                                 infos.setInstanceStatus(InstanceStatus.SUCCESS);
                             } else if (event.getStatus().equals("error")) {
                                 infos.setInstanceStatus(InstanceStatus.FAILURE);
+                            } else if (event.getStatus().equals("deleted")) {
+                                log.debug("[listenDeploymentEvent] remove instance " + inb);
+                                nodeInstancesInfos.remove(inb);
+                                // TODO notifyInstanceStateChanged will fail here ?
                             }
                             this.notifyInstanceStateChanged(deploymentPaaSId, event.getNode(), inb, infos);
 
