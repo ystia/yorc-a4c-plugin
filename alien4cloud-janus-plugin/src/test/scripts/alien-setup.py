@@ -2,13 +2,15 @@ import argparse
 import json
 import logging
 import requests
+import inspect
 import sys
+import glob
+import os
 
 __author__ = 'Loic Albertin'
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 logger = logging.getLogger(__name__)
-
 
 class AlienClient(object):
     def __init__(self, alien_url):
@@ -42,15 +44,13 @@ class AlienClient(object):
 
         self.session = requests.session()
         self.session.cookies.update(r.cookies)
-        headers = {'accept': 'application/json'}
-        self.session.headers = headers
+
+        self.session.headers = {'accept': 'application/json'}
 
         # return authentication json object
         r = self.session.get("{0}/rest/auth/status".format(self.alien_url))
         login_status = r.json()
 
-        headers = {'accept': 'application/json', 'content-type': 'application/json'}
-        self.session.headers = headers
 
         if login_status['error'] is None:
             self.login_status = login_status['data']
@@ -205,6 +205,27 @@ class AlienClient(object):
         if response["error"]:
             raise RuntimeError("Failed to create network resource {0}: {1}".format(network_name, response["error"]))
 
+    def upload_janus_plugin(self):
+        logger.info("Uploading the janus plugin")
+        artifact = 'alien4cloud-janus-plugin-1.0.0-SNAPSHOT.zip'
+        self.session.headers = {'accept': 'application/json'}
+        payload = {'file': open(artifact, 'rb')}
+        response = self.session.post("%s/rest/plugins" % self.alien_url, files=payload).json()
+        if response["error"]:
+            raise RuntimeError("Failed to upload janus plugin: {0}".format(response["error"]))
+
+    # upload csar into a4c
+    def upload_csar(self, name):
+        artifacts = glob.glob('%s-*-csar.zip' % name)
+        for artifact in artifacts:
+            logger.info("Uploading %s" % artifact)
+            self.session.headers = {'accept': 'application/json'}
+            payload = {'file': open(artifact, 'rb')}
+            response = self.session.post("%s/rest/csars" % self.alien_url, files=payload).json()
+            if response["error"]:
+                logger.warn(str(response))
+                raise RuntimeError("Failed to upload csars: {0}".format(response["error"]))
+
 def main():
     parser = argparse.ArgumentParser(description='Configure Alien4Cloud')
     parser.add_argument('--alien-ip', dest='alien_ip', action='store',
@@ -217,12 +238,33 @@ def main():
                         type=str, nargs=1, required=True,
                         help='The Image ID for Centos OS')
     parser.add_argument('--public-network-name', dest='public_net_name', action='store',
-                        type=str, default="public_starlings",
+                        type=str, default="public-starlings",
                         help='The Name of the OpenStack Public Network')
     args = parser.parse_args()
     alien = AlienClient("http://{0}:8088/".format(args.alien_ip))
     alien.connect("admin", "admin")
 
+    # Upload the alien4cloud-janus-plugin
+    alien.upload_janus_plugin()
+
+    # Upload all csar from the bdcf catalog
+    # Order is important : there are dependencies
+    alien.upload_csar('java')
+    alien.upload_csar('consul')
+    alien.upload_csar('haproxy')
+    alien.upload_csar('mysql')
+    alien.upload_csar('rstudio')
+    alien.upload_csar('mongodb')
+    alien.upload_csar('elasticsearch')
+    alien.upload_csar('kafka')
+    alien.upload_csar('kibana')
+    alien.upload_csar('logstash')
+    alien.upload_csar('mapr')
+    alien.upload_csar('beats')
+    alien.upload_csar('nutch')
+
+    # Create the janus orchestrator
+    alien.session.headers = {'accept': 'application/json', 'content-type': 'application/json'}
     orchestrator_id = alien.create_orchestrator("Janus", "alien4cloud-Janus-plugin", "Janus-orchestrator-factory")
     print orchestrator_id
     alien.configure_janus_orchestrator(orchestrator_id, args.manager_ip[0])
