@@ -40,8 +40,8 @@ public class RestClient {
     private static ObjectMapper objectMapper;
     private static final String CHARSET = "UTF-8";
 
-    // Default long pooling duration on Janus endpoints is 5min
-    private static final long SOCKET_TIMEOUT = 300060;
+    // Default long pooling duration on Janus endpoints is 15 min
+    private static final long SOCKET_TIMEOUT = 900000;
     private static final long CONNECTION_TIMEOUT = 10000;
 
 
