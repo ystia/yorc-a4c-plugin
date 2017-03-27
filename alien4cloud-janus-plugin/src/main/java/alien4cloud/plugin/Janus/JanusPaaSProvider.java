@@ -196,14 +196,12 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         Map<String, Map<String, InstanceInformation>> currentInformations = this.setupInstanceInformations(deploymentContext, topology);
 
 
-        // Why DeploymentStatus.DEPLOYMENT_IN_PROGRESS and not DeploymentStatus.INIT_DEPLOYMENT ??
-        JanusRuntimeDeploymentInfo janusDeploymentInfo = new JanusRuntimeDeploymentInfo(deploymentContext, DeploymentStatus.DEPLOYMENT_IN_PROGRESS, currentInformations, "");
+        JanusRuntimeDeploymentInfo janusDeploymentInfo = new JanusRuntimeDeploymentInfo(deploymentContext, DeploymentStatus.INIT_DEPLOYMENT, currentInformations, "");
         runtimeDeploymentInfos.put(deploymentContext.getDeploymentPaaSId(), janusDeploymentInfo);
 
         doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.DEPLOYMENT_IN_PROGRESS);
 
         MappingTosca.addPreConfigureSteps(topology, deploymentContext.getPaaSTopology());
-
         MappingTosca.generateOpenstackFIP(deploymentContext);
 
         //Create the yml of our topology (after substitution)
@@ -241,15 +239,12 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         log.debug("Deployment Url : " + deploymentUrl);
         sendMessage(deploymentContext.getDeploymentPaaSId(), deploymentUrl);
 
-
         Runnable task = () -> {
             String threadName = Thread.currentThread().getName();
             log.info("Running another thread for event check " + threadName);
 
             try {
-
                 checkJanusStatusUntil("DEPLOYED", deploymentUrl);
-
                 this.changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.DEPLOYED);
 
             } catch (Exception e) {
@@ -262,11 +257,11 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
                 throw new RuntimeException(e.getMessage()); // TODO : Refactor, For detecting error deploy rest API A4C, when integrationt test
             }
         };
-
         Thread thread = new Thread(task);
         thread.start();
 
         this.listenDeploymentEvent(deploymentUrl, deploymentContext.getDeploymentPaaSId());
+
         this.listenJanusLog(deploymentUrl, deploymentContext);
     }
 
