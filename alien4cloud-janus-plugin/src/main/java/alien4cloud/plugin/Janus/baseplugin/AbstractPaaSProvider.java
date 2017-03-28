@@ -6,25 +6,28 @@
 */
 package alien4cloud.plugin.Janus.baseplugin;
 
+import java.util.Map;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 import alien4cloud.model.deployment.DeploymentTopology;
 import alien4cloud.orchestrators.plugin.IOrchestratorPlugin;
 import alien4cloud.paas.IPaaSCallback;
-import alien4cloud.paas.exception.*;
-import alien4cloud.paas.model.*;
+import alien4cloud.paas.exception.IllegalDeploymentStateException;
+import alien4cloud.paas.exception.OperationExecutionException;
+import alien4cloud.paas.exception.PaaSAlreadyDeployedException;
+import alien4cloud.paas.exception.PaaSNotYetDeployedException;
+import alien4cloud.paas.exception.PluginConfigurationException;
+import alien4cloud.paas.model.DeploymentStatus;
+import alien4cloud.paas.model.NodeOperationExecRequest;
+import alien4cloud.paas.model.PaaSDeploymentContext;
+import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
 import alien4cloud.plugin.Janus.ProviderConfig;
 import alien4cloud.topology.TopologyUtils;
 import alien4cloud.utils.MapUtil;
-import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.alien4cloud.tosca.model.templates.Capability;
-import org.alien4cloud.tosca.model.templates.NodeTemplate;
 import org.alien4cloud.tosca.model.templates.ScalingPolicy;
 import org.alien4cloud.tosca.model.templates.Topology;
-import org.springframework.web.client.RestClientException;
-
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 @Slf4j
 public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
@@ -72,52 +75,39 @@ public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<Provid
         }
     }
 
+    /**
+     * Scale a node
+     *
+     * @param ctx      the deployment context
+     * @param nodeId   id of the compute node to scale up
+     * @param nbi      the number of instances to be added (if positive) or removed (if negative)
+     * @param callback
+     */
     @Override
-    public void getInstancesInformation(PaaSTopologyDeploymentContext deploymentContext, IPaaSCallback<Map<String, Map<String, InstanceInformation>>> callback) {
-        callback.onSuccess(getInstancesInformation(deploymentContext.getDeploymentPaaSId(), deploymentContext.getDeploymentTopology()));
-    }
-
-    public Map<String, Map<String, InstanceInformation>> getInstancesInformation(String deploymentId, Topology topology) {
-        Map<String, Map<String, InstanceInformation>> instanceInformations = instanceInformationsFromTopology(topology);
-
+    public void scale(PaaSDeploymentContext ctx, String nodeId, int nbi, IPaaSCallback<?> callback) {
+        String deploymentId = ctx.getDeploymentPaaSId();
         try {
-            // TODO :
-            // fillInstanceStates(deploymentId, instanceInformations, restEventEndpoint);
-
-            // fillRuntimeInformations(deploymentId, instanceInformations);
-
-            // parseAttributes(instanceInformations, statusByDeployments.get(deploymentId));
-            log.debug("------------------------------", instanceInformations);
-            return instanceInformations;
-        } catch (RestClientException e) {
-            log.warn("Error getting " + deploymentId + " deployment informations. \n\t Cause: " + e.getMessage());
-            return Maps.newHashMap();
-        } catch (Exception e) {
-            throw new PaaSTechnicalException("Error getting " + deploymentId + " deployment informations", e);
-        }
-    }
-
-    private Map<String, Map<String, InstanceInformation>> instanceInformationsFromTopology(Topology topology) {
-        Map<String, Map<String, InstanceInformation>> instanceInformations = Maps.newHashMap();
-        // fill instance informations based on the topology
-        for (Entry<String, NodeTemplate> nodeTempalteEntry : topology.getNodeTemplates().entrySet()) {
-            Map<String, InstanceInformation> nodeInstanceInfos = Maps.newHashMap();
-            // get the current number of instances
-            int currentPlannedInstances = getPlannedInstancesCount(nodeTempalteEntry.getKey(), topology);
-            for (int i = 1; i <= currentPlannedInstances; i++) {
-                // Map<String, AbstractPropertyValue> properties = nodeTempalteEntry.getValue().getProperties() == null ? null
-                // : Maps.newHashMap(nodeTempalteEntry.getValue().getProperties());
-                // Map<String, String> attributes = nodeTempalteEntry.getValue().getAttributes() == null ? null
-                // : Maps.newHashMap(nodeTempalteEntry.getValue().getAttributes());
-                // Map<String, String> runtimeProperties = Maps.newHashMap();
-                // TODO remove thoses infos
-                // InstanceInformation instanceInfo = new InstanceInformation(ToscaNodeLifecycleConstants.INITIAL, InstanceStatus.PROCESSING, properties,
-                // attributes, null);
-                // nodeInstanceInfos.put(String.valueOf(i), instanceInfo);
+            providerLock.writeLock().lock();
+            DeploymentStatus deploymentStatus = getStatus(deploymentId, false);
+            switch (deploymentStatus) {
+                case UNDEPLOYED:
+                case DEPLOYMENT_IN_PROGRESS:
+                case UNDEPLOYMENT_IN_PROGRESS:
+                case WARNING:
+                case FAILURE:
+                case UNKNOWN:
+                    throw new IllegalDeploymentStateException(
+                            "Topology [" + deploymentId + "] is in status [" + deploymentStatus + "] and cannot be scaled");
+                case DEPLOYED:
+                    doScale(ctx, nodeId, nbi, callback);
+                    break;
+                default:
+                    throw new IllegalDeploymentStateException("Topology [" + deploymentId + "] is in illegal status [" + deploymentStatus
+                            + "] and cannot be deployed");
             }
-            instanceInformations.put(nodeTempalteEntry.getKey(), nodeInstanceInfos);
+        } finally {
+            providerLock.writeLock().unlock();
         }
-        return instanceInformations;
     }
 
     private int getPlannedInstancesCount(String nodeTemplateId, Topology topology) {
@@ -205,6 +195,8 @@ public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<Provid
     protected abstract DeploymentStatus doGetStatus(String deploymentId, boolean triggerEventIfUndeployed);
 
     protected abstract void doDeploy(PaaSTopologyDeploymentContext deploymentContext);
+
+    protected abstract void doScale(PaaSDeploymentContext deploymentContext, String nodeId, int nbi, IPaaSCallback<?> callback);
 
     protected abstract void doUndeploy(PaaSDeploymentContext deploymentContext);
 
