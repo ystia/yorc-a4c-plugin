@@ -26,9 +26,13 @@ import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.ObjectMapper;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.json.JSONObject;
 
+import static org.springframework.http.HttpStatus.CREATED;
+
+@Slf4j
 public class RestClient {
 
     private static RestClient instance;
@@ -36,8 +40,8 @@ public class RestClient {
     private static ObjectMapper objectMapper;
     private static final String CHARSET = "UTF-8";
 
-    // Default long pooling duration on Janus endpoints is 5min
-    private static final long SOCKET_TIMEOUT = 300060;
+    // Default long pooling duration on Janus endpoints is 15 min
+    private static final long SOCKET_TIMEOUT = 900000;
     private static final long CONNECTION_TIMEOUT = 10000;
 
 
@@ -101,6 +105,29 @@ public class RestClient {
         return postResponse.getHeaders().getFirst("Location");
     }
 
+    /**
+     * Scale a node
+     * @param deploymentUrl returned by Janus at deployment: deployment/<deployment_id>
+     * @param nodeName
+     * @param delta
+     * @return
+     * @throws Exception
+     */
+    public String scaleNodeInJanus(String deploymentUrl, String nodeName, int delta) throws Exception {
+        HttpResponse<JsonNode> postResponse =
+                Unirest.post(providerConfiguration.getUrlJanus() + deploymentUrl + "/scale/" + nodeName + "?delta=" + delta)
+                .header("accept", "application/json")
+                .asJson();
+        if (postResponse.getStatus() != 202) {
+            log.info("Janus returned an error : " + postResponse.getStatusText());
+            throw new Exception("Janus returned an error : " + postResponse.getStatus());
+        }
+
+        String ret = postResponse.getHeaders().getFirst("Location");
+        log.info("Scaling accepted: " + ret);
+        return ret;
+    }
+
     public String getStatusFromJanus(String deploymentUrl) throws Exception {
         HttpResponse<JsonNode> res = Unirest.get(providerConfiguration.getUrlJanus() + deploymentUrl)
                 .header("accept", "application/json")
@@ -147,7 +174,7 @@ public class RestClient {
 
     public LogResponse getLogFromJanus(String deploymentUrl, int index) throws Exception {
         HttpResponse<JsonNode> logRes =
-                Unirest.get(providerConfiguration.getUrlJanus() + deploymentUrl + "/" + "logs?index=" + index + "&filter=")
+                Unirest.get(providerConfiguration.getUrlJanus() + deploymentUrl + "/logs?index=" + index + "&filter=")
                         .header("accept", "application/json")
                         .asJson();
         this.checkRestErrors(logRes);
@@ -156,7 +183,7 @@ public class RestClient {
 
     public EventResponse getEventFromJanus(String deploymentUrl, int index) throws Exception {
         HttpResponse<JsonNode> eventResponse =
-                Unirest.get(providerConfiguration.getUrlJanus() + deploymentUrl + "/" + "events?index=" + index + "&filter=")
+                Unirest.get(providerConfiguration.getUrlJanus() + deploymentUrl + "/events?index=" + index + "&filter=")
                         .header("accept", "application/json")
                         .asJson();
         this.checkRestErrors(eventResponse);

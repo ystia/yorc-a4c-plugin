@@ -19,6 +19,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -165,7 +166,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
 
     private Map<String, Map<String, InstanceInformation>> setupInstanceInformations(final PaaSTopologyDeploymentContext deploymentContext, Topology topology) {
-
+        log.debug("setupInstanceInformations");
         Map<String, NodeTemplate> nodeTemplates = topology.getNodeTemplates();
         if (nodeTemplates == null) {
             nodeTemplates = Maps.newHashMap();
@@ -187,7 +188,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
     @Override
     protected synchronized void doDeploy(final PaaSTopologyDeploymentContext deploymentContext) {
-        log.info("Deploying deployment [" + deploymentContext.getDeploymentPaaSId() + "]");
+        log.debug("Deploying deployment [" + deploymentContext.getDeploymentPaaSId() + "]");
         this.paaSDeploymentIdToAlienDeploymentIdMap.put(deploymentContext.getDeploymentPaaSId(), deploymentContext.getDeploymentId());
 
         Topology topology = deploymentContext.getDeploymentTopology();
@@ -195,22 +196,19 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         Map<String, Map<String, InstanceInformation>> currentInformations = this.setupInstanceInformations(deploymentContext, topology);
 
 
-        // Why DeploymentStatus.DEPLOYMENT_IN_PROGRESS and not DeploymentStatus.INIT_DEPLOYMENT ??
-        JanusRuntimeDeploymentInfo janusDeploymentInfo = new JanusRuntimeDeploymentInfo(deploymentContext, DeploymentStatus.DEPLOYMENT_IN_PROGRESS, currentInformations, "");
+        JanusRuntimeDeploymentInfo janusDeploymentInfo = new JanusRuntimeDeploymentInfo(deploymentContext, DeploymentStatus.INIT_DEPLOYMENT, currentInformations, "");
         runtimeDeploymentInfos.put(deploymentContext.getDeploymentPaaSId(), janusDeploymentInfo);
 
-
-        this.changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.DEPLOYMENT_IN_PROGRESS);
+        doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.DEPLOYMENT_IN_PROGRESS);
 
         MappingTosca.addPreConfigureSteps(topology, deploymentContext.getPaaSTopology());
-
         MappingTosca.generateOpenstackFIP(deploymentContext);
 
         //Create the yml of our topology (after substitution)
         String yaml = archiveExportService.getYaml(new Csar(), topology);
-        //log.info(yaml);
+        //log.debug(yaml);
         List<String> lines = Collections.singletonList(yaml);
-        log.info("YML Topology");
+        log.debug("YML Topology");
         Path file = Paths.get("topology.yml");
         try {
             Files.write(file, lines, Charset.forName("UTF-8"));
@@ -221,17 +219,14 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         //Build our zip topology
         try {
             File zip = new File("topology.zip");
-            log.info("ZIP Topology");
+            log.debug("ZIP Topology");
             zipTopology.buildZip(zip, deploymentContext);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        //doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.UNDEPLOYED);
-
         //post topology zip to Janus
         log.info("POST Topology");
-
 
         String deploymentUrl;
         try {
@@ -241,192 +236,277 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
             return;
         }
         janusDeploymentInfo.setDeploymentUrl(deploymentUrl);
-        log.info("Deployment Url : " + deploymentUrl);
-        sendMesage(deploymentContext.getDeploymentPaaSId(), deploymentUrl);
-
+        log.debug("Deployment Url : " + deploymentUrl);
+        sendMessage(deploymentContext.getDeploymentPaaSId(), deploymentUrl);
 
         Runnable task = () -> {
             String threadName = Thread.currentThread().getName();
             log.info("Running another thread for event check " + threadName);
 
             try {
-
                 checkJanusStatusUntil("DEPLOYED", deploymentUrl);
-
                 this.changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.DEPLOYED);
-
-                this.setAttributes(deploymentUrl, deploymentContext);
 
             } catch (Exception e) {
                 e.printStackTrace();
                 this.changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
-                sendMesage(deploymentContext.getDeploymentPaaSId(), e.getMessage());
+                sendMessage(deploymentContext.getDeploymentPaaSId(), e.getMessage());
                 this.changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.UNDEPLOYED);
                 runtimeDeploymentInfos.remove(deploymentContext.getDeploymentPaaSId());
 
                 throw new RuntimeException(e.getMessage()); // TODO : Refactor, For detecting error deploy rest API A4C, when integrationt test
             }
         };
-
         Thread thread = new Thread(task);
         thread.start();
 
         this.listenDeploymentEvent(deploymentUrl, deploymentContext.getDeploymentPaaSId());
+
         this.listenJanusLog(deploymentUrl, deploymentContext);
     }
 
-    private void setAttributes(String deploymentUrl, PaaSDeploymentContext deploymentContext) throws Exception {
-        Map<String, Map<String, InstanceInformation>> intancesInfos =  this.runtimeDeploymentInfos.get(deploymentContext.getDeploymentPaaSId()).getInstanceInformations();
-        DeployInfosResponse deployRes =  this.restClient.getDeploymentInfosFromJanus(deploymentUrl);
+    /**
+     * Scale a Node
+     * @param ctx the deployment context
+     * @param nodeId id of the compute node to scale up
+     * @param nbi the number of instances to be added (if positive) or removed (if negative)
+     */
+    @Override
+    public void doScale(PaaSDeploymentContext ctx, String nodeId, int nbi, IPaaSCallback<?> callback) {
+        log.info("scaling " + nodeId + " delta=" + nbi);
+        String paasId = ctx.getDeploymentPaaSId();
+        JanusRuntimeDeploymentInfo rdinfo = runtimeDeploymentInfos.get(paasId);
+        String deploymentUrl = rdinfo.getDeploymentUrl();
+        Map<String, Map<String, InstanceInformation>> einfo = rdinfo.getInstanceInformations();
+        Map<String, InstanceInformation> nodeInfo = einfo.get(nodeId);
+        if (nodeInfo != null) {
+            int currentSize = nodeInfo.size();
+            log.debug("current size : " + currentSize);
+        }
+        String taskUrl = null;
+        try {
+            taskUrl = this.restClient.scaleNodeInJanus(deploymentUrl, nodeId, nbi);
+        } catch (Exception e) {
+            callback.onFailure(e);
+            return;
+        }
 
-        List<Link> nodes = deployRes.getLinks().stream().filter(link -> link.getRel().equals("node")).collect(Collectors.toList());
-        for(Link nodeLink : nodes) {
-            NodeInfosResponse nodeInfosRes = this.restClient.getNodesInfosFromJanus(nodeLink.getHref());
+        // Check status DONE after scaling
+        final String url = taskUrl;
+        Runnable task = () -> {
+            String threadName = Thread.currentThread().getName();
+            log.debug("Running another thread for event check " + threadName);
+            try {
+                checkJanusStatusUntil("DONE", url);
+                updateNodeInfo(deploymentUrl, ctx.getDeploymentPaaSId(), nodeId);
+                callback.onSuccess(null);
+            } catch (Exception e) {
+                e.printStackTrace();
+                this.changeStatus(ctx.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
+                sendMessage(ctx.getDeploymentPaaSId(), e.getMessage());
+                callback.onFailure(e);
+            }
+        };
+        Thread thread = new Thread(task);
+        thread.start();
+    }
 
-            for(Link instanceLink : nodeInfosRes.getLinks()) {
-                if(instanceLink.getRel().equals("instance")) {
-                    AtomicBoolean nodeFound = new AtomicBoolean(true);
-                    InstanceInfosResponse instInfoRes = this.restClient.getInstanceInfosFromJanus(instanceLink.getHref());
-                    instInfoRes.getLinks().stream().filter(attributeLink -> attributeLink.getRel().equals("attribute")).forEach(attributeLink -> {
-                        try {
-                            AttributeResponse attrRes = this.restClient.getAttributeFromJanus(attributeLink.getHref());
-                            log.info("--------------------------------");
-                            log.info("{}",attrRes);
-                            Map<String, InstanceInformation> nodeInstancesInfos = intancesInfos.get(nodeInfosRes.getName());
-                            if (nodeInstancesInfos == null) {
-                                nodeFound.set(false);
-                                return;
-                            }
-                            InstanceInformation instanceInfo = nodeInstancesInfos.get(instInfoRes.getId());
-                            if (nodeInstancesInfos == null) {
-                                nodeFound.set(false);
-                                return;
-                            }
-                            instanceInfo.getAttributes().put(attrRes.getName(), attrRes.getValue());
-                        } catch (Exception e) { // Response could be : [PANIC]yaml: mapping values are not allowed in this context
+    /**
+     * Update nodeInformation in the JanusRuntimeDeploymentInfo
+     * This is needed to let a4c know all about the nodes and their instances
+     * Information is got from Janus using the REST API
+     * @param deploymentUrl
+     * @param deploymentPaaSId
+     * @param nodeName
+     * @throws
+     */
+    private void updateNodeInfo(String deploymentUrl, String deploymentPaaSId, final String nodeName) throws Exception {
+        log.debug("updateNodeInfo " + nodeName);
+        // find the nodemap to be updated
+        JanusRuntimeDeploymentInfo jrdi = this.runtimeDeploymentInfos.get(deploymentPaaSId);
+        Map<String, Map<String, InstanceInformation>> nodemap = jrdi.getInstanceInformations();
 
-                        }
-                    });
-                    if (nodeFound.get()) {
-                        this.notifyInstanceStateChanged(deploymentContext.getDeploymentPaaSId(), nodeInfosRes.getName(),
-                                instInfoRes.getId(), intancesInfos.get(nodeInfosRes.getName()).get(instInfoRes.getId()));
+        // Find the node Information from Janus
+        DeployInfosResponse deployRes = this.restClient.getDeploymentInfosFromJanus(deploymentUrl);
+        for (Link nodeLink : deployRes.getLinks()) {
+            if (nodeLink.getRel().equals("node")) {
+                // nodeName is the last part of nodeLink.getHref()
+                if (nodeLink.getHref().endsWith(nodeName)) {
+                    NodeInfosResponse nodeInfosRes = this.restClient.getNodesInfosFromJanus(nodeLink.getHref());
+                    if (! nodeInfosRes.getName().equals(nodeName)) {
+                        // debug
+                        log.info("Bad node name " + nodeInfosRes.getName());
+                        return;
                     }
+                    Map<String, InstanceInformation> instanceMap = nodemap.get(nodeName);
+                    if (instanceMap == null) {
+                        // This node was unknown. Create it.
+                        instanceMap = Maps.newHashMap();
+                        nodemap.put(nodeName, instanceMap);
+                    }
+                    // Find information about all the node instances from Janus
+                    for (Link instanceLink : nodeInfosRes.getLinks()) {
+                        if (instanceLink.getRel().equals("instance")) {
+                            InstanceInfosResponse instInfoRes = this.restClient.getInstanceInfosFromJanus(instanceLink.getHref());
+                            String inb = instInfoRes.getId();
+                            InstanceInformation iinfo = instanceMap.get(inb);
+                            if (iinfo == null) {
+                                // This instance was unknown. create it.
+                                iinfo = newInstance(new Integer(inb));
+                                instanceMap.put(inb, iinfo);
+                            }
+                            for (Link link : instInfoRes.getLinks()) {
+                                switch (link.getRel()) {
+                                    case "attribute":
+                                        // Get the attribute from Janus
+                                        AttributeResponse attrRes = this.restClient.getAttributeFromJanus(link.getHref());
+                                        iinfo.getAttributes().put(attrRes.getName(), attrRes.getValue());
+                                        log.debug("Attribute: " + attrRes.getName() + "=" + attrRes.getValue());
+                                        break;
+                                    default:
+                                        log.debug("Ignore link type: " + link.getRel());
+                                        break;
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    log.debug("Ignore node name " + nodeLink.getHref());
                 }
             }
         }
     }
 
     private void setNodeAttributes(String deploymentUrl, String deploymentPaaSId, final String nodeName, final String instanceName) throws Exception {
-            Map<String, Map<String, InstanceInformation>> intancesInfos =  this.runtimeDeploymentInfos.get(deploymentPaaSId).getInstanceInformations();
-            DeployInfosResponse deployRes =  this.restClient.getDeploymentInfosFromJanus(deploymentUrl);
+        log.debug("setNodeAttributes " + nodeName + "/" + instanceName);
+        Map<String, Map<String, InstanceInformation>> intancesInfos = this.runtimeDeploymentInfos.get(deploymentPaaSId).getInstanceInformations();
+        DeployInfosResponse deployRes = this.restClient.getDeploymentInfosFromJanus(deploymentUrl);
 
-            List<Link> nodes = deployRes.getLinks().stream().filter(link -> link.getRel().equals("node") && link.getHref().endsWith(nodeName)).collect(Collectors.toList());
-            for(Link nodeLink : nodes) {
-                NodeInfosResponse nodeInfosRes = this.restClient.getNodesInfosFromJanus(nodeLink.getHref());
-                List<Link> instances = nodeInfosRes.getLinks().stream().filter(link -> link.getRel().equals("instance") && link.getHref().endsWith(instanceName)).collect(Collectors.toList());
-                for(Link instanceLink : instances) {
-                    if(instanceLink.getRel().equals("instance")) {
-                        AtomicBoolean nodeFound = new AtomicBoolean(true);
-                        InstanceInfosResponse instInfoRes = this.restClient.getInstanceInfosFromJanus(instanceLink.getHref());
-                        instInfoRes.getLinks().stream().filter(attributeLink -> attributeLink.getRel().equals("attribute")).forEach(attributeLink -> {
-                            try {
-                                AttributeResponse attrRes = this.restClient.getAttributeFromJanus(attributeLink.getHref());
-                                log.info("--------------------------------");
-                                log.info("{}", attrRes);
+        List<Link> nodes = deployRes.getLinks().stream().filter(link -> link.getRel().equals("node") && link.getHref().endsWith(nodeName)).collect(Collectors.toList());
+        for (Link nodeLink : nodes) {
+            NodeInfosResponse nodeInfosRes = this.restClient.getNodesInfosFromJanus(nodeLink.getHref());
+            List<Link> instances = nodeInfosRes.getLinks().stream().filter(link -> link.getRel().equals("instance") && link.getHref().endsWith(instanceName)).collect(Collectors.toList());
+            for (Link instanceLink : instances) {
+                if (instanceLink.getRel().equals("instance")) {
+                    AtomicBoolean nodeFound = new AtomicBoolean(true);
+                    InstanceInfosResponse instInfoRes = this.restClient.getInstanceInfosFromJanus(instanceLink.getHref());
+                    instInfoRes.getLinks().stream().filter(attributeLink -> attributeLink.getRel().equals("attribute")).forEach(attributeLink -> {
+                        try {
+                            AttributeResponse attrRes = this.restClient.getAttributeFromJanus(attributeLink.getHref());
+                            log.debug("Attr: {}", attrRes);
 
-                                Map<String, InstanceInformation> nodeInstancesInfos = intancesInfos.get(nodeInfosRes.getName());
-                                if (nodeInstancesInfos == null) {
-                                    nodeFound.set(false);
-                                    return;
-                                }
-                                InstanceInformation instanceInfo = nodeInstancesInfos.get(instInfoRes.getId());
-                                if (nodeInstancesInfos == null) {
-                                    nodeFound.set(false);
-                                    return;
-                                }
-                                instanceInfo.getAttributes().put(attrRes.getName(), attrRes.getValue());
-                            } catch (Exception e) { // Response could be : [PANIC]yaml: mapping values are not allowed in this context
-
+                            Map<String, InstanceInformation> nodeInstancesInfos = intancesInfos.get(nodeInfosRes.getName());
+                            if (nodeInstancesInfos == null) {
+                                log.debug("[setNodeAttributes] nodeInstancesInfos == null");
+                                nodeFound.set(false);
+                                return;
                             }
-                        });
-                        if (nodeFound.get()) {
-                            this.notifyInstanceStateChanged(deploymentPaaSId, nodeInfosRes.getName(), instInfoRes.getId(),
-                                    intancesInfos.get(nodeInfosRes.getName()).get(instInfoRes.getId()));
+                            InstanceInformation instanceInfo = nodeInstancesInfos.get(instInfoRes.getId());
+                            if (instanceInfo == null) {
+                                log.debug("[setNodeAttributes] instanceInfo == null");
+                                nodeFound.set(false);
+                                return;
+                            }
+                            instanceInfo.getAttributes().put(attrRes.getName(), attrRes.getValue());
+                        } catch (Exception e) {
+                            // Response could be : [PANIC]yaml: mapping values are not allowed in this context
+                            log.debug("[setNodeAttributes] ", e);
+                            nodeFound.set(false);
+                            return;
                         }
-                    }
+                    });
+                    //if (nodeFound.get()) {
+                    //    this.notifyInstanceStateChanged(deploymentPaaSId, nodeInfosRes.getName(), instInfoRes.getId(),
+                    //            intancesInfos.get(nodeInfosRes.getName()).get(instInfoRes.getId()));
+                    //}
                 }
             }
         }
+    }
 
+    /**
+     * Listen events from Janus about this deployment
+     * @param deploymentUrl
+     * @param deploymentPaaSId
+     */
     private void listenDeploymentEvent(String deploymentUrl, String deploymentPaaSId) {
-        Map<String, Map<String, InstanceInformation>> intancesInfos =  this.runtimeDeploymentInfos.get(deploymentPaaSId).getInstanceInformations();
+        log.debug("listenDeploymentEvent");
+        final JanusRuntimeDeploymentInfo jrdi = runtimeDeploymentInfos.get(deploymentPaaSId);
+        Map<String, Map<String, InstanceInformation>> instanceInfo =  jrdi.getInstanceInformations();
         Runnable task = () -> {
             int prevIndex = 1;
             while (true) {
                 try {
                     EventResponse eventResponse = this.restClient.getEventFromJanus(deploymentUrl, prevIndex);
                     if (eventResponse == null) {
-                        TimeUnit.SECONDS.sleep(1);
+                        TimeUnit.SECONDS.sleep(2);
                         continue;
                     }
                     prevIndex = eventResponse.getLast_index();
                     if (eventResponse.getEvents() != null) {
                         for (Event event : eventResponse.getEvents()) {
-                            log.info("[listenDeploymentEvent] " + event.getNode() +  " "  +event.getStatus());
-                            this.sendMesage(deploymentPaaSId, "[listenDeploymentEvent] " + event.getNode() + " " + event.getStatus());
+                            String nodeName = event.getNode();
+                            log.debug("[listenDeploymentEvent] " + nodeName +  " "  +event.getStatus());
+                            this.sendMessage(deploymentPaaSId, "[listenDeploymentEvent] " + nodeName + " " + event.getStatus());
 
-                            Map<String, InstanceInformation> nodeInstancesInfos = intancesInfos.get(event.getNode());
+                            Map<String, InstanceInformation> nodeInstancesInfos = instanceInfo.get(nodeName);
                             if (nodeInstancesInfos == null) {
-                                continue;
+                                // Add a new Node in JanusRuntimeDeploymentInfo
+                                log.debug("[listenDeploymentEvent] nodeInstancesInfos == null");
+                                nodeInstancesInfos = Maps.newHashMap();
+                                instanceInfo.put(nodeName, nodeInstancesInfos);
                             }
 
-                            String instanceId = event.getInstance(); // Need to change when Janus api change
+                            String inb = event.getInstance();
                             if (event.getStatus().equals("started")) {
-                                this.setNodeAttributes(deploymentUrl, deploymentPaaSId, event.getNode(), instanceId);
+                                this.setNodeAttributes(deploymentUrl, deploymentPaaSId, event.getNode(), inb);
                             }
 
-                            InstanceInformation infos = nodeInstancesInfos.get(instanceId);
+                            InstanceInformation infos = nodeInstancesInfos.get(inb);
+                            if (infos == null) {
+                                // Add a new Instance for this node in JanusRuntimeDeploymentInfo
+                                log.debug("[listenDeploymentEvent] creating instance info for " + inb);
+                                infos = newInstance(new Integer(inb));
+                                nodeInstancesInfos.put(inb, infos);
+                            }
                             infos.setState(event.getStatus());
                             if (event.getStatus().equals("started")) {
                                 infos.setInstanceStatus(InstanceStatus.SUCCESS);
                             } else if (event.getStatus().equals("error")) {
                                 infos.setInstanceStatus(InstanceStatus.FAILURE);
+                            } else if (event.getStatus().equals("deleted")) {
+                                log.debug("[listenDeploymentEvent] remove instance " + inb);
+                                nodeInstancesInfos.remove(inb);
                             }
-                            this.notifyInstanceStateChanged(deploymentPaaSId, event.getNode(), instanceId, infos);
-
+                            this.notifyInstanceStateChanged(deploymentPaaSId, event.getNode(), inb, infos);
                         }
                     }
                 } catch (InterruptedException e) {
                     String threadName = Thread.currentThread().getName();
-                    log.info("[listenDeploymentEvent] Stopped " + threadName + " " + deploymentPaaSId);
+                    log.error("[listenDeploymentEvent] Stopped " + threadName + " " + deploymentPaaSId);
                     return;
-                } catch (JanusRestException e) {
-                    if (e.getHttpStatusCode() == 404) {
-                        log.info("[listenDeploymentEvent] Stopped got 404 exception " + deploymentPaaSId);
-                        return;
-                    }
-                    e.printStackTrace();
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    log.error("[listenDeploymentEvent] Failed " + deploymentPaaSId, e);
+                    return;
                 }
             }
-
         };
         this.runtimeDeploymentInfos.get(deploymentPaaSId).getExecutor().submit(task);
     }
 
 
-    private void addPremiumLog(PaaSDeploymentContext deploymentContext, String log, Date date, PaaSDeploymentLogLevel level) {
+    private void addPremiumLog(PaaSDeploymentContext deploymentContext, String mylog, Date date, PaaSDeploymentLogLevel level) {
         Deployment deployment = deploymentContext.getDeployment();
         PaaSDeploymentLog deploymentLog = new PaaSDeploymentLog();
         deploymentLog.setDeploymentId(deployment.getId());
         deploymentLog.setDeploymentPaaSId(deployment.getOrchestratorDeploymentId());
-        deploymentLog.setContent(log);
+        deploymentLog.setContent(mylog);
         deploymentLog.setLevel(level);
         deploymentLog.setTimestamp(date);
         alienMonitorDao.save(deploymentLog);
     }
     private void listenJanusLog(String deploymentUrl, PaaSDeploymentContext deploymentContext) {
+        log.debug("listenJanusLog");
         String deploymentPaaSId = deploymentContext.getDeploymentPaaSId();
         Runnable task = () -> {
             int prevIndex = 1;
@@ -440,7 +520,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
                     prevIndex = logResponse.getLast_index();
                     if (logResponse.getLogs() != null) {
                         for (LogEvent logEvent : logResponse.getLogs()) {
-                            this.sendMesage(deploymentPaaSId, logEvent.getLogs());
+                            this.sendMessage(deploymentPaaSId, logEvent.getLogs());
                             addPremiumLog(deploymentContext, logEvent.getLogs(),  logEvent.getDate(),PaaSDeploymentLogLevel.INFO);
                         }
                     }
@@ -455,7 +535,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
                     }
                     e.printStackTrace();
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    log.info("getLogFromJanus raise exception: " + e);
                 }
             }
 
@@ -464,10 +544,11 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
     }
 
     private void checkJanusStatusUntil(String aimStatus, String deploymentUrl) throws Exception {
+        log.debug("checkJanusStatusUntil " + aimStatus);
         String status = "";
         while (!status.equals(aimStatus) && !status.contains("FAILED")) {
             status = restClient.getStatusFromJanus(deploymentUrl);
-            log.info(status);
+            log.debug("[checkJanusStatusUntil] current status: " + status);
             Thread.sleep(2000);
         }
     }
@@ -480,7 +561,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         }
 
         log.info("Undeploying deployment [" + deploymentContext.getDeploymentPaaSId() + "]");
-        changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.UNDEPLOYMENT_IN_PROGRESS);
+        doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.UNDEPLOYMENT_IN_PROGRESS);
 
         JanusRuntimeDeploymentInfo runtimeDeploymentInfo = runtimeDeploymentInfos.get(deploymentContext.getDeploymentPaaSId());
         if (runtimeDeploymentInfo != null) {
@@ -500,7 +581,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
                 restClient.undeployJanus(deploymentUrl);
                 checkJanusStatusUntil("UNDEPLOYED", deploymentUrl);
             } catch (Exception e) {
-                sendMesage(deploymentContext.getDeploymentPaaSId(), e.getMessage());
+                sendMessage(deploymentContext.getDeploymentPaaSId(), e.getMessage());
                 changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
                 throw new RuntimeException(e.getMessage()); // TODO : Refactor, For detecting error deploy rest API A4C, when integrationt test
             }
@@ -515,13 +596,19 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         thread.start();
     }
 
+    /**
+     * Change status of the deployment in JanusRuntimeDeploymentInfo
+     * This must be called with providerLock
+     * @param deploymentPaaSId
+     * @param status
+     * @return old status
+     */
     @Override
     protected synchronized DeploymentStatus doChangeStatus(final String deploymentPaaSId, final DeploymentStatus status) {
         JanusRuntimeDeploymentInfo runtimeDeploymentInfo = runtimeDeploymentInfos.get(deploymentPaaSId);
         DeploymentStatus oldDeploymentStatus = runtimeDeploymentInfo.getStatus();
         log.info("Deployment [" + deploymentPaaSId + "] moved from status [" + oldDeploymentStatus + "] to [" + status + "]");
         runtimeDeploymentInfo.setStatus(status);
-
 
         PaaSDeploymentStatusMonitorEvent event = new PaaSDeploymentStatusMonitorEvent();
         event.setDeploymentStatus(status);
@@ -534,11 +621,11 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         messageMonitorEvent.setMessage("APPLICATIONS.RUNTIME.EVENTS.MESSAGE_EVENT.STATUS_DEPLOYMENT_CHANGED");
         toBeDeliveredEvents.add(messageMonitorEvent);
 
-
         return oldDeploymentStatus;
     }
 
-    protected synchronized void sendMesage(final String deploymentPaaSId, final String message) {
+    protected synchronized void sendMessage(final String deploymentPaaSId, final String message) {
+        log.debug("sendMessage ");
         PaaSMessageMonitorEvent messageMonitorEvent = new PaaSMessageMonitorEvent();
         messageMonitorEvent.setDate((new Date()).getTime());
         messageMonitorEvent.setDeploymentId(paaSDeploymentIdToAlienDeploymentIdMap.get(deploymentPaaSId));
@@ -548,10 +635,16 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
     private void notifyInstanceStateChanged(final String deploymentPaaSId, final String nodeId, final String instanceId, final InstanceInformation information){
         final InstanceInformation cloned = new InstanceInformation();
+        log.debug("notifyInstanceStateChanged " + nodeId + "/" + instanceId);
+        if (information == null) {
+            log.error("NULL information");
+            return;
+        }
         cloned.setAttributes(information.getAttributes());
         cloned.setInstanceStatus(information.getInstanceStatus());
         cloned.setRuntimeProperties(information.getRuntimeProperties());
         cloned.setState(information.getState());
+        log.debug("state: " + information.getState());
 
         final JanusRuntimeDeploymentInfo deploymentInfo = runtimeDeploymentInfos.get(deploymentPaaSId);
         Deployment deployment = deploymentInfo.getDeploymentContext().getDeployment();
@@ -580,65 +673,16 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         toBeDeliveredEvents.add(messageMonitorEvent);
     }
 
-    private interface ScalingVisitor {
-        void visit(String nodeTemplateId);
-    }
-
     private RelationshipType getRelationshipType(String typeName) {
         return toscaTypeSearchService.findMostRecent(RelationshipType.class, typeName);
     }
 
-    private void doScaledUpNode(ScalingVisitor scalingVisitor, String nodeTemplateId, Map<String, NodeTemplate> nodeTemplates) {
-        scalingVisitor.visit(nodeTemplateId);
-        for (Entry<String, NodeTemplate> nEntry : nodeTemplates.entrySet()) {
-            if (nEntry.getValue().getRelationships() != null) {
-                for (Entry<String, RelationshipTemplate> rt : nEntry.getValue().getRelationships().entrySet()) {
-                    RelationshipType relType = getRelationshipType(rt.getValue().getType());
-                    if (nodeTemplateId.equals(rt.getValue().getTarget()) && ToscaUtils.isFromType(NormativeRelationshipConstants.HOSTED_ON, relType)) {
-                        doScaledUpNode(scalingVisitor, nEntry.getKey(), nodeTemplates);
-                    }
-                }
-            }
-        }
-    }
 
     @Override
     public void init(Map<String, PaaSTopologyDeploymentContext> activeDeployments) {
 
     }
 
-    @Override
-    public void scale(PaaSDeploymentContext deploymentContext, String nodeTemplateId, final int instances, IPaaSCallback<?> callback) {
-        JanusRuntimeDeploymentInfo runtimeDeploymentInfo = runtimeDeploymentInfos.get(deploymentContext.getDeploymentPaaSId());
-
-        if (runtimeDeploymentInfo == null) {
-            return;
-        }
-
-        Topology topology = runtimeDeploymentInfo.getDeploymentContext().getDeploymentTopology();
-        final Map<String, Map<String, InstanceInformation>> existingInformations = runtimeDeploymentInfo.getInstanceInformations();
-        if (existingInformations != null && existingInformations.containsKey(nodeTemplateId)) {
-            ScalingVisitor scalingVisitor = nodeTemplateId1 -> {
-                Map<String, InstanceInformation> nodeInformations = existingInformations.get(nodeTemplateId1);
-                if (nodeInformations != null) {
-                    int currentSize = nodeInformations.size();
-                    if (instances > 0) {
-                        for (int i = currentSize; i < currentSize + instances; i++) {
-                            nodeInformations.put(String.valueOf(i), newInstance(i));
-                        }
-                    } else {
-                        for (int i = currentSize + instances; i < currentSize; i++) {
-                            if (nodeInformations.containsKey(String.valueOf(i))) {
-                                nodeInformations.get(String.valueOf(i)).setState("stopping");
-                                nodeInformations.get(String.valueOf(i)).setInstanceStatus(InstanceStatus.PROCESSING);
-                            }
-                        }
-                    }
-                }
-            };
-            doScaledUpNode(scalingVisitor, nodeTemplateId, topology.getNodeTemplates());
-        }
-    }
 
     @Override
     public void launchWorkflow(PaaSDeploymentContext deploymentContext, final String workflowName, Map<String, Object> inputs, final IPaaSCallback<?> callback) {
@@ -651,6 +695,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
     @Override
     public void getStatus(PaaSDeploymentContext deploymentContext, IPaaSCallback<DeploymentStatus> callback) {
+        log.debug("getStatus");
         DeploymentStatus status = doGetStatus(deploymentContext.getDeploymentPaaSId(), false);
         callback.onSuccess(status);
     }
@@ -658,12 +703,19 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
     @Override
     public void getInstancesInformation(PaaSTopologyDeploymentContext deploymentContext,
                                         IPaaSCallback<Map<String, Map<String, InstanceInformation>>> callback) {
+        log.debug("getInstancesInformation");
         JanusRuntimeDeploymentInfo runtimeDeploymentInfo = runtimeDeploymentInfos.get(deploymentContext.getDeploymentPaaSId());
         if (runtimeDeploymentInfo != null) {
             callback.onSuccess(runtimeDeploymentInfo.getInstanceInformations());
         }
     }
 
+    /**
+     * Called from a4c every second
+     * @param date The start date since which we should retrieve events.
+     * @param maxEvents The maximum number of events to return.
+     * @param eventsCallback
+     */
     @Override
     public void getEventsSince(Date date, int maxEvents, IPaaSCallback<AbstractMonitorEvent[]> eventsCallback) {
         AbstractMonitorEvent[] events = toBeDeliveredEvents.toArray(new AbstractMonitorEvent[toBeDeliveredEvents.size()]);
@@ -676,9 +728,9 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         List<String> allowedOperation = Arrays.asList("success", "success_param");
         String result = null;
         try {
-            log.info("TRIGGERING OPERATION : {}", request.getOperationName());
+            log.debug("TRIGGERING OPERATION : {}", request.getOperationName());
             Thread.sleep(3000);
-            log.info(" COMMAND REQUEST IS: " + JsonUtil.toString(request));
+            log.debug(" COMMAND REQUEST IS: " + JsonUtil.toString(request));
         } catch (JsonProcessingException | InterruptedException e) {
             log.error("OPERATION execution failled!", e);
             log.info("RESULT IS: KO");
@@ -694,7 +746,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
     public void setConfiguration(ProviderConfig configuration) throws PluginConfigurationException {
         log.info("In the plugin configurator <" + this.getClass().getName() + ">");
         try {
-            log.info("The config object Tags is : {}", JsonUtil.toString(configuration.getTags()));
+            log.debug("The config object Tags is : {}", JsonUtil.toString(configuration.getTags()));
             this.providerConfiguration = configuration;
             this.restClient.setProviderConfiguration(this.providerConfiguration);
         } catch (JsonProcessingException e) {
@@ -705,7 +757,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
     @Override
     public void switchMaintenanceMode(PaaSDeploymentContext deploymentContext, boolean maintenanceModeOn) {
         String deploymentPaaSId = deploymentContext.getDeploymentPaaSId();
-
+        log.info("switchMaintenanceMode");
         JanusRuntimeDeploymentInfo runtimeDeploymentInfo = runtimeDeploymentInfos.get(deploymentContext.getDeploymentPaaSId());
 
         Topology topology = runtimeDeploymentInfo.getDeploymentContext().getDeploymentTopology();
@@ -737,12 +789,12 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
     private void switchInstanceMaintenanceMode(String deploymentPaaSId, String nodeTemplateId, String instanceId, InstanceInformation instanceInformation,
                                                boolean maintenanceModeOn) {
         if (maintenanceModeOn && instanceInformation.getInstanceStatus() == InstanceStatus.SUCCESS) {
-            log.info(String.format("switching instance MaintenanceMode ON for node <%s>, instance <%s>", nodeTemplateId, instanceId));
+            log.debug(String.format("switching instance MaintenanceMode ON for node <%s>, instance <%s>", nodeTemplateId, instanceId));
             instanceInformation.setInstanceStatus(InstanceStatus.MAINTENANCE);
             instanceInformation.setState("maintenance");
             notifyInstanceStateChanged(deploymentPaaSId, nodeTemplateId, instanceId, instanceInformation);
         } else if (!maintenanceModeOn && instanceInformation.getInstanceStatus() == InstanceStatus.MAINTENANCE) {
-            log.info(String.format("switching instance MaintenanceMode OFF for node <%s>, instance <%s>", nodeTemplateId, instanceId));
+            log.debug(String.format("switching instance MaintenanceMode OFF for node <%s>, instance <%s>", nodeTemplateId, instanceId));
             instanceInformation.setInstanceStatus(InstanceStatus.SUCCESS);
             instanceInformation.setState("started");
             notifyInstanceStateChanged(deploymentPaaSId, nodeTemplateId, instanceId, instanceInformation);
@@ -751,7 +803,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
     @Override
     public void switchInstanceMaintenanceMode(PaaSDeploymentContext deploymentContext, String nodeTemplateId, String instanceId, boolean maintenanceModeOn) {
-        log.info(String.format("switchInstanceMaintenanceMode order received for node <%s>, instance <%s>, mode <%s>", nodeTemplateId, instanceId,
+        log.debug(String.format("switchInstanceMaintenanceMode order received for node <%s>, instance <%s>, mode <%s>", nodeTemplateId, instanceId,
                 maintenanceModeOn));
         JanusRuntimeDeploymentInfo runtimeDeploymentInfo = runtimeDeploymentInfos.get(deploymentContext.getDeploymentPaaSId());
         if (runtimeDeploymentInfo == null) {
