@@ -1,16 +1,16 @@
 import argparse
+import glob
 import json
 import logging
+
 import requests
-import inspect
 import sys
-import glob
-import os
 
 __author__ = 'Loic Albertin'
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 class AlienClient(object):
     def __init__(self, alien_url):
@@ -51,7 +51,6 @@ class AlienClient(object):
         r = self.session.get("{0}/rest/auth/status".format(self.alien_url))
         login_status = r.json()
 
-
         if login_status['error'] is None:
             self.login_status = login_status['data']
             return True
@@ -78,17 +77,17 @@ class AlienClient(object):
             raise RuntimeError("Failed to create an Orchestrator {0}: {1}".format(name, response["error"]))
         return response["data"]
 
-    def configure_janus_orchestrator(self, orchestrator_id, janus_ip):
+    def configure_janus_orchestrator(self, orchestrator_id, janus_url):
         """
         Configure a Janus orchestrator
         :param orchestrator_id: The orchestrator id
         :type orchestrator_id: str
-        :param janus_ip: The Janus manager ip
-        :type janus_ip: str
+        :param janus_url: The Janus manager REST API URL (format https?://ip_or_dns_name:port)
+        :type janus_url: str
         """
-        logger.info("Configuring the Orchestrator to use Janus Manager at %s", janus_ip)
+        logger.info("Configuring the Orchestrator to use Janus Manager at %s", janus_url)
         payload = {
-            'urlJanus': 'http://{0}'.format(janus_ip)
+            'urlJanus': janus_url
         }
         logger.info(payload)
         response = self.session.put("{0}/rest/orchestrators/{1}/configuration".format(self.alien_url, orchestrator_id),
@@ -166,7 +165,7 @@ class AlienClient(object):
         payload = {'propertyName': 'id', 'propertyValue': resource_id}
         response = self.session.post(
             "{0}/rest/latest/orchestrators/{1}/locations/{2}/resources/{3}/template/properties".format(self.alien_url, orchestrator_id,
-                                                                                                location_id, res_id),
+                                                                                                       location_id, res_id),
             data=json.dumps(payload)).json()
         if response["error"]:
             raise RuntimeError("Failed to create resource {1}:{0}: {2}".format(resource_type, resource_name, response["error"]))
@@ -226,14 +225,15 @@ class AlienClient(object):
                 logger.warn(str(response))
                 raise RuntimeError("Failed to upload csars: {0}".format(response["error"]))
 
+
 def main():
     parser = argparse.ArgumentParser(description='Configure Alien4Cloud')
     parser.add_argument('--alien-ip', dest='alien_ip', action='store',
                         type=str, default="localhost",
                         help='The Alien IP')
-    parser.add_argument('--manager-ip', dest='manager_ip', action='store',
+    parser.add_argument('--manager-url', dest='manager_url', action='store',
                         type=str, nargs=1, required=True,
-                        help='The Janus IP')
+                        help='The Janus manager REST API URL (format https?://ip_or_dns_name:port)')
     parser.add_argument('--agent-image-id', dest='centos_image_id', action='store',
                         type=str, nargs=1, required=True,
                         help='The Image ID for Centos OS')
@@ -267,11 +267,11 @@ def main():
     alien.session.headers = {'accept': 'application/json', 'content-type': 'application/json'}
     orchestrator_id = alien.create_orchestrator("Janus", "alien4cloud-Janus-plugin", "Janus-orchestrator-factory")
     print orchestrator_id
-    alien.configure_janus_orchestrator(orchestrator_id, args.manager_ip[0])
+    alien.configure_janus_orchestrator(orchestrator_id, args.manager_url[0])
     alien.enable_orchestrator(orchestrator_id)
     location_id = alien.create_location(orchestrator_id, "openstack", "OpenStack")
     alien.create_resources_for_location(orchestrator_id, location_id, args.centos_image_id[0], args.public_net_name)
 
+
 if __name__ == "__main__":
     main()
-

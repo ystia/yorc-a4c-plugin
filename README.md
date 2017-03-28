@@ -8,7 +8,7 @@ This means that we allocate nodes with Slurm, then deploy component (docker imag
 
 ## Requirements
 
-- Alien4Cloud version 1.2.0-SM2
+- Alien4Cloud version 1.3.x
 - http://alien4cloud.github.io/#/documentation/1.1.0/devops_guide/
 
 
