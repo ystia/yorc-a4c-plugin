@@ -6,25 +6,28 @@
 */
 package alien4cloud.plugin.Janus.baseplugin;
 
+import java.util.Map;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 import alien4cloud.model.deployment.DeploymentTopology;
 import alien4cloud.orchestrators.plugin.IOrchestratorPlugin;
 import alien4cloud.paas.IPaaSCallback;
-import alien4cloud.paas.exception.*;
-import alien4cloud.paas.model.*;
+import alien4cloud.paas.exception.IllegalDeploymentStateException;
+import alien4cloud.paas.exception.OperationExecutionException;
+import alien4cloud.paas.exception.PaaSAlreadyDeployedException;
+import alien4cloud.paas.exception.PaaSNotYetDeployedException;
+import alien4cloud.paas.exception.PluginConfigurationException;
+import alien4cloud.paas.model.DeploymentStatus;
+import alien4cloud.paas.model.NodeOperationExecRequest;
+import alien4cloud.paas.model.PaaSDeploymentContext;
+import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
 import alien4cloud.plugin.Janus.ProviderConfig;
 import alien4cloud.topology.TopologyUtils;
 import alien4cloud.utils.MapUtil;
-import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import org.alien4cloud.tosca.model.templates.Capability;
-import org.alien4cloud.tosca.model.templates.NodeTemplate;
 import org.alien4cloud.tosca.model.templates.ScalingPolicy;
 import org.alien4cloud.tosca.model.templates.Topology;
-import org.springframework.web.client.RestClientException;
-
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 @Slf4j
 public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
@@ -74,9 +77,10 @@ public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<Provid
 
     /**
      * Scale a node
-     * @param ctx the deployment context
-     * @param nodeId id of the compute node to scale up
-     * @param nbi the number of instances to be added (if positive) or removed (if negative)
+     *
+     * @param ctx      the deployment context
+     * @param nodeId   id of the compute node to scale up
+     * @param nbi      the number of instances to be added (if positive) or removed (if negative)
      * @param callback
      */
     @Override
@@ -92,7 +96,8 @@ public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<Provid
                 case WARNING:
                 case FAILURE:
                 case UNKNOWN:
-                    throw new IllegalDeploymentStateException("Topology [" + deploymentId + "] is in status [" + deploymentStatus + "] and cannot be scaled");
+                    throw new IllegalDeploymentStateException(
+                            "Topology [" + deploymentId + "] is in status [" + deploymentStatus + "] and cannot be scaled");
                 case DEPLOYED:
                     doScale(ctx, nodeId, nbi, callback);
                     break;
