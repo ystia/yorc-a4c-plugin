@@ -12,15 +12,8 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -615,6 +608,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         event.setDate((new Date()).getTime());
         event.setDeploymentId(paaSDeploymentIdToAlienDeploymentIdMap.get(deploymentPaaSId));
         toBeDeliveredEvents.add(event);
+
         PaaSMessageMonitorEvent messageMonitorEvent = new PaaSMessageMonitorEvent();
         messageMonitorEvent.setDate((new Date()).getTime());
         messageMonitorEvent.setDeploymentId(paaSDeploymentIdToAlienDeploymentIdMap.get(deploymentPaaSId));
@@ -729,8 +723,8 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
      * @param request containes operation description and parameters
      */
     @Override
-    protected void doExecuteOperation(PaaSDeploymentContext deploymentContext, NodeOperationExecRequest request) {
-        log.info("Do execute " + request.getOperationName() + " on node " + request.getOperationName());
+    protected void doExecuteOperation(PaaSDeploymentContext deploymentContext, NodeOperationExecRequest request, IPaaSCallback<Map<String, String>> callback) {
+        log.info("Do execute " + request.getOperationName() + " on node " + request.getNodeTemplateName());
 
         String deploymentUrl = runtimeDeploymentInfos.get(deploymentContext.getDeploymentPaaSId()).getDeploymentUrl();
         String taskUrl = null;
@@ -746,11 +740,24 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
             log.info("Running another thread for event check " + threadName);
             try {
                 checkJanusStatusUntil("DONE", url);
+
+                PaaSMessageMonitorEvent messageMonitorEvent = new PaaSMessageMonitorEvent();
+                messageMonitorEvent.setDate((new Date()).getTime());
+                messageMonitorEvent.setDeploymentId(deploymentContext.getDeploymentPaaSId());
+                messageMonitorEvent.setMessage("APPLICATIONS.RUNTIME.EVENTS.MESSAGE_EVENT.INSTANCE_STATE_CHANGED");
+                toBeDeliveredEvents.add(messageMonitorEvent);
+
+                Map<String, String> customResults = null;
+                //
+                customResults = new Hashtable<>(1);
+                customResults.put("result", "Succesfully executed custom " + request.getOperationName() + " on node " + request.getNodeTemplateName());
+                // Get results returned by the custom command ??
+                callback.onSuccess(customResults);
             } catch (Exception e) {
                 e.printStackTrace();
-                this.changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
+                //this.changeStatus(ctx.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
                 sendMessage(deploymentContext.getDeploymentPaaSId(), e.getMessage());
-                throw new RuntimeException(e.getMessage());
+                callback.onFailure(e);
             }
         };
         Thread thread = new Thread(task);

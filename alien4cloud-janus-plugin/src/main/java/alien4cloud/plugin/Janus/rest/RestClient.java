@@ -214,11 +214,6 @@ public class RestClient {
         jobject.put("name", request.getOperationName());
         jobject.put("inputs", request.getParameters());
 
-        System.out.println(">>> JSON Body :");
-        System.out.println(">>>>>>>>>>>>>>>");
-        System.out.println(jobject.toString());
-        System.out.println(">>>>>>>>>>>>>>>");
-
         final byte[] bytes = jobject.toString().getBytes();
 
         HttpResponse<JsonNode> postResponse = Unirest.post(providerConfiguration.getUrlJanus() + deploymentUrl + "/custom")

@@ -190,7 +190,7 @@ public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<Provid
                 case UNKNOWN:
                     throw new IllegalDeploymentStateException("Topology [" + deploymentId + "] is in status [" + deploymentStatus + "] and operation " + name + " cannot be executed on node " + node);
                 case DEPLOYED:
-                    doExecuteOperation(deploymentContext, request);
+                    doExecuteOperation(deploymentContext, request, callback);
                     break;
                 default:
                     throw new IllegalDeploymentStateException("Topology [" + deploymentId + "] is in illegal status [" + deploymentStatus + "] and cannot be deployed");
@@ -210,7 +210,7 @@ public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<Provid
 
     protected abstract void doUndeploy(PaaSDeploymentContext deploymentContext);
 
-    protected abstract void doExecuteOperation(PaaSDeploymentContext deploymentContext, NodeOperationExecRequest request);
+    protected abstract void doExecuteOperation(PaaSDeploymentContext deploymentContext, NodeOperationExecRequest request, IPaaSCallback<Map<String, String>> callback);
 
 
 }
