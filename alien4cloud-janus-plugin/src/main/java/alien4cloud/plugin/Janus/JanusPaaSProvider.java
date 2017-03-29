@@ -633,23 +633,27 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         toBeDeliveredEvents.add(messageMonitorEvent);
     }
 
+    /**
+     * Notify A4C that an instance has changed its status
+     * @param deploymentPaaSId
+     * @param nodeId
+     * @param instanceId
+     * @param information
+     */
     private void notifyInstanceStateChanged(final String deploymentPaaSId, final String nodeId, final String instanceId, final InstanceInformation information){
-        final InstanceInformation cloned = new InstanceInformation();
         log.debug("notifyInstanceStateChanged " + nodeId + "/" + instanceId);
         if (information == null) {
             log.error("NULL information");
             return;
         }
+        final InstanceInformation cloned = new InstanceInformation();
         cloned.setAttributes(information.getAttributes());
         cloned.setInstanceStatus(information.getInstanceStatus());
         cloned.setRuntimeProperties(information.getRuntimeProperties());
         cloned.setState(information.getState());
         log.debug("state: " + information.getState());
 
-        final JanusRuntimeDeploymentInfo deploymentInfo = runtimeDeploymentInfos.get(deploymentPaaSId);
-        Deployment deployment = deploymentInfo.getDeploymentContext().getDeployment();
-        PaaSInstanceStateMonitorEvent event;
-        event = new PaaSInstanceStateMonitorEvent();
+        PaaSInstanceStateMonitorEvent event = new PaaSInstanceStateMonitorEvent();
         event.setInstanceId(instanceId);
         event.setInstanceState(cloned.getState());
         event.setInstanceStatus(cloned.getInstanceStatus());
@@ -660,17 +664,14 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         event.setAttributes(cloned.getAttributes());
         toBeDeliveredEvents.add(event);
 
+        final JanusRuntimeDeploymentInfo deploymentInfo = runtimeDeploymentInfos.get(deploymentPaaSId);
+        Deployment deployment = deploymentInfo.getDeploymentContext().getDeployment();
         if (deployment.getSourceName().equals(BLOCKSTORAGE_APPLICATION) && cloned.getState().equalsIgnoreCase("created")) {
             PaaSInstancePersistentResourceMonitorEvent prme = new PaaSInstancePersistentResourceMonitorEvent(nodeId, instanceId,
                     NormativeBlockStorageConstants.VOLUME_ID, UUID.randomUUID().toString());
             toBeDeliveredEvents.add(prme);
         }
 
-        PaaSMessageMonitorEvent messageMonitorEvent = new PaaSMessageMonitorEvent();
-        messageMonitorEvent.setDate((new Date()).getTime());
-        messageMonitorEvent.setDeploymentId(paaSDeploymentIdToAlienDeploymentIdMap.get(deploymentPaaSId));
-        messageMonitorEvent.setMessage("APPLICATIONS.RUNTIME.EVENTS.MESSAGE_EVENT.INSTANCE_STATE_CHANGED");
-        toBeDeliveredEvents.add(messageMonitorEvent);
     }
 
     private RelationshipType getRelationshipType(String typeName) {
