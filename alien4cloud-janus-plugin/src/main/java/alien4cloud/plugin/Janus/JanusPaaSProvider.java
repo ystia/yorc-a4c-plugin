@@ -12,12 +12,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.concurrent.Executors;
@@ -619,6 +614,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         event.setDate((new Date()).getTime());
         event.setDeploymentId(paaSDeploymentIdToAlienDeploymentIdMap.get(deploymentPaaSId));
         toBeDeliveredEvents.add(event);
+
         PaaSMessageMonitorEvent messageMonitorEvent = new PaaSMessageMonitorEvent();
         messageMonitorEvent.setDate((new Date()).getTime());
         messageMonitorEvent.setDeploymentId(paaSDeploymentIdToAlienDeploymentIdMap.get(deploymentPaaSId));
@@ -637,23 +633,27 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         toBeDeliveredEvents.add(messageMonitorEvent);
     }
 
+    /**
+     * Notify A4C that an instance has changed its status
+     * @param deploymentPaaSId
+     * @param nodeId
+     * @param instanceId
+     * @param information
+     */
     private void notifyInstanceStateChanged(final String deploymentPaaSId, final String nodeId, final String instanceId, final InstanceInformation information){
-        final InstanceInformation cloned = new InstanceInformation();
         log.debug("notifyInstanceStateChanged " + nodeId + "/" + instanceId);
         if (information == null) {
             log.error("NULL information");
             return;
         }
+        final InstanceInformation cloned = new InstanceInformation();
         cloned.setAttributes(information.getAttributes());
         cloned.setInstanceStatus(information.getInstanceStatus());
         cloned.setRuntimeProperties(information.getRuntimeProperties());
         cloned.setState(information.getState());
         log.debug("state: " + information.getState());
 
-        final JanusRuntimeDeploymentInfo deploymentInfo = runtimeDeploymentInfos.get(deploymentPaaSId);
-        Deployment deployment = deploymentInfo.getDeploymentContext().getDeployment();
-        PaaSInstanceStateMonitorEvent event;
-        event = new PaaSInstanceStateMonitorEvent();
+        PaaSInstanceStateMonitorEvent event = new PaaSInstanceStateMonitorEvent();
         event.setInstanceId(instanceId);
         event.setInstanceState(cloned.getState());
         event.setInstanceStatus(cloned.getInstanceStatus());
@@ -664,17 +664,14 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         event.setAttributes(cloned.getAttributes());
         toBeDeliveredEvents.add(event);
 
+        final JanusRuntimeDeploymentInfo deploymentInfo = runtimeDeploymentInfos.get(deploymentPaaSId);
+        Deployment deployment = deploymentInfo.getDeploymentContext().getDeployment();
         if (deployment.getSourceName().equals(BLOCKSTORAGE_APPLICATION) && cloned.getState().equalsIgnoreCase("created")) {
             PaaSInstancePersistentResourceMonitorEvent prme = new PaaSInstancePersistentResourceMonitorEvent(nodeId, instanceId,
                     NormativeBlockStorageConstants.VOLUME_ID, UUID.randomUUID().toString());
             toBeDeliveredEvents.add(prme);
         }
 
-        PaaSMessageMonitorEvent messageMonitorEvent = new PaaSMessageMonitorEvent();
-        messageMonitorEvent.setDate((new Date()).getTime());
-        messageMonitorEvent.setDeploymentId(paaSDeploymentIdToAlienDeploymentIdMap.get(deploymentPaaSId));
-        messageMonitorEvent.setMessage("APPLICATIONS.RUNTIME.EVENTS.MESSAGE_EVENT.INSTANCE_STATE_CHANGED");
-        toBeDeliveredEvents.add(messageMonitorEvent);
     }
 
     private RelationshipType getRelationshipType(String typeName) {
@@ -727,23 +724,51 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         eventsCallback.onSuccess(events);
     }
 
+    /**
+     * Execute an operation (custom command)
+     * @param deploymentContext the deployment context in which operation is to be executed
+     * @param request containes operation description and parameters
+     */
     @Override
-    protected String doExecuteOperation(NodeOperationExecRequest request) {
-        List<String> allowedOperation = Arrays.asList("success", "success_param");
-        String result = null;
+    protected void doExecuteOperation(PaaSDeploymentContext deploymentContext, NodeOperationExecRequest request, IPaaSCallback<Map<String, String>> callback) {
+        log.info("Do execute " + request.getOperationName() + " on node " + request.getNodeTemplateName());
+
+        String deploymentUrl = runtimeDeploymentInfos.get(deploymentContext.getDeploymentPaaSId()).getDeploymentUrl();
+        String taskUrl = null;
         try {
-            log.debug("TRIGGERING OPERATION : {}", request.getOperationName());
-            Thread.sleep(3000);
-            log.debug(" COMMAND REQUEST IS: " + JsonUtil.toString(request));
-        } catch (JsonProcessingException | InterruptedException e) {
-            log.error("OPERATION execution failled!", e);
-            log.info("RESULT IS: KO");
-            return "KO";
+            taskUrl = restClient.postCustomCommandToJanus(deploymentUrl, request);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        // only 2 operations in allowedOperation will return OK
-        result = allowedOperation.contains(request.getOperationName()) ? "OK" : "KO";
-        log.info("RESULT IS : {}", result);
-        return result;
+        // Check status DONE after executing operation
+        final String url = taskUrl;
+        Runnable task = () -> {
+            String threadName = Thread.currentThread().getName();
+            log.info("Running another thread for event check " + threadName);
+            try {
+                checkJanusStatusUntil("DONE", url);
+
+                PaaSMessageMonitorEvent messageMonitorEvent = new PaaSMessageMonitorEvent();
+                messageMonitorEvent.setDate((new Date()).getTime());
+                messageMonitorEvent.setDeploymentId(deploymentContext.getDeploymentPaaSId());
+                messageMonitorEvent.setMessage("APPLICATIONS.RUNTIME.EVENTS.MESSAGE_EVENT.INSTANCE_STATE_CHANGED");
+                toBeDeliveredEvents.add(messageMonitorEvent);
+
+                Map<String, String> customResults = null;
+                //
+                customResults = new Hashtable<>(1);
+                customResults.put("result", "Succesfully executed custom " + request.getOperationName() + " on node " + request.getNodeTemplateName());
+                // Get results returned by the custom command ??
+                callback.onSuccess(customResults);
+            } catch (Exception e) {
+                e.printStackTrace();
+                //this.changeStatus(ctx.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
+                sendMessage(deploymentContext.getDeploymentPaaSId(), e.getMessage());
+                callback.onFailure(e);
+            }
+        };
+        Thread thread = new Thread(task);
+        thread.start();
     }
 
     @Override
