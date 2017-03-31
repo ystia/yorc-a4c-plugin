@@ -63,6 +63,12 @@ When all nodes are deployed, go back in the |AppInfoBtn| sub-menu to get the Wel
    :align: center
 
 
+Next Steps: Define your own components
+--------------------------------------
+
+Please refer to `the Alien4Cloud dev guide <http://alien4cloud.github.io/community/index.html#/documentation/1.3.0/devops_guide/dev_ops_guide.html>`_
+to write your own components.
+
 .. |ComponentsBtn| image:: _static/img/components-btn.png
                    :alt: components
 
