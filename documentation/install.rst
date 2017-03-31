@@ -22,7 +22,6 @@ Please be sure to use `Alien4Cloud 1.3.2 <http://fastconnect.org/maven/service/l
 
 Then start Alien4Cloud as described in the `online documentation (section "Start Alien4Cloud") <http://alien4cloud.github.io/#/documentation/1.3.0/getting_started/getting_started.html>`_
 
-
 Alien4Cloud Janus Plugin installation
 -------------------------------------
 
