@@ -771,6 +771,46 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         thread.start();
     }
 
+    /**
+     * Execute a workflow
+     * @param deploymentContext he deployment context in which the workflow is to be executed
+     * @param workflowName the name of the workflow to execute
+     * @param callback allow to communicate with Alien UI
+     */
+    protected void doLaunchWorkflow(PaaSDeploymentContext deploymentContext, String workflowName, IPaaSCallback<Map<String, String>> callback) {
+        log.info("Do execute workflow " + workflowName);
+
+        String deploymentUrl = runtimeDeploymentInfos.get(deploymentContext.getDeploymentPaaSId()).getDeploymentUrl();
+         String taskUrl = null;
+        try {
+            taskUrl = restClient.postWorkflowToJanus(deploymentUrl, workflowName);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        // Check status DONE after executing operation
+        final String url = taskUrl;
+        Runnable task = () -> {
+            String threadName = Thread.currentThread().getName();
+            log.info("Running another thread for event check " + threadName);
+            try {
+                checkJanusStatusUntil("DONE", url);
+
+                // add a message event
+                // TODO
+
+                // Currently the workflow execution doesn't return results
+                callback.onSuccess(null);
+            } catch (Exception e) {
+                e.printStackTrace();
+                //this.changeStatus(ctx.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
+                sendMessage(deploymentContext.getDeploymentPaaSId(), e.getMessage());
+                callback.onFailure(e);
+            }
+        };
+        Thread thread = new Thread(task);
+        thread.start();
+    }
+
     @Override
     public void setConfiguration(ProviderConfig configuration) throws PluginConfigurationException {
         log.info("In the plugin configurator <" + this.getClass().getName() + ">");

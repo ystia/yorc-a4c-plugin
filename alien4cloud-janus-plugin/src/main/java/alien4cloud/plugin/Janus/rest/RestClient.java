@@ -272,6 +272,18 @@ public class RestClient {
         return ret;
     }
 
+    public String postWorkflowToJanus(String deploymentUr, String workflowName) throws Exception {
+        HttpResponse<JsonNode> postResponse = Unirest.post(providerConfiguration.getUrlJanus() + deploymentUr + "/workflows/" + workflowName)
+                .header("accept", "application/json")
+                .asJson();
+        if (!postResponse.getStatusText().equals("Created")) {
+            throw new Exception("Janus returned an error :" + postResponse.getStatus());
+        }
+
+        log.info("Workflow accepted : " +  postResponse.getHeaders().getFirst("Location"));
+        return postResponse.getHeaders().getFirst("Location");
+    }
+
     private void checkRestErrors(HttpResponse<?> httpResponse) throws Exception {
         if (!isStatusCodeOk(httpResponse.getStatus())) {
             ErrorsResponse errors =

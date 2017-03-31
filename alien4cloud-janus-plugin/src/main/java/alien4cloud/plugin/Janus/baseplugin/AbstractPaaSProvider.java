@@ -217,5 +217,6 @@ public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<Provid
 
     protected abstract void doExecuteOperation(PaaSDeploymentContext deploymentContext, NodeOperationExecRequest request, IPaaSCallback<Map<String, String>> callback);
 
+    protected abstract void doLaunchWorkflow(PaaSDeploymentContext deploymentContext, String workflowName, IPaaSCallback<Map<String, String>> callback);
 
 }
