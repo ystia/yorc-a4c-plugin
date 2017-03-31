@@ -16,11 +16,11 @@ An HTTP access to a running (and properly configured for OpenStack deployements)
 Alien4Cloud Setup
 -----------------
 
-Please refer to the `online documentation of Alien4Cloud <http://alien4cloud.github.io/#install-alien4cloud>`_ in order to install Alien4Cloud properly.
+Please refer to the `online documentation of Alien4Cloud (section "Install Alien4Cloud") <http://alien4cloud.github.io/#/documentation/1.3.0/getting_started/getting_started.html>`_ in order to install Alien4Cloud properly.
 
 Please be sure to use `Alien4Cloud 1.3.2 <http://fastconnect.org/maven/service/local/artifact/maven/redirect?r=opensource&g=alien4cloud&a=alien4cloud-dist&v=1.3.2&p=tar.gz&c=dist>`_ !
 
-Then start Alien4Cloud as described in the `online documentation <http://alien4cloud.github.io/#start-alien4cloud>`_
+Then start Alien4Cloud as described in the `online documentation (section "Start Alien4Cloud") <http://alien4cloud.github.io/#/documentation/1.3.0/getting_started/getting_started.html>`_
 
 
 Alien4Cloud Janus Plugin installation
