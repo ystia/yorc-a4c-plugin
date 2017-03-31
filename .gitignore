@@ -1,4 +1,6 @@
 /target/
+/*/target/
 /.idea/
+/*/.idea
 *.iml
 /documentation/_build/
