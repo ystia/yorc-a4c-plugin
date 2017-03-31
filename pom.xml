@@ -10,6 +10,7 @@
 
   <properties>
     <alien4cloud.version>1.3.0</alien4cloud.version>
+    <bdcf.samples.version>3.0-SNAPSHOT</bdcf.samples.version>
   </properties>
 
   <artifactId>alien4cloud-janus-plugin-parent</artifactId>
