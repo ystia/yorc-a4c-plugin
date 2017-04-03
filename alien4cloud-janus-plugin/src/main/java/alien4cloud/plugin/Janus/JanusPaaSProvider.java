@@ -115,8 +115,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         }
     }
 
-    @Override
-    public DeploymentStatus doGetStatus(String deploymentPaaSId, boolean triggerEventIfUndeployed) {
+    public DeploymentStatus doGetStatus(String deploymentPaaSId) {
         JanusRuntimeDeploymentInfo deploymentInfo = runtimeDeploymentInfos.get(deploymentPaaSId);
         if (deploymentInfo == null) {
             return DeploymentStatus.UNDEPLOYED;
@@ -221,7 +220,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
             deploymentUrl = restClient.postTopologyToJanus();
         } catch (Exception e) {
             e.printStackTrace();
-            this.changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
+            doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
             this.sendMessage(deploymentContext.getDeploymentPaaSId(), e.getMessage());
             return;
         }
@@ -554,8 +553,8 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
     @Override
     protected synchronized void doUndeploy(final PaaSDeploymentContext deploymentContext) {
-        log.info(this.doGetStatus(deploymentContext.getDeploymentPaaSId(), false).toString());
-        if (this.doGetStatus(deploymentContext.getDeploymentPaaSId(), false) == DeploymentStatus.DEPLOYMENT_IN_PROGRESS) {
+        log.info(this.doGetStatus(deploymentContext.getDeploymentPaaSId()).toString());
+        if (this.doGetStatus(deploymentContext.getDeploymentPaaSId()) == DeploymentStatus.DEPLOYMENT_IN_PROGRESS) {
             return;
         }
 
@@ -692,13 +691,6 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
             log.info(String.format("Execution of workflow %s is done", workflowName));
             callback.onSuccess(null);
         }, 5L, TimeUnit.SECONDS);
-    }
-
-    @Override
-    public void getStatus(PaaSDeploymentContext deploymentContext, IPaaSCallback<DeploymentStatus> callback) {
-        log.debug("getStatus");
-        DeploymentStatus status = doGetStatus(deploymentContext.getDeploymentPaaSId(), false);
-        callback.onSuccess(status);
     }
 
     @Override
