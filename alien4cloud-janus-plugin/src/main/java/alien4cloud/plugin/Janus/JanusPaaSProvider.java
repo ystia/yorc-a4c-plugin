@@ -685,15 +685,6 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
 
     @Override
-    public void launchWorkflow(PaaSDeploymentContext deploymentContext, final String workflowName, Map<String, Object> inputs, final IPaaSCallback<?> callback) {
-        log.info(String.format("Execution of workflow %s is scheduled", workflowName));
-        executorService.schedule(() -> {
-            log.info(String.format("Execution of workflow %s is done", workflowName));
-            callback.onSuccess(null);
-        }, 5L, TimeUnit.SECONDS);
-    }
-
-    @Override
     public void getInstancesInformation(PaaSTopologyDeploymentContext deploymentContext,
             IPaaSCallback<Map<String, Map<String, InstanceInformation>>> callback) {
         log.debug("getInstancesInformation");
@@ -769,7 +760,8 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
      * @param workflowName the name of the workflow to execute
      * @param callback allow to communicate with Alien UI
      */
-    protected void doLaunchWorkflow(PaaSDeploymentContext deploymentContext, String workflowName, IPaaSCallback<Map<String, String>> callback) {
+    @Override
+    protected void doLaunchWorkflow(PaaSDeploymentContext deploymentContext, String workflowName, Map<String, Object> inputs, IPaaSCallback<?> callback) {
         log.info("Do execute workflow " + workflowName);
 
         String deploymentUrl = runtimeDeploymentInfos.get(deploymentContext.getDeploymentPaaSId()).getDeploymentUrl();

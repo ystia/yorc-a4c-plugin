@@ -182,6 +182,31 @@ public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<Provid
         }
     }
 
+    /**
+     * Launch a workflow
+     * @param deploymentContext the deployment context
+     * @param name the workflow to launch
+     * @param inputs the workflow params
+     * @param callback
+     */
+    @Override
+    public void launchWorkflow(PaaSDeploymentContext deploymentContext, String name, Map<String, Object> inputs, final IPaaSCallback<?> callback) {
+        String deploymentId = deploymentContext.getDeploymentPaaSId();
+        try {
+            providerLock.writeLock().lock();
+            DeploymentStatus deploymentStatus = doGetStatus(deploymentId);
+            switch (deploymentStatus) {
+                case DEPLOYED:
+                    doLaunchWorkflow(deploymentContext, name, inputs, callback);
+                    break;
+                default:
+                    throw new IllegalDeploymentStateException("Topology [" + deploymentId + "] is in status [" + deploymentStatus + "] and workflow " + name + " cannot be launched ");
+            }
+        } finally {
+            providerLock.writeLock().unlock();
+        }
+    }
+
     protected abstract DeploymentStatus doChangeStatus(String deploymentId, DeploymentStatus status);
 
     protected abstract DeploymentStatus doGetStatus(String deploymentId);
@@ -194,6 +219,6 @@ public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<Provid
 
     protected abstract void doExecuteOperation(PaaSDeploymentContext deploymentContext, NodeOperationExecRequest request, IPaaSCallback<Map<String, String>> callback);
 
-    protected abstract void doLaunchWorkflow(PaaSDeploymentContext deploymentContext, String workflowName, IPaaSCallback<Map<String, String>> callback);
+    protected abstract void doLaunchWorkflow(PaaSDeploymentContext deploymentContext, String workflowName, Map<String, Object> inputs, IPaaSCallback<?> callback);
 
 }
