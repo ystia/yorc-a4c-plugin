@@ -272,7 +272,15 @@ public class RestClient {
         return ret;
     }
 
-    public String postWorkflowToJanus(String deploymentUr, String workflowName) throws Exception {
+    /**
+     * POST a workflow to janus
+     * @param deploymentUr
+     * @param workflowName
+     * @param inputs
+     * @return
+     * @throws Exception
+     */
+    public String postWorkflowToJanus(String deploymentUr, String workflowName, Map<String, Object> inputs) throws Exception {
         HttpResponse<JsonNode> postResponse = Unirest.post(providerConfiguration.getUrlJanus() + deploymentUr + "/workflows/" + workflowName)
                 .header("accept", "application/json")
                 .asJson();

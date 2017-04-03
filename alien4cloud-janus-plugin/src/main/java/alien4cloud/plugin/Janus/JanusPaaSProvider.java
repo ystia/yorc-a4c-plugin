@@ -758,6 +758,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
      * Execute a workflow
      * @param deploymentContext he deployment context in which the workflow is to be executed
      * @param workflowName the name of the workflow to execute
+     * @param inputs parameters for the workflow
      * @param callback allow to communicate with Alien UI
      */
     @Override
@@ -765,9 +766,9 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         log.info("Do execute workflow " + workflowName);
 
         String deploymentUrl = runtimeDeploymentInfos.get(deploymentContext.getDeploymentPaaSId()).getDeploymentUrl();
-         String taskUrl = null;
+        String taskUrl = null;
         try {
-            taskUrl = restClient.postWorkflowToJanus(deploymentUrl, workflowName);
+            taskUrl = restClient.postWorkflowToJanus(deploymentUrl, workflowName, inputs);
         } catch (Exception e) {
             e.printStackTrace();
         }
