@@ -53,19 +53,15 @@ public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<Provid
                 }
             }
 
-            DeploymentStatus deploymentStatus = getStatus(deploymentId, false);
+            DeploymentStatus deploymentStatus = doGetStatus(deploymentId);
             switch (deploymentStatus) {
-                case DEPLOYED:
-                case DEPLOYMENT_IN_PROGRESS:
-                case UNDEPLOYMENT_IN_PROGRESS:
-                case WARNING:
-                case FAILURE:
-                    throw new PaaSAlreadyDeployedException("Topology [" + deploymentId + "] is in status [" + deploymentStatus + "] and cannot be deployed");
-                case UNKNOWN:
-                    throw new IllegalDeploymentStateException("Topology [" + deploymentId + "] is in status [" + deploymentStatus + "] and cannot be deployed");
                 case UNDEPLOYED:
                     doDeploy(deploymentContext);
                     break;
+                case DEPLOYED:
+                case DEPLOYMENT_IN_PROGRESS:
+                case UNDEPLOYMENT_IN_PROGRESS:
+                    throw new PaaSAlreadyDeployedException("Topology [" + deploymentId + "] is in status [" + deploymentStatus + "] and cannot be deployed");
                 default:
                     throw new IllegalDeploymentStateException("Topology [" + deploymentId + "] is in illegal status [" + deploymentStatus
                             + "] and cannot be deployed");
@@ -88,41 +84,17 @@ public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<Provid
         String deploymentId = ctx.getDeploymentPaaSId();
         try {
             providerLock.writeLock().lock();
-            DeploymentStatus deploymentStatus = getStatus(deploymentId, false);
+            DeploymentStatus deploymentStatus = doGetStatus(deploymentId);
             switch (deploymentStatus) {
-                case UNDEPLOYED:
-                case DEPLOYMENT_IN_PROGRESS:
-                case UNDEPLOYMENT_IN_PROGRESS:
-                case WARNING:
-                case FAILURE:
-                case UNKNOWN:
-                    throw new IllegalDeploymentStateException(
-                            "Topology [" + deploymentId + "] is in status [" + deploymentStatus + "] and cannot be scaled");
                 case DEPLOYED:
                     doScale(ctx, nodeId, nbi, callback);
                     break;
                 default:
-                    throw new IllegalDeploymentStateException("Topology [" + deploymentId + "] is in illegal status [" + deploymentStatus
-                            + "] and cannot be deployed");
+                    throw new IllegalDeploymentStateException("Application [" + deploymentId + "] is in status [" + deploymentStatus + "] and cannot be scaled");
             }
         } finally {
             providerLock.writeLock().unlock();
         }
-    }
-
-    private int getPlannedInstancesCount(String nodeTemplateId, Topology topology) {
-        Capability scalableCapability = TopologyUtils.getScalableCapability(topology, nodeTemplateId, false);
-        if (scalableCapability != null) {
-            ScalingPolicy scalingPolicy = TopologyUtils.getScalingPolicy(scalableCapability);
-            return scalingPolicy.getInitialInstances();
-        }
-        return 1;
-    }
-
-    @Override
-    public void setConfiguration(ProviderConfig configuration) throws PluginConfigurationException {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
@@ -130,13 +102,11 @@ public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<Provid
         String deploymentId = deploymentContext.getDeploymentPaaSId();
         try {
             providerLock.writeLock().lock();
-            DeploymentStatus deploymentStatus = getStatus(deploymentId, true);
+            DeploymentStatus deploymentStatus = doGetStatus(deploymentId);
             switch (deploymentStatus) {
                 case UNDEPLOYMENT_IN_PROGRESS:
                 case UNDEPLOYED:
                     throw new PaaSNotYetDeployedException("Application [" + deploymentId + "] is in status [" + deploymentStatus + "] and cannot be undeployed");
-                case UNKNOWN:
-                    throw new IllegalDeploymentStateException("Application [" + deploymentId + "] is in status [" + deploymentStatus + "] and cannot be undeployed");
                 case DEPLOYMENT_IN_PROGRESS:
                 case FAILURE:
                 case DEPLOYED:
@@ -152,15 +122,29 @@ public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<Provid
         }
     }
 
-    public DeploymentStatus getStatus(String deploymentId, boolean triggerEventIfUndeployed) {
+    /**
+     * Get the status of the deployment given by its PaaSDeploymentContext
+     * @param deploymentContext the deployment context
+     * @param callback callback when the status will be available
+     */
+    @Override
+    public void getStatus(PaaSDeploymentContext deploymentContext, IPaaSCallback<DeploymentStatus> callback) {
+        String deploymentId = deploymentContext.getDeploymentPaaSId();
         try {
             providerLock.readLock().lock();
-            return doGetStatus(deploymentId, triggerEventIfUndeployed);
+            DeploymentStatus status = doGetStatus(deploymentId);
+            callback.onSuccess(status);
         } finally {
             providerLock.readLock().unlock();
         }
     }
 
+    /**
+     * Called internally by threads of the plugin when the deployment status change
+     * @param applicationId
+     * @param status  new status
+     * @return old status
+     */
     protected DeploymentStatus changeStatus(String applicationId, DeploymentStatus status) {
         try {
             providerLock.writeLock().lock();
@@ -185,20 +169,13 @@ public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<Provid
         String name = request.getOperationName();
         try {
             providerLock.writeLock().lock();
-            DeploymentStatus deploymentStatus = getStatus(deploymentId, false);
+            DeploymentStatus deploymentStatus = doGetStatus(deploymentId);
             switch (deploymentStatus) {
-                case UNDEPLOYED:
-                case DEPLOYMENT_IN_PROGRESS:
-                case UNDEPLOYMENT_IN_PROGRESS:
-                case WARNING:
-                case FAILURE:
-                case UNKNOWN:
-                    throw new IllegalDeploymentStateException("Topology [" + deploymentId + "] is in status [" + deploymentStatus + "] and operation " + name + " cannot be executed on node " + node);
                 case DEPLOYED:
                     doExecuteOperation(deploymentContext, request, callback);
                     break;
                 default:
-                    throw new IllegalDeploymentStateException("Topology [" + deploymentId + "] is in illegal status [" + deploymentStatus + "] and cannot be deployed");
+                    throw new IllegalDeploymentStateException("Topology [" + deploymentId + "] is in status [" + deploymentStatus + "] and operation " + name + " cannot be executed on node " + node);
             }
         } finally {
             providerLock.writeLock().unlock();
@@ -207,7 +184,7 @@ public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<Provid
 
     protected abstract DeploymentStatus doChangeStatus(String deploymentId, DeploymentStatus status);
 
-    protected abstract DeploymentStatus doGetStatus(String deploymentId, boolean triggerEventIfUndeployed);
+    protected abstract DeploymentStatus doGetStatus(String deploymentId);
 
     protected abstract void doDeploy(PaaSTopologyDeploymentContext deploymentContext);
 
