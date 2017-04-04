@@ -81,6 +81,7 @@ public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<Provid
      */
     @Override
     public void scale(PaaSDeploymentContext ctx, String nodeId, int nbi, IPaaSCallback<?> callback) {
+        log.info("scale " + nodeId);
         String deploymentId = ctx.getDeploymentPaaSId();
         try {
             providerLock.writeLock().lock();
@@ -191,6 +192,7 @@ public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<Provid
      */
     @Override
     public void launchWorkflow(PaaSDeploymentContext deploymentContext, String name, Map<String, Object> inputs, final IPaaSCallback<?> callback) {
+        log.info("launchWorkflow " + name);
         String deploymentId = deploymentContext.getDeploymentPaaSId();
         try {
             providerLock.writeLock().lock();
