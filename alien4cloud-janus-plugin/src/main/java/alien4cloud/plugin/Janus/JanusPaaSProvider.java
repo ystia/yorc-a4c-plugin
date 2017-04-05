@@ -25,6 +25,7 @@ import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
 import javax.inject.Inject;
 
+import alien4cloud.utils.MapUtil;
 import alien4cloud.dao.IGenericSearchDAO;
 import alien4cloud.model.deployment.Deployment;
 import alien4cloud.paas.IPaaSCallback;
@@ -193,7 +194,10 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         MappingTosca.generateOpenstackFIP(deploymentContext);
 
         //Create the yml of our topology (after substitution)
-        String yaml = archiveExportService.getYaml(new Csar(), topology);
+        String version = topology.getArchiveVersion();
+        deploymentContext.getDeploymentPaaSId();
+        Csar myCsar = new Csar(deploymentContext.getDeploymentPaaSId(), version);
+        String yaml = archiveExportService.getYaml(myCsar, topology);
         //log.debug(yaml);
         List<String> lines = Collections.singletonList(yaml);
         log.debug("YML Topology");
@@ -667,8 +671,10 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         final JanusRuntimeDeploymentInfo deploymentInfo = runtimeDeploymentInfos.get(deploymentPaaSId);
         Deployment deployment = deploymentInfo.getDeploymentContext().getDeployment();
         if (deployment.getSourceName().equals(BLOCKSTORAGE_APPLICATION) && cloned.getState().equalsIgnoreCase("created")) {
+
             PaaSInstancePersistentResourceMonitorEvent prme = new PaaSInstancePersistentResourceMonitorEvent(nodeId, instanceId,
-                    NormativeBlockStorageConstants.VOLUME_ID, UUID.randomUUID().toString());
+                    MapUtil.newHashMap(new String[] { NormativeBlockStorageConstants.VOLUME_ID }, new Object[] { UUID.randomUUID().toString() }));
+            prme.setDeploymentId(deployment.getId());
             toBeDeliveredEvents.add(prme);
         }
 
