@@ -175,8 +175,9 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
     @Override
     protected synchronized void doDeploy(final PaaSTopologyDeploymentContext deploymentContext) {
-        log.debug("Deploying deployment [" + deploymentContext.getDeploymentPaaSId() + "]");
-        this.paaSDeploymentIdToAlienDeploymentIdMap.put(deploymentContext.getDeploymentPaaSId(), deploymentContext.getDeploymentId());
+        String name =  deploymentContext.getDeploymentPaaSId();
+        log.debug("Deploying deployment [" + name + "]");
+        this.paaSDeploymentIdToAlienDeploymentIdMap.put(name, deploymentContext.getDeploymentId());
 
         Topology topology = deploymentContext.getDeploymentTopology();
 
@@ -185,19 +186,17 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
         JanusRuntimeDeploymentInfo janusDeploymentInfo =
                 new JanusRuntimeDeploymentInfo(deploymentContext, DeploymentStatus.INIT_DEPLOYMENT, currentInformations, "");
-        runtimeDeploymentInfos.put(deploymentContext.getDeploymentPaaSId(), janusDeploymentInfo);
+        runtimeDeploymentInfos.put(name, janusDeploymentInfo);
 
-        doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.DEPLOYMENT_IN_PROGRESS);
+        doChangeStatus(name, DeploymentStatus.DEPLOYMENT_IN_PROGRESS);
 
         MappingTosca.addPreConfigureSteps(topology, deploymentContext.getPaaSTopology());
         MappingTosca.generateOpenstackFIP(deploymentContext);
 
         //Create the yml of our topology (after substitution)
-        // TODO check using CSAR constructor with params to avoid NPE
-        Csar myCsar = new Csar("csar_name", "0.0.1");
-        //String yaml = archiveExportService.getYaml(new Csar(), topology);
+        // TODO Change version
+        Csar myCsar = new Csar(name, "0.0.7");
         String yaml = archiveExportService.getYaml(myCsar, topology);
-        //log.debug(yaml);
         List<String> lines = Collections.singletonList(yaml);
         log.debug("YML Topology");
         Path file = Paths.get("topology.yml");
@@ -224,13 +223,13 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
             deploymentUrl = restClient.postTopologyToJanus();
         } catch (Exception e) {
             e.printStackTrace();
-            doChangeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
-            this.sendMessage(deploymentContext.getDeploymentPaaSId(), e.getMessage());
+            doChangeStatus(name, DeploymentStatus.FAILURE);
+            this.sendMessage(name, e.getMessage());
             return;
         }
         janusDeploymentInfo.setDeploymentUrl(deploymentUrl);
         log.debug("Deployment Url : " + deploymentUrl);
-        sendMessage(deploymentContext.getDeploymentPaaSId(), deploymentUrl);
+        sendMessage(name, deploymentUrl);
 
         Runnable task = () -> {
             String threadName = Thread.currentThread().getName();
@@ -238,16 +237,16 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
             try {
                 checkJanusStatusUntil("DEPLOYED", deploymentUrl);
-                this.changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.DEPLOYED);
+                this.changeStatus(name, DeploymentStatus.DEPLOYED);
 
             } catch (Exception e) {
                 e.printStackTrace();
-                this.changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.FAILURE);
-                sendMessage(deploymentContext.getDeploymentPaaSId(), e.getMessage());
-                this.changeStatus(deploymentContext.getDeploymentPaaSId(), DeploymentStatus.UNDEPLOYED);
-                runtimeDeploymentInfos.remove(deploymentContext.getDeploymentPaaSId());
-
-                throw new RuntimeException(e.getMessage()); // TODO : Refactor, For detecting error deploy rest API A4C, when integrationt test
+                this.changeStatus(name, DeploymentStatus.FAILURE);
+                sendMessage(name, e.getMessage());
+                this.changeStatus(name, DeploymentStatus.UNDEPLOYED);
+                runtimeDeploymentInfos.remove(name);
+                // TODO : Refactor, For detecting error deploy rest API A4C, when integrationt test
+                throw new RuntimeException(e.getMessage());
             }
         };
         Thread thread = new Thread(task);
@@ -670,9 +669,8 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         final JanusRuntimeDeploymentInfo deploymentInfo = runtimeDeploymentInfos.get(deploymentPaaSId);
         Deployment deployment = deploymentInfo.getDeploymentContext().getDeployment();
         if (deployment.getSourceName().equals(BLOCKSTORAGE_APPLICATION) && cloned.getState().equalsIgnoreCase("created")) {
-
             PaaSInstancePersistentResourceMonitorEvent prme = new PaaSInstancePersistentResourceMonitorEvent(nodeId, instanceId,
-                    MapUtil.newHashMap(new String[] { NormativeBlockStorageConstants.VOLUME_ID }, new Object[] { UUID.randomUUID().toString() }));
+                    MapUtil.newHashMap(new String[]{NormativeBlockStorageConstants.VOLUME_ID}, new Object[]{UUID.randomUUID().toString()}));
             prme.setDeploymentId(deployment.getId());
             toBeDeliveredEvents.add(prme);
         }
