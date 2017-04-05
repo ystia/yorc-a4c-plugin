@@ -1,0 +1,63 @@
+  <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+      <groupId>alien4cloud</groupId>
+      <artifactId>alien4cloud-janus-plugin-parent</artifactId>
+      <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>alien4cloud-janus-plugin-doc</artifactId>
+    <name>Alien 4 Cloud HPC PaaS provider Janus :: Documentation</name>
+    <packaging>pom</packaging>
+
+    <build>
+
+
+      <plugins>
+
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>exec-maven-plugin</artifactId>
+          <version>1.4.0</version>
+          <executions>
+            <execution>
+              <id>sphinx-linux</id>
+              <phase>package</phase>
+              <goals>
+                <goal>exec</goal>
+              </goals>
+              <configuration>
+                <executable>make</executable>
+                <commandlineArgs>html latexpdf</commandlineArgs>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+
+        <plugin>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <configuration>
+              <appendAssemblyId>false</appendAssemblyId>
+              <ignoreDirFormatExtensions>true</ignoreDirFormatExtensions>
+              <attach>false</attach>
+            </configuration>
+            <executions>
+              <execution>
+                <id>assembly</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>single</goal>
+                </goals>
+                <configuration>
+                  <finalName>alien4cloud-janus-plugin-documentation-${project.version}</finalName>
+                  <attach>true</attach>
+                  <descriptors>
+                    <descriptor>src/assembly/janus-plugin-doc-assembly.xml</descriptor>
+                  </descriptors>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+      </plugins>
+    </build>
+  </project>
