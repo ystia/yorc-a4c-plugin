@@ -1,6 +1,8 @@
 
 matching_configurations:
   janus.nodes.slurm.Compute:
+    properties:
+      - gpuType: { equal: "" }
     capabilities:
       - host:
           properties:
@@ -8,7 +10,6 @@ matching_configurations:
             - cpu_frequency: { less_or_equal: 0 Hz }
             - mem_size: { less_or_equal: 0 B }
             - disk_size: { less_or_equal: 0 B }
-            - gpuType: { equal: "" }
       - os:
           properties:
             - architecture: { equal: "" }
