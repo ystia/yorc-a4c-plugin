@@ -1,0 +1,24 @@
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.0.0 http://maven.apache.org/xsd/assembly-2.0.0.xsd">
+    <id>assemble-plugin</id>
+    <formats>
+        <format>zip</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <dependencySets>
+        <dependencySet>
+            <outputDirectory>/</outputDirectory>
+            <useTransitiveDependencies>false</useTransitiveDependencies>
+            <excludes>
+                <exclude>com.bull.bdcf.tosca.samples:*</exclude>
+            </excludes>
+        </dependencySet>
+        <dependencySet>
+                    <outputDirectory>/samples</outputDirectory>
+                    <useTransitiveDependencies>false</useTransitiveDependencies>
+                    <includes>
+                        <include>com.bull.bdcf.tosca.samples:*</include>
+                    </includes>
+                </dependencySet>
+    </dependencySets>
+</assembly>
