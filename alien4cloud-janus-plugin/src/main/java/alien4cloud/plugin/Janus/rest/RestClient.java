@@ -177,10 +177,11 @@ public class RestClient {
     }
 
     public String getStatusFromJanus(String deploymentUrl) throws Exception {
-        HttpResponse<JsonNode> res = Unirest.get(providerConfiguration.getUrlJanus() + deploymentUrl)
+        String fullUrl = providerConfiguration.getUrlJanus() + deploymentUrl;
+        log.debug("getStatusFromJanus " + fullUrl);
+        HttpResponse<JsonNode> res = Unirest.get(fullUrl)
                 .header("accept", "application/json")
                 .asJson();
-
 
         JSONObject obj = res.getBody().getObject();
 
@@ -287,9 +288,9 @@ public class RestClient {
         if (!postResponse.getStatusText().equals("Created")) {
             throw new Exception("Janus returned an error :" + postResponse.getStatus());
         }
-
-        log.info("Workflow accepted : " +  postResponse.getHeaders().getFirst("Location"));
-        return postResponse.getHeaders().getFirst("Location");
+        String ret = postResponse.getHeaders().getFirst("Location");
+        log.info("Workflow accepted: " + ret);
+        return ret;
     }
 
     private void checkRestErrors(HttpResponse<?> httpResponse) throws Exception {
