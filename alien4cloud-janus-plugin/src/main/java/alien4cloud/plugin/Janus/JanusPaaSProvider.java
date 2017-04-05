@@ -194,7 +194,6 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         MappingTosca.generateOpenstackFIP(deploymentContext);
 
         //Create the yml of our topology (after substitution)
-        // TODO Change version
         Csar myCsar = new Csar(name, topology.getArchiveVersion());
         String yaml = archiveExportService.getYaml(myCsar, topology);
         List<String> lines = Collections.singletonList(yaml);
