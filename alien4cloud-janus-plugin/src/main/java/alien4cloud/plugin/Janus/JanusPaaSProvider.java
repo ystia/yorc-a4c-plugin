@@ -320,13 +320,18 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         JanusRuntimeDeploymentInfo jrdi = this.runtimeDeploymentInfos.get(deploymentPaaSId);
         Map<String, Map<String, InstanceInformation>> nodemap = jrdi.getInstanceInformations();
 
-        // Find the node Information from Janus
+        // Find the deployment info from Janus
         DeployInfosResponse deployRes = this.restClient.getDeploymentInfosFromJanus(deploymentUrl);
+
+        // Look every node we want to update.
         for (Link nodeLink : deployRes.getLinks()) {
             if (nodeLink.getRel().equals("node")) {
                 // nodeName is the last part of nodeLink.getHref()
                 if (nodeName == null || nodeLink.getHref().endsWith(nodeName)) {
+
+                    // Find the node info from Janus
                     NodeInfosResponse nodeInfosRes = this.restClient.getNodesInfosFromJanus(nodeLink.getHref());
+
                     Map<String, InstanceInformation> instanceMap = nodemap.get(nodeInfosRes.getName());
                     if (instanceMap == null) {
                         // This node was unknown. Create it.
@@ -336,7 +341,10 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
                     // Find information about all the node instances from Janus
                     for (Link instanceLink : nodeInfosRes.getLinks()) {
                         if (instanceLink.getRel().equals("instance")) {
+
+                            // Find the instance info from Janus
                             InstanceInfosResponse instInfoRes = this.restClient.getInstanceInfosFromJanus(instanceLink.getHref());
+
                             String inb = instInfoRes.getId();
                             InstanceInformation iinfo = instanceMap.get(inb);
                             if (iinfo == null) {
@@ -366,26 +374,44 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         }
     }
 
-    private void setNodeAttributes(String deploymentUrl, String deploymentPaaSId, final String nodeName, final String instanceName)
-            throws Exception {
+    /**
+     * Update node information for a specified instance of a node.
+     * TODO This is more or less the same than updateNodeInfo: Keep only one method.
+     * @param deploymentUrl
+     * @param deploymentPaaSId
+     * @param nodeName
+     * @param instanceName
+     * @throws Exception
+     */
+    private void setNodeAttributes(String deploymentUrl, String deploymentPaaSId, final String nodeName, final String instanceName) throws Exception {
         log.debug("setNodeAttributes " + nodeName + "/" + instanceName);
-        Map<String, Map<String, InstanceInformation>> intancesInfos =
-                this.runtimeDeploymentInfos.get(deploymentPaaSId).getInstanceInformations();
+        // find the nodemap to be updated
+        JanusRuntimeDeploymentInfo jrdi = this.runtimeDeploymentInfos.get(deploymentPaaSId);
+        Map<String, Map<String, InstanceInformation>> intancesInfos = jrdi.getInstanceInformations();
+
+        // Find the deployment info from Janus
         DeployInfosResponse deployRes = this.restClient.getDeploymentInfosFromJanus(deploymentUrl);
 
         List<Link> nodes = deployRes.getLinks().stream().filter(link -> link.getRel().equals("node") && link.getHref().endsWith(nodeName))
                 .collect(Collectors.toList());
         for (Link nodeLink : nodes) {
+
+            // Find the node info from Janus
             NodeInfosResponse nodeInfosRes = this.restClient.getNodesInfosFromJanus(nodeLink.getHref());
+
             List<Link> instances = nodeInfosRes.getLinks().stream()
                     .filter(link -> link.getRel().equals("instance") && link.getHref().endsWith(instanceName)).collect(Collectors.toList());
             for (Link instanceLink : instances) {
                 if (instanceLink.getRel().equals("instance")) {
                     AtomicBoolean nodeFound = new AtomicBoolean(true);
+
+                    // Find the instance info from Janus
                     InstanceInfosResponse instInfoRes = this.restClient.getInstanceInfosFromJanus(instanceLink.getHref());
+                    
                     instInfoRes.getLinks().stream().filter(attributeLink -> attributeLink.getRel().equals("attribute"))
                             .forEach(attributeLink -> {
                                 try {
+                                    // Get the attribute from Janus
                                     AttributeResponse attrRes = this.restClient.getAttributeFromJanus(attributeLink.getHref());
                                     log.debug("Attr: {}", attrRes);
 
@@ -409,10 +435,6 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
                                     return;
                                 }
                             });
-                    //if (nodeFound.get()) {
-                    //    this.notifyInstanceStateChanged(deploymentPaaSId, nodeInfosRes.getName(), instInfoRes.getId(),
-                    //            intancesInfos.get(nodeInfosRes.getName()).get(instInfoRes.getId()));
-                    //}
                 }
             }
         }
