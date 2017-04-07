@@ -563,7 +563,20 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         log.debug("checkJanusStatusUntil " + aimStatus + " URL=" + deploymentUrl);
         String status = "";
         while (!status.equals(aimStatus) && !status.contains("FAILED")) {
-            status = restClient.getStatusFromJanus(deploymentUrl);
+            try {
+                status = restClient.getStatusFromJanus(deploymentUrl);
+            }
+            catch(Exception e) {
+                if (aimStatus.equals("UNDEPLOYED")) {
+                    // Assumes application has been destroyed, triggering this Exception
+                    log.info("Assumes Undeployment is OK");
+                    return;
+                } else {
+                    // An error occured. Rethrow the Exception
+                    log.debug("checkJanusStatusUntil " + aimStatus + " raised exception: ", e);
+                    throw(e);
+                }
+            }
             log.debug("[checkJanusStatusUntil] current status: " + status);
             Thread.sleep(2000);
         }
@@ -713,7 +726,9 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         if (jrdi != null) {
             callback.onSuccess(jrdi.getInstanceInformations());
         } else {
-            callback.onFailure(new Exception("No instance Information"));
+            log.warn("No information about this deployment: " + deploymentContext.getDeploymentPaaSId());
+            log.warn("Assuming that it has been undeployed");
+            callback.onSuccess(Maps.newHashMap());
         }
     }
 
