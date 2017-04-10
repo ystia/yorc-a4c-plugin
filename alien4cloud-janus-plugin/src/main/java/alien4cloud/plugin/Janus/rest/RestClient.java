@@ -144,7 +144,7 @@ public class RestClient {
 
 
         if (!postResponse.getStatusText().equals("Created")) {
-            throw new Exception("Janus returned an error ?");
+            throw new Exception("postTopologyToJanus: Janus returned an error : " + postResponse.getStatus());
         }
 
         return postResponse.getHeaders().getFirst("Location");
@@ -167,25 +167,26 @@ public class RestClient {
                         .header("accept", "application/json")
                         .asJson();
         if (postResponse.getStatus() != 202) {
-            log.info("Janus returned an error : " + postResponse.getStatusText());
-            throw new Exception("Janus returned an error : " + postResponse.getStatus());
+            log.warn("Janus returned an error : " + postResponse.getStatusText());
+            throw new Exception("scaleNodeInJanus: Janus returned an error : " + postResponse.getStatus());
         }
 
         String ret = postResponse.getHeaders().getFirst("Location");
-        log.info("Scaling accepted: " + ret);
+        log.debug("Scaling accepted: " + ret);
         return ret;
     }
 
     public String getStatusFromJanus(String deploymentUrl) throws Exception {
-        HttpResponse<JsonNode> res = Unirest.get(providerConfiguration.getUrlJanus() + deploymentUrl)
+        String fullUrl = providerConfiguration.getUrlJanus() + deploymentUrl;
+        log.debug("getStatusFromJanus " + fullUrl);
+        HttpResponse<JsonNode> res = Unirest.get(fullUrl)
                 .header("accept", "application/json")
                 .asJson();
-
 
         JSONObject obj = res.getBody().getObject();
 
         if (!obj.has("status")) {
-            throw new Exception("getStatusFromJanus : Janus returned an error");
+            throw new Exception("getStatusFromJanus returned no status");
         }
 
         return obj.getString("status");
@@ -238,7 +239,7 @@ public class RestClient {
     }
 
     public String undeployJanus(String deploymentUrl) throws UnirestException {
-        return Unirest.delete(providerConfiguration.getUrlJanus() + deploymentUrl)
+        return Unirest.delete(providerConfiguration.getUrlJanus() + deploymentUrl + "?purge")
                 .header("accept", "application/json")
                 .asJson()
                 .getStatusText();
@@ -264,11 +265,30 @@ public class RestClient {
 
         System.out.println(">>> Response status for custom POST is : " + postResponse.getStatusText());
         if (!postResponse.getStatusText().equals("Accepted")) {
-            throw new Exception("Janus returned an error :" + postResponse.getStatus());
+            throw new Exception("postCustomCommandToJanus: Janus returned an error :" + postResponse.getStatus());
         }
 
         String ret = postResponse.getHeaders().getFirst("Location");
-        //log.info("Custom operation accepted : " + ret);
+        return ret;
+    }
+
+    /**
+     * POST a workflow to janus
+     * @param deploymentUr
+     * @param workflowName
+     * @param inputs
+     * @return
+     * @throws Exception
+     */
+    public String postWorkflowToJanus(String deploymentUr, String workflowName, Map<String, Object> inputs) throws Exception {
+        HttpResponse<JsonNode> postResponse = Unirest.post(providerConfiguration.getUrlJanus() + deploymentUr + "/workflows/" + workflowName)
+                .header("accept", "application/json")
+                .asJson();
+        if (!postResponse.getStatusText().equals("Created")) {
+            throw new Exception("postWorkflowToJanus: Janus returned an error :" + postResponse.getStatus());
+        }
+        String ret = postResponse.getHeaders().getFirst("Location");
+        log.info("Workflow accepted: " + ret);
         return ret;
     }
 
