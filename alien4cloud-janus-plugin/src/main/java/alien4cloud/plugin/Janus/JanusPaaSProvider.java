@@ -289,7 +289,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
             try {
                 checkJanusStatusUntil("DONE", url);
                 // TODO replace this by actions in listenDeploymentEvent
-                updateNodeInfo(deploymentUrl, ctx.getDeploymentPaaSId(), nodeId);
+                updateNodeInfo(deploymentUrl, ctx.getDeploymentPaaSId(), nodeId, null);
                 callback.onSuccess(null);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -310,10 +310,11 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
      * @param deploymentUrl
      * @param deploymentPaaSId
      * @param nodeName null = All nodes
+     * @param instanceName null = All instances of this node
      *
      * @throws
      */
-    private void updateNodeInfo(String deploymentUrl, String deploymentPaaSId, final String nodeName) throws Exception {
+    private void updateNodeInfo(String deploymentUrl, String deploymentPaaSId, final String nodeName, final String instanceName) throws Exception {
         log.debug("updateNodeInfo " + nodeName);
         // find the nodemap to be updated
         JanusRuntimeDeploymentInfo jrdi = this.runtimeDeploymentInfos.get(deploymentPaaSId);
@@ -340,28 +341,30 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
                     // Find information about all the node instances from Janus
                     for (Link instanceLink : nodeInfosRes.getLinks()) {
                         if (instanceLink.getRel().equals("instance")) {
+                            if (instanceName == null || instanceLink.getHref().endsWith(instanceName)) {
 
-                            // Find the instance info from Janus
-                            InstanceInfosResponse instInfoRes = this.restClient.getInstanceInfosFromJanus(instanceLink.getHref());
+                                // Find the instance info from Janus
+                                InstanceInfosResponse instInfoRes = this.restClient.getInstanceInfosFromJanus(instanceLink.getHref());
 
-                            String inb = instInfoRes.getId();
-                            InstanceInformation iinfo = instanceMap.get(inb);
-                            if (iinfo == null) {
-                                // This instance was unknown. create it.
-                                iinfo = newInstance(new Integer(inb));
-                                instanceMap.put(inb, iinfo);
-                            }
-                            for (Link link : instInfoRes.getLinks()) {
-                                switch (link.getRel()) {
-                                    case "attribute":
-                                        // Get the attribute from Janus
-                                        AttributeResponse attrRes = this.restClient.getAttributeFromJanus(link.getHref());
-                                        iinfo.getAttributes().put(attrRes.getName(), attrRes.getValue());
-                                        log.debug("Attribute: " + attrRes.getName() + "=" + attrRes.getValue());
-                                        break;
-                                    default:
-                                        log.debug("Ignore link type: " + link.getRel());
-                                        break;
+                                String inb = instInfoRes.getId();
+                                InstanceInformation iinfo = instanceMap.get(inb);
+                                if (iinfo == null) {
+                                    // This instance was unknown. create it.
+                                    iinfo = newInstance(new Integer(inb));
+                                    instanceMap.put(inb, iinfo);
+                                }
+                                for (Link link : instInfoRes.getLinks()) {
+                                    switch (link.getRel()) {
+                                        case "attribute":
+                                            // Get the attribute from Janus
+                                            AttributeResponse attrRes = this.restClient.getAttributeFromJanus(link.getHref());
+                                            iinfo.getAttributes().put(attrRes.getName(), attrRes.getValue());
+                                            log.debug("Attribute: " + attrRes.getName() + "=" + attrRes.getValue());
+                                            break;
+                                        default:
+                                            log.debug("Ignore link type: " + link.getRel());
+                                            break;
+                                    }
                                 }
                             }
                         }
@@ -478,6 +481,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
                             if (event.getStatus().equals("started")) {
                                 this.setNodeAttributes(deploymentUrl, deploymentPaaSId, eNode, eInstance);
+                                // TODO replace with: updateNodeInfo(deploymentUrl, deploymentPaaSId, eNode, eInstance);
                             }
 
                             InstanceInformation iinfo = nodeInstancesInfos.get(eInstance);
@@ -814,7 +818,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
                 checkJanusStatusUntil("DONE", url);
 
                 // Properties may have changed and must be read again
-                updateNodeInfo(deploymentUrl, ctx.getDeploymentPaaSId(), null);
+                updateNodeInfo(deploymentUrl, ctx.getDeploymentPaaSId(), null, null);
 
                 // Currently the workflow execution doesn't return results
                 callback.onSuccess(null);
