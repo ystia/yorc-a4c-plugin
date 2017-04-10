@@ -6,21 +6,18 @@
 */
 package alien4cloud.plugin.Janus.location;
 
+import java.util.List;
+import java.util.Map;
+
 import alien4cloud.model.deployment.matching.MatchingConfiguration;
 import alien4cloud.model.orchestrators.locations.LocationResourceTemplate;
 import alien4cloud.orchestrators.locations.services.LocationResourceGeneratorService.ComputeContext;
 import alien4cloud.orchestrators.locations.services.LocationResourceGeneratorService.ImageFlavorContext;
 import alien4cloud.orchestrators.plugin.ILocationResourceAccessor;
-import alien4cloud.orchestrators.plugin.model.PluginArchive;
-import alien4cloud.tosca.parser.ParsingException;
-import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * Configure resources for the slurm location type.
@@ -45,7 +42,7 @@ public class JanusSlurmLocationConfigurer extends AbstractLocationConfigurer {
 
     @Override
        protected String[] getLocationArchivePaths() {
-           return new String[] { "slurm/resources", "slurm/slurm-resources" };
+        return new String[]{"commons/resources", "slurm/resources", "slurm/slurm-resources"};
        }
 
     @Override
