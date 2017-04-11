@@ -25,10 +25,11 @@ import static com.google.common.io.Files.copy;
 public class ZipTopology {
 
     /**
+     * Create a list of File, one per component of the topology (PaaSNodeTemplate)
      * @param deploymentContext
      * @return
      */
-    public List<File> createListTopology(PaaSTopologyDeploymentContext deploymentContext) {
+    private List<File> createListTopology(PaaSTopologyDeploymentContext deploymentContext) {
         List<File> files = new LinkedList();
         for (PaaSNodeTemplate node : deploymentContext.getPaaSTopology().getComputes()) {
             putCsarPathChildrenIntoFiles(node, files);
@@ -41,38 +42,36 @@ public class ZipTopology {
         List<PaaSNodeTemplate> children = node.getChildren();
         for (PaaSNodeTemplate child : children) {
             String parentPathChild = child.getCsarPath().getParent().toString();
-            System.out.println(parentPathChild);
             files.add(new File(parentPathChild));
             putCsarPathChildrenIntoFiles(child, files);
         }
     }
 
     /**
+     * Build the zip file that will be sent to janus at deployment
      * @param zipfile
      * @param deploymentContext
      * @throws IOException
      */
     public void buildZip(File zipfile, PaaSTopologyDeploymentContext deploymentContext) throws IOException {
 
-        List<File> folders = createListTopology(deploymentContext);
         OutputStream out = new FileOutputStream(zipfile);
-        Closeable res;
-
         ZipOutputStream zout = new ZipOutputStream(out);
-        //set the compression method and level
-//        zout.setMethod(ZipOutputStream.DEFLATED);
-//        zout.setLevel(9);
-        res = zout;
+        // set the compression method and level
+        // zout.setMethod(ZipOutputStream.DEFLATED);
+        // zout.setLevel(9);
+        Closeable res = zout;
 
         //clean import topology (delete all precedent import)
         cleanImportInTopology();
 
-        if(deploymentContext.getLocations().get("_A4C_ALL").getDependencies().stream().filter(csar -> csar.getName().contains(("slurm"))).findFirst().isPresent()) {
+        if (deploymentContext.getLocations().get("_A4C_ALL").getDependencies().stream().filter(csar -> csar.getName().contains(("slurm"))).findFirst().isPresent()) {
             addImportInTopology("<janus-slurm-types.yml>");
         } else {
             addImportInTopology("<janus-openstack-types.yml>");
         }
 
+        List<File> folders = createListTopology(deploymentContext);
         for (File directory : folders) {
 
             //Get info name path for component
@@ -80,17 +79,17 @@ public class ZipTopology {
             String[] dirFolders = directory.toString().split("/");
             String componentName = dirFolders[dirFolders.length - 2] + "/";
             String componentVersion = dirFolders[dirFolders.length - 1] + "/";
+            String struct = componentName + componentVersion;
+            log.info(struct);
 
-            //create structure of our component folder
-            log.info(componentName);
+            // create structure of our component folder
             try {
                 zout.putNextEntry(new ZipEntry(componentName));
-                zout.putNextEntry(new ZipEntry(componentName + componentVersion));
+                zout.putNextEntry(new ZipEntry(struct));
 
-                String struct = componentName + componentVersion;
                 // Set it to true after adding imports into the TOSCA definition file
                 // corresponding to the component.
-                // Normally the TOSCA definition file is the first yaml or yml encountered (its at the highest level in the tree)
+                // Normally the TOSCA definition file is the first yaml or yml encountered (it is at the highest level in the tree)
                 boolean addedImports = false;
 
                 URI base = directory.toURI();
@@ -106,13 +105,15 @@ public class ZipTopology {
                             zout.putNextEntry(new ZipEntry(name));
                         } else {
                             File file;
-                            //we check if the file is a tosca file or not (because there are also json file for example)
-                            //MAPPING TOSCA ALIEN -> TOSCA JANUS
+                            // we check if the file is a tosca file or not (because there are also json file for example)
+                            // MAPPING TOSCA ALIEN -> TOSCA JANUS
                             if (name.endsWith(".yml") || name.endsWith(".yaml")) {
                                 String[] parts = kid.getPath().split("runtime/csar/");
                                 if (addedImports) {
+                                    log.debug("processing " + name);
                                     file = kid;
                                 } else {
+                                    log.debug("processing TOSCA " + name);
                                     // This is the TOSCA definition, treate it !!
                                     addImportInTopology(parts[1]);
                                     file = removeLineBetween(kid, "imports:", "node_types:");
@@ -126,13 +127,9 @@ public class ZipTopology {
                         }
                     }
                 }
-
-
             } catch (Exception e) {
                 log.info(e.getMessage());
             }
-
-
         }
         zout.putNextEntry(new ZipEntry("topology.yml"));
         copy(new File("topology.yml"), zout);
@@ -140,7 +137,10 @@ public class ZipTopology {
         res.close();
     }
 
-     /*TODO REFACTOR cleanImportInTopology AND addImportInTopology => DUPLICATED CODE */
+    /**
+     * Add an import in topology.yml
+     * @param ymlPath path to be imported
+     */
     private void addImportInTopology(String ymlPath) {
         String oldFileName = "topology.yml";
         String tmpFileName = "tmp_topology.yml";
@@ -155,8 +155,7 @@ public class ZipTopology {
             while ((line = br.readLine()) != null) {
                 bw.append(line).append("\n");
                 if (line.contains("imports:")) {
-                    log.debug("add an import to topology.yml :");
-                    log.debug("  - path: " + ymlPath);
+                    log.debug("add an import to topology.yml : " + ymlPath);
                     bw.append("  - path: ").append(ymlPath).append("\n");
                 }
             }
@@ -186,7 +185,10 @@ public class ZipTopology {
 
     }
 
-    public void cleanImportInTopology() {
+    /**
+     * Remove all imports in topology.yml
+     */
+    private void cleanImportInTopology() {
         String oldFileName = "topology.yml";
         String tmpFileName = "tmp_topology.yml";
 
@@ -239,29 +241,31 @@ public class ZipTopology {
         File file = new File("tmp.yml");
         file.createNewFile();
 
-        try (FileWriter fw = new FileWriter(file);
-             BufferedWriter bw = new BufferedWriter(fw);
-             PrintWriter out = new PrintWriter(bw)) {
+        FileWriter fw = new FileWriter(file);
+        BufferedWriter bw = new BufferedWriter(fw);
+        PrintWriter out = new PrintWriter(bw);
 
-            boolean clean = false;
-            Scanner sc = new Scanner(fileToRead);
-            while (sc.hasNextLine()) {
-                String line = sc.nextLine();
-                if (!clean) {
-                    out.println(line);
-                }
-                if (line.contains(begin)) {
-                    clean = true;
-                } else if (line.contains(end)) {
-                    out.println(line);
-                    clean = false;
-                }
+        FileReader fr = new FileReader(fileToRead);
+        BufferedReader fin = new  BufferedReader(fr);
+        String line;
+        boolean clean = false;
+        for (; ; ) {
+            // Read a line.
+            line = fin.readLine();
+            if (line == null) {
+                break;
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+            if (!clean) {
+                out.println(line);
+            }
+            if (line.contains(begin)) {
+                clean = true;
+            } else if (line.contains(end)) {
+                out.println(line);
+                clean = false;
+            }
         }
-
+        out.close();
         return file;
-
     }
 }
