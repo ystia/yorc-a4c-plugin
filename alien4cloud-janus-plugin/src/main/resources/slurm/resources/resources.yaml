@@ -1,8 +1,8 @@
-tosca_definitions_version: tosca_simple_yaml_1_0_0_wd03
+tosca_definitions_version: alien_dsl_1_3_0
 
-template_name: Janus-plugin-slurm-if-types
-template_author: Alien 4 Cloud
-template_version: 1.0.0
+template_name: janus-plugin-slurm-if-types
+template_author: Janus
+template_version: ${janus.types.version}
 
 description: "Defines resources for the Janus plugin, slurm configuration."
 
@@ -13,24 +13,15 @@ node_types:
   janus.nodes.slurm.Compute:
     derived_from: tosca.nodes.Compute
     properties:
-      imageId:
-        type: string
-        required: true
-      flavorId:
-        type: string
-        required: true
       gpuType:
         type: string
         required: false
+        default: "none"
       user:
         type: string
         description: >
           The user name used to connect to the Compute and provision it.
         required: true
-  janus.nodes.slurm.BlockStorage:
-    derived_from: tosca.nodes.BlockStorage
-  janus.nodes.slurm.Network:
-    derived_from: tosca.nodes.Network
   janus.nodes.slurm.Cntk:
     derived_from: tosca.nodes.Compute
     properties:

@@ -11,6 +11,7 @@
 
       <properties>
           <httpclient.version>4.4.1</httpclient.version>
+          <janus.types.version>1.0.0</janus.types.version>
       </properties>
 
     <dependencies>
@@ -61,13 +62,8 @@
       <resources>
         <resource>
           <directory>src/main/resources</directory>
-        </resource>
-        <resource>
-          <directory>src/main/resources/META-INF</directory>
-          <targetPath>META-INF</targetPath>
           <filtering>true</filtering>
         </resource>
-
       </resources>
 
       <plugins>

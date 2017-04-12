@@ -1,8 +1,8 @@
-tosca_definitions_version: tosca_simple_yaml_1_0_0_wd03
+tosca_definitions_version: alien_dsl_1_3_0
 
 template_name: janus-openstack-types
 template_author: Janus
-template_version: 1.0.0
+template_version: ${janus.types.version}
 
 imports:
   - tosca-normative-types:1.0.0-ALIEN12
@@ -79,3 +79,27 @@ node_types:
 
   janus.nodes.openstack.Network:
     derived_from: tosca.nodes.Network
+
+  ##############################################
+  # Abstract resources used for auto-config
+  ##############################################
+  janus.nodes.openstack.Image:
+    abstract: true
+    derived_from: tosca.nodes.Root
+    properties:
+      id:
+        type: string
+    capabilities:
+      os:
+        type: tosca.capabilities.OperatingSystem
+
+  janus.nodes.openstack.Flavor:
+    abstract: true
+    derived_from: tosca.nodes.Root
+    properties:
+      id:
+        type: string
+    capabilities:
+      host:
+        type: tosca.capabilities.Container
+
