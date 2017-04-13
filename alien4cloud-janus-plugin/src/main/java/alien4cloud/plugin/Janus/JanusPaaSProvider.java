@@ -314,7 +314,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
      * @throws
      */
     private void updateNodeInfo(String deploymentUrl, String deploymentPaaSId, final String nodeName, final String instanceName) throws Exception {
-        log.debug("updateNodeInfo " + nodeName);
+        log.debug("updateNodeInfo " + nodeName + " " + instanceName);
         // find the nodemap to be updated
         JanusRuntimeDeploymentInfo jrdi = this.runtimeDeploymentInfos.get(deploymentPaaSId);
         Map<String, Map<String, InstanceInformation>> nodemap = jrdi.getInstanceInformations();
@@ -361,15 +361,12 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
                                             log.debug("Attribute: " + attrRes.getName() + "=" + attrRes.getValue());
                                             break;
                                         default:
-                                            log.debug("Ignore link type: " + link.getRel());
                                             break;
                                     }
                                 }
                             }
                         }
                     }
-                } else {
-                    log.debug("Ignore node name " + nodeLink.getHref());
                 }
             }
         }
