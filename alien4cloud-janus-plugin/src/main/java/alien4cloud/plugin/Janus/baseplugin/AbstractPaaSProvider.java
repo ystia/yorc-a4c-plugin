@@ -56,7 +56,7 @@ public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<Provid
             DeploymentStatus deploymentStatus = doGetStatus(deploymentId);
             switch (deploymentStatus) {
                 case UNDEPLOYED:
-                    doDeploy(deploymentContext);
+                    doDeploy(deploymentContext, callback);
                     break;
                 case DEPLOYED:
                 case DEPLOYMENT_IN_PROGRESS:
@@ -112,7 +112,7 @@ public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<Provid
                 case FAILURE:
                 case DEPLOYED:
                 case WARNING:
-                    doUndeploy(deploymentContext);
+                    doUndeploy(deploymentContext, callback);
                     break;
                 default:
                     throw new IllegalDeploymentStateException("Application [" + deploymentId + "] is in illegal status [" + deploymentStatus
@@ -209,18 +209,64 @@ public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<Provid
         }
     }
 
+    /**
+     * Switch Maintenance Mode for all instances
+     * @param deploymentContext
+     * @param mode
+     */
+    @Override
+    public void switchMaintenanceMode(PaaSDeploymentContext deploymentContext, boolean mode) {
+        log.debug("switchInstanceMaintenanceMode order received for mode {}", mode);
+        String deploymentId = deploymentContext.getDeploymentPaaSId();
+        try {
+            providerLock.writeLock().lock();
+            DeploymentStatus deploymentStatus = doGetStatus(deploymentId);
+            switch (deploymentStatus) {
+                case DEPLOYED:
+                    doSwitchMaintenanceMode(deploymentContext, mode);
+                    break;
+                default:
+                    throw new IllegalDeploymentStateException("Topology [" + deploymentId + "] is in status [" + deploymentStatus);
+            }
+        } finally {
+            providerLock.writeLock().unlock();
+        }
+    }
+
+    /**
+     * switch Maintenance Mode for this instance
+     * @param deploymentContext
+     * @param node
+     * @param instance
+     * @param mode
+     */
+    @Override
+    public void switchInstanceMaintenanceMode(PaaSDeploymentContext deploymentContext, String node, String instance, boolean mode) {
+        log.debug("switchInstanceMaintenanceMode order received for node {}, instance {}, mode {}", node, instance, mode);
+        String deploymentId = deploymentContext.getDeploymentPaaSId();
+        try {
+            providerLock.writeLock().lock();
+            DeploymentStatus deploymentStatus = doGetStatus(deploymentId);
+            switch (deploymentStatus) {
+                case DEPLOYED:
+                    doSwitchInstanceMaintenanceMode(deploymentContext, node, instance, mode);
+                    break;
+                default:
+                    throw new IllegalDeploymentStateException("Topology [" + deploymentId + "] is in status [" + deploymentStatus);
+            }
+        } finally {
+            providerLock.writeLock().unlock();
+        }
+    }
+
+    protected abstract void doSwitchMaintenanceMode(PaaSDeploymentContext deploymentContext, boolean mode);
+    protected abstract void doSwitchInstanceMaintenanceMode(PaaSDeploymentContext deploymentContext, String node, String instance, boolean mode);
     protected abstract DeploymentStatus doChangeStatus(String deploymentId, DeploymentStatus status);
-
     protected abstract DeploymentStatus doGetStatus(String deploymentId);
-
-    protected abstract void doDeploy(PaaSTopologyDeploymentContext deploymentContext);
-
+    protected abstract void doDeploy(PaaSTopologyDeploymentContext deploymentContext, IPaaSCallback<?> callback);
     protected abstract void doScale(PaaSDeploymentContext deploymentContext, String nodeId, int nbi, IPaaSCallback<?> callback);
-
-    protected abstract void doUndeploy(PaaSDeploymentContext deploymentContext);
-
+    protected abstract void doUndeploy(PaaSDeploymentContext deploymentContext, IPaaSCallback<?> callback);
     protected abstract void doExecuteOperation(PaaSDeploymentContext deploymentContext, NodeOperationExecRequest request, IPaaSCallback<Map<String, String>> callback);
-
     protected abstract void doLaunchWorkflow(PaaSDeploymentContext deploymentContext, String workflowName, Map<String, Object> inputs, IPaaSCallback<?> callback);
 
 }
