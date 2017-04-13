@@ -1,7 +1,8 @@
 
 matching_configurations:
-  starlings.nodes.KubernetesContainer:
+  janus.nodes.KubernetesContainer:
     properties:
+      - image: { equal: "" }
       - cpu_share: { equal: "" }
       - namespace: { equal: "" }
       - imagePullPolicy: { equal: "Always" }
