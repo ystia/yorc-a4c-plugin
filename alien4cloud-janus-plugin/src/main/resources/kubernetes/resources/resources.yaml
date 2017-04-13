@@ -1,0 +1,45 @@
+tosca_definitions_version: alien_dsl_1_3_0
+
+template_name: kubernetes-types
+template_author: Janus
+template_version: 3.0-SNAPSHOT
+
+description: "Defines resources for the Janus plugin, kubernetes configuration."
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN12
+  - janus-docker-types:3.0-SNAPSHOT
+
+node_types:
+  starlings.nodes.KubernetesContainer:
+    derived_from: janus.nodes.DockerContainer
+    properties:
+      image:
+        type: string
+        required: true
+      cpu_share:
+        type: integer
+        required: false
+      namespace:
+        type: string
+        required: false
+      imagePullPolicy:
+        type: string
+        required: false
+        constraints:
+          - valid_values: [IfNotPresent, Always, Never]
+      cpu_limit:
+        type: integer
+        required: false
+      mem_share:
+        type: string
+        required: false
+      mem_limits:
+        type: string
+        required: false
+      docker_options:
+        type: string
+        required: false
+      docker_run_cmd:
+        type: string
+        required: false

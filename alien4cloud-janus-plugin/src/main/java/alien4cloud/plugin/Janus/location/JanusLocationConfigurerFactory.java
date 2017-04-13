@@ -17,6 +17,9 @@ public class JanusLocationConfigurerFactory extends AbstractLocationConfigurerFa
         } else if (JanusOrchestratorFactory.SLURM.equals(locationType)) {
             JanusSlurmLocationConfigurer configurer = applicationContext.getBean(JanusSlurmLocationConfigurer.class);
             return configurer;
+        } else if (JanusOrchestratorFactory.KUBERNETES.equals(locationType)) {
+            JanusKubernetesLocationConfigurer configurer = applicationContext.getBean(JanusKubernetesLocationConfigurer.class);
+            return configurer;
         }
         return null;
     }

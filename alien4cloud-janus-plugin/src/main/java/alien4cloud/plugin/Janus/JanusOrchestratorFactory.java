@@ -25,6 +25,7 @@ import org.springframework.stereotype.Component;
 public class JanusOrchestratorFactory implements IOrchestratorPluginFactory<JanusOrchestrator, ProviderConfig> {
     public static final String OPENSTACK = "OpenStack";
     public static final String SLURM = "Slurm";
+    public static final String KUBERNETES = "Kubernetes";
     private final Map<String, PropertyDefinition> deploymentProperties = Maps.newHashMap();
     @Resource
     private BeanFactory beanFactory;
@@ -51,7 +52,7 @@ public class JanusOrchestratorFactory implements IOrchestratorPluginFactory<Janu
 
     @Override
     public LocationSupport getLocationSupport() {
-        return new LocationSupport(true, new String[]{OPENSTACK, SLURM});
+        return new LocationSupport(true, new String[]{OPENSTACK, SLURM, KUBERNETES});
     }
 
     @Override
