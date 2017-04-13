@@ -36,7 +36,7 @@ public class JanusSlurmLocationConfigurer extends AbstractLocationConfigurer {
 
     @Override
        protected String[] getLocationArchivePaths() {
-        return new String[]{"commons/resources", "slurm/resources"};
+        return new String[]{"slurm/resources"};
        }
 
     @Override

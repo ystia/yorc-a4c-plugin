@@ -36,7 +36,7 @@ public class JanusKubernetesLocationConfigurer extends AbstractLocationConfigure
 
     @Override
        protected String[] getLocationArchivePaths() {
-        return new String[]{"commons/resources", "kubernetes/resources"};
+        return new String[]{"kubernetes/resources"};
        }
 
     @Override
