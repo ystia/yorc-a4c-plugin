@@ -134,6 +134,7 @@ public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<Provid
         try {
             providerLock.readLock().lock();
             DeploymentStatus status = doGetStatus(deploymentId);
+            System.out.println("In getStatus for deployment " + deploymentId + ", the status is " + status);
             callback.onSuccess(status);
         } finally {
             providerLock.readLock().unlock();

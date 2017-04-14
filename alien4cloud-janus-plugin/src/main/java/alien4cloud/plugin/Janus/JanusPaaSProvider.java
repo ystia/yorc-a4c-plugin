@@ -174,7 +174,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
     @Override
     protected synchronized void doDeploy(final PaaSTopologyDeploymentContext deploymentContext, IPaaSCallback<?> callback) {
         String name =  deploymentContext.getDeploymentPaaSId();
-        log.debug("Deploying deployment [" + name + "]");
+        log.debug("Deploying deployment [" + name + "] having id : " + deploymentContext.getDeploymentId());
         this.paaSDeploymentIdToAlienDeploymentIdMap.put(name, deploymentContext.getDeploymentId());
 
         Topology topology = deploymentContext.getDeploymentTopology();
@@ -216,12 +216,12 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
             return;
         }
 
-        //post topology zip to Janus
-        log.info("POST Topology");
+        //put topology zip to Janus
+        log.info("PUT Topology");
 
         String deploymentUrl;
         try {
-            deploymentUrl = restClient.postTopologyToJanus();
+            deploymentUrl = restClient.putTopologyToJanus(name);
         } catch (Exception e) {
             doChangeStatus(name, DeploymentStatus.FAILURE);
             callback.onFailure(e);
@@ -643,7 +643,39 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
     @Override
     public void init(Map<String, PaaSTopologyDeploymentContext> activeDeployments) {
+        System.out.println("================= Active Deployments ================");
+        System.out.println("  ");
+        for (Map.Entry<String, PaaSTopologyDeploymentContext> activeDeploymentsEntry : activeDeployments.entrySet()) {
+            String key = activeDeploymentsEntry.getKey();
+            System.out.println("===================== " + key + " ==================");
 
+            PaaSTopologyDeploymentContext deploymentContext = activeDeploymentsEntry.getValue();
+            String deploymentId = deploymentContext.getDeploymentId();
+            System.out.println(">>> deployment ID : " + deploymentId);
+
+            String deploymentContextString = deploymentContext.toString();
+            System.out.println(">>> ");
+            System.out.println(deploymentContextString);
+            alien4cloud.model.deployment.Deployment deployment = deploymentContext.getDeployment();
+            System.out.println(deployment.toString());
+            System.out.println("deployment id : " + deployment.getId());
+            System.out.println("env id : " +deployment.getEnvironmentId());
+            System.out.println("source id : " + deployment.getSourceId());
+            System.out.println("source name : " + deployment.getSourceName());
+            System.out.println("source type : " + deployment.getSourceType());
+            System.out.println(">>> ");
+            System.out.println("     ");
+        }
+        System.out.println("=====================================================");
+        if (runtimeDeploymentInfos.isEmpty()) {
+            System.out.println("   NO Runtime Infos !!  ");
+        } else {
+            for (Map.Entry<String, JanusRuntimeDeploymentInfo> runtimeInfo : runtimeDeploymentInfos.entrySet()) {
+                String infoKey = runtimeInfo.getKey();
+                System.out.println("=========== Runtime Infos key ========= " + infoKey + " ==================");
+            }
+        }
+        System.out.println("=====================================================");
     }
 
     /**
