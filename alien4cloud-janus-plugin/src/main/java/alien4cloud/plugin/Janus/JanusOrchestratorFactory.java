@@ -57,8 +57,8 @@ public class JanusOrchestratorFactory implements IOrchestratorPluginFactory<Janu
     @Override
     public ArtifactSupport getArtifactSupport() {
         // support all type of implementations artifacts
-        return new ArtifactSupport(new String[]{"tosca.artifacts.Implementation.Python", "tosca.artifacts.ShellScript",
-                "tosca.artifacts.Implementation.Ansible"});
+        return new ArtifactSupport(new String[]{"tosca.artifacts.Implementation.Python",
+                "tosca.artifacts.Implementation.Bash", "tosca.artifacts.Implementation.Ansible"});
     }
 
     @Override
