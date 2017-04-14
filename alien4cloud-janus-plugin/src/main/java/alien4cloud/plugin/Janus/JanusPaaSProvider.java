@@ -527,17 +527,11 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
     @Override
     protected synchronized void doUndeploy(final PaaSDeploymentContext deploymentContext, IPaaSCallback<?> callback) {
         final String deploymentId = deploymentContext.getDeploymentPaaSId();
-        DeploymentStatus status = this.doGetStatus(deploymentId);
-        if (status == DeploymentStatus.DEPLOYMENT_IN_PROGRESS) {
-            log.info("Undeploying: A deployment is in progress. Do nothing.");
-            callback.onSuccess(null);
-            return;
-        }
 
-        log.info("Undeploying deployment [" + deploymentId + "] status=" + status);
         doChangeStatus(deploymentId, DeploymentStatus.UNDEPLOYMENT_IN_PROGRESS);
 
         // Update all instance states to stopping
+        /*
         JanusRuntimeDeploymentInfo jrdi = runtimeDeploymentInfos.get(deploymentId);
         if (jrdi != null) {
             Map<String, Map<String, InstanceInformation>> appInfo = jrdi.getInstanceInformations();
@@ -546,7 +540,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
                     updateInstanceState(deploymentId, nodeEntry.getKey(), instanceEntry.getKey(), instanceEntry.getValue(), "stopping");
                 }
             }
-        }
+        }   */
 
         Runnable task = () -> {
             try {
