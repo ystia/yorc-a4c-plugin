@@ -385,7 +385,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
      */
     private void updateNodeInfo(PaaSDeploymentContext ctx, final String nodeName, final String instanceName) throws Exception {
         String paasId = ctx.getDeploymentPaaSId();
-        String deploymentUrl = "deployments/" + paasId;
+        String deploymentUrl = "/deployments/" + paasId;
         log.debug("updateNodeInfo " + paasId + " " + nodeName + " " + instanceName);
 
         // Find the deployment info from Janus
