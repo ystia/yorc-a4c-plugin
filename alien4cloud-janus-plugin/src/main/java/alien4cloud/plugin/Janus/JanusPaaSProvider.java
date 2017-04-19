@@ -339,17 +339,16 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         String deploymentUrl = "/deployments/" + paasId;
         log.debug("updateNodeInfo " + paasId + " " + nodeName + " " + instanceName);
 
-        // Find the deployment info from Janus
-        DeployInfosResponse deployRes = this.restClient.getDeploymentInfosFromJanus(deploymentUrl);
-        DeploymentStatus status = getDeploymentStatusFromString(deployRes.getStatus());
-
-        // Find the JanusRuntimeDeploymentInfo or create it if not known yet.
+        // Assumes JanusRuntimeDeploymentInfo already created.
         JanusRuntimeDeploymentInfo jrdi = this.runtimeDeploymentInfos.get(paasId);
         if (jrdi == null) {
             log.error("No JanusRuntimeDeploymentInfo");
             return;
         }
-        jrdi.setStatus(status);
+
+        // Find the deployment info from Janus
+        DeployInfosResponse deployRes = this.restClient.getDeploymentInfosFromJanus(deploymentUrl);
+        jrdi.setStatus(getDeploymentStatusFromString(deployRes.getStatus()));
 
         Map<String, Map<String, InstanceInformation>> nodemap = jrdi.getInstanceInformations();
 
@@ -566,18 +565,6 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         final String paasId = deploymentContext.getDeploymentPaaSId();
 
         doChangeStatus(paasId, DeploymentStatus.UNDEPLOYMENT_IN_PROGRESS);
-
-        // Update all instance states to stopping
-        /*
-        JanusRuntimeDeploymentInfo jrdi = runtimeDeploymentInfos.get(deploymentId);
-        if (jrdi != null) {
-            Map<String, Map<String, InstanceInformation>> appInfo = jrdi.getInstanceInformations();
-            for (Map.Entry<String, Map<String, InstanceInformation>> nodeEntry : appInfo.entrySet()) {
-                for (Map.Entry<String, InstanceInformation> instanceEntry : nodeEntry.getValue().entrySet()) {
-                    updateInstanceState(deploymentId, nodeEntry.getKey(), instanceEntry.getKey(), instanceEntry.getValue(), "stopping");
-                }
-            }
-        }   */
 
         Runnable task = () -> {
             try {
