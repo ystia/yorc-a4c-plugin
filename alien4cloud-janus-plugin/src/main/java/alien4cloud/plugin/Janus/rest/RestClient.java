@@ -241,6 +241,7 @@ public class RestClient {
     }
 
     public String undeployJanus(String deploymentUrl) throws UnirestException {
+        log.debug("undeployJanus " + deploymentUrl);
         return Unirest.delete(providerConfiguration.getUrlJanus() + deploymentUrl + "?purge")
                 .header("accept", "application/json")
                 .asJson()
