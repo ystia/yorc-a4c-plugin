@@ -303,7 +303,6 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
     /**
      * Update Deployment Info from Janus information
-     * TODO Use updateNodeInfo if possible
      * @param ctx
      */
     protected void doUpdateDeploymentInfo(PaaSTopologyDeploymentContext ctx) {
@@ -311,63 +310,14 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
         a4cDeploymentIds.put(paasId, ctx.getDeploymentId());
         String deploymentUrl = "/deployments/" + paasId;
         log.debug("update deployment info " + paasId);
+
+        // Create the JanusRuntimeDeploymentInfo for this deployment
+        Map<String, Map<String, InstanceInformation>> nodemap = Maps.newHashMap();
+        JanusRuntimeDeploymentInfo jrdi = new JanusRuntimeDeploymentInfo(ctx, DeploymentStatus.UNKNOWN, nodemap, deploymentUrl);
+        runtimeDeploymentInfos.put(paasId, jrdi);
+        
         try {
-            DeployInfosResponse deployRes = this.restClient.getDeploymentInfosFromJanus(deploymentUrl);
-            DeploymentStatus status = getDeploymentStatusFromString(deployRes.getStatus());
-
-            // Find the JanusRuntimeDeploymentInfo or create it if not known yet.
-            JanusRuntimeDeploymentInfo jrdi = this.runtimeDeploymentInfos.get(paasId);
-            Map<String, Map<String, InstanceInformation>> nodemap;
-            if (jrdi == null) {
-                nodemap = Maps.newHashMap();
-                jrdi = new JanusRuntimeDeploymentInfo(ctx, status, nodemap, deploymentUrl);
-                runtimeDeploymentInfos.put(paasId, jrdi);
-            } else {
-                nodemap = jrdi.getInstanceInformations();
-            }
-            for (Link nodeLink : deployRes.getLinks()) {
-                if (nodeLink.getRel().equals("node")) {
-                    // Find the node info from Janus
-                    NodeInfosResponse nodeInfosRes = this.restClient.getNodesInfosFromJanus(nodeLink.getHref());
-                    String nodeName = nodeInfosRes.getName();
-                    Map<String, InstanceInformation> instanceMap = nodemap.get(nodeName);
-                    if (instanceMap == null) {
-                        // This node was unknown. Create it.
-                        instanceMap = Maps.newHashMap();
-                        nodemap.put(nodeName, instanceMap);
-                    }
-                    // Find information about all the node instances from Janus
-                    for (Link instanceLink : nodeInfosRes.getLinks()) {
-                        if (instanceLink.getRel().equals("instance")) {
-                            // Find the instance info from Janus
-                            InstanceInfosResponse instInfoRes = this.restClient.getInstanceInfosFromJanus(instanceLink.getHref());
-                            String iState = instInfoRes.getStatus();
-
-                            String inb = instInfoRes.getId();
-                            InstanceInformation iinfo = instanceMap.get(inb);
-                            if (iinfo == null) {
-                                // This instance was unknown. create it.
-                                iinfo = newInstance(new Integer(inb));
-                                instanceMap.put(inb, iinfo);
-                            }
-                            for (Link link : instInfoRes.getLinks()) {
-                                switch (link.getRel()) {
-                                    case "attribute":
-                                        // Get the attribute from Janus
-                                        AttributeResponse attrRes = this.restClient.getAttributeFromJanus(link.getHref());
-                                        iinfo.getAttributes().put(attrRes.getName(), attrRes.getValue());
-                                        log.debug("Attribute: " + attrRes.getName() + "=" + attrRes.getValue());
-                                        break;
-                                    default:
-                                        break;
-                                }
-                            }
-                            // Notify a4c that the instance State may have changed
-                            updateInstanceState(paasId, nodeName, inb, iinfo, iState);
-                        }
-                    }
-                }
-            }
+            updateNodeInfo(ctx, null, null);
         } catch (Exception e) {
             log.error("Cannot get info for deployment " + ctx.getDeploymentPaaSId(), e);
         }
@@ -377,7 +327,6 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
      * Update nodeInformation in the JanusRuntimeDeploymentInfo
      * This is needed to let a4c know all about the nodes and their instances
      * Information is got from Janus using the REST API
-     * TODO duplicate code with doUpdateDeploymentInfo
      *
      * @param ctx PaaSDeploymentContext to be updated
      * @param nodeName null = All nodes
@@ -392,6 +341,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
 
         // Find the deployment info from Janus
         DeployInfosResponse deployRes = this.restClient.getDeploymentInfosFromJanus(deploymentUrl);
+        DeploymentStatus status = getDeploymentStatusFromString(deployRes.getStatus());
 
         // Find the JanusRuntimeDeploymentInfo or create it if not known yet.
         JanusRuntimeDeploymentInfo jrdi = this.runtimeDeploymentInfos.get(paasId);
@@ -399,7 +349,7 @@ public abstract class JanusPaaSProvider extends AbstractPaaSProvider {
             log.error("No JanusRuntimeDeploymentInfo");
             return;
         }
-
+        jrdi.setStatus(status);
 
         Map<String, Map<String, InstanceInformation>> nodemap = jrdi.getInstanceInformations();
 
