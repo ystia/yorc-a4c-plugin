@@ -24,6 +24,12 @@
     <module>distribution</module>
   </modules>
 
+  <scm>
+    <connection>scm:git:https://stash.sdmc.ao-srv.com/scm/brbdcf/janus-a4c-plugin.git</connection>
+    <developerConnection>scm:git:https://stash.sdmc.ao-srv.com/scm/brbdcf/janus-a4c-plugin.git</developerConnection>
+    <url>https://stash.sdmc.ao-srv.com/scm/brbdcf/janus-a4c-plugin/</url>
+  </scm>
+
   <repositories>
     <repository>
       <id>repo.opensource.fastconnect.org</id>
@@ -33,5 +39,55 @@
       <id>repo.opensource.snapshot.fastconnect.org</id>
       <url>http://fastconnect.org/maven/content/repositories/opensource-snapshot</url>
     </repository>
+    <repository>
+      <id>starlings-repo-releases</id>
+      <name>Starlings Release Repository</name>
+      <url>https://novaforge.bull.com/nexus-default/nexus/content/repositories/starlings_nexus_release</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>starlings-repo-snapshots</id>
+      <name>Starlings Snapshot Repository</name>
+      <url>https://novaforge.bull.com/nexus-default/nexus/content/repositories/starlings_nexus_snapshot</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+    </repository>
   </repositories>
+
+  <pluginRepositories>
+    <pluginRepository>
+      <id>starlings-repo-plugin-releases</id>
+      <name>Starlings Release Repository</name>
+      <url>https://novaforge.bull.com/nexus-default/nexus/content/repositories/starlings_nexus_release</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </pluginRepository>
+    <pluginRepository>
+      <id>starlings-repo-plugin-snapshots</id>
+      <name>Starlings Snapshot Repository</name>
+      <url>https://novaforge.bull.com/nexus-default/nexus/content/repositories/starlings_nexus_snapshot</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+    </pluginRepository>
+  </pluginRepositories>
+
+
+  <distributionManagement>
+    <repository>
+      <id>dm-starlings-repo-releases</id>
+      <name>Starlings Release Repository</name>
+      <url>https://novaforge.bull.com/nexus-default/nexus/content/repositories/starlings_nexus_release</url>
+    </repository>
+    <snapshotRepository>
+      <id>dm-starlings-repo-snapshots</id>
+      <name>Starlings Snapshot Repository</name>
+      <url>https://novaforge.bull.com/nexus-default/nexus/content/repositories/starlings_nexus_snapshot</url>
+    </snapshotRepository>
+  </distributionManagement>
+
 </project>
