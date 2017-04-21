@@ -13,5 +13,7 @@ public class Event {
     private String node;
     private String instance;
     private String status;
+    private String type;
+    private String taskid;
 
 }
