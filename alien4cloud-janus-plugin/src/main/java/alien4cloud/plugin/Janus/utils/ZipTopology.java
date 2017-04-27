@@ -67,6 +67,8 @@ public class ZipTopology {
 
         if (deploymentContext.getLocations().get("_A4C_ALL").getDependencies().stream().filter(csar -> csar.getName().contains(("slurm"))).findFirst().isPresent()) {
             addImportInTopology("<janus-slurm-types.yml>");
+        } else if (deploymentContext.getLocations().get("_A4C_ALL").getDependencies().stream().filter(csar -> csar.getName().contains(("kubernetes"))).findFirst().isPresent()) {
+            addImportInTopology("<janus-kubernetes-types.yml>");
         } else {
             addImportInTopology("<janus-openstack-types.yml>");
         }
