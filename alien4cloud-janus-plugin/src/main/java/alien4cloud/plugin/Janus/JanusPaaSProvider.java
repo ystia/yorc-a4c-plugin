@@ -103,7 +103,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
     // Should set to infinite, since it is not possible to know how long will take
     // an operation. This value is mainly used for debugging.
     // private final int JANUS_TIMEOUT = 1000 * 3600 * 24;  // 1 day
-    private final int JANUS_TIMEOUT = 1000 * 60 * 2;   // 2 mn
+    private final int JANUS_TIMEOUT = 1000 * 60 * 10;   // 10 mns
 
     // ------------------------------------------------------------------------------------------------------
     // IPaaSProvider implementation
@@ -1174,6 +1174,9 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
                                             case "initial":
                                             case "creating":
                                             case "deleting":
+                                            case "starting":
+                                            case "configured":
+                                            case "configuring":
                                                 break;
                                             case "deleted":
                                                 ninfo.remove(eInstance);
