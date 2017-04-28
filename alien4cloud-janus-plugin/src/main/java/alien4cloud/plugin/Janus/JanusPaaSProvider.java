@@ -23,6 +23,8 @@ import alien4cloud.model.deployment.DeploymentTopology;
 import alien4cloud.orchestrators.plugin.IOrchestratorPlugin;
 import alien4cloud.paas.exception.MaintenanceModeException;
 import alien4cloud.paas.exception.OperationExecutionException;
+import alien4cloud.paas.model.PaaSWorkflowMonitorEvent;
+import alien4cloud.paas.model.PaaSWorkflowStepMonitorEvent;
 import alien4cloud.plugin.Janus.rest.JanusRestException;
 import alien4cloud.plugin.Janus.rest.Response.DeployInfosResponse;
 import alien4cloud.plugin.Janus.rest.Response.NodeInfosResponse;
@@ -72,6 +74,7 @@ import org.alien4cloud.tosca.model.templates.Topology;
 import org.alien4cloud.tosca.model.types.NodeType;
 import org.alien4cloud.tosca.model.types.RelationshipType;
 import org.elasticsearch.common.collect.Maps;
+import static java.nio.file.StandardCopyOption.*;
 
 /**
  * a4c janus plugin
@@ -151,7 +154,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
      */
     @Override
     public void deploy(PaaSTopologyDeploymentContext ctx, IPaaSCallback<?> callback) {
-        
+
         // Keep Ids in a Map
         String paasId = ctx.getDeploymentPaaSId();
         String alienId = ctx.getDeploymentId();
@@ -160,26 +163,29 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         a4cDeploymentIds.put(paasId, alienId);
 
         // Init Deployment Info from topology
-        DeploymentTopology topo = ctx.getDeploymentTopology();
-        Map<String, Map<String, InstanceInformation>> curinfo = setupInstanceInformations(topo);
+        DeploymentTopology dtopo = ctx.getDeploymentTopology();
+        Map<String, Map<String, InstanceInformation>> curinfo = setupInstanceInformations(dtopo);
         JanusRuntimeDeploymentInfo jrdi = new JanusRuntimeDeploymentInfo(ctx, DeploymentStatus.INIT_DEPLOYMENT, curinfo, deploymentUrl);
         runtimeDeploymentInfos.put(paasId, jrdi);
         doChangeStatus(paasId, DeploymentStatus.INIT_DEPLOYMENT);
 
-        // Change topology
-        MappingTosca.addPreConfigureSteps(topo, ctx.getPaaSTopology());
+        // Change topology to be suitable for janus and tosca
+        MappingTosca.addPreConfigureSteps(ctx);
         MappingTosca.generateOpenstackFIP(ctx);
+        MappingTosca.quoteProperties(ctx);
 
         // This operation must be synchronized, because it uses the same files topology.yml and topology.zip
         synchronized(this) {
             // Create the yml of our topology (after substitution)
             // We use a local file named "topology.yml"
-            Csar myCsar = new Csar(paasId, topo.getArchiveVersion());
-            String yaml = archiveExportService.getYaml(myCsar, topo);
+            Csar myCsar = new Csar(paasId, dtopo.getArchiveVersion());
+            String yaml = archiveExportService.getYaml(myCsar, dtopo);
             List<String> lines = Collections.singletonList(yaml);
             Path file = Paths.get("topology.yml");
+            Path orig = Paths.get("original.yml");
             try {
-                Files.write(file, lines, Charset.forName("UTF-8"));
+                Files.write(file, lines, Charset.forName("UTF-8"));  
+                Files.write(orig, lines, Charset.forName("UTF-8"));
             } catch (IOException e) {
                 doChangeStatus(paasId, DeploymentStatus.FAILURE);
                 callback.onFailure(e);
@@ -506,16 +512,27 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
                 sendMessage(paasId, "Workflow " + workflowName + " " + evt.getStatus());
                 switch (evt.getStatus()) {
                     case "failed":
+                        //workflowStep(paasId, workflowName, "TODO", "TODO", "TODO");
                         callback.onFailure(new Exception("Workflow " + workflowName + " failed"));
                         done = true;
                         break;
                     case "canceled":
+                        //workflowStep(paasId, workflowName, "TODO", "TODO", "TODO");
                         callback.onFailure(new Exception("Workflow " + workflowName + " canceled"));
                         done = true;
                         break;
                     case "done":
+                        //workflowStep(paasId, workflowName, "TODO", "TODO", "TODO");
                         callback.onSuccess(null);
                         done = true;
+                        break;
+                    case "initial":
+                        // TODO name of subworkflow ?
+                        //workflowStarted(paasId, workflowName, "TODO");
+                        break;
+                    case "running":
+                        // TODO get name of step and stage: need update of janus API
+                        //workflowStep(paasId, workflowName, "TODO", "TODO", "TODO");
                         break;
                     default:
                         break;
@@ -725,7 +742,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
     }
 
     /**
-     * Switch the maintenance mode for a given node instance of this deployed topology.  
+     * Switch the maintenance mode for a given node instance of this deployed topology.
      *
      * @param ctx the deployment context
      * @param node
@@ -791,7 +808,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
      * @param paasId
      * @param status
      */
-    protected void doChangeStatus(final String paasId, final DeploymentStatus status) {
+    protected void doChangeStatus(String paasId, DeploymentStatus status) {
         JanusRuntimeDeploymentInfo jrdi = runtimeDeploymentInfos.get(paasId);
         DeploymentStatus oldDeploymentStatus = jrdi.getStatus();
         log.debug("Deployment [" + paasId + "] moved from status [" + oldDeploymentStatus + "] to [" + status + "]");
@@ -799,6 +816,38 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
 
         PaaSDeploymentStatusMonitorEvent event = new PaaSDeploymentStatusMonitorEvent();
         event.setDeploymentStatus(status);
+        postEvent(event, paasId);
+    }
+
+    /**
+     * Notify a4c that a workflow has been started
+     * @param paasId
+     * @param workflow
+     * @param subworkflow
+     */
+    protected void workflowStarted(String paasId, String workflow, String subworkflow) {
+        PaaSWorkflowMonitorEvent event = new PaaSWorkflowMonitorEvent();
+        // TODO
+        event.setSubworkflow(subworkflow);
+        event.setWorkflowId(workflow);
+        postEvent(event, paasId);
+    }
+
+    /**
+     * Notify a4c that a workflow has reached a step
+     * @param paasId
+     * @param workflow
+     * @param node
+     * @param step
+     * @param stage
+     */
+    protected void workflowStep(String paasId, String workflow, String node, String step, String stage) {
+        PaaSWorkflowStepMonitorEvent event = new PaaSWorkflowStepMonitorEvent();
+        // TODO
+        event.setWorkflowId(workflow);
+        event.setStepId(step);
+        event.setStage(stage);
+        event.setNodeId(node);
         postEvent(event, paasId);
     }
 
