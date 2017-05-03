@@ -33,6 +33,31 @@ import org.alien4cloud.tosca.model.templates.Topology;
 public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
     private ReentrantReadWriteLock providerLock = new ReentrantReadWriteLock();
 
+    /**
+     * Init plugin when a4c start
+     * @param activeDeployments the currently active deployments that Alien has
+     */
+    @Override
+    public void init(Map<String, PaaSTopologyDeploymentContext> activeDeployments) {
+        log.info("Init plugin for " + activeDeployments.size() + " active deployments");
+        for (Map.Entry<String, PaaSTopologyDeploymentContext> entry : activeDeployments.entrySet()) {
+            String key = entry.getKey();
+            PaaSTopologyDeploymentContext deploymentContext = entry.getValue();
+            String deploymentId = deploymentContext.getDeploymentId();
+            log.info("Active deployment: " + key + " Id=" + deploymentId);
+
+            String deploymentContextString = deploymentContext.toString();
+            log.debug(">>> " + deploymentContextString);
+            alien4cloud.model.deployment.Deployment deployment = deploymentContext.getDeployment();
+            log.debug(">>> " + deployment.toString());
+            log.debug(">>> env id : " +deployment.getEnvironmentId());
+            log.debug(">>> source id : " + deployment.getSourceId());
+            log.debug(">>> source name : " + deployment.getSourceName());
+            log.debug(">>> source type : " + deployment.getSourceType());
+            doUpdateDeploymentInfo(deploymentContext);
+        }
+    }
+
     @Override
     public void deploy(PaaSTopologyDeploymentContext deploymentContext, IPaaSCallback<?> callback) {
         String deploymentId = deploymentContext.getDeploymentPaaSId();
@@ -134,6 +159,7 @@ public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<Provid
         try {
             providerLock.readLock().lock();
             DeploymentStatus status = doGetStatus(deploymentId);
+            System.out.println("In getStatus for deployment " + deploymentId + ", the status is " + status);
             callback.onSuccess(status);
         } finally {
             providerLock.readLock().unlock();
@@ -268,5 +294,5 @@ public abstract class AbstractPaaSProvider implements IOrchestratorPlugin<Provid
     protected abstract void doUndeploy(PaaSDeploymentContext deploymentContext, IPaaSCallback<?> callback);
     protected abstract void doExecuteOperation(PaaSDeploymentContext deploymentContext, NodeOperationExecRequest request, IPaaSCallback<Map<String, String>> callback);
     protected abstract void doLaunchWorkflow(PaaSDeploymentContext deploymentContext, String workflowName, Map<String, Object> inputs, IPaaSCallback<?> callback);
-
+    protected abstract void doUpdateDeploymentInfo(PaaSTopologyDeploymentContext deploymentContext);
 }

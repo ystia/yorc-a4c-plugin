@@ -128,26 +128,28 @@ public class RestClient {
 
     }
 
-    public String postTopologyToJanus() throws Exception {
+    public String putTopologyToJanus(String deploymentId) throws Exception {
         final InputStream stream;
+
+        System.out.println("Put Topology with id = " + deploymentId);
 
         stream = new FileInputStream(new File("topology.zip"));
         final byte[] bytes = new byte[stream.available()];
         stream.read(bytes);
         stream.close();
 
-        HttpResponse<JsonNode> postResponse = Unirest.post(providerConfiguration.getUrlJanus() + "/deployments")
+        HttpResponse<JsonNode> putResponse = Unirest.put(providerConfiguration.getUrlJanus() + "/deployments/" + deploymentId)
                 .header("accept", "application/json")
                 .header("Content-Type", "application/zip")
                 .body(bytes)
                 .asJson();
 
 
-        if (!postResponse.getStatusText().equals("Created")) {
-            throw new Exception("postTopologyToJanus: Janus returned an error : " + postResponse.getStatus());
+        if (!putResponse.getStatusText().equals("Created")) {
+            throw new Exception("putTopologyToJanus: Janus returned an error : " + putResponse.getStatus());
         }
 
-        return postResponse.getHeaders().getFirst("Location");
+        return putResponse.getHeaders().getFirst("Location");
     }
 
     /**
@@ -239,6 +241,7 @@ public class RestClient {
     }
 
     public String undeployJanus(String deploymentUrl) throws UnirestException {
+        log.debug("undeployJanus " + deploymentUrl);
         return Unirest.delete(providerConfiguration.getUrlJanus() + deploymentUrl + "?purge")
                 .header("accept", "application/json")
                 .asJson()
