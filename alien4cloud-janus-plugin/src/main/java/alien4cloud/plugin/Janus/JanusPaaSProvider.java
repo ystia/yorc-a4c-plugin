@@ -1259,6 +1259,9 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
     private static InstanceStatus getInstanceStatusFromState(String state) {
         switch (state) {
             case "started":
+            case "published":
+            case "finished":
+            case "done":
                 return InstanceStatus.SUCCESS;
             case "deleted":
                 return null;
