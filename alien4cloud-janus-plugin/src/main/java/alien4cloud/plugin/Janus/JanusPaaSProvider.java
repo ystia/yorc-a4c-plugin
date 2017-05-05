@@ -102,8 +102,8 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
 
     // Should set to infinite, since it is not possible to know how long will take
     // an operation. This value is mainly used for debugging.
-    // private final int JANUS_TIMEOUT = 1000 * 3600 * 24;  // 1 day
-    private final int JANUS_TIMEOUT = 1000 * 60 * 10;   // 10 mns
+    // private final int JANUS_TIMEOUT = 1000 * 3600 * 24;  // 24 hours
+    private final int JANUS_TIMEOUT = 1000 * 60 * 4;   // 4 mns
 
     // ------------------------------------------------------------------------------------------------------
     // IPaaSProvider implementation
@@ -228,6 +228,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
                     log.warn("Timeout occured");
                     break;
                 }
+                log.debug(paasId + ": Waiting for deployment events.");
                 try {
                     jrdi.wait(timetowait);
                 } catch (InterruptedException e) {
@@ -241,16 +242,18 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
                 }
                 switch (evt.getStatus()) {
                     case "deployment_failed":
+                        log.warn("Deployment failed: " + paasId);
                         doChangeStatus(paasId, DeploymentStatus.FAILURE);
                         callback.onFailure(new Exception("Deployment failed"));
                         done = true;
                         break;
                     case "deployed":
+                        log.debug("Deployment success: " + paasId);
                         doChangeStatus(paasId, DeploymentStatus.DEPLOYED);
                         callback.onSuccess(null);
                         done = true;
                         break;
-                    case "deploying":
+                    case "deployment_in_progress":
                         doChangeStatus(paasId, DeploymentStatus.DEPLOYMENT_IN_PROGRESS);
                         break;
                     default:
@@ -327,11 +330,13 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
                 }
                 switch (evt.getStatus()) {
                     case "undeployment_failed":
+                        log.warn("Undeployment failed: " + paasId);
                         doChangeStatus(paasId, DeploymentStatus.FAILURE);
                         callback.onFailure(new Exception("Undeployment failed"));
                         done = true;
                         break;
                     case "undeployed":
+                        log.debug("Undeployment success: " + paasId);
                         doChangeStatus(paasId, DeploymentStatus.UNDEPLOYED);
                         callback.onSuccess(null);
                         // Stop threads and remove info about this deployment
@@ -340,6 +345,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
                         done = true;
                         break;
                     case "undeploying":
+                    case "undeployment_in_progress":
                         doChangeStatus(paasId, DeploymentStatus.UNDEPLOYMENT_IN_PROGRESS);
                         break;
                     default:
@@ -905,10 +911,17 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         JanusRuntimeDeploymentInfo jrdi = new JanusRuntimeDeploymentInfo(ctx, DeploymentStatus.UNKNOWN, nodemap, deploymentUrl);
         runtimeDeploymentInfos.put(paasId, jrdi);
 
+        DeploymentStatus ds = null;
         try {
-            updateNodeInfo(ctx);
+            ds = updateNodeInfo(ctx);
         } catch (Exception e) {
             log.error(paasId + " : Cannot update DeploymentInfo ", e);
+        }
+
+        // Restart threads listening to janus log and events
+        if (ds != DeploymentStatus.UNDEPLOYED ) {
+            listenDeploymentEvent(ctx);
+            listenJanusLog(ctx);
         }
     }
 
@@ -918,10 +931,11 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
      * Information is got from Janus using the REST API
      *
      * @param ctx PaaSDeploymentContext to be updated
+     * @return deployment status
      *
      * @throws
      */
-    private void updateNodeInfo(PaaSDeploymentContext ctx) throws Exception {
+    private DeploymentStatus updateNodeInfo(PaaSDeploymentContext ctx) throws Exception {
         String paasId = ctx.getDeploymentPaaSId();
         String deploymentUrl = "/deployments/" + paasId;
         log.debug("updateNodeInfo " + paasId);
@@ -930,12 +944,13 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         JanusRuntimeDeploymentInfo jrdi = runtimeDeploymentInfos.get(paasId);
         if (jrdi == null) {
             log.error("No JanusRuntimeDeploymentInfo");
-            return;
+            return DeploymentStatus.FAILURE;
         }
 
         // Find the deployment info from Janus
         DeployInfosResponse deployRes = restClient.getDeploymentInfosFromJanus(deploymentUrl);
-        jrdi.setStatus(getDeploymentStatusFromString(deployRes.getStatus()));
+        DeploymentStatus ds = getDeploymentStatusFromString(deployRes.getStatus());
+        jrdi.setStatus(ds);
 
         Map<String, Map<String, InstanceInformation>> nodemap = jrdi.getInstanceInformations();
 
@@ -981,6 +996,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
                 }
             }
         }
+        return ds;
     }
 
     /**
@@ -1135,6 +1151,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
             int prevIndex = 1;
             while (true) {
                 try {
+                    log.debug("Get events from Janus for " + paasId);
                     EventResponse eventResponse = restClient.getEventFromJanus(deploymentUrl, prevIndex);
                     if (eventResponse != null) {
                         prevIndex = eventResponse.getLast_index();
@@ -1191,6 +1208,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
                                                 }
                                                 break;
                                             case "error":
+                                                log.warn("Error instance status");
                                                 break;
                                             default:
                                                 log.warn("Unknown instance status: " + eState);
