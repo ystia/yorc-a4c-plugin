@@ -102,8 +102,8 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
 
     // Should set to infinite, since it is not possible to know how long will take
     // an operation. This value is mainly used for debugging.
-    // private final int JANUS_TIMEOUT = 1000 * 3600 * 24;  // 24 hours
-    private final int JANUS_TIMEOUT = 1000 * 60 * 4;   // 4 mns
+    private final int JANUS_TIMEOUT = 1000 * 3600 * 24;  // 24 hours
+    //private final int JANUS_TIMEOUT = 1000 * 60 * 4;   // 4 mns
 
     // ------------------------------------------------------------------------------------------------------
     // IPaaSProvider implementation
