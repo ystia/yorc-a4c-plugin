@@ -1122,6 +1122,13 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
                 } catch (InterruptedException e) {
                     log.error("listenJanusLog Stopped " + paasId);
                     return;
+                } catch (JanusRestException e) {
+                    if (e.getHttpStatusCode() == 404) {
+                        log.warn("Stop listening to logs. Assuming " + paasId + " is undeployed.");
+                    } else {
+                        log.warn("listenJanusLog Failed " + paasId, e);
+                    }
+                    return;
                 } catch (Exception e) {
                     log.warn("listenJanusLog Failed " + paasId, e);
                     return;
