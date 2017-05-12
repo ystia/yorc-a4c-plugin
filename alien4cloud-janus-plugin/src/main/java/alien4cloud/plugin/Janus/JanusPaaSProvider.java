@@ -112,6 +112,14 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
     private final int JANUS_TIMEOUT = 1000 * 3600 * 24;  // 24 hours
     //private final int JANUS_TIMEOUT = 1000 * 60 * 4;   // 4 mns
 
+    // Possible values for janus event types
+    // Check with janus code for these values.
+    public static final String EVT_INSTANCE   = "instance";
+    public static final String EVT_DEPLOYMENT = "deployment";
+    public static final String EVT_OPERATION  = "custom-command";
+    public static final String EVT_SCALING    = "scaling";
+    public static final String EVT_WORKFLOW   = "workflow";
+
     // ------------------------------------------------------------------------------------------------------
     // IPaaSProvider implementation
     // ------------------------------------------------------------------------------------------------------
@@ -263,7 +271,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
                     break;
                 }
                 evt = jrdi.getLastEvent();
-                if (evt == null || !evt.getType().equals("deployment")) {
+                if (evt == null || !evt.getType().equals(EVT_DEPLOYMENT)) {
                     // This event is not for us, or a timeout occured.
                     continue;
                 }
@@ -314,7 +322,8 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
 
     /**
      * Undeploy a given topology.
-     * TODO check undeploy while deploying
+     * TODO check undeploy while deploying : events will be seen only by 1 task: change this
+     * TODO maybe stop deploy before starting undeploy ?
      * @param ctx the context of the un-deployment
      * @param callback
      */
@@ -363,7 +372,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
                     break;
                 }
                 evt = jrdi.getLastEvent();
-                if (evt == null || !evt.getType().equals("deployment")) {
+                if (evt == null || !evt.getType().equals(EVT_DEPLOYMENT)) {
                     // This event is not for us, or a timeout occured.
                     continue;
                 }
@@ -473,7 +482,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
                     break;
                 }
                 evt = jrdi.getLastEvent();
-                if (evt == null || !evt.getType().equals("scaling")) {
+                if (evt == null || !evt.getType().equals(EVT_SCALING)) {
                     // This event is not for us, or a timeout occured.
                     continue;
                 }
@@ -579,7 +588,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
                     break;
                 }
                 evt = jrdi.getLastEvent();
-                if (evt == null || !evt.getType().equals("workflow")) {
+                if (evt == null || !evt.getType().equals(EVT_WORKFLOW)) {
                     // This event is not for us, or a timeout occured.
                     continue;
                 }
@@ -695,7 +704,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
                     break;
                 }
                 evt = jrdi.getLastEvent();
-                if (evt == null || !evt.getType().equals("custom_command")) {
+                if (evt == null || !evt.getType().equals(EVT_OPERATION)) {
                     // This event is not for us, or a timeout occured.
                     continue;
                 }
@@ -718,7 +727,8 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
                     done = true;
                     break;
                 default:
-                    log.warn("An event has been ignored. Unexpected status=" + evt.getStatus());
+                    // could be 'initial' or 'running'
+                    log.warn("An event has been ignored. Status=" + evt.getStatus());
                     break;
             }
         }
@@ -1253,11 +1263,11 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
 
                                 if (event.getType() == null) {
                                     log.warn("Janus version is obsolete. Please use a newer version");
-                                    event.setType("instance");
+                                    event.setType(EVT_INSTANCE);
                                 }
 
                                 switch (event.getType()) {
-                                    case "instance":
+                                    case EVT_INSTANCE:
                                         String eNode = event.getNode();
                                         String eInstance = event.getInstance();
                                         eMessage += "instance " + eNode + ":" + eInstance + ":" + eState;
@@ -1305,10 +1315,10 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
                                                 break;
                                         }
                                         break;
-                                    case "deployment":
-                                    case "custom_command":
-                                    case "workflow":
-                                    case "scaling":
+                                    case EVT_DEPLOYMENT:
+                                    case EVT_OPERATION:
+                                    case EVT_SCALING:
+                                    case EVT_WORKFLOW:
                                         eMessage += event.getType() + ":" + eState;
                                         log.debug(eMessage);
                                         synchronized (jrdi) {
