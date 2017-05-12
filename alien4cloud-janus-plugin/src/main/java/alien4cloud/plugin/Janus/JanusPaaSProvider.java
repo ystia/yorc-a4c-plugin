@@ -103,7 +103,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
 
     // Nb of Worker threads to execute tasks
     // tasks are deploy, undeploy, scale, launchWorkflow, executeOperation
-    private final int WORKER_POOL_SIZE = 3;
+    private final int WORKER_POOL_SIZE = 4;
 
     private List<AlienTask> tasks = new LinkedList<>();
 
@@ -135,8 +135,10 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         log.info("Init plugin for " + activeDeployments.size() + " active deployments");
 
         // Start worker threads
-        for (int i = 0; i < WORKER_POOL_SIZE; i++) {
-            (new Thread(new Worker())).start();
+        for (int i = 1; i <= WORKER_POOL_SIZE; i++) {
+            Thread w = new Thread(new Worker());
+            w.setName("JanusPlugin_" + i);
+            w.start();
         }
 
         // Update deployment info for all active deployments
@@ -544,18 +546,15 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         JanusRuntimeDeploymentInfo jrdi = runtimeDeploymentInfos.get(paasId);
 
         // first check if a deployment is still running
-        while (jrdi.getDeployTaskId() != null) {
-            // must stop it and wait for the janus task done
-            try {
-                restClient.stopTask(deploymentUrl + "/tasks/" + jrdi.getDeployTaskId());
-            } catch (Exception e) {
-                log.error("stopTask returned an exception", e);
-            }
-            synchronized (jrdi) {
+        synchronized (jrdi) {
+            while (jrdi.getDeployTaskId() != null) {
+                // must stop it and wait for the janus task done
                 try {
-                    jrdi.wait();
-                } catch (InterruptedException e) {
-                    log.error("Interrupted while waiting for undeployment");
+                    restClient.stopTask(deploymentUrl + "/tasks/" + jrdi.getDeployTaskId());
+                    // do not wait more than 30 sec.
+                    jrdi.wait(1000 * 30);
+                } catch (Exception e) {
+                    log.error("stopTask returned an exception", e);
                 }
             }
         }
