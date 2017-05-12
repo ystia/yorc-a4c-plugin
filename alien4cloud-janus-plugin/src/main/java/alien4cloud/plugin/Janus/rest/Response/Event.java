@@ -8,10 +8,11 @@ import lombok.ToString;
 @Getter
 @Setter
 public class Event {
-
+    // refer to janus code to check this values: events/struct.go
     private String timestamp;
     private String node;
     private String instance;
     private String status;
-
+    private String type;
+    private String task_id;
 }

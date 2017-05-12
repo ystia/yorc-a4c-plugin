@@ -131,8 +131,6 @@ public class RestClient {
     public String putTopologyToJanus(String deploymentId) throws Exception {
         final InputStream stream;
 
-        System.out.println("Put Topology with id = " + deploymentId);
-
         stream = new FileInputStream(new File("topology.zip"));
         final byte[] bytes = new byte[stream.available()];
         stream.read(bytes);
