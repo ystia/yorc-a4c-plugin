@@ -1292,11 +1292,15 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
                                             case "creating":
                                             case "deleting":
                                             case "starting":
+                                            case "stopping":
                                             case "configured":
                                             case "configuring":
                                                 break;
                                             case "deleted":
                                                 ninfo.remove(eInstance);
+                                                break;
+                                            case "stopped":
+                                                updateInstanceAttributes(ctx, iinfo, eNode, eInstance);
                                                 break;
                                             case "started":
                                                 updateInstanceAttributes(ctx, iinfo, eNode, eInstance);
