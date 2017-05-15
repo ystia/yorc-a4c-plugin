@@ -667,6 +667,10 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
             return;
         }
         String taskId = taskUrl.substring(taskUrl.lastIndexOf("/") + 1);
+        synchronized (jrdi) {
+            // In case we want to undeploy during the scale.
+            jrdi.setDeployTaskId(taskId);
+        }
         sendMessage(paasId, "Scaling sent to Janus. taskId=" + taskId);
 
         // wait for end of task
@@ -717,6 +721,11 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
                     break;
             }
         }
+        synchronized (jrdi) {
+            // Task is ended: Must remove the taskId and notify a possible undeploy waiting for it.
+            jrdi.setDeployTaskId(null);
+            jrdi.notify();
+        }
         if (! done) {
             // Janus did not reply on time.
             // This should never occur with last version of janus (eventV2)
@@ -764,6 +773,10 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
             return;
         }
         String taskId = taskUrl.substring(taskUrl.lastIndexOf("/") + 1);
+        synchronized (jrdi) {
+            // In case we want to undeploy during the workflow.
+            jrdi.setDeployTaskId(taskId);
+        }
         sendMessage(paasId, "Workflow " + workflowName + " sent to Janus. taskId=" + taskId);
 
         // wait for end of task
@@ -825,6 +838,11 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
                     break;
             }
         }
+        synchronized (jrdi) {
+            // Task is ended: Must remove the taskId and notify a possible undeploy waiting for it.
+            jrdi.setDeployTaskId(null);
+            jrdi.notify();
+        }
         if (! done) {
             // Janus did not reply on time.
             // This should never occur with last version of janus (eventV2)
@@ -872,6 +890,10 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
             return;
         }
         String taskId = taskUrl.substring(taskUrl.lastIndexOf("/") + 1);
+        synchronized (jrdi) {
+            // In case we want to undeploy during the custom command.
+            jrdi.setDeployTaskId(taskId);
+        }
         sendMessage(paasId, "Operation " + request.getOperationName() + " sent to Janus. taskId=" + taskId);
 
         // wait for end of task
@@ -903,7 +925,6 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
                 // Event will be processed: remove it.
                 jrdi.setLastEvent(null);
             }
-            // TODO check taskId in case of several custom command in //
             sendMessage(paasId, "Operation " + evt.getStatus());
             switch (evt.getStatus()) {
                 case "failed":
@@ -923,6 +944,11 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
                     log.warn("An event has been ignored. Status=" + evt.getStatus());
                     break;
             }
+        }
+        synchronized (jrdi) {
+            // Task is ended: Must remove the taskId and notify a possible undeploy waiting for it.
+            jrdi.setDeployTaskId(null);
+            jrdi.notify();
         }
         if (! done) {
             // Janus did not reply on time.
