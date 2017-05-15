@@ -491,11 +491,6 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
                     log.warn("Deployment failed: " + paasId);
                     doChangeStatus(paasId, DeploymentStatus.FAILURE);
                     callback.onFailure(new Exception("Deployment failed"));
-                    synchronized (jrdi) {
-                        // Just in case we are inside a undeploy.
-                        jrdi.setDeployTaskId(null);
-                        jrdi.notify();
-                    }
                     done = true;
                     break;
                 case "deployed":
@@ -511,6 +506,11 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
                     sendMessage(paasId, "Deployment status = " + evt.getStatus());
                     break;
             }
+        }
+        synchronized (jrdi) {
+            // Task is ended: Must remove the taskId and notify a possible undeploy waiting for it.
+            jrdi.setDeployTaskId(null);
+            jrdi.notify();
         }
         if (! done) {
             // Janus did not reply in time.
