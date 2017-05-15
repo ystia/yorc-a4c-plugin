@@ -1356,7 +1356,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
                                         String eNode = event.getNode();
                                         String eInstance = event.getInstance();
                                         eMessage += "instance " + eNode + ":" + eInstance + ":" + eState;
-                                        log.debug(eMessage);
+                                        log.debug("Received Event from janus <<< " + eMessage);
                                         Map<String, InstanceInformation> ninfo = instanceInfo.get(eNode);
                                         if (ninfo == null) {
                                             // Add a new Node in JanusRuntimeDeploymentInfo
@@ -1410,7 +1410,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
                                     case EVT_SCALING:
                                     case EVT_WORKFLOW:
                                         eMessage += event.getType() + ":" + eState;
-                                        log.debug(eMessage);
+                                        log.debug("Received Event from janus <<< " + eMessage);
                                         synchronized (jrdi) {
                                             if (jrdi.getLastEvent() != null) {
                                                 log.debug("Event not taken, forgot it: " + jrdi.getLastEvent());
@@ -1420,7 +1420,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
                                         }
                                         break;
                                     default:
-                                        log.warn("Unknown event type received from janus: " + event.getType());
+                                        log.warn("Unknown event type received from janus <<< " + event.getType());
                                         break;
                                 }
                             }

@@ -242,12 +242,16 @@ public class RestClient {
         return objectMapper.readValue(new String(IOUtils.toByteArray(eventResponse.getRawBody()), CHARSET), EventResponse.class);
     }
 
-    public String undeployJanus(String deploymentUrl) throws UnirestException {
+    public String undeployJanus(String deploymentUrl) throws Exception {
         log.debug("undeployJanus " + deploymentUrl);
         HttpResponse<JsonNode> res = Unirest.delete(providerConfiguration.getUrlJanus() + deploymentUrl + "?purge")
                 .header("accept", "application/json")
                 .asJson();
-        return res.getHeaders().getFirst("Location");
+        String task = res.getHeaders().getFirst("Location");
+        if (task == null) {
+            throw(new Exception("Undeploy returned no TaskId"));
+        }
+        return task;
     }
 
     public String stopTask(String taskUrl) throws UnirestException {
