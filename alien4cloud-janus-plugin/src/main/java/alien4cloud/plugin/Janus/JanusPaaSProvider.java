@@ -405,7 +405,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         doChangeStatus(paasId, DeploymentStatus.INIT_DEPLOYMENT);
 
         // Show Topoloy for debug
-        //showTopology.topologyInLog(ctx);
+        showTopology.topologyInLog(ctx);
 
         // Change topology to be suitable for janus and tosca
         MappingTosca.addPreConfigureSteps(ctx);
@@ -547,7 +547,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
 
         // first check if a deployment is still running
         synchronized (jrdi) {
-            while (jrdi.getDeployTaskId() != null) {
+            if (jrdi.getDeployTaskId() != null) {
                 // must stop it and wait for the janus task done
                 try {
                     restClient.stopTask(deploymentUrl + "/tasks/" + jrdi.getDeployTaskId());
@@ -555,6 +555,11 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
                     jrdi.wait(1000 * 30);
                 } catch (Exception e) {
                     log.error("stopTask returned an exception", e);
+                }
+                // Maybe janus is stuck. Forget the task and continue.
+                if (jrdi.getDeployTaskId() != null) {
+                    jrdi.setDeployTaskId(null);
+                    log.warn("A deployment task was stuck. Forget it.");
                 }
             }
         }
@@ -1179,22 +1184,26 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
 
     /**
      * Ask Janus the values of all attributes for this node/instance
+     * This method should never throw Exception.
      * @param ctx
      * @param node
      * @param instance
-     * @throws Exception
      */
-    private void updateInstanceAttributes(PaaSDeploymentContext ctx, InstanceInformation iinfo, String node, String instance) throws Exception {
+    private void updateInstanceAttributes(PaaSDeploymentContext ctx, InstanceInformation iinfo, String node, String instance) {
         String paasId = ctx.getDeploymentPaaSId();
         String url = "/deployments/" + paasId + "/nodes/" + node + "/instances/" + instance;
-        InstanceInfosResponse instInfoRes = restClient.getInstanceInfosFromJanus(url);
-        for (Link link : instInfoRes.getLinks()) {
-            if (link.getRel().equals("attribute")) {
-                // Get the attribute from Janus
-                AttributeResponse attrRes = restClient.getAttributeFromJanus(link.getHref());
-                iinfo.getAttributes().put(attrRes.getName(), attrRes.getValue());
-                log.debug("Attribute: " + attrRes.getName() + "=" + attrRes.getValue());
+        try {
+            InstanceInfosResponse instInfoRes = restClient.getInstanceInfosFromJanus(url);
+            for (Link link : instInfoRes.getLinks()) {
+                if (link.getRel().equals("attribute")) {
+                    // Get the attribute from Janus
+                    AttributeResponse attrRes = restClient.getAttributeFromJanus(link.getHref());
+                    iinfo.getAttributes().put(attrRes.getName(), attrRes.getValue());
+                    log.debug("Attribute: " + attrRes.getName() + "=" + attrRes.getValue());
+                }
             }
+        } catch (Exception e) {
+            log.error("Could not get instance attributes: ", e);
         }
     }
 
