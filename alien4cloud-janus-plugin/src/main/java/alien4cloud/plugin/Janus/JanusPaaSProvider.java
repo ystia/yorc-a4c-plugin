@@ -1192,18 +1192,26 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
     private void updateInstanceAttributes(PaaSDeploymentContext ctx, InstanceInformation iinfo, String node, String instance) {
         String paasId = ctx.getDeploymentPaaSId();
         String url = "/deployments/" + paasId + "/nodes/" + node + "/instances/" + instance;
+        InstanceInfosResponse instInfoRes;
         try {
-            InstanceInfosResponse instInfoRes = restClient.getInstanceInfosFromJanus(url);
-            for (Link link : instInfoRes.getLinks()) {
-                if (link.getRel().equals("attribute")) {
+            instInfoRes = restClient.getInstanceInfosFromJanus(url);
+        } catch (Exception e) {
+            log.error("Could not get instance info: ", e);
+            sendMessage(paasId, "Could not get instance info: " + e.getMessage());
+            return;
+        }
+        for (Link link : instInfoRes.getLinks()) {
+            if (link.getRel().equals("attribute")) {
+                try {
                     // Get the attribute from Janus
                     AttributeResponse attrRes = restClient.getAttributeFromJanus(link.getHref());
                     iinfo.getAttributes().put(attrRes.getName(), attrRes.getValue());
                     log.debug("Attribute: " + attrRes.getName() + "=" + attrRes.getValue());
+                } catch (Exception e) {
+                    log.error("Error getting instance attribute " + link.getHref());
+                    sendMessage(paasId, "Error getting instance attribute " + link.getHref());
                 }
             }
-        } catch (Exception e) {
-            log.error("Could not get instance attributes: ", e);
         }
     }
 
