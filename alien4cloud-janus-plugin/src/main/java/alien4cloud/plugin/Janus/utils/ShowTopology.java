@@ -41,6 +41,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * This class is used for debugging only.
+ * It provides some utilities to print info about a deployment topology.
+ */
 @Slf4j
 public class ShowTopology {
 
@@ -54,6 +58,162 @@ public class ShowTopology {
     private CsarFileRepository fileRepository;
 
     /**
+     * Copy artifacts for this component
+     * @param node
+     * TODO nothing to do here. put this elsewhere
+     */
+    private void copyArtifacts(PaaSNodeTemplate node) {
+        String name = node.getId();
+        ArrayList<Path> artis = new ArrayList<>();
+
+        // Check if this component has artifacts
+        Map<String, DeploymentArtifact> map = node.getTemplate().getArtifacts();
+        if (map == null) {
+            return;
+        }
+
+        // Create a local directory
+        String home = System.getProperty("user.home");
+        File f = new File(home, name);
+        try {
+            FileUtils.mkdir(f, true);
+        } catch (IOException e) {
+            log.debug("Cannot create a directory " + name, e);
+            return;
+        }
+
+        // Process each artifact
+        for (Map.Entry<String, DeploymentArtifact> da : map.entrySet()) {
+            String aname =  name + "/" + da.getKey();
+            File f2 = new File(home, aname);
+            if (f2.exists()) {
+                f2.delete();
+            }
+            printArtifact(da.getValue());
+            String artRepo = da.getValue().getArtifactRepository();
+            if (artRepo == null) {
+                continue;
+            }
+            log.debug("Processing artifact: " + aname);
+            if (artRepo.equals(ArtifactRepositoryConstants.ALIEN_ARTIFACT_REPOSITORY)) {
+                log.debug("Artifact in alien_repository");
+                try {
+                    Files.copy(localRepository.resolveFile(da.getValue().getArtifactRef()), Paths.get(home, aname));
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+                artis.add(Paths.get(home, aname));
+            } else {
+                log.debug("Artifact in " + artRepo);
+
+                String nodeTypeRelativePath = node.getIndexedToscaElement().getElementId() + "-" + node.getIndexedToscaElement().getArchiveVersion();
+                //try {
+                //    log.debug("COPY ART ");
+
+                //copyArtifactFromCsar(child.getCsarPath(), e.getValue().getArtifactRef(), nodeTypeRelativePath, home + "/" + child.getId() + "/" + e.getKey(), e.getValue(), child.getIndexedToscaElement());
+                //    artifacts.add(Paths.get(home + "/" + child.getId() + "/" + e.getKey()));
+
+                //} catch (IOException e1) {
+                //    log.debug(e1.getStackTrace().toString());
+                //}
+            }
+        }
+    }
+
+    /**
+     * Print info about Artifact
+     * @param da
+     */
+    private void printArtifact(DeploymentArtifact da) {
+        log.debug("*** Artifact : " + da.getArtifactName());
+        log.debug("DeployPath=" + da.getDeployPath());
+        log.debug("Archive=" + da.getArchiveName() + " " + da.getArchiveVersion());
+        log.debug("ArtifactType=" + da.getArtifactType());
+        log.debug("ArtifactPath=" + da.getArtifactPath());
+        log.debug("ArtifactRepository=" + da.getArtifactRepository());
+        log.debug("RepositoryName=" + da.getRepositoryName());
+        log.debug("ArtifactRef=" + da.getArtifactRef());
+    }
+
+    /**
+     * Print info about a Node
+     * @param node
+     */
+    private void printNode(PaaSNodeTemplate node) {
+        log.debug("******* Compute Node " + node.getId() + " *******");
+        NodeTemplate nt = node.getTemplate();
+
+        log.debug("CsarPath = " + node.getCsarPath());
+        log.debug("Type = " + nt.getType());
+
+        // Children
+        List<PaaSNodeTemplate> children = node.getChildren();
+        for (PaaSNodeTemplate child : children) {
+            log.info("Child: " + child.getId());
+        }
+        
+        // properties
+        for (String prop : nt.getProperties().keySet()) {
+            AbstractPropertyValue absval = nt.getProperties().get(prop);
+            if (absval instanceof ScalarPropertyValue) {
+                ScalarPropertyValue scaval = (ScalarPropertyValue) absval;
+                log.debug(">> Property: " + prop + "=" + scaval.getValue());
+            }
+        }
+
+        // Attributes
+        Map<String, IValue> attrs = nt.getAttributes();
+        if (attrs != null) {
+            for (String attname : attrs.keySet()) {
+                IValue att = attrs.get(attname);
+                log.debug(">> Attribute: " + attname + "=" + att);
+            }
+        }
+
+        // capabilities
+        Map<String, Capability> capabilities = nt.getCapabilities();
+        if (capabilities != null) {
+            for (String capname : capabilities.keySet()) {
+                Capability cap = capabilities.get(capname);
+                log.debug(">> Capability " + capname);
+                log.debug("type : " + cap.getType());
+                log.debug("properties : " + cap.getProperties());
+            }
+        }
+
+        // requirements
+        Map <String, Requirement> requirements = nt.getRequirements();
+        if (requirements != null) {
+            for (String reqname : requirements.keySet()) {
+                Requirement req = requirements.get(reqname);
+                log.debug(">> Requirement: " + reqname);
+                log.debug("type : " + req.getType());
+                log.debug("properties : " + req.getProperties());
+            }
+        }
+
+        // relationships
+        Map <String, RelationshipTemplate> relations = nt.getRelationships();
+        if (relations != null) {
+            for (String relname : relations.keySet()) {
+                RelationshipTemplate rel = relations.get(relname);
+                log.debug(">> Relationship: " + relname);
+                log.debug("type : " + rel.getType());
+                log.debug("properties : " + rel.getProperties());
+            }
+        }
+
+        // artifacts
+        Map <String, DeploymentArtifact> artifacts = nt.getArtifacts();
+        if (artifacts != null) {
+            for (DeploymentArtifact art : artifacts.values()) {
+                printArtifact(art);
+            }
+        }
+
+    }
+
+    /**
      * Log topology infos for debugging
      * @param ctx
      */
@@ -65,7 +225,7 @@ public class ShowTopology {
         // Deployment Workflows
         Map<String, Workflow> workflows = dtopo.getWorkflows();
         for (String wfname : workflows.keySet()) {
-            log.debug("---- Workflow " + wfname);
+            log.debug("***** Workflow " + wfname);
             Workflow wf = workflows.get(wfname);
             log.debug("name: " + wf.getName());
             log.debug("host: " + wf.getHosts().toString());
@@ -77,76 +237,30 @@ public class ShowTopology {
         if (groups != null) {
             for (String grname : groups.keySet()) {
                 NodeGroup group = groups.get(grname);
-                log.debug("---- Group " + grname);
+                log.debug("***** Group " + grname);
                 log.debug("name: " + group.getName());
                 log.debug("members: " + group.getMembers().toString());
             }
         }
 
         // PaaS Compute Nodes
-        for (PaaSNodeTemplate node : ptopo.getComputes()) {
+        for (PaaSNodeTemplate node : ptopo.getAllNodes().values()) {
+            printNode(node);
+        }
+    }
 
-            log.debug("---- Compute Node " + node.getId());
-            NodeTemplate nt = node.getTemplate();
+    public void copyAllArtifacts(PaaSTopologyDeploymentContext ctx) {
+        PaaSTopology ptopo = ctx.getPaaSTopology();
+        for (PaaSNodeTemplate node : ptopo.getAllNodes().values()) {
+            copyArtifacts(node);
+        }
+    }
 
-            log.debug("CsarPath = " + node.getCsarPath());
-            log.debug("Type = " + nt.getType());
-            log.debug("Nb children = " + node.getChildren().size());
-
-            // capabilities
-            Map<String, Capability> capabilities = nt.getCapabilities();
-            if (capabilities != null) {
-                for (String capname : capabilities.keySet()) {
-                    Capability cap = capabilities.get(capname);
-                    log.debug("-- Capability " + capname);
-                    log.debug("properties : " + cap.getProperties());
-                    log.debug("type : " + cap.getType());
-                }
-            }
-
-            // requirements
-            Map <String, Requirement> requirements = nt.getRequirements();
-            if (requirements != null) {
-                for (String reqname : requirements.keySet()) {
-                    Requirement req = requirements.get(reqname);
-                    log.debug("-- Requirement: " + reqname);
-                    log.debug("properties : " + req.getProperties());
-                    log.debug("type : " + req.getType());
-                }
-            }
-
-            // artifacts
-            Map <String, DeploymentArtifact> artifacts = nt.getArtifacts();
-            if (artifacts != null) {
-                for (String artname : artifacts.keySet()) {
-                    DeploymentArtifact art = artifacts.get(artname);
-                    log.debug("-- Artifact: " + artname);
-                }
-            }
-
-            // relationships
-            Map <String, RelationshipTemplate> relations = nt.getRelationships();
-            if (relations != null) {
-                for (String relname : relations.keySet()) {
-                    RelationshipTemplate rel = relations.get(relname);
-                    log.debug("-- Relationship: " + relname);
-                    log.debug("properties : " + rel.getProperties());
-                    log.debug("type : " + rel.getType());
-                }
-            }
-
-            // Attributes
-            Map<String, IValue> attrs = nt.getAttributes();
-            if (attrs != null) {
-                for (String attname : attrs.keySet()) {
-                    IValue att = attrs.get(attname);
-                    log.debug("-- Attribute: " + attname);
-                }
-            }
-
+    /* OLD CODE
             // Children
             List<PaaSNodeTemplate> children = node.getChildren();
             for (PaaSNodeTemplate child : children) {
+                log.info("Child: " + child.getId());
                 NodeTemplate ch = child.getTemplate();
                 Map<String, AbstractPropertyValue> properties = ch.getProperties();
                 Map<String, DeploymentArtifact> artifs = ch.getArtifacts();
@@ -154,11 +268,10 @@ public class ShowTopology {
                 for (Interface interF : inter.values()) {
                     for (Operation opera : interF.getOperations().values()) {
                         if (opera.getImplementationArtifact() != null && !opera.getImplementationArtifact().getArtifactRef().isEmpty()) {
-                            log.debug(" impl artif : " + opera.getImplementationArtifact().getArtifactRef());
+                            log.debug(" implementation artifact : " + opera.getImplementationArtifact().getArtifactRef());
                         }
                     }
                 }
-                log.debug("artifact nb:" + child.getTemplate().getArtifacts().size());
 
                 Map<String, DeploymentArtifact> mapArt = child.getTemplate().getArtifacts();
                 for (Map.Entry<String, DeploymentArtifact> e : mapArt.entrySet()) {
@@ -174,11 +287,9 @@ public class ShowTopology {
                     log.debug("TYPE : " + art.getArtifactType());
                     log.debug("VERSION : " + art.getArchiveVersion());
                 }
-                log.debug(">>> ARTIFACTS");
 
                 log.debug("Size artifacts : " + child.getTemplate().getArtifacts().size());
                 log.debug("Artifacts : " + child.getTemplate().getArtifacts().get(0));
-                log.debug(">>> CHILD PROPERTIES");
                 for (AbstractPropertyValue propertieC : properties.values()) {
                     if (propertieC != null) {
                         log.debug(((ScalarPropertyValue) propertieC).getValue());
@@ -321,7 +432,6 @@ public class ShowTopology {
                 }
             }
         }
-    }
 
 
     public void printRelationTemplate(RelationshipTemplate relation) {
@@ -331,4 +441,5 @@ public class ShowTopology {
         log.debug("  TargetedCapabilityName : " + relation.getTargetedCapabilityName());
         log.debug("  Type : " + relation.getType());
     }
+        */
 }

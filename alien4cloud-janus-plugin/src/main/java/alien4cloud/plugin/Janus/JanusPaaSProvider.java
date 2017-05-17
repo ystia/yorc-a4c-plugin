@@ -405,7 +405,8 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         doChangeStatus(paasId, DeploymentStatus.INIT_DEPLOYMENT);
 
         // Show Topoloy for debug
-        showTopology.topologyInLog(ctx);
+        //showTopology.topologyInLog(ctx);
+        //showTopology.copyAllArtifacts(ctx);
 
         // Change topology to be suitable for janus and tosca
         MappingTosca.addPreConfigureSteps(ctx);
