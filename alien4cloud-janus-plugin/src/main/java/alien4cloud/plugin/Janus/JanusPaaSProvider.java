@@ -65,6 +65,8 @@ import alien4cloud.tosca.normative.NormativeComputeConstants;
 import alien4cloud.tosca.normative.NormativeRelationshipConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.alien4cloud.tosca.catalog.index.IToscaTypeSearchService;
+import org.alien4cloud.tosca.catalog.repository.CsarFileRepository;
+import org.alien4cloud.tosca.catalog.repository.ICsarRepositry;
 import org.alien4cloud.tosca.exporter.ArchiveExportService;
 import org.alien4cloud.tosca.model.Csar;
 import org.alien4cloud.tosca.model.templates.Capability;
@@ -90,6 +92,9 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
 
     @Inject
     private IToscaTypeSearchService toscaTypeSearchService;
+
+    @Inject
+    private ICsarRepositry archiveRepositry;
 
     private ShowTopology showTopology = new ShowTopology();
     private ZipTopology zipTopology = new ZipTopology();
@@ -201,19 +206,22 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         doChangeStatus(paasId, DeploymentStatus.INIT_DEPLOYMENT);
 
         // Show Topoloy for debug
-        //showTopology.topologyInLog(ctx);
+        showTopology.topologyInLog(ctx);
 
         // Change topology to be suitable for janus and tosca
         MappingTosca.addPreConfigureSteps(ctx);
         MappingTosca.generateOpenstackFIP(ctx);
         MappingTosca.quoteProperties(ctx);
 
+        Csar myCsar = new Csar(paasId, dtopo.getArchiveVersion());
+        String yaml = archiveExportService.getYaml(myCsar, dtopo);
+        Path expanded = archiveRepositry.getExpandedCSAR(dtopo.getArchiveName(), dtopo.getArchiveVersion());
+        log.debug(expanded.toString());
+
         // This operation must be synchronized, because it uses the same files topology.yml and topology.zip
         synchronized(this) {
             // Create the yml of our topology (after substitution)
             // We use a local file named "topology.yml"
-            Csar myCsar = new Csar(paasId, dtopo.getArchiveVersion());
-            String yaml = archiveExportService.getYaml(myCsar, dtopo);
             List<String> lines = Collections.singletonList(yaml);
             Path file = Paths.get("topology.yml");
             Path orig = Paths.get("original.yml");
@@ -229,7 +237,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
             // Build our zip topology
             try {
                 File zip = new File("topology.zip");
-                zipTopology.buildZip(zip, ctx);
+                zipTopology.buildZip(zip, ctx, expanded);
             } catch (IOException e) {
                 doChangeStatus(paasId, DeploymentStatus.FAILURE);
                 callback.onFailure(e);

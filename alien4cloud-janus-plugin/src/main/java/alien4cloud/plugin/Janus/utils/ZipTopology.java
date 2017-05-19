@@ -10,6 +10,7 @@ import alien4cloud.paas.model.PaaSNodeTemplate;
 import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
 import lombok.extern.slf4j.Slf4j;
 
+import java.nio.file.Path;
 import java.io.*;
 import java.net.URI;
 import java.util.Deque;
@@ -51,9 +52,10 @@ public class ZipTopology {
      * Build the zip file that will be sent to janus at deployment
      * @param zipfile
      * @param deploymentContext
+     * @param expanded
      * @throws IOException
      */
-    public void buildZip(File zipfile, PaaSTopologyDeploymentContext deploymentContext) throws IOException {
+    public void buildZip(File zipfile, PaaSTopologyDeploymentContext deploymentContext, Path expanded) throws IOException {
 
         OutputStream out = new FileOutputStream(zipfile);
         ZipOutputStream zout = new ZipOutputStream(out);
@@ -131,8 +133,24 @@ public class ZipTopology {
                 log.info(e.getMessage());
             }
         }
-        zout.putNextEntry(new ZipEntry("topology.yml"));
-        copy(new File("topology.yml"), zout);
+        // Copy overwritten artifacts
+        // TODO maybe better to search artifacts and copy only them.
+        String filename;
+        for (File file : expanded.toFile().listFiles()) {
+            filename = file.getName();
+            if (file.isFile() && ! filename.equals("topology.yml")) {
+                log.debug("new ZipEntry: "  + filename);
+                zout.putNextEntry(new ZipEntry(filename));
+                copy(file, zout);
+            }
+        }
+
+        // Copy modified topology
+        filename = "topology.yml";
+        log.debug("new ZipEntry: "  + filename);
+        zout.putNextEntry(new ZipEntry(filename));
+        copy(new File(filename), zout);
+
         zout.closeEntry();
         res.close();
     }
