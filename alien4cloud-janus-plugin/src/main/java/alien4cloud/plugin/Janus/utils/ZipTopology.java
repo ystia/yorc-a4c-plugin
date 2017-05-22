@@ -84,7 +84,9 @@ public class ZipTopology {
 
             // create structure of our component folder
             try {
+                log.debug("new ZipEntry: " + componentName);
                 zout.putNextEntry(new ZipEntry(componentName));
+                log.debug("new ZipEntry: " + struct);
                 zout.putNextEntry(new ZipEntry(struct));
 
                 // Set it to true after adding imports into the TOSCA definition file
@@ -102,6 +104,7 @@ public class ZipTopology {
                         if (kid.isDirectory()) {
                             queue.push(kid);
                             name = name.endsWith("/") ? struct + name : struct + name + "/";
+                            log.debug("new ZipEntry: " + name);
                             zout.putNextEntry(new ZipEntry(name));
                         } else {
                             File file;
@@ -120,8 +123,10 @@ public class ZipTopology {
                                     addedImports = true;
                                 }
                             } else {
+                                log.debug("processing non yaml file " + kid);
                                 file = kid;
                             }
+                            log.debug("new ZipEntry: " + struct + name);
                             zout.putNextEntry(new ZipEntry(struct + name));
                             copy(file, zout);
                         }
@@ -131,6 +136,7 @@ public class ZipTopology {
                 log.info(e.getMessage());
             }
         }
+        log.debug("new ZipEntry: " + "topology.yml");
         zout.putNextEntry(new ZipEntry("topology.yml"));
         copy(new File("topology.yml"), zout);
         zout.closeEntry();
