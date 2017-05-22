@@ -35,10 +35,18 @@ import javax.annotation.Resource;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import org.eclipse.jgit.util.FileUtils;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * This class is used for debugging only.
+ * It provides some utilities to print info about a deployment topology.
+ */
 @Slf4j
 public class ShowTopology {
 
@@ -46,7 +54,6 @@ public class ShowTopology {
     ArtifactLocalRepository localRepository;
     @Resource
     private CsarFileRepository fileRepository;
-
 
     /**
      * Print info about Artifact
@@ -67,7 +74,7 @@ public class ShowTopology {
      * Print info about a Node
      * @param node
      */
-    public static void printNode(PaaSNodeTemplate node) {
+    private static void printNode(PaaSNodeTemplate node) {
         log.debug("******* Compute Node " + node.getId() + " *******");
         NodeTemplate nt = node.getTemplate();
 
@@ -176,6 +183,5 @@ public class ShowTopology {
             printNode(node);
         }
     }
-
 
 }

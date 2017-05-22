@@ -128,6 +128,12 @@ public class RestClient {
 
     }
 
+    /**
+     * Deploy a topology to janus
+     * @param deploymentId
+     * @return
+     * @throws Exception
+     */
     public String putTopologyToJanus(String deploymentId) throws Exception {
         final InputStream stream;
 
@@ -171,9 +177,7 @@ public class RestClient {
             throw new Exception("scaleNodeInJanus: Janus returned an error : " + postResponse.getStatus());
         }
 
-        String ret = postResponse.getHeaders().getFirst("Location");
-        log.debug("Scaling accepted: " + ret);
-        return ret;
+        return postResponse.getHeaders().getFirst("Location");
     }
 
     public String getStatusFromJanus(String deploymentUrl) throws Exception {
@@ -238,13 +242,24 @@ public class RestClient {
         return objectMapper.readValue(new String(IOUtils.toByteArray(eventResponse.getRawBody()), CHARSET), EventResponse.class);
     }
 
-    public String undeployJanus(String deploymentUrl) throws UnirestException {
+    public String undeployJanus(String deploymentUrl) throws Exception {
         log.debug("undeployJanus " + deploymentUrl);
-        return Unirest.delete(providerConfiguration.getUrlJanus() + deploymentUrl + "?purge")
+        HttpResponse<JsonNode> res = Unirest.delete(providerConfiguration.getUrlJanus() + deploymentUrl + "?purge")
                 .header("accept", "application/json")
-                .asJson()
-                .getStatusText();
+                .asJson();
+        String task = res.getHeaders().getFirst("Location");
+        if (task == null) {
+            throw(new Exception("Undeploy returned no TaskId"));
+        }
+        return task;
+    }
 
+    public String stopTask(String taskUrl) throws UnirestException {
+        log.debug("stop task " + taskUrl);
+        HttpResponse<JsonNode> res = Unirest.delete(providerConfiguration.getUrlJanus() + taskUrl)
+                .header("accept", "application/json")
+                .asJson();
+        return res.getHeaders().getFirst("Location");
     }
 
     public String postCustomCommandToJanus(String deploymentUrl, NodeOperationExecRequest request) throws Exception {

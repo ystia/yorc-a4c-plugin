@@ -13,17 +13,14 @@ import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
 import lombok.extern.slf4j.Slf4j;
 import org.alien4cloud.tosca.model.definitions.DeploymentArtifact;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.io.*;
 import java.net.URI;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
