@@ -96,7 +96,6 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
     @Inject
     private ICsarRepositry archiveRepositry;
 
-    private ShowTopology showTopology = new ShowTopology();
     private ZipTopology zipTopology = new ZipTopology();
 
     private RestClient restClient = RestClient.getInstance();
@@ -206,7 +205,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         doChangeStatus(paasId, DeploymentStatus.INIT_DEPLOYMENT);
 
         // Show Topoloy for debug
-        showTopology.topologyInLog(ctx);
+        ShowTopology.topologyInLog(ctx);
 
         // Change topology to be suitable for janus and tosca
         MappingTosca.addPreConfigureSteps(ctx);
@@ -215,8 +214,8 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
 
         Csar myCsar = new Csar(paasId, dtopo.getArchiveVersion());
         String yaml = archiveExportService.getYaml(myCsar, dtopo);
-        Path expanded = archiveRepositry.getExpandedCSAR(dtopo.getArchiveName(), dtopo.getArchiveVersion());
-        log.debug(expanded.toString());
+        //Path expanded = archiveRepositry.getExpandedCSAR(dtopo.getArchiveName(), dtopo.getArchiveVersion());
+        //log.debug(expanded.toString());
 
         // This operation must be synchronized, because it uses the same files topology.yml and topology.zip
         synchronized(this) {
@@ -237,7 +236,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
             // Build our zip topology
             try {
                 File zip = new File("topology.zip");
-                zipTopology.buildZip(zip, ctx, expanded);
+                zipTopology.buildZip(zip, ctx);
             } catch (IOException e) {
                 doChangeStatus(paasId, DeploymentStatus.FAILURE);
                 callback.onFailure(e);
@@ -263,7 +262,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         // wait for janus deployment completion
         boolean done = false;
         long timeout = System.currentTimeMillis() + JANUS_TIMEOUT;
-        Event evt = null;
+        Event evt;
         while (!done) {
             synchronized (jrdi) {
                 long timetowait = timeout - System.currentTimeMillis();

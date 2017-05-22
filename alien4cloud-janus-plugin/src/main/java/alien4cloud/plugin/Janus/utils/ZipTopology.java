@@ -6,18 +6,26 @@
 */
 package alien4cloud.plugin.Janus.utils;
 
+import alien4cloud.component.repository.ArtifactRepositoryConstants;
 import alien4cloud.paas.model.PaaSNodeTemplate;
+import alien4cloud.paas.model.PaaSTopology;
 import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
 import lombok.extern.slf4j.Slf4j;
+import org.alien4cloud.tosca.model.definitions.DeploymentArtifact;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.io.*;
 import java.net.URI;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
 
 import static com.google.common.io.Files.copy;
@@ -49,13 +57,45 @@ public class ZipTopology {
     }
 
     /**
+     * Add all ZipEntry for this file path
+     * If path is a directory, it must be ended by a "/".
+     * All directory entries must be ended by a "/", and all simple file entries must be not.
+     * TODO use this method everywhere
+     * @param fullpath
+     * @param zout
+     */
+    private void createZipEntries(String fullpath, ZipOutputStream zout) throws IOException {
+        log.debug("createZipEntries for " + fullpath);
+        int index = 0;
+        String name = "";
+        while (name.length() < fullpath.length()) {
+            index = fullpath.indexOf("/", index) + 1;
+            if (index <= 1) {
+                name = fullpath;
+            } else {
+                name = fullpath.substring(0, index);
+            }
+            try {
+                zout.putNextEntry(new ZipEntry(name));
+                log.debug("new ZipEntry: " + name);
+            } catch (ZipException e) {
+                if (e.getMessage().contains("duplicate")) {
+                    //log.debug("ZipEntry already added: " + name);
+                } else {
+                    log.error("Cannot add ZipEntry: " + name, e);
+                    throw e;
+                }
+            }
+        }
+    }
+
+    /**
      * Build the zip file that will be sent to janus at deployment
      * @param zipfile
      * @param deploymentContext
-     * @param expanded
      * @throws IOException
      */
-    public void buildZip(File zipfile, PaaSTopologyDeploymentContext deploymentContext, Path expanded) throws IOException {
+    public void buildZip(File zipfile, PaaSTopologyDeploymentContext deploymentContext) throws IOException {
 
         OutputStream out = new FileOutputStream(zipfile);
         ZipOutputStream zout = new ZipOutputStream(out);
@@ -76,18 +116,16 @@ public class ZipTopology {
         List<File> folders = createListTopology(deploymentContext);
         for (File directory : folders) {
 
-            //Get info name path for component
+            // Get info name path for component
             log.info("Path directory : " + directory.toString());
             String[] dirFolders = directory.toString().split("/");
             String componentName = dirFolders[dirFolders.length - 2] + "/";
             String componentVersion = dirFolders[dirFolders.length - 1] + "/";
             String struct = componentName + componentVersion;
-            log.info(struct);
 
             // create structure of our component folder
             try {
-                zout.putNextEntry(new ZipEntry(componentName));
-                zout.putNextEntry(new ZipEntry(struct));
+                //createZipEntries(struct, zout);
 
                 // Set it to true after adding imports into the TOSCA definition file
                 // corresponding to the component.
@@ -103,28 +141,19 @@ public class ZipTopology {
                         String name = base.relativize(kid.toURI()).getPath();
                         if (kid.isDirectory()) {
                             queue.push(kid);
-                            name = name.endsWith("/") ? struct + name : struct + name + "/";
-                            zout.putNextEntry(new ZipEntry(name));
                         } else {
-                            File file;
-                            // we check if the file is a tosca file or not (because there are also json file for example)
-                            // MAPPING TOSCA ALIEN -> TOSCA JANUS
+                            File file = kid;
+                            createZipEntries(struct + name, zout);
                             if (name.endsWith(".yml") || name.endsWith(".yaml")) {
+                                // MAPPING TOSCA ALIEN -> TOSCA JANUS
                                 String[] parts = kid.getPath().split("runtime/csar/");
-                                if (addedImports) {
-                                    log.debug("processing " + name);
-                                    file = kid;
-                                } else {
+                                if (! addedImports) {
                                     log.debug("processing TOSCA " + name);
-                                    // This is the TOSCA definition, treate it !!
                                     addImportInTopology(parts[1]);
                                     file = removeLineBetween(kid, "imports:", "node_types:");
                                     addedImports = true;
                                 }
-                            } else {
-                                file = kid;
                             }
-                            zout.putNextEntry(new ZipEntry(struct + name));
                             copy(file, zout);
                         }
                     }
@@ -133,27 +162,73 @@ public class ZipTopology {
                 log.info(e.getMessage());
             }
         }
-        // Copy overwritten artifacts
-        // TODO maybe better to search artifacts and copy only them.
-        String filename;
-        for (File file : expanded.toFile().listFiles()) {
-            filename = file.getName();
-            if (file.isFile() && ! filename.equals("topology.yml")) {
-                log.debug("new ZipEntry: "  + filename);
-                zout.putNextEntry(new ZipEntry(filename));
-                copy(file, zout);
-            }
+        // Copy overwritten artifacts for each node
+        PaaSTopology ptopo = deploymentContext.getPaaSTopology();
+        for (PaaSNodeTemplate node : ptopo.getAllNodes().values()) {
+            copyArtifacts(node, zout);
         }
 
         // Copy modified topology
-        filename = "topology.yml";
-        log.debug("new ZipEntry: "  + filename);
-        zout.putNextEntry(new ZipEntry(filename));
+        String filename = "topology.yml";
+        createZipEntries(filename, zout);
         copy(new File(filename), zout);
 
         zout.closeEntry();
         res.close();
     }
+
+    /**
+     * Copy artifacts to archive
+     * @param node
+     * @param zout
+     */
+    private void copyArtifacts(PaaSNodeTemplate node, ZipOutputStream zout) {
+        String name = node.getId();
+
+        // Check if this component has artifacts
+        Map<String, DeploymentArtifact> map = node.getTemplate().getArtifacts();
+        if (map == null) {
+            log.debug("Component with no artifact: " + name);
+            return;
+        }
+
+        // Process each artifact
+        for (Map.Entry<String, DeploymentArtifact> da : map.entrySet()) {
+            String aname =  name + "/" + da.getKey();
+            DeploymentArtifact artifact = da.getValue();
+            String artRepo = artifact.getArtifactRepository();
+            if (artRepo == null) {
+                continue;
+            }
+            ShowTopology.printArtifact(artifact);
+            if  (artRepo.equals(ArtifactRepositoryConstants.ALIEN_TOPOLOGY_REPOSITORY)) {
+                // Copy artifact from topology repository to the root of archive.
+                String from = artifact.getArtifactPath();
+                log.debug("Copying local artifact: " + aname + " path=" + from);
+                Path artifactPath = Paths.get(from);
+                try {
+                    String filename = artifact.getArtifactRef();
+                    createZipEntries(filename, zout);
+                    copy(artifactPath.toFile(), zout);
+                } catch (Exception e) {
+                    log.error("Could not copy local artifact " + aname, e);
+                }
+            } else {
+                // Copy remote artifact
+                String from = artifact.getArtifactPath();
+                log.debug("Copying remote artifact: " + aname + " path=" + from);
+                Path artifactPath = Paths.get(from);
+                try {
+                    String filename = artifact.getArtifactRef();
+                    createZipEntries(filename, zout);
+                    copy(artifactPath.toFile(), zout);
+                } catch (Exception e) {
+                    log.error("Could not copy remote artifact " + aname, e);
+                }
+            }
+        }
+    }
+
 
     /**
      * Add an import in topology.yml

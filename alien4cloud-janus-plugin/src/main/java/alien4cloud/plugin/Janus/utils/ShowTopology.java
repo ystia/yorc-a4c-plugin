@@ -30,27 +30,18 @@ import org.alien4cloud.tosca.model.templates.NodeGroup;
 import org.alien4cloud.tosca.model.templates.NodeTemplate;
 import org.alien4cloud.tosca.model.templates.RelationshipTemplate;
 import org.alien4cloud.tosca.model.templates.Requirement;
-import org.alien4cloud.tosca.model.templates.Topology;
 
 import javax.annotation.Resource;
-import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 @Slf4j
 public class ShowTopology {
 
-    private static final String FILE_TYPE = "tosca.artifacts.File";
-    private static final String DIRECTORY_ARTIFACT_TYPE = "fastconnect.artifacts.ResourceDirectory";
-    private static final Boolean BOOL = false;
-    @Resource
-    protected ToscaTypeSearchService csarRepositorySearchService;
     @Resource
     ArtifactLocalRepository localRepository;
     @Resource
@@ -58,55 +49,10 @@ public class ShowTopology {
 
 
     /**
-     * Copy artifacts for this component
-     * @param node
-     */
-    private void copyArtifacts(PaaSNodeTemplate node) {
-        String name = node.getId();
-
-        // Check if this component has artifacts
-        Map<String, DeploymentArtifact> map = node.getTemplate().getArtifacts();
-        if (map == null) {
-            log.debug("Component with no artifact: " + name);
-            return;
-        }
-
-        // Process each artifact
-        for (Map.Entry<String, DeploymentArtifact> da : map.entrySet()) {
-            String aname =  name + "/" + da.getKey();
-            DeploymentArtifact artifact = da.getValue();
-            String artRepo = artifact.getArtifactRepository();
-            if (artRepo == null) {
-                continue;
-            }
-            printArtifact(artifact);
-            log.debug("Processing artifact: " + aname + " located in " + artRepo);
-            if (artRepo.equals(ArtifactRepositoryConstants.ALIEN_ARTIFACT_REPOSITORY)) {
-                // TODO These one are not copied today!
-                log.warn("TODO copy artifacts from repository");
-            } else if (artRepo.equals(ArtifactRepositoryConstants.ALIEN_TOPOLOGY_REPOSITORY)) {
-                // Copy artifact from topology repository to the root of archive.
-                String from = artifact.getArtifactPath();
-                Path to = node.getCsarPath(); // TODO put at root of archive.
-                log.debug("Copy " + from + " -> " + to.toString());
-                Path artifactPath = Paths.get(from);
-                try {
-                    Files.copy(artifactPath, to, StandardCopyOption.REPLACE_EXISTING);
-                } catch (Exception e) {
-                    log.error("Could not copy artifact " + aname);
-                }
-            } else {
-                log.warn("Do not know what to do with artifacts from " + artRepo);
-            }
-        }
-    }
-
-
-    /**
      * Print info about Artifact
      * @param da
      */
-    private void printArtifact(DeploymentArtifact da) {
+    public static void printArtifact(DeploymentArtifact da) {
         log.debug("*** Artifact : " + da.getArtifactName());
         log.debug("DeployPath=" + da.getDeployPath());
         log.debug("Archive=" + da.getArchiveName() + " " + da.getArchiveVersion());
@@ -121,7 +67,7 @@ public class ShowTopology {
      * Print info about a Node
      * @param node
      */
-    private void printNode(PaaSNodeTemplate node) {
+    public static void printNode(PaaSNodeTemplate node) {
         log.debug("******* Compute Node " + node.getId() + " *******");
         NodeTemplate nt = node.getTemplate();
 
@@ -199,7 +145,7 @@ public class ShowTopology {
      * Log topology infos for debugging
      * @param ctx
      */
-    public void topologyInLog(PaaSTopologyDeploymentContext ctx) {
+    public static void topologyInLog(PaaSTopologyDeploymentContext ctx) {
         String paasId = ctx.getDeploymentPaaSId();
         PaaSTopology ptopo = ctx.getPaaSTopology();
         DeploymentTopology dtopo = ctx.getDeploymentTopology();
@@ -231,11 +177,5 @@ public class ShowTopology {
         }
     }
 
-    public void copyAllArtifacts(PaaSTopologyDeploymentContext ctx) {
-        PaaSTopology ptopo = ctx.getPaaSTopology();
-        for (PaaSNodeTemplate node : ptopo.getAllNodes().values()) {
-            copyArtifacts(node);
-        }
-    }
 
 }
