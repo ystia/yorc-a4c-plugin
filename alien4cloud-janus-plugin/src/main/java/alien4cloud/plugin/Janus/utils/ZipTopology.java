@@ -101,7 +101,7 @@ public class ZipTopology {
         // zout.setLevel(9);
         Closeable res = zout;
 
-        //clean import topology (delete all precedent import)
+        // clean import topology (delete all precedent import)
         cleanImportInTopology();
 
         if (deploymentContext.getLocations().get("_A4C_ALL").getDependencies().stream().filter(csar -> csar.getName().contains(("slurm"))).findFirst().isPresent()) {
@@ -222,10 +222,96 @@ public class ZipTopology {
                 } catch (Exception e) {
                     log.error("Could not copy remote artifact " + aname, e);
                 }
+                // Workaround for a bug in a4c: artifact not added in topology.yml
+                // TODO Remove this when a4c bug is fixed.
+                addRemoteArtifactInTopology(name, da.getKey(), artifact);
             }
         }
     }
 
+    /**
+     * Workaround for a4c issue: SUPALIEN-926
+     // TODO Remove this when a4c bug is fixed.
+     * @param node Node Name
+     * @param key Name of the artifact
+     * @param da
+     */
+    private void addRemoteArtifactInTopology(String node, String key, DeploymentArtifact da) {
+        String oldFileName = "topology.yml";
+        String tmpFileName = "tmp_topology.yml";
+
+        log.debug("Add remote artifact in topology (workaround for SUPALIEN-926)");
+        log.debug(node + " " + key + " : " + da.getArtifactRef() + " - " + da.getArtifactType());
+
+        BufferedReader br = null;
+        BufferedWriter bw = null;
+
+        try {
+            bw = new BufferedWriter(new FileWriter(tmpFileName));
+            br = new BufferedReader(new FileReader(oldFileName));
+            String line;
+            boolean inNode = false;
+            boolean done = false;
+            while ((line = br.readLine()) != null) {
+                if (! done) {
+                    if (line.startsWith("    " + node + ":")) {
+                        inNode = true;
+                        bw.append(line).append("\n");
+                        continue;
+                    }
+                    if (! inNode) {
+                        bw.append(line).append("\n");
+                        continue;
+                    }
+                    if (! line.startsWith("      ")) {
+                        bw.append("      artifacts:\n");
+                        // Add here the 3 lines to describe the remote artifact
+                        String l1 = "        " + key + ":\n";
+                        String l2 = "          file: " + da.getArtifactRef() + "\n";
+                        String l3 = "          type: " + da.getArtifactType() + "\n";
+                        bw.append(l1).append(l2).append(l3);
+                        done = true;
+                        bw.append(line).append("\n");
+                        continue;
+                    }
+                    if (line.startsWith("      artifacts:")) {
+                        bw.append(line).append("\n");
+                        // Add here the 3 lines to describe the remote artifact
+                        String l1 = "        " + key + ":\n";
+                        String l2 = "          file: " + da.getArtifactRef() + "\n";
+                        String l3 = "          type: " + da.getArtifactType() + "\n";
+                        bw.append(l1).append(l2).append(l3);
+                        done = true;
+                        continue;
+                    }
+                }
+                bw.append(line).append("\n");
+            }
+        } catch (Exception e) {
+            log.error("Error while modifying topology.yml");
+            return;
+        } finally {
+            try {
+                if (br != null)
+                    br.close();
+            } catch (IOException e) {
+                log.error("Error closing " + oldFileName, e);
+            }
+            try {
+                if (bw != null)
+                    bw.close();
+            } catch (IOException e) {
+                log.error("Error closing " + tmpFileName, e);
+            }
+        }
+        // Once everything is complete, delete old file..
+        File oldFile = new File(oldFileName);
+        oldFile.delete();
+
+        // And rename tmp file's name to old file name
+        File newFile = new File(tmpFileName);
+        newFile.renameTo(oldFile);
+    }
 
     /**
      * Add an import in topology.yml
@@ -250,19 +336,20 @@ public class ZipTopology {
                 }
             }
         } catch (Exception e) {
+            log.error("Error while modifying topology.yml");
             return;
         } finally {
             try {
                 if (br != null)
                     br.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                log.error("Error closing " + oldFileName, e);
             }
             try {
                 if (bw != null)
                     bw.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                log.error("Error closing " + tmpFileName, e);
             }
         }
         // Once everything is complete, delete old file..
@@ -272,7 +359,6 @@ public class ZipTopology {
         // And rename tmp file's name to old file name
         File newFile = new File(tmpFileName);
         newFile.renameTo(oldFile);
-
     }
 
     /**
@@ -297,24 +383,25 @@ public class ZipTopology {
                 if (line.contains("imports:")) {
                     clean = true;
                 } else if (line.contains("topology_template:")) {
-                    bw.append(line).append("\n");
+                    bw.append("\n").append(line).append("\n");
                     clean = false;
                 }
             }
         } catch (Exception e) {
+            log.error("Error while modifying topology.yml");
             return;
         } finally {
             try {
                 if (br != null)
                     br.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                log.error("Error closing " + oldFileName, e);
             }
             try {
                 if (bw != null)
                     bw.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                log.error("Error closing " + tmpFileName, e);
             }
         }
         // Once everything is complete, delete old file..
@@ -324,7 +411,6 @@ public class ZipTopology {
         // And rename tmp file's name to old file name
         File newFile = new File(tmpFileName);
         newFile.renameTo(oldFile);
-
     }
 
     private File removeLineBetween(File fileToRead, String begin, String end) throws IOException {
