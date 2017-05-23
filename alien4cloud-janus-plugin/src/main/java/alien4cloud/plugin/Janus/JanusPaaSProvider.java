@@ -109,8 +109,9 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
 
     // Should set to infinite, since it is not possible to know how long will take
     // an operation. This value is mainly used for debugging.
-    private final int JANUS_TIMEOUT = 1000 * 3600 * 24;  // 24 hours
-    //private final int JANUS_TIMEOUT = 1000 * 60 * 4;   // 4 mns
+    private final int JANUS_DEPLOY_TIMEOUT = 1000 * 3600 * 24;  // 24 hours
+    private final int JANUS_UNDEPLOY_TIMEOUT = 1000 * 60 * 5;  //  5 mn
+    private final int JANUS_OPE_TIMEOUT = 1000 * 3600 * 2;  // 2 hours
 
     // Possible values for janus event types
     // Check with janus code for these values.
@@ -462,7 +463,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
 
         // wait for janus deployment completion
         boolean done = false;
-        long timeout = System.currentTimeMillis() + JANUS_TIMEOUT;
+        long timeout = System.currentTimeMillis() + JANUS_DEPLOY_TIMEOUT;
         Event evt;
         while (!done) {
             synchronized (jrdi) {
@@ -579,7 +580,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
 
         // wait for janus undeployment completion
         boolean done = false;
-        long timeout = System.currentTimeMillis() + JANUS_TIMEOUT;
+        long timeout = System.currentTimeMillis() + JANUS_UNDEPLOY_TIMEOUT;
         Event evt;
         while (!done) {
             synchronized (jrdi) {
@@ -681,7 +682,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
 
         // wait for end of task
         boolean done = false;
-        long timeout = System.currentTimeMillis() + JANUS_TIMEOUT;
+        long timeout = System.currentTimeMillis() + JANUS_OPE_TIMEOUT;
         Event evt;
         while (!done) {
             synchronized (jrdi) {
@@ -787,7 +788,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
 
         // wait for end of task
         boolean done = false;
-        long timeout = System.currentTimeMillis() + JANUS_TIMEOUT;
+        long timeout = System.currentTimeMillis() + JANUS_OPE_TIMEOUT;
         Event evt;
         while (!done) {
             synchronized (jrdi) {
@@ -904,7 +905,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
 
         // wait for end of task
         boolean done = false;
-        long timeout = System.currentTimeMillis() + JANUS_TIMEOUT;
+        long timeout = System.currentTimeMillis() + JANUS_OPE_TIMEOUT;
         Event evt;
         while (!done) {
             synchronized (jrdi) {
