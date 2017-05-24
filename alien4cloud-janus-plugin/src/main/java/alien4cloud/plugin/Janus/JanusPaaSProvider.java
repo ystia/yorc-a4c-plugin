@@ -916,6 +916,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         try {
             taskUrl = restClient.postCustomCommandToJanus(deploymentUrl, request);
         } catch (Exception e) {
+            sendMessage(paasId, "Custom Command not accepted by Janus: " + e.getMessage());
             callback.onFailure(e);
             return;
         }
@@ -931,6 +932,26 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         long timeout = System.currentTimeMillis() + JANUS_OPE_TIMEOUT;
         Event evt;
         while (!done) {
+            // Check if task is done
+            String status;
+            try {
+                status = restClient.getStatusFromJanus(taskUrl);
+                log.debug("Returned status:" + status);
+            } catch (Exception e) {
+                status = "FAILED";
+            }
+            if (status.equals("DONE")) {
+                // Task OK.
+                sendMessage(paasId, "Operation Successful");
+                log.debug("Operation OK");
+                Map<String, String> customResults = new Hashtable<>(1);
+                customResults.put("result", "Succesfully executed custom " + request.getOperationName() + " on node " + request.getNodeTemplateName());
+                // TODO Get results returned by the custom command ??
+                callback.onSuccess(customResults);
+                done = true;
+                break;
+            }
+            // Wait an Event from Janus or timeout
             synchronized (jrdi) {
                 long timetowait = timeout - System.currentTimeMillis();
                 if (timetowait <= 0) {
@@ -982,25 +1003,9 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         }
         if (! done) {
             // Janus did not reply on time.
-            // This should never occur with last version of janus (eventV2)
-            String status;
-            try {
-                status = restClient.getStatusFromJanus(taskUrl);
-                log.debug("Returned status:" + status);
-            } catch (Exception e) {
-                status = "FAILED";
-            }
-            if (status.equals("DONE")) {
-                // Task OK.
-                sendMessage(paasId, "Custom Command Successful");
-                log.debug("Operation OK");
-                callback.onSuccess(null);
-            } else {
-                // Task failed
-                sendMessage(paasId, "Custom Command Failed");
-                log.debug("Operation failed");
-                callback.onFailure(new Throwable("Task failed with status " + status));
-            }
+            sendMessage(paasId, "Custom Command Failed");
+            log.debug("Operation failed");
+            callback.onFailure(new Throwable("Task failed (timeout)"));
         }
     }
 
