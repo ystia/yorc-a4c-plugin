@@ -592,7 +592,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         long timeout = System.currentTimeMillis() + JANUS_UNDEPLOY_TIMEOUT;
         Event evt;
         while (!done) {
-            // First Check if already done
+            // Check if already done
             // This may occur when undeploy is immediate
             String status;
             try {
@@ -689,6 +689,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         try {
             taskUrl = restClient.scaleNodeInJanus(deploymentUrl, node, nbi);
         } catch (Exception e) {
+            sendMessage(paasId, "Scaling not accepted by Janus: " + e.getMessage());
             callback.onFailure(e);
             return;
         }
@@ -704,6 +705,23 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         long timeout = System.currentTimeMillis() + JANUS_OPE_TIMEOUT;
         Event evt;
         while (!done) {
+            // Check if task is done
+            String status;
+            try {
+                status = restClient.getStatusFromJanus(taskUrl);
+                log.debug("Returned status:" + status);
+            } catch (Exception e) {
+                status = "FAILED";
+            }
+            if (status.equals("DONE")) {
+                // Task OK.
+                sendMessage(paasId, "Scaling Successful");
+                log.debug("Scaling OK");
+                callback.onSuccess(null);
+                done = true;
+                break;
+            }
+            // Wait an Event from Janus or timeout
             synchronized (jrdi) {
                 long timetowait = timeout - System.currentTimeMillis();
                 if (timetowait <= 0) {
@@ -753,26 +771,10 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
             jrdi.notify();
         }
         if (! done) {
-            // Janus did not reply on time.
-            // This should never occur with last version of janus (eventV2)
-            String status;
-            try {
-                status = restClient.getStatusFromJanus(taskUrl);
-                log.debug("Returned status:" + status);
-            } catch (Exception e) {
-                status = "FAILED";
-            }
-            if (status.equals("DONE")) {
-                // Task OK.
-                sendMessage(paasId, "Scaling Successful");
-                log.debug("Scaling OK");
-                callback.onSuccess(null);
-            } else {
-                // Task failed
-                sendMessage(paasId, "Scaling Failed");
-                log.debug("Scaling failed");
-                callback.onFailure(new Throwable("Task failed with status " + status));
-            }
+            // Task failed
+            sendMessage(paasId, "Scaling Failed");
+            log.debug("Scaling failed");
+            callback.onFailure(new Throwable("Task failed (timeout)"));
         }
     }
 
