@@ -112,10 +112,10 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
     private List<AlienTask> tasks = new LinkedList<>();
 
     // Should set to infinite, since it is not possible to know how long will take
-    // an operation. This value is mainly used for debugging.
+    // an operation. These values are mainly used for debugging.
     private final int JANUS_DEPLOY_TIMEOUT = 1000 * 3600 * 24;  // 24 hours
-    private final int JANUS_UNDEPLOY_TIMEOUT = 1000 * 60 * 5;  //  5 mn
-    private final int JANUS_OPE_TIMEOUT = 1000 * 3600 * 2;  // 2 hours
+    private final int JANUS_UNDEPLOY_TIMEOUT = 1000 * 60 * 30;  //  30 mn
+    private final int JANUS_OPE_TIMEOUT = 1000 * 3600 * 4;  // 4 hours
 
     // Possible values for janus event types
     // Check with janus code for these values.
@@ -589,6 +589,31 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         long timeout = System.currentTimeMillis() + JANUS_UNDEPLOY_TIMEOUT;
         Event evt;
         while (!done) {
+            // First Check if already done
+            // This may occur when undeploy is immediate
+            String status;
+            try {
+                status = restClient.getStatusFromJanus(deploymentUrl);
+            } catch (Exception e) {
+                // TODO Check error 404
+                // assumes it is undeployed
+                status = "UNDEPLOYED";
+            }
+            log.debug("Status of deployment: " + status);
+            if (status.equals("UNDEPLOYED")) {
+                // Undeployment OK.
+                changeStatus(paasId, DeploymentStatus.UNDEPLOYED);
+                callback.onSuccess(null);
+                // Stop threads and remove info about this deployment
+                jrdi.getExecutor().shutdownNow();
+                runtimeDeploymentInfos.remove(paasId);
+                done = true;
+                break;
+            } else if (status.equals("INITIAL")) {
+                // No event will be received, and the undeployment should be straightforward
+                timeout = System.currentTimeMillis() + 3000;
+            }
+            // Wait an Event from Janus or timeout
             synchronized (jrdi) {
                 long timetowait = timeout - System.currentTimeMillis();
                 if (timetowait <= 0) {
@@ -637,23 +662,8 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         }
         if (!done) {
             // Janus did not reply on time.
-            // This should never occur with last version of janus (eventV2)
-            String status = null;
-            try {
-                status = restClient.getStatusFromJanus(deploymentUrl);
-            } catch (Exception e) {
-                // assumes it is undeployed
-                status = "UNDEPLOYED";
-            }
-            if (status.equals("UNDEPLOYED")) {
-                // Undeployment OK.
-                changeStatus(paasId, DeploymentStatus.UNDEPLOYED);
-                callback.onSuccess(null);
-            } else {
-                // Undeployment failed
-                changeStatus(paasId, DeploymentStatus.FAILURE);
-                callback.onFailure(new Throwable("Undeployment failed with status " + status));
-            }
+            changeStatus(paasId, DeploymentStatus.FAILURE);
+            callback.onFailure(new Throwable("Undeployment failed (timeout)"));
         }
     }
 
