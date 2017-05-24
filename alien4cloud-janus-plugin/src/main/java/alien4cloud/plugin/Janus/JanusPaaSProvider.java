@@ -472,6 +472,23 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         long timeout = System.currentTimeMillis() + JANUS_DEPLOY_TIMEOUT;
         Event evt;
         while (!done) {
+            // Check Deployment Status: No need to wait if already done.
+            String status;
+            try {
+                status = restClient.getStatusFromJanus(deploymentUrl);
+            } catch (Exception e) {
+                // TODO Check error 404
+                // assumes it is undeployed
+                status = "UNDEPLOYED";
+            }
+            log.debug("Status of deployment: " + status);
+            if (status.equals("DEPLOYED")) {
+                // Deployment OK.
+                changeStatus(paasId, DeploymentStatus.DEPLOYED);
+                callback.onSuccess(null);
+                done = true;
+                break;
+            }
             synchronized (jrdi) {
                 long timetowait = timeout - System.currentTimeMillis();
                 if (timetowait <= 0) {
@@ -522,22 +539,8 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         }
         if (! done) {
             // Janus did not reply in time.
-            // This should never occur with last version of janus (eventV2)
-            String status;
-            try {
-                status = restClient.getStatusFromJanus(deploymentUrl);
-            } catch (Exception e) {
-                status = "FAILED";
-            }
-            if (status.equals("DEPLOYED")) {
-                // Deployment OK.
-                changeStatus(paasId, DeploymentStatus.DEPLOYED);
-                callback.onSuccess(null);
-            } else {
-                // Deployment failed
-                changeStatus(paasId, DeploymentStatus.FAILURE);
-                callback.onFailure(new Throwable("Deployment failed with status " + status));
-            }
+            changeStatus(paasId, DeploymentStatus.FAILURE);
+            callback.onFailure(new Throwable("Deployment failed (timeout)"));
         }
     }
 
