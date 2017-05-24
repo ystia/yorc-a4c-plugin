@@ -797,6 +797,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         try {
             taskUrl = restClient.postWorkflowToJanus(deploymentUrl, workflowName, inputs);
         } catch (Exception e) {
+            sendMessage(paasId, "Workflow not accepted by Janus: " + e.getMessage());
             callback.onFailure(e);
             return;
         }
@@ -812,6 +813,23 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         long timeout = System.currentTimeMillis() + JANUS_OPE_TIMEOUT;
         Event evt;
         while (!done) {
+            // Check if task is done
+            String status;
+            try {
+                status = restClient.getStatusFromJanus(taskUrl);
+                log.debug("Returned status:" + status);
+            } catch (Exception e) {
+                status = "FAILED";
+            }
+            if (status.equals("DONE")) {
+                // Task OK.
+                sendMessage(paasId, "Workflow Successful");
+                log.debug("Workflow OK");
+                callback.onSuccess(null);
+                done = true;
+                break;
+            }
+            // Wait an Event from Janus or timeout
             synchronized (jrdi) {
                 long timetowait = timeout - System.currentTimeMillis();
                 if (timetowait <= 0) {
@@ -873,25 +891,9 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         }
         if (! done) {
             // Janus did not reply on time.
-            // This should never occur with last version of janus (eventV2)
-            String status;
-            try {
-                status = restClient.getStatusFromJanus(taskUrl);
-                log.debug("Returned status:" + status);
-            } catch (Exception e) {
-                status = "FAILED";
-            }
-            if (status.equals("DONE")) {
-                // Task OK.
-                sendMessage(paasId, "Worlflow Successful");
-                log.debug("Workflow OK");
-                callback.onSuccess(null);
-            } else {
-                // Task failed
-                sendMessage(paasId, "Workflow Failed");
-                log.debug("Workflow failed");
-                callback.onFailure(new Throwable("Task failed with status " + status));
-            }
+            sendMessage(paasId, "Workflow Failed");
+            log.debug("Workflow failed");
+            callback.onFailure(new Throwable("Task failed (timeout)"));
         }
     }
 
