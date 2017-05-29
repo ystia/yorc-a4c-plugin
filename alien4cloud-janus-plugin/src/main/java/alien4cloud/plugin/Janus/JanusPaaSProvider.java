@@ -394,6 +394,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
     private void doDeploy(DeployTask task) {
         PaaSTopologyDeploymentContext ctx = task.ctx;
         IPaaSCallback<?> callback = task.callback;
+        Throwable error = null;
 
         // Keep Ids in a Map
         String paasId = ctx.getDeploymentPaaSId();
@@ -454,6 +455,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
             try {
                 taskUrl = restClient.putTopologyToJanus(paasId);
             } catch (Exception e) {
+                sendMessage(paasId, "Deployment not accepted by janus: " + e.getMessage());
                 doChangeStatus(paasId, DeploymentStatus.FAILURE);
                 callback.onFailure(e);
                 return;
@@ -471,8 +473,50 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         boolean done = false;
         long timeout = System.currentTimeMillis() + JANUS_DEPLOY_TIMEOUT;
         Event evt;
-        while (!done) {
-            // Check Deployment Status: No need to wait if already done.
+        while (!done && error == null) {
+            synchronized (jrdi) {
+                // Check deployment timeout
+                long timetowait = timeout - System.currentTimeMillis();
+                if (timetowait <= 0) {
+                    log.warn("Deployment Timeout occured");
+                    error = new Throwable("Deployment timeout");
+                    doChangeStatus(paasId, DeploymentStatus.FAILURE);
+                    break;
+                }
+                // Wait Deployment Events from Janus
+                log.debug(paasId + ": Waiting for deployment events.");
+                try {
+                    jrdi.wait(timetowait);
+                } catch (InterruptedException e) {
+                    log.warn("Interrupted while waiting for deployment");
+                }
+                // Check if we received a Deployment Event and process it
+                evt = jrdi.getLastEvent();
+                if (evt != null && evt.getType().equals(EVT_DEPLOYMENT)) {
+                    jrdi.setLastEvent(null);
+                    switch (evt.getStatus()) {
+                        case "deployment_failed":
+                            log.warn("Deployment failed: " + paasId);
+                            doChangeStatus(paasId, DeploymentStatus.FAILURE);
+                            error = new Exception("Deployment failed");
+                            break;
+                        case "deployed":
+                            log.debug("Deployment success: " + paasId);
+                            doChangeStatus(paasId, DeploymentStatus.DEPLOYED);
+                            done = true;
+                            break;
+                        case "deployment_in_progress":
+                            doChangeStatus(paasId, DeploymentStatus.DEPLOYMENT_IN_PROGRESS);
+                            break;
+                        default:
+                            sendMessage(paasId, "Deployment status = " + evt.getStatus());
+                            break;
+                    }
+                    continue;
+                }
+            }
+            // We were awaken for some bad reason or a timeout 
+            // Check Deployment Status to decide what to do now.
             String status;
             try {
                 status = restClient.getStatusFromJanus(deploymentUrl);
@@ -481,54 +525,18 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
                 // assumes it is undeployed
                 status = "UNDEPLOYED";
             }
-            log.debug("Status of deployment: " + status);
-            if (status.equals("DEPLOYED")) {
-                // Deployment OK.
-                changeStatus(paasId, DeploymentStatus.DEPLOYED);
-                callback.onSuccess(null);
-                done = true;
-                break;
-            }
-            synchronized (jrdi) {
-                long timetowait = timeout - System.currentTimeMillis();
-                if (timetowait <= 0) {
-                    log.warn("Timeout occured");
+            switch (status) {
+                case "UNDEPLOYED":
+                    changeStatus(paasId, DeploymentStatus.UNDEPLOYED);
+                    error = new Throwable("Deployment has been undeployed");
                     break;
-                }
-                log.debug(paasId + ": Waiting for deployment events.");
-                try {
-                    jrdi.wait(timetowait);
-                } catch (InterruptedException e) {
-                    log.warn("Interrupted while waiting for deployment");
-                    break;
-                }
-                evt = jrdi.getLastEvent();
-                if (evt == null || !evt.getType().equals(EVT_DEPLOYMENT)) {
-                    // This event is not for us, or a timeout occured.
-                    continue;
-                }
-                // Do not check taskId here, because it is not sent in case of deploy
-                // Event will be processed: remove it.
-                jrdi.setLastEvent(null);
-            }
-            switch (evt.getStatus()) {
-                case "deployment_failed":
-                    log.warn("Deployment failed: " + paasId);
-                    doChangeStatus(paasId, DeploymentStatus.FAILURE);
-                    callback.onFailure(new Exception("Deployment failed"));
+                case "DEPLOYED":
+                    // Deployment is OK.
+                    changeStatus(paasId, DeploymentStatus.DEPLOYED);
                     done = true;
-                    break;
-                case "deployed":
-                    log.debug("Deployment success: " + paasId);
-                    doChangeStatus(paasId, DeploymentStatus.DEPLOYED);
-                    callback.onSuccess(null);
-                    done = true;
-                    break;
-                case "deployment_in_progress":
-                    doChangeStatus(paasId, DeploymentStatus.DEPLOYMENT_IN_PROGRESS);
                     break;
                 default:
-                    sendMessage(paasId, "Deployment status = " + evt.getStatus());
+                    log.debug("Deployment Status is currently " + status);
                     break;
             }
         }
@@ -537,10 +545,11 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
             jrdi.setDeployTaskId(null);
             jrdi.notify();
         }
-        if (! done) {
-            // Janus did not reply in time.
-            changeStatus(paasId, DeploymentStatus.FAILURE);
-            callback.onFailure(new Throwable("Deployment failed (timeout)"));
+        // Return result to a4c
+        if (error == null) {
+            callback.onSuccess(null);
+        } else {
+            callback.onFailure(error);
         }
     }
 
