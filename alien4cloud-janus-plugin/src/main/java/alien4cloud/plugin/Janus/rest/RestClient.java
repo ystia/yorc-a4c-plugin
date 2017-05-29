@@ -180,6 +180,12 @@ public class RestClient {
         return postResponse.getHeaders().getFirst("Location");
     }
 
+    /**
+     * Return the Deployment Status from Janus
+     * @param deploymentUrl
+     * @return Status Look at janus/deployments/structs.go to see all possible values
+     * @throws Exception
+     */
     public String getStatusFromJanus(String deploymentUrl) throws Exception {
         String fullUrl = providerConfiguration.getUrlJanus() + deploymentUrl;
         log.debug("getStatusFromJanus " + fullUrl);
