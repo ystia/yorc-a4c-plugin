@@ -82,7 +82,6 @@
                 <goal>single</goal>
               </goals>
               <configuration>
-                <finalName>alien4cloud-janus-plugin-${project.version}</finalName>
                 <attach>true</attach>
                 <descriptors>
                   <descriptor>src/main/assembly/janus-plugin-assembly.xml</descriptor>
