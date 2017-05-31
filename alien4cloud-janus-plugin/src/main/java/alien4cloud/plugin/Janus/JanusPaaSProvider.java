@@ -112,9 +112,10 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
     private List<AlienTask> tasks = new LinkedList<>();
 
     // Should set to infinite, since it is not possible to know how long will take
-    // an operation. This value is mainly used for debugging.
-    private final int JANUS_TIMEOUT = 1000 * 3600 * 24;  // 24 hours
-    //private final int JANUS_TIMEOUT = 1000 * 60 * 4;   // 4 mns
+    // an operation. These values are mainly used for debugging.
+    private final int JANUS_DEPLOY_TIMEOUT = 1000 * 3600 * 24;  // 24 hours
+    private final int JANUS_UNDEPLOY_TIMEOUT = 1000 * 60 * 30;  //  30 mn
+    private final int JANUS_OPE_TIMEOUT = 1000 * 3600 * 4;  // 4 hours
 
     // Possible values for janus event types
     // Check with janus code for these values.
@@ -393,6 +394,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
     private void doDeploy(DeployTask task) {
         PaaSTopologyDeploymentContext ctx = task.ctx;
         IPaaSCallback<?> callback = task.callback;
+        Throwable error = null;
 
         // Keep Ids in a Map
         String paasId = ctx.getDeploymentPaaSId();
@@ -453,6 +455,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
             try {
                 taskUrl = restClient.putTopologyToJanus(paasId);
             } catch (Exception e) {
+                sendMessage(paasId, "Deployment not accepted by janus: " + e.getMessage());
                 doChangeStatus(paasId, DeploymentStatus.FAILURE);
                 callback.onFailure(e);
                 return;
@@ -468,49 +471,72 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
 
         // wait for janus deployment completion
         boolean done = false;
-        long timeout = System.currentTimeMillis() + JANUS_TIMEOUT;
+        long timeout = System.currentTimeMillis() + JANUS_DEPLOY_TIMEOUT;
         Event evt;
-        while (!done) {
+        while (!done && error == null) {
             synchronized (jrdi) {
+                // Check deployment timeout
                 long timetowait = timeout - System.currentTimeMillis();
                 if (timetowait <= 0) {
-                    log.warn("Timeout occured");
+                    log.warn("Deployment Timeout occured");
+                    error = new Throwable("Deployment timeout");
+                    doChangeStatus(paasId, DeploymentStatus.FAILURE);
                     break;
                 }
+                // Wait Deployment Events from Janus
                 log.debug(paasId + ": Waiting for deployment events.");
                 try {
                     jrdi.wait(timetowait);
                 } catch (InterruptedException e) {
                     log.warn("Interrupted while waiting for deployment");
-                    break;
                 }
+                // Check if we received a Deployment Event and process it
                 evt = jrdi.getLastEvent();
-                if (evt == null || !evt.getType().equals(EVT_DEPLOYMENT)) {
-                    // This event is not for us, or a timeout occured.
+                if (evt != null && evt.getType().equals(EVT_DEPLOYMENT)) {
+                    jrdi.setLastEvent(null);
+                    switch (evt.getStatus()) {
+                        case "deployment_failed":
+                            log.warn("Deployment failed: " + paasId);
+                            doChangeStatus(paasId, DeploymentStatus.FAILURE);
+                            error = new Exception("Deployment failed");
+                            break;
+                        case "deployed":
+                            log.debug("Deployment success: " + paasId);
+                            doChangeStatus(paasId, DeploymentStatus.DEPLOYED);
+                            done = true;
+                            break;
+                        case "deployment_in_progress":
+                            doChangeStatus(paasId, DeploymentStatus.DEPLOYMENT_IN_PROGRESS);
+                            break;
+                        default:
+                            sendMessage(paasId, "Deployment status = " + evt.getStatus());
+                            break;
+                    }
                     continue;
                 }
-                // Do not check taskId here, because it is not sent in case of deploy
-                // Event will be processed: remove it.
-                jrdi.setLastEvent(null);
             }
-            switch (evt.getStatus()) {
-                case "deployment_failed":
-                    log.warn("Deployment failed: " + paasId);
-                    doChangeStatus(paasId, DeploymentStatus.FAILURE);
-                    callback.onFailure(new Exception("Deployment failed"));
-                    done = true;
+            // We were awaken for some bad reason or a timeout 
+            // Check Deployment Status to decide what to do now.
+            String status;
+            try {
+                status = restClient.getStatusFromJanus(deploymentUrl);
+            } catch (Exception e) {
+                // TODO Check error 404
+                // assumes it is undeployed
+                status = "UNDEPLOYED";
+            }
+            switch (status) {
+                case "UNDEPLOYED":
+                    changeStatus(paasId, DeploymentStatus.UNDEPLOYED);
+                    error = new Throwable("Deployment has been undeployed");
                     break;
-                case "deployed":
-                    log.debug("Deployment success: " + paasId);
-                    doChangeStatus(paasId, DeploymentStatus.DEPLOYED);
-                    callback.onSuccess(null);
+                case "DEPLOYED":
+                    // Deployment is OK.
+                    changeStatus(paasId, DeploymentStatus.DEPLOYED);
                     done = true;
-                    break;
-                case "deployment_in_progress":
-                    doChangeStatus(paasId, DeploymentStatus.DEPLOYMENT_IN_PROGRESS);
                     break;
                 default:
-                    sendMessage(paasId, "Deployment status = " + evt.getStatus());
+                    log.debug("Deployment Status is currently " + status);
                     break;
             }
         }
@@ -519,24 +545,11 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
             jrdi.setDeployTaskId(null);
             jrdi.notify();
         }
-        if (! done) {
-            // Janus did not reply in time.
-            // This should never occur with last version of janus (eventV2)
-            String status;
-            try {
-                status = restClient.getStatusFromJanus(deploymentUrl);
-            } catch (Exception e) {
-                status = "FAILED";
-            }
-            if (status.equals("DEPLOYED")) {
-                // Deployment OK.
-                changeStatus(paasId, DeploymentStatus.DEPLOYED);
-                callback.onSuccess(null);
-            } else {
-                // Deployment failed
-                changeStatus(paasId, DeploymentStatus.FAILURE);
-                callback.onFailure(new Throwable("Deployment failed with status " + status));
-            }
+        // Return result to a4c
+        if (error == null) {
+            callback.onSuccess(null);
+        } else {
+            callback.onFailure(error);
         }
     }
 
@@ -547,6 +560,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
     private void doUndeploy(UndeployTask task) {
         PaaSDeploymentContext ctx = task.ctx;
         IPaaSCallback<?> callback = task.callback;
+        Throwable error = null;
 
         String paasId = ctx.getDeploymentPaaSId();
         String deploymentUrl = "/deployments/" + paasId;
@@ -585,9 +599,34 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
 
         // wait for janus undeployment completion
         boolean done = false;
-        long timeout = System.currentTimeMillis() + JANUS_TIMEOUT;
+        long timeout = System.currentTimeMillis() + JANUS_UNDEPLOY_TIMEOUT;
         Event evt;
-        while (!done) {
+        while (!done && error == null) {
+            // Check if already done
+            // This may occur when undeploy is immediate
+            String status;
+            try {
+                status = restClient.getStatusFromJanus(deploymentUrl);
+            } catch (Exception e) {
+                // TODO Check error 404
+                // assumes it is undeployed
+                status = "UNDEPLOYED";
+            }
+            log.debug("Status of deployment: " + status);
+            switch (status) {
+                case "UNDEPLOYED":
+                    // Undeployment OK.
+                    changeStatus(paasId, DeploymentStatus.UNDEPLOYED);
+                    break;
+                case "INITIAL":
+                    // No event will be received, and the undeployment should be straightforward
+                    timeout = System.currentTimeMillis() + 3000;
+                    break;
+                default:
+                    log.debug("Deployment Status is currently " + status);
+                    break;
+            }
+            // Wait an Event from Janus or timeout
             synchronized (jrdi) {
                 long timetowait = timeout - System.currentTimeMillis();
                 if (timetowait <= 0) {
@@ -601,58 +640,38 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
                     break;
                 }
                 evt = jrdi.getLastEvent();
-                if (evt == null || !evt.getType().equals(EVT_DEPLOYMENT)) {
-                    // This event is not for us, or a timeout occured.
-                    continue;
+                if (evt != null && evt.getType().equals(EVT_DEPLOYMENT)) {
+                    jrdi.setLastEvent(null);
+                    switch (evt.getStatus()) {
+                        case "undeployment_failed":
+                            log.warn("Undeployment failed: " + paasId);
+                            doChangeStatus(paasId, DeploymentStatus.FAILURE);
+                            error = new Exception("Undeployment failed");
+                            break;
+                        case "undeployed":
+                            log.debug("Undeployment success: " + paasId);
+                            doChangeStatus(paasId, DeploymentStatus.UNDEPLOYED);
+                            done = true;
+                            break;
+                        case "undeploying":
+                        case "undeployment_in_progress":
+                            doChangeStatus(paasId, DeploymentStatus.UNDEPLOYMENT_IN_PROGRESS);
+                            break;
+                        default:
+                            sendMessage(paasId, "Undeployment: status=" + evt.getStatus());
+                            break;
+                    }
                 }
-                // Do not check taskId here, because it is not sent in case of undeploy
-                // Event will be processed: remove it.
-                jrdi.setLastEvent(null);
-            }
-            switch (evt.getStatus()) {
-                case "undeployment_failed":
-                    log.warn("Undeployment failed: " + paasId);
-                    doChangeStatus(paasId, DeploymentStatus.FAILURE);
-                    callback.onFailure(new Exception("Undeployment failed"));
-                    done = true;
-                    break;
-                case "undeployed":
-                    log.debug("Undeployment success: " + paasId);
-                    doChangeStatus(paasId, DeploymentStatus.UNDEPLOYED);
-                    callback.onSuccess(null);
-                    // Stop threads and remove info about this deployment
-                    jrdi.getExecutor().shutdownNow();
-                    runtimeDeploymentInfos.remove(paasId);
-                    done = true;
-                    break;
-                case "undeploying":
-                case "undeployment_in_progress":
-                    doChangeStatus(paasId, DeploymentStatus.UNDEPLOYMENT_IN_PROGRESS);
-                    break;
-                default:
-                    sendMessage(paasId, "Undeployment: status=" + evt.getStatus());
-                    break;
             }
         }
-        if (!done) {
-            // Janus did not reply on time.
-            // This should never occur with last version of janus (eventV2)
-            String status = null;
-            try {
-                status = restClient.getStatusFromJanus(deploymentUrl);
-            } catch (Exception e) {
-                // assumes it is undeployed
-                status = "UNDEPLOYED";
-            }
-            if (status.equals("UNDEPLOYED")) {
-                // Undeployment OK.
-                changeStatus(paasId, DeploymentStatus.UNDEPLOYED);
-                callback.onSuccess(null);
-            } else {
-                // Undeployment failed
-                changeStatus(paasId, DeploymentStatus.FAILURE);
-                callback.onFailure(new Throwable("Undeployment failed with status " + status));
-            }
+        // Return result to a4c
+        if (error == null) {
+            callback.onSuccess(null);
+            // Stop threads and remove info about this deployment
+            jrdi.getExecutor().shutdownNow();
+            runtimeDeploymentInfos.remove(paasId);
+        } else {
+            callback.onFailure(error);
         }
     }
 
@@ -665,6 +684,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         String node = task.node;
         int nbi = task.nbi;
         IPaaSCallback<?> callback = task.callback;
+        Throwable error = null;
 
         String paasId = ctx.getDeploymentPaaSId();
         String deploymentUrl = "/deployments/" + paasId;
@@ -675,6 +695,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         try {
             taskUrl = restClient.scaleNodeInJanus(deploymentUrl, node, nbi);
         } catch (Exception e) {
+            sendMessage(paasId, "Scaling not accepted by Janus: " + e.getMessage());
             callback.onFailure(e);
             return;
         }
@@ -687,49 +708,69 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
 
         // wait for end of task
         boolean done = false;
-        long timeout = System.currentTimeMillis() + JANUS_TIMEOUT;
+        long timeout = System.currentTimeMillis() + JANUS_OPE_TIMEOUT;
         Event evt;
-        while (!done) {
+        while (!done && error == null) {
             synchronized (jrdi) {
+                // Check for timeout
                 long timetowait = timeout - System.currentTimeMillis();
                 if (timetowait <= 0) {
                     log.warn("Timeout occured");
+                    error = new Throwable("Scaling timeout");
                     break;
                 }
+                // Wait Events from Janus
+                log.debug(paasId + ": Waiting for scaling events.");
                 try {
                     jrdi.wait(timetowait);
                 } catch (InterruptedException e) {
-                    log.error("Interrupted while waiting for task end");
-                    break;
+                    log.warn("Interrupted while waiting for scaling");
                 }
+                // Check if we received a Scaling Event and process it
                 evt = jrdi.getLastEvent();
-                if (evt == null || !evt.getType().equals(EVT_SCALING)) {
-                    // This event is not for us, or a timeout occured.
+                if (evt != null && evt.getType().equals(EVT_SCALING)) {
+                    jrdi.setLastEvent(null);
+                    switch (evt.getStatus()) {
+                        case "failed":
+                            log.warn("Scaling failed: " + paasId);
+                            error = new Exception("Scaling failed");
+                            break;
+                        case "canceled":
+                            log.warn("Scaling canceled: " + paasId);
+                            error = new Exception("Scaling canceled");
+                            break;
+                        case "done":
+                            log.debug("Scaling success: " + paasId);
+                            done = true;
+                            break;
+                        default:
+                            sendMessage(paasId, "Scaling status = " + evt.getStatus());
+                            break;
+                    }
                     continue;
                 }
-                if (! evt.getTask_id().equals(taskId)) {
-                    log.debug("Task Id does not match: " + taskId + ":" + evt.getTask_id());
-                    continue;
-                }
-                // Event has been processed: remove it.
-                jrdi.setLastEvent(null);
             }
-            sendMessage(paasId, "Scaling " + evt.getStatus());
-            switch (evt.getStatus()) {
-                case "failed":
-                    callback.onFailure(new Exception("Scaling failed"));
+            // We were awaken for some bad reason or a timeout
+            // Check Task Status to decide what to do now.
+            String status;
+            try {
+                status = restClient.getStatusFromJanus(taskUrl);
+                log.debug("Returned status:" + status);
+            } catch (Exception e) {
+                status = "FAILED";
+            }
+            switch (status) {
+                case "DONE":
+                    // Task OK.
+                    log.debug("Scaling OK");
                     done = true;
                     break;
-                case "canceled":
-                    callback.onFailure(new Exception("Scaling canceled"));
-                    done = true;
-                    break;
-                case "done":
-                    callback.onSuccess(null);
-                    done = true;
+                case "FAILED":
+                    log.debug("Scaling failed");
+                    error = new Exception("Scaling failed");
                     break;
                 default:
-                    log.warn("An event has been ignored. Unexpected status=" + evt.getStatus());
+                    log.debug("Scaling Status is currently " + status);
                     break;
             }
         }
@@ -738,27 +779,11 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
             jrdi.setDeployTaskId(null);
             jrdi.notify();
         }
-        if (! done) {
-            // Janus did not reply on time.
-            // This should never occur with last version of janus (eventV2)
-            String status;
-            try {
-                status = restClient.getStatusFromJanus(taskUrl);
-                log.debug("Returned status:" + status);
-            } catch (Exception e) {
-                status = "FAILED";
-            }
-            if (status.equals("DONE")) {
-                // Task OK.
-                sendMessage(paasId, "Scaling Successful");
-                log.debug("Scaling OK");
-                callback.onSuccess(null);
-            } else {
-                // Task failed
-                sendMessage(paasId, "Scaling Failed");
-                log.debug("Scaling failed");
-                callback.onFailure(new Throwable("Task failed with status " + status));
-            }
+        // Return result to a4c
+        if (error == null) {
+            callback.onSuccess(null);
+        } else {
+            callback.onFailure(error);
         }
     }
 
@@ -771,6 +796,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         String workflowName = task.workflowName;
         Map<String, Object> inputs = task.inputs;
         IPaaSCallback<?> callback = task.callback;
+        Throwable error = null;
 
         String paasId = ctx.getDeploymentPaaSId();
         String deploymentUrl = "/deployments/" + paasId;
@@ -781,6 +807,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         try {
             taskUrl = restClient.postWorkflowToJanus(deploymentUrl, workflowName, inputs);
         } catch (Exception e) {
+            sendMessage(paasId, "Workflow not accepted by Janus: " + e.getMessage());
             callback.onFailure(e);
             return;
         }
@@ -793,60 +820,81 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
 
         // wait for end of task
         boolean done = false;
-        long timeout = System.currentTimeMillis() + JANUS_TIMEOUT;
+        long timeout = System.currentTimeMillis() + JANUS_OPE_TIMEOUT;
         Event evt;
-        while (!done) {
+        while (!done && error == null) {
             synchronized (jrdi) {
+                // Check for timeout
                 long timetowait = timeout - System.currentTimeMillis();
                 if (timetowait <= 0) {
                     log.warn("Timeout occured");
+                    error = new Throwable("Workflow timeout");
                     break;
                 }
+                // Wait Events from Janus
+                log.debug(paasId + ": Waiting for workflow events.");
                 try {
                     jrdi.wait(timetowait);
                 } catch (InterruptedException e) {
                     log.error("Interrupted while waiting for task end");
                     break;
                 }
+                // Check if we received a Workflow Event and process it
                 evt = jrdi.getLastEvent();
-                if (evt == null || !evt.getType().equals(EVT_WORKFLOW)) {
-                    // This event is not for us, or a timeout occured.
+                if (evt != null && evt.getType().equals(EVT_WORKFLOW) && evt.getTask_id().equals(taskId)) {
+                    jrdi.setLastEvent(null);
+                    switch (evt.getStatus()) {
+                        case "failed":
+                            log.warn("Workflow failed: " + paasId);
+                            //workflowStep(paasId, workflowName, "TODO", "TODO", "TODO");
+                            error = new Exception("Workflow " + workflowName + " failed");
+                            break;
+                        case "canceled":
+                            log.warn("Workflow canceled: " + paasId);
+                            //workflowStep(paasId, workflowName, "TODO", "TODO", "TODO");
+                            error = new Exception("Workflow " + workflowName + " canceled");
+                            break;
+                        case "done":
+                            log.debug("Workflow success: " + paasId);
+                            //workflowStep(paasId, workflowName, "TODO", "TODO", "TODO");
+                            done = true;
+                            break;
+                        case "initial":
+                            // TODO name of subworkflow ?
+                            //workflowStarted(paasId, workflowName, "TODO");
+                            break;
+                        case "running":
+                            // TODO get name of step and stage: need update of janus API
+                            //workflowStep(paasId, workflowName, "TODO", "TODO", "TODO");
+                            break;
+                        default:
+                            log.warn("An event has been ignored. Unexpected status=" + evt.getStatus());
+                            break;
+                    }
                     continue;
                 }
-                if (! evt.getTask_id().equals(taskId)) {
-                    log.debug("Task Id does not match: " + taskId + ":" + evt.getTask_id());
-                    continue;
-                }
-                // Event has been processed: remove it.
-                jrdi.setLastEvent(null);
             }
-            sendMessage(paasId, "Workflow " + workflowName + " " + evt.getStatus());
-            switch (evt.getStatus()) {
-                case "failed":
-                    //workflowStep(paasId, workflowName, "TODO", "TODO", "TODO");
-                    callback.onFailure(new Exception("Workflow " + workflowName + " failed"));
+            // We were awaken for some bad reason or a timeout
+            // Check Task Status to decide what to do now.
+            String status;
+            try {
+                status = restClient.getStatusFromJanus(taskUrl);
+                log.debug("Returned status:" + status);
+            } catch (Exception e) {
+                status = "FAILED";
+            }
+            switch (status) {
+                case "DONE":
+                    // Task OK.
+                    log.debug("Workflow OK");
                     done = true;
                     break;
-                case "canceled":
-                    //workflowStep(paasId, workflowName, "TODO", "TODO", "TODO");
-                    callback.onFailure(new Exception("Workflow " + workflowName + " canceled"));
-                    done = true;
-                    break;
-                case "done":
-                    //workflowStep(paasId, workflowName, "TODO", "TODO", "TODO");
-                    callback.onSuccess(null);
-                    done = true;
-                    break;
-                case "initial":
-                    // TODO name of subworkflow ?
-                    //workflowStarted(paasId, workflowName, "TODO");
-                    break;
-                case "running":
-                    // TODO get name of step and stage: need update of janus API
-                    //workflowStep(paasId, workflowName, "TODO", "TODO", "TODO");
+                case "FAILED":
+                    log.debug("Workflow failed");
+                    error = new Exception("Workflow failed");
                     break;
                 default:
-                    log.warn("An event has been ignored. Unexpected status=" + evt.getStatus());
+                    log.debug("Workflow Status is currently " + status);
                     break;
             }
         }
@@ -855,27 +903,11 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
             jrdi.setDeployTaskId(null);
             jrdi.notify();
         }
-        if (! done) {
-            // Janus did not reply on time.
-            // This should never occur with last version of janus (eventV2)
-            String status;
-            try {
-                status = restClient.getStatusFromJanus(taskUrl);
-                log.debug("Returned status:" + status);
-            } catch (Exception e) {
-                status = "FAILED";
-            }
-            if (status.equals("DONE")) {
-                // Task OK.
-                sendMessage(paasId, "Worlflow Successful");
-                log.debug("Workflow OK");
-                callback.onSuccess(null);
-            } else {
-                // Task failed
-                sendMessage(paasId, "Workflow Failed");
-                log.debug("Workflow failed");
-                callback.onFailure(new Throwable("Task failed with status " + status));
-            }
+        // Return result to a4c
+        if (error == null) {
+            callback.onSuccess(null);
+        } else {
+            callback.onFailure(error);
         }
     }
 
@@ -888,6 +920,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         PaaSTopologyDeploymentContext ctx = task.ctx;
         NodeOperationExecRequest request = task.request;
         IPaaSCallback<Map<String, String>> callback = task.callback;
+        Throwable error = null;
 
         String paasId = ctx.getDeploymentPaaSId();
         String deploymentUrl = "/deployments/" + paasId;
@@ -898,6 +931,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         try {
             taskUrl = restClient.postCustomCommandToJanus(deploymentUrl, request);
         } catch (Exception e) {
+            sendMessage(paasId, "Custom Command not accepted by Janus: " + e.getMessage());
             callback.onFailure(e);
             return;
         }
@@ -910,15 +944,19 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
 
         // wait for end of task
         boolean done = false;
-        long timeout = System.currentTimeMillis() + JANUS_TIMEOUT;
+        long timeout = System.currentTimeMillis() + JANUS_OPE_TIMEOUT;
         Event evt;
-        while (!done) {
+        while (!done && error == null) {
             synchronized (jrdi) {
+                // Check for timeout
                 long timetowait = timeout - System.currentTimeMillis();
                 if (timetowait <= 0) {
                     log.warn("Timeout occured");
+                    error = new Throwable("Operation timeout");
                     break;
                 }
+                // Wait Events from Janus
+                log.debug(paasId + ": Waiting for Custom command events.");
                 try {
                     jrdi.wait(timetowait);
                 } catch (InterruptedException e) {
@@ -926,34 +964,47 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
                     break;
                 }
                 evt = jrdi.getLastEvent();
-                if (evt == null || !evt.getType().equals(EVT_OPERATION)) {
-                    // This event is not for us, or a timeout occured.
+                if (evt != null && evt.getType().equals(EVT_OPERATION) && evt.getTask_id().equals(taskId)) {
+                    jrdi.setLastEvent(null);
+                    switch (evt.getStatus()) {
+                        case "failed":
+                        case "canceled":
+                            log.warn("Custom command failed: " + paasId);
+                            error = new Exception("Custom command " + request.getOperationName() + " failed");
+                            break;
+                        case "done":
+                            log.debug("Operation success: " + paasId);
+                            done = true;
+                            break;
+                        default:
+                            // could be 'initial' or 'running'
+                            log.warn("An event has been ignored. Status=" + evt.getStatus());
+                            break;
+                    }
                     continue;
                 }
-                if (! evt.getTask_id().equals(taskId)) {
-                    log.debug("Task Id does not match: " + taskId + ":" + evt.getTask_id());
-                    continue;
-                }
-                // Event will be processed: remove it.
-                jrdi.setLastEvent(null);
             }
-            sendMessage(paasId, "Operation " + evt.getStatus());
-            switch (evt.getStatus()) {
-                case "failed":
-                case "canceled":
-                    callback.onFailure(new Exception("Custom command " + request.getOperationName() + " failed"));
+            // We were awaken for some bad reason or a timeout
+            // Check Task Status to decide what to do now.
+            String status;
+            try {
+                status = restClient.getStatusFromJanus(taskUrl);
+                log.debug("Returned status:" + status);
+            } catch (Exception e) {
+                status = "FAILED";
+            }
+            switch (status) {
+                case "DONE":
+                    // Task OK.
+                    log.debug("Operation OK");
                     done = true;
                     break;
-                case "done":
-                    Map<String, String> customResults = new Hashtable<>(1);
-                    customResults.put("result", "Succesfully executed custom " + request.getOperationName() + " on node " + request.getNodeTemplateName());
-                    // TODO Get results returned by the custom command ??
-                    callback.onSuccess(customResults);
-                    done = true;
+                case "FAILED":
+                    log.debug("Operation failed");
+                    error = new Exception("Operation failed");
                     break;
                 default:
-                    // could be 'initial' or 'running'
-                    log.warn("An event has been ignored. Status=" + evt.getStatus());
+                    log.debug("Operation Status is currently " + status);
                     break;
             }
         }
@@ -962,27 +1013,14 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
             jrdi.setDeployTaskId(null);
             jrdi.notify();
         }
-        if (! done) {
-            // Janus did not reply on time.
-            // This should never occur with last version of janus (eventV2)
-            String status;
-            try {
-                status = restClient.getStatusFromJanus(taskUrl);
-                log.debug("Returned status:" + status);
-            } catch (Exception e) {
-                status = "FAILED";
-            }
-            if (status.equals("DONE")) {
-                // Task OK.
-                sendMessage(paasId, "Custom Command Successful");
-                log.debug("Operation OK");
-                callback.onSuccess(null);
-            } else {
-                // Task failed
-                sendMessage(paasId, "Custom Command Failed");
-                log.debug("Operation failed");
-                callback.onFailure(new Throwable("Task failed with status " + status));
-            }
+        // Return result to a4c
+        if (error == null) {
+            Map<String, String> customResults = new Hashtable<>(1);
+            customResults.put("result", "Succesfully executed custom " + request.getOperationName() + " on node " + request.getNodeTemplateName());
+            // TODO Get results returned by the custom command ??
+            callback.onSuccess(customResults);
+        } else {
+            callback.onFailure(error);
         }
     }
 
