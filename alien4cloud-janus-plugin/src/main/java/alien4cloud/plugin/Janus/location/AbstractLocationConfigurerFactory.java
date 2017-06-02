@@ -22,9 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Component that creates location configurer for a Janus slurm cloud.
- */
 public abstract class AbstractLocationConfigurerFactory {
     @Inject
     protected ArchiveParser archiveParser;

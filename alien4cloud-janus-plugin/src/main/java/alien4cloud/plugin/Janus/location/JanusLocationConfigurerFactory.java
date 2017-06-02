@@ -5,19 +5,26 @@ import alien4cloud.plugin.Janus.JanusOrchestratorFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+/**
+ * Component that creates location configurer for Janus.
+ */
 @Component
 @Scope("prototype")
 public class JanusLocationConfigurerFactory extends AbstractLocationConfigurerFactory {
 
+    /**
+     * Return a Location Configurer suitable for this location type
+     * @param locationType OPENSTACK or SLURM
+     * @return
+     */
     @Override
     protected ILocationConfiguratorPlugin newInstanceBasedOnLocation(String locationType) {
+        AbstractLocationConfigurer configurer = null;
         if (JanusOrchestratorFactory.OPENSTACK.equals(locationType)) {
-            JanusOpenStackLocationConfigurer configurer = applicationContext.getBean(JanusOpenStackLocationConfigurer.class);
-            return configurer;
+            configurer = applicationContext.getBean(JanusOpenStackLocationConfigurer.class);
         } else if (JanusOrchestratorFactory.SLURM.equals(locationType)) {
-            JanusSlurmLocationConfigurer configurer = applicationContext.getBean(JanusSlurmLocationConfigurer.class);
-            return configurer;
+            configurer = applicationContext.getBean(JanusSlurmLocationConfigurer.class);
         }
-        return null;
+        return configurer;
     }
 }
