@@ -58,7 +58,6 @@
               <goal>single</goal>
             </goals>
             <configuration>
-              <finalName>alien4cloud-janus-plugin-distribution-${project.version}</finalName>
               <attach>true</attach>
               <descriptors>
                 <descriptor>src/main/assembly/janus-plugin-dist-assembly.xml</descriptor>
