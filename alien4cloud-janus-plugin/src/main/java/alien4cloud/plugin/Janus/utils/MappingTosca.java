@@ -28,7 +28,6 @@ import org.alien4cloud.tosca.model.definitions.ScalarPropertyValue;
 import org.alien4cloud.tosca.model.templates.Capability;
 import org.alien4cloud.tosca.model.templates.NodeTemplate;
 import org.alien4cloud.tosca.model.templates.RelationshipTemplate;
-import org.alien4cloud.tosca.model.templates.Topology;
 import org.springframework.data.util.Pair;
 
 @Slf4j
@@ -218,19 +217,20 @@ public class MappingTosca {
 
     public static void quoteProperties(final PaaSTopologyDeploymentContext ctx) {
         PaaSTopology ptopo = ctx.getPaaSTopology();
-        DeploymentTopology dtopo = ctx.getDeploymentTopology();
+
         for (PaaSNodeTemplate node : ptopo.getAllNodes().values()) {
             NodeTemplate nt = node.getTemplate();
-            log.debug("Node: " + nt.getName());
-            for (String prop : nt.getProperties().keySet()) {
-                AbstractPropertyValue absval = nt.getProperties().get(prop);
+
+            Map<String, AbstractPropertyValue> ntProperties = nt.getProperties();
+            for (String prop : ntProperties.keySet()) {
+                AbstractPropertyValue absval = ntProperties.get(prop);
                 if (absval instanceof ScalarPropertyValue) {
                     ScalarPropertyValue scaval = (ScalarPropertyValue) absval;
-                    log.debug("  Property: " + prop + "=" + scaval.getValue());
+                    if (scaval.getValue().contains("\"")) {
+                        scaval.setValue(scaval.getValue().replace("\"", "\\\""));
+                    }
+                    log.debug("Property: " + prop + "=" + ((ScalarPropertyValue) nt.getProperties().get(prop)).getValue());
                 }
-            }
-            for (String attr : nt.getAttributes().keySet()) {
-                log.debug("  Attribute: " + attr + "=" + nt.getAttributes().get(attr));
             }
         }
 
