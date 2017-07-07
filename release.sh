@@ -3,8 +3,6 @@ set -x
 set -e
 scriptDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-componentVersionName="janus_version"
-
 cd ${scriptDir}
 
 python -c "import semantic_version" > /dev/null 2>&1 || {
@@ -134,7 +132,7 @@ if [[ -z "${prerelease}" ]]; then
     if [[ "True" == "$(python -c "import semantic_version; print  semantic_version.Version('${version}') > semantic_version.Version('${masterTag}')" )" ]]; then
         # We should merge the tag to master as it is our highest release
         git checkout master
-        git merge --no-ff "janus-a4c-plugin-${version}" -m "merging latest tag janus-a4c-plugin-${version} into master"
+        git merge --no-ff "janus-a4c-plugin-${version}" -X theirs -m "merging latest tag janus-a4c-plugin-${version} into master"
     fi
 fi
 
