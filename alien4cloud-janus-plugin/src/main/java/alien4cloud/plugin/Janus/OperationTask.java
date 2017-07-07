@@ -21,7 +21,7 @@ public class OperationTask extends AlienTask {
     IPaaSCallback<Map<String, String>> callback;
 
     public OperationTask(PaaSTopologyDeploymentContext ctx, JanusPaaSProvider prov, NodeOperationExecRequest request, IPaaSCallback<Map<String, String>> callback) {
-        super(AlienTask.OPERATION, prov);
+        super(prov);
         this.ctx = ctx;
         this.request = request;
         this.callback = callback;

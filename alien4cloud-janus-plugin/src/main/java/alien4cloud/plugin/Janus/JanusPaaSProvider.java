@@ -450,8 +450,8 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         sendMessage(paasId, "Deployment sent to Janus. TaskId=" + taskId);
 
         // Listen Events and logs from janus about the deployment
-        listenDeploymentEvent(ctx);
-        listenJanusLog(ctx);
+        taskManager.addTask(new EventListenerTask(ctx, this));
+        taskManager.addTask(new LogListenerTask(ctx, this));
 
         // wait for janus deployment completion
         boolean done = false;
@@ -1014,6 +1014,187 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         }
     }
 
+    /**
+     * Listen for all events from janus
+     * @param task
+     */
+    public void listenJanusEvents(EventListenerTask task) {
+        PaaSDeploymentContext ctx = task.ctx;
+        String paasId = ctx.getDeploymentPaaSId();
+        Deployment deployment = ctx.getDeployment();
+        String source = deployment.getSourceName();
+        String deploymentUrl = "/deployments/" + paasId;
+        JanusRuntimeDeploymentInfo jrdi = runtimeDeploymentInfos.get(paasId);
+        if (jrdi == null) {
+            log.error("listenJanusEvents: no JanusRuntimeDeploymentInfo");
+            return;
+        }
+        Map<String, Map<String, InstanceInformation>> instanceInfo = jrdi.getInstanceInformations();
+        int prevIndex = 1;
+        while (true) {
+            try {
+                log.debug("Get events from Janus for " + paasId);
+                EventResponse eventResponse = restClient.getEventFromJanus(deploymentUrl, prevIndex);
+                if (eventResponse != null) {
+                    prevIndex = eventResponse.getLast_index();
+                    if (eventResponse.getEvents() != null) {
+                        for (Event event : eventResponse.getEvents()) {
+                            // Check type of Event sent by janus and process it
+                            String eState = event.getStatus();
+                            String eMessage = paasId + " - Janus Event: ";
+
+                            if (event.getType() == null) {
+                                log.warn("Janus version is obsolete. Please use a newer version");
+                                event.setType(EVT_INSTANCE);
+                            }
+
+                            switch (event.getType()) {
+                                case EVT_INSTANCE:
+                                    String eNode = event.getNode();
+                                    String eInstance = event.getInstance();
+                                    eMessage += "instance " + eNode + ":" + eInstance + ":" + eState;
+                                    log.debug("Received Event from janus <<< " + eMessage);
+                                    Map<String, InstanceInformation> ninfo = instanceInfo.get(eNode);
+                                    if (ninfo == null) {
+                                        // Add a new Node in JanusRuntimeDeploymentInfo
+                                        log.debug("Add a node in JanusRuntimeDeploymentInfo: " + eNode);
+                                        ninfo = Maps.newHashMap();
+                                        instanceInfo.put(eNode, ninfo);
+                                    }
+                                    InstanceInformation iinfo = ninfo.get(eInstance);
+                                    if (iinfo == null) {
+                                        // Add a new Instance for this node in JanusRuntimeDeploymentInfo
+                                        log.debug("Add an instance in JanusRuntimeDeploymentInfo: " + eInstance);
+                                        iinfo = newInstance(new Integer(eInstance));
+                                        ninfo.put(eInstance, iinfo);
+                                    }
+                                    updateInstanceState(paasId, eNode, eInstance, iinfo, eState);
+                                    switch (eState) {
+                                        case "initial":
+                                        case "creating":
+                                        case "deleting":
+                                        case "starting":
+                                        case "stopping":
+                                        case "configured":
+                                        case "configuring":
+                                        case "created":
+                                            break;
+                                        case "deleted":
+                                            ninfo.remove(eInstance);
+                                            break;
+                                        case "stopped":
+                                            updateInstanceAttributes(ctx, iinfo, eNode, eInstance);
+                                            break;
+                                        case "started":
+                                            updateInstanceAttributes(ctx, iinfo, eNode, eInstance);
+                                            // persist BS Id
+                                            if (source.equals("BLOCKSTORAGE_APPLICATION")) {
+                                                PaaSInstancePersistentResourceMonitorEvent prme = new PaaSInstancePersistentResourceMonitorEvent(eNode, eInstance,
+                                                        MapUtil.newHashMap(new String[]{NormativeBlockStorageConstants.VOLUME_ID}, new Object[]{UUID.randomUUID().toString()}));
+                                                postEvent(prme, paasId);
+                                            }
+                                            break;
+                                        case "error":
+                                            log.warn("Error instance status");
+                                            break;
+                                        default:
+                                            log.warn("Unknown instance status: " + eState);
+                                            break;
+                                    }
+                                    break;
+                                case EVT_DEPLOYMENT:
+                                case EVT_OPERATION:
+                                case EVT_SCALING:
+                                case EVT_WORKFLOW:
+                                    eMessage += event.getType() + ":" + eState;
+                                    log.debug("Received Event from janus <<< " + eMessage);
+                                    synchronized (jrdi) {
+                                        if (jrdi.getLastEvent() != null) {
+                                            log.debug("Event not taken, forgot it: " + jrdi.getLastEvent());
+                                        }
+                                        jrdi.setLastEvent(event);
+                                        jrdi.notifyAll();
+                                    }
+                                    break;
+                                default:
+                                    log.warn("Unknown event type received from janus <<< " + event.getType());
+                                    break;
+                            }
+                        }
+                    }
+                }
+            } catch (JanusRestException e) {
+                int error = e.getHttpStatusCode();
+                if (error == 404) {
+                    // Assume undeployed OK.
+                    // Janus may not have returned the event "undeployed", so emulate it.
+                    log.debug("JanusRestException error 404: assumes undeployed");
+                    Event event = new Event();
+                    event.setType("deployment");
+                    event.setStatus("undeployed");
+                    synchronized (jrdi) {
+                        if (jrdi.getLastEvent() != null) {
+                            log.debug("Event not taken, forgot it: " + jrdi.getLastEvent());
+                        }
+                        jrdi.setLastEvent(event);
+                        jrdi.notifyAll();
+                    }
+                } else {
+                    log.error("listenDeploymentEvent Failed " + paasId, e);
+                }
+                return;
+            } catch (InterruptedException e) {
+                log.error("listenDeploymentEvent Stopped " + paasId);
+                return;
+            } catch (Exception e) {
+                log.warn("listenDeploymentEvent Failed " + paasId, e);
+                return;
+            }
+        }
+    }
+
+    /**
+     * Listen Janus Logs
+     * @param task
+     */
+    public void listenJanusLogs(LogListenerTask task) {
+        PaaSDeploymentContext ctx = task.ctx;
+        String paasId = ctx.getDeploymentPaaSId();
+        String deploymentUrl = "/deployments/" + paasId;
+        int prevIndex = 1;
+        while (true) {
+            try {
+                LogResponse logResponse = restClient.getLogFromJanus(deploymentUrl, prevIndex);
+                if (logResponse != null) {
+                    prevIndex = logResponse.getLast_index();
+                    if (logResponse.getLogs() != null) {
+                        for (LogEvent logEvent : logResponse.getLogs()) {
+                            log.debug("Received log from janus: " + logEvent.getLogs());
+                            // add Premium Log
+                            PaaSDeploymentLog deploymentLog = new PaaSDeploymentLog();
+                            deploymentLog.setContent(logEvent.getLogs());
+                            deploymentLog.setTimestamp(logEvent.getDate());
+                            postLog(deploymentLog, paasId);
+                        }
+                    }
+                }
+            } catch (InterruptedException e) {
+                log.error("listenJanusLog Stopped " + paasId);
+                return;
+            } catch (JanusRestException e) {
+                if (e.getHttpStatusCode() == 404) {
+                    log.warn("Stop listening to logs. Assuming " + paasId + " is undeployed.");
+                } else {
+                    log.warn("listenJanusLog Failed " + paasId, e);
+                }
+                return;
+            } catch (Exception e) {
+                log.warn("listenJanusLog Failed " + paasId, e);
+                return;
+            }
+        }
+    }
+
     // ------------------------------------------------------------------------------------------------------
     // private methods
     // ------------------------------------------------------------------------------------------------------
@@ -1150,8 +1331,8 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
 
         // Restart threads listening to janus log and events
         if (ds != DeploymentStatus.UNDEPLOYED ) {
-            listenDeploymentEvent(ctx);
-            listenJanusLog(ctx);
+            taskManager.addTask(new EventListenerTask(ctx, this));
+            taskManager.addTask(new LogListenerTask(ctx, this));
         }
     }
 
@@ -1327,199 +1508,6 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
 
     private RelationshipType getRelationshipType(String typeName) {
         return toscaTypeSearchService.findMostRecent(RelationshipType.class, typeName);
-    }
-
-    /**
-     * Listen logs from Janus about this deployment
-     * @param ctx
-     */
-    private void listenJanusLog(PaaSDeploymentContext ctx) {
-        String paasId = ctx.getDeploymentPaaSId();
-        String deploymentUrl = "/deployments/" + paasId;
-        log.debug("listenJanusLog " + paasId);
-        final JanusRuntimeDeploymentInfo jrdi = runtimeDeploymentInfos.get(paasId);
-        if (jrdi == null) {
-            log.error("listenJanusLog: no JanusRuntimeDeploymentInfo");
-            return;
-        }
-
-        Runnable task = () -> {
-            int prevIndex = 1;
-            while (true) {
-                try {
-                    LogResponse logResponse = restClient.getLogFromJanus(deploymentUrl, prevIndex);
-                    if (logResponse != null) {
-                        prevIndex = logResponse.getLast_index();
-                        if (logResponse.getLogs() != null) {
-                            for (LogEvent logEvent : logResponse.getLogs()) {
-                                log.debug("Received log from janus: " + logEvent.getLogs());
-                                // add Premium Log
-                                PaaSDeploymentLog deploymentLog = new PaaSDeploymentLog();
-                                deploymentLog.setContent(logEvent.getLogs());
-                                deploymentLog.setTimestamp(logEvent.getDate());
-                                postLog(deploymentLog, paasId);
-                            }
-                        }
-                    }
-                } catch (InterruptedException e) {
-                    log.error("listenJanusLog Stopped " + paasId);
-                    return;
-                } catch (JanusRestException e) {
-                    if (e.getHttpStatusCode() == 404) {
-                        log.warn("Stop listening to logs. Assuming " + paasId + " is undeployed.");
-                    } else {
-                        log.warn("listenJanusLog Failed " + paasId, e);
-                    }
-                    return;
-                } catch (Exception e) {
-                    log.warn("listenJanusLog Failed " + paasId, e);
-                    return;
-                }
-            }
-        };
-        jrdi.getExecutor().submit(task);
-    }
-
-    /**
-     * Listen events from Janus about this deployment
-     * @param ctx
-     */
-    private void listenDeploymentEvent(PaaSDeploymentContext ctx) {
-        String paasId = ctx.getDeploymentPaaSId();
-        Deployment deployment = ctx.getDeployment();
-        String source = deployment.getSourceName();
-        String deploymentUrl = "/deployments/" + paasId;
-        log.debug("listenDeploymentEvent " + paasId + " source=" + source);
-        final JanusRuntimeDeploymentInfo jrdi = runtimeDeploymentInfos.get(paasId);
-        if (jrdi == null) {
-            log.error("listenDeploymentEvent: no JanusRuntimeDeploymentInfo");
-            return;
-        }
-        Map<String, Map<String, InstanceInformation>> instanceInfo = jrdi.getInstanceInformations();
-        Runnable task = () -> {
-            int prevIndex = 1;
-            while (true) {
-                try {
-                    log.debug("Get events from Janus for " + paasId);
-                    EventResponse eventResponse = restClient.getEventFromJanus(deploymentUrl, prevIndex);
-                    if (eventResponse != null) {
-                        prevIndex = eventResponse.getLast_index();
-                        if (eventResponse.getEvents() != null) {
-                            for (Event event : eventResponse.getEvents()) {
-                                // Check type of Event sent by janus and process it
-                                String eState = event.getStatus();
-                                String eMessage = paasId + " - Janus Event: ";
-
-                                if (event.getType() == null) {
-                                    log.warn("Janus version is obsolete. Please use a newer version");
-                                    event.setType(EVT_INSTANCE);
-                                }
-
-                                switch (event.getType()) {
-                                    case EVT_INSTANCE:
-                                        String eNode = event.getNode();
-                                        String eInstance = event.getInstance();
-                                        eMessage += "instance " + eNode + ":" + eInstance + ":" + eState;
-                                        log.debug("Received Event from janus <<< " + eMessage);
-                                        Map<String, InstanceInformation> ninfo = instanceInfo.get(eNode);
-                                        if (ninfo == null) {
-                                            // Add a new Node in JanusRuntimeDeploymentInfo
-                                            log.debug("Add a node in JanusRuntimeDeploymentInfo: " + eNode);
-                                            ninfo = Maps.newHashMap();
-                                            instanceInfo.put(eNode, ninfo);
-                                        }
-                                        InstanceInformation iinfo = ninfo.get(eInstance);
-                                        if (iinfo == null) {
-                                            // Add a new Instance for this node in JanusRuntimeDeploymentInfo
-                                            log.debug("Add an instance in JanusRuntimeDeploymentInfo: " + eInstance);
-                                            iinfo = newInstance(new Integer(eInstance));
-                                            ninfo.put(eInstance, iinfo);
-                                        }
-                                        updateInstanceState(paasId, eNode, eInstance, iinfo, eState);
-                                        switch (eState) {
-                                            case "initial":
-                                            case "creating":
-                                            case "deleting":
-                                            case "starting":
-                                            case "stopping":
-                                            case "configured":
-                                            case "configuring":
-                                            case "created":
-                                                break;
-                                            case "deleted":
-                                                ninfo.remove(eInstance);
-                                                break;
-                                            case "stopped":
-                                                updateInstanceAttributes(ctx, iinfo, eNode, eInstance);
-                                                break;
-                                            case "started":
-                                                updateInstanceAttributes(ctx, iinfo, eNode, eInstance);
-                                                // persist BS Id
-                                                if (source.equals("BLOCKSTORAGE_APPLICATION")) {
-                                                    PaaSInstancePersistentResourceMonitorEvent prme = new PaaSInstancePersistentResourceMonitorEvent(eNode, eInstance,
-                                                            MapUtil.newHashMap(new String[]{NormativeBlockStorageConstants.VOLUME_ID}, new Object[]{UUID.randomUUID().toString()}));
-                                                    postEvent(prme, paasId);
-                                                }
-                                                break;
-                                            case "error":
-                                                log.warn("Error instance status");
-                                                break;
-                                            default:
-                                                log.warn("Unknown instance status: " + eState);
-                                                break;
-                                        }
-                                        break;
-                                    case EVT_DEPLOYMENT:
-                                    case EVT_OPERATION:
-                                    case EVT_SCALING:
-                                    case EVT_WORKFLOW:
-                                        eMessage += event.getType() + ":" + eState;
-                                        log.debug("Received Event from janus <<< " + eMessage);
-                                        synchronized (jrdi) {
-                                            if (jrdi.getLastEvent() != null) {
-                                                log.debug("Event not taken, forgot it: " + jrdi.getLastEvent());
-                                            }
-                                            jrdi.setLastEvent(event);
-                                            jrdi.notifyAll();
-                                        }
-                                        break;
-                                    default:
-                                        log.warn("Unknown event type received from janus <<< " + event.getType());
-                                        break;
-                                }
-                            }
-                        }
-                    }
-                } catch (JanusRestException e) {
-                    int error = e.getHttpStatusCode();
-                    if (error == 404) {
-                        // Assume undeployed OK.
-                        // Janus may not have returned the event "undeployed", so emulate it.
-                        log.debug("JanusRestException error 404: assumes undeployed");
-                        Event event = new Event();
-                        event.setType("deployment");
-                        event.setStatus("undeployed");
-                        synchronized (jrdi) {
-                            if (jrdi.getLastEvent() != null) {
-                                log.debug("Event not taken, forgot it: " + jrdi.getLastEvent());
-                            }
-                            jrdi.setLastEvent(event);
-                            jrdi.notifyAll();
-                        }
-                    } else {
-                        log.error("listenDeploymentEvent Failed " + paasId, e);
-                    }
-                    return;
-                } catch (InterruptedException e) {
-                    log.error("listenDeploymentEvent Stopped " + paasId);
-                    return;
-                } catch (Exception e) {
-                    log.warn("listenDeploymentEvent Failed " + paasId, e);
-                    return;
-                }
-            }
-        };
-        jrdi.getExecutor().submit(task);
     }
 
     /**

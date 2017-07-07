@@ -38,8 +38,7 @@ public class TaskManager {
     }
     
     /**
-     * Get the next JWork object to be run.
-     * @return next JWork object to be run, or null if thread must end.
+     * Get the next task to be run.
      */
     public void nextWork() throws Exception {
         AlienTask task;

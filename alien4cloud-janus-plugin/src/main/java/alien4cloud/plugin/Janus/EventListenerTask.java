@@ -7,22 +7,21 @@
 package alien4cloud.plugin.Janus;
 
 import alien4cloud.paas.IPaaSCallback;
+import alien4cloud.paas.model.PaaSDeploymentContext;
 import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
 
 /**
- * Information needed for a DEPLOY Task
+ * Information needed for a EventListener Task
  */
-public class DeployTask extends AlienTask {
-    PaaSTopologyDeploymentContext ctx;
-    IPaaSCallback<?> callback;
+public class EventListenerTask extends AlienTask {
+    PaaSDeploymentContext ctx;
 
-    public DeployTask(PaaSTopologyDeploymentContext ctx, JanusPaaSProvider prov, IPaaSCallback<?> callback) {
+    public EventListenerTask(PaaSDeploymentContext ctx, JanusPaaSProvider prov) {
         super(prov);
         this.ctx = ctx;
-        this.callback = callback;
     }
 
     public void run() {
-        orchestrator.doDeploy(this);
+        orchestrator.listenJanusEvents(this);
     }
 }

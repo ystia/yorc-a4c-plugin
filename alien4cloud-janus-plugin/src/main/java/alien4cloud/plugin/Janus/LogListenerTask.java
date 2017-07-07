@@ -6,27 +6,20 @@
 */
 package alien4cloud.plugin.Janus;
 
-import alien4cloud.paas.IPaaSCallback;
 import alien4cloud.paas.model.PaaSDeploymentContext;
 
 /**
- * Information needed for a SCALE Task
+ * Information needed for a EventListener Task
  */
-public class ScaleTask extends AlienTask {
+public class LogListenerTask extends AlienTask {
     PaaSDeploymentContext ctx;
-    IPaaSCallback<?> callback;
-    String node;
-    int nbi;
 
-    public ScaleTask(PaaSDeploymentContext ctx, JanusPaaSProvider prov, String node, int nbi, IPaaSCallback<?> callback) {
+    public LogListenerTask(PaaSDeploymentContext ctx, JanusPaaSProvider prov) {
         super(prov);
         this.ctx = ctx;
-        this.node = node;
-        this.nbi = nbi;
-        this.callback = callback;
     }
 
     public void run() {
-        orchestrator.doScale(this);
+        orchestrator.listenJanusLogs(this);
     }
 }

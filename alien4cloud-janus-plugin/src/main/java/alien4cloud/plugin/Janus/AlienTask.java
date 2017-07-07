@@ -9,23 +9,14 @@ package alien4cloud.plugin.Janus;
 
 public abstract class AlienTask {
 
-    // type of Task
-    final static int DEPLOY = 1;
-    final static int UNDEPLOY = 2;
-    final static int SCALE = 3;
-    final static int OPERATION = 4;
-    final static int WORKFLOW = 5;
-    protected int type;
-
     protected JanusPaaSProvider orchestrator;
 
     /**
      * Constructor
-     * @param type
+     * @param  provider
      */
-    public AlienTask(int type, JanusPaaSProvider provider) {
+    public AlienTask(JanusPaaSProvider provider) {
         this.orchestrator = provider;
-        this.type = type;
     }
 
     /**

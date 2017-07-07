@@ -17,7 +17,7 @@ public class UndeployTask extends AlienTask {
     IPaaSCallback<?> callback;
 
     public UndeployTask(PaaSDeploymentContext ctx, JanusPaaSProvider prov, IPaaSCallback<?> callback) {
-        super(AlienTask.UNDEPLOY, prov);
+        super(prov);
         this.ctx = ctx;
         this.callback = callback;
     }
