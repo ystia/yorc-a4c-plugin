@@ -35,6 +35,7 @@ public class TaskManager {
             WorkThread st = new WorkThread(this, threadnumber++);
             st.start();
         }
+        log.debug("ThreadPool size : " + poolsz);
     }
     
     /**
@@ -53,20 +54,23 @@ public class TaskManager {
                 try {
                     // Wait for a new task to run
                     freeThreads++;
-                    log.debug("waiting");
+                    log.debug(Thread.currentThread().getName() + " waiting");
                     workList.wait(waitingTime);
-                    log.debug("notified");
+                    log.debug(Thread.currentThread().getName() + " notified");
                     freeThreads--;
                     haswait = true;
                 } catch (InterruptedException e) {
+                    log.debug(Thread.currentThread().getName() + " interrupted");
                     freeThreads--;
                     poolsz--;
+                    log.debug("ThreadPool size : " + poolsz);
                     throw e;
                 }
             }
             task = workList.remove(0);
         }
         // run the task
+        log.debug(Thread.currentThread().getName() + " running a task");
         task.run();
     }
 
@@ -81,6 +85,7 @@ public class TaskManager {
             if (poolsz < maxpoolsz && workList.size() > freeThreads) {
                 // We need one more thread.
                 poolsz++;
+                log.debug("ThreadPool size : " + poolsz);
                 WorkThread st = new WorkThread(this, threadnumber++);
                 st.start();
             } else {
@@ -111,7 +116,7 @@ public class TaskManager {
 
         @Override
         public void run() {
-            log.debug("running " + number);
+            log.debug(Thread.currentThread().getName() + " running");
             while (true) {
                 try {
                     mgr.nextWork();
