@@ -13,17 +13,21 @@ import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
 import java.util.Map;
 
 /**
- * Information needed for a OPERATION Task
+ * Information needed for an OPERATION Task
  */
 public class OperationTask extends AlienTask {
     PaaSTopologyDeploymentContext ctx;
     NodeOperationExecRequest request;
     IPaaSCallback<Map<String, String>> callback;
 
-    public OperationTask(PaaSTopologyDeploymentContext ctx, NodeOperationExecRequest request, IPaaSCallback<Map<String, String>> callback) {
-        super(AlienTask.OPERATION);
+    public OperationTask(PaaSTopologyDeploymentContext ctx, JanusPaaSProvider prov, NodeOperationExecRequest request, IPaaSCallback<Map<String, String>> callback) {
+        super(AlienTask.OPERATION, prov);
         this.ctx = ctx;
         this.request = request;
         this.callback = callback;
+    }
+
+    public void run() {
+        orchestrator.doExecuteOperation(this);
     }
 }

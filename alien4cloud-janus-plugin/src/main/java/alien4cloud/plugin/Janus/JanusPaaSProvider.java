@@ -102,6 +102,8 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
 
     private ArchiveExportService archiveExportService = new ArchiveExportService();
 
+    private TaskManager taskManager;
+
     @Resource(name = "alien-monitor-es-dao")
     private IGenericSearchDAO alienMonitorDao;
 
@@ -139,12 +141,9 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
     public void init(Map<String, PaaSTopologyDeploymentContext> activeDeployments) {
         log.info("Init plugin for " + activeDeployments.size() + " active deployments");
 
-        // Start worker threads
-        for (int i = 1; i <= WORKER_POOL_SIZE; i++) {
-            Thread w = new Thread(new Worker());
-            w.setName("JanusPlugin_" + i);
-            w.start();
-        }
+        // Start the TaskManager
+        // TODO make sizes configurable
+        taskManager = new TaskManager(2, 100, 300);
 
         // Update deployment info for all active deployments
         for (Map.Entry<String, PaaSTopologyDeploymentContext> entry : activeDeployments.entrySet()) {
@@ -182,11 +181,8 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
      */
     @Override
     public void deploy(PaaSTopologyDeploymentContext ctx, IPaaSCallback<?> callback) {
-        AlienTask task = new DeployTask(ctx, callback);
-        synchronized(tasks) {
-            tasks.add(task);
-            tasks.notify();
-        }
+        AlienTask task = new DeployTask(ctx, this, callback);
+        taskManager.addTask(task);
     }
 
     /**
@@ -196,11 +192,8 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
      */
     @Override
     public void undeploy(PaaSDeploymentContext ctx, IPaaSCallback<?> callback) {
-        AlienTask task = new UndeployTask(ctx, callback);
-        synchronized(tasks) {
-            tasks.add(task);
-            tasks.notify();
-        }
+        AlienTask task = new UndeployTask(ctx, this, callback);
+        taskManager.addTask(task);
     }
 
     /**
@@ -213,11 +206,8 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
      */
     @Override
     public void scale(PaaSDeploymentContext ctx, String node, int nbi, IPaaSCallback<?> callback) {
-        AlienTask task = new ScaleTask(ctx, node, nbi, callback);
-        synchronized(tasks) {
-            tasks.add(task);
-            tasks.notify();
-        }
+        AlienTask task = new ScaleTask(ctx, this, node, nbi, callback);
+        taskManager.addTask(task);
     }
 
     /**
@@ -230,11 +220,8 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
      */
     @Override
     public void launchWorkflow(PaaSDeploymentContext ctx, String workflowName, Map<String, Object> inputs, IPaaSCallback<?> callback) {
-        AlienTask task = new WorkflowTask(ctx, workflowName, inputs, callback);
-        synchronized(tasks) {
-            tasks.add(task);
-            tasks.notify();
-        }
+        AlienTask task = new WorkflowTask(ctx, this, workflowName, inputs, callback);
+        taskManager.addTask(task);
     }
 
     /**
@@ -247,11 +234,8 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
      */
     @Override
     public void executeOperation(PaaSTopologyDeploymentContext ctx, NodeOperationExecRequest request, IPaaSCallback<Map<String, String>> callback) throws OperationExecutionException {
-        AlienTask task = new OperationTask(ctx, request, callback);
-        synchronized(tasks) {
-            tasks.add(task);
-            tasks.notify();
-        }
+        AlienTask task = new OperationTask(ctx, this, request, callback);
+        taskManager.addTask(task);
     }
 
     /**
@@ -384,14 +368,14 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
 
 
     // ------------------------------------------------------------------------------------------------------
-    // private methods
+    // Task operations (deploy/undeploy/scale/operation/workflow)
     // ------------------------------------------------------------------------------------------------------
 
     /**
      * Deploy a topology.
      * @param task
      */
-    private void doDeploy(DeployTask task) {
+    public void doDeploy(DeployTask task) {
         PaaSTopologyDeploymentContext ctx = task.ctx;
         IPaaSCallback<?> callback = task.callback;
         Throwable error = null;
@@ -557,7 +541,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
      * Undeploy a deployment.
      * @param task
      */
-    private void doUndeploy(UndeployTask task) {
+    public void doUndeploy(UndeployTask task) {
         PaaSDeploymentContext ctx = task.ctx;
         IPaaSCallback<?> callback = task.callback;
         Throwable error = null;
@@ -667,6 +651,12 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         // Return result to a4c
         if (error == null) {
             callback.onSuccess(null);
+            // Add a little delay for debug
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             // Stop threads and remove info about this deployment
             jrdi.getExecutor().shutdownNow();
             runtimeDeploymentInfos.remove(paasId);
@@ -679,7 +669,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
      * Scale a Node.
      * @param task
      */
-    private void doScale(ScaleTask task) {
+    public void doScale(ScaleTask task) {
         PaaSDeploymentContext ctx = task.ctx;
         String node = task.node;
         int nbi = task.nbi;
@@ -791,7 +781,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
      * Start a custom workflow.
      * @param task
      */
-    private void doLaunchWorkflow(WorkflowTask task) {
+    public void doLaunchWorkflow(WorkflowTask task) {
         PaaSDeploymentContext ctx = task.ctx;
         String workflowName = task.workflowName;
         Map<String, Object> inputs = task.inputs;
@@ -916,7 +906,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
      * @param task
      * @throws OperationExecutionException
      */
-    private void doExecuteOperation(OperationTask task) throws OperationExecutionException {
+    public void doExecuteOperation(OperationTask task) throws OperationExecutionException {
         PaaSTopologyDeploymentContext ctx = task.ctx;
         NodeOperationExecRequest request = task.request;
         IPaaSCallback<Map<String, String>> callback = task.callback;
@@ -1024,6 +1014,10 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         }
     }
 
+    // ------------------------------------------------------------------------------------------------------
+    // private methods
+    // ------------------------------------------------------------------------------------------------------
+
     /**
      * Change status of the deployment in JanusRuntimeDeploymentInfo
      * @param paasId
@@ -1031,6 +1025,10 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
      */
     protected void changeStatus(final String paasId, final DeploymentStatus status) {
         JanusRuntimeDeploymentInfo jrdi = runtimeDeploymentInfos.get(paasId);
+        if (jrdi == null) {
+            log.error("JanusRuntimeDeploymentInfo is null. paasId=" + paasId);
+            return;
+        }
         synchronized (jrdi) {
             doChangeStatus(paasId, status);
         }
@@ -1044,6 +1042,10 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
      */
     protected void doChangeStatus(String paasId, DeploymentStatus status) {
         JanusRuntimeDeploymentInfo jrdi = runtimeDeploymentInfos.get(paasId);
+        if (jrdi == null) {
+            log.error("JanusRuntimeDeploymentInfo is null for paasId " + paasId);
+            return;
+        }
         DeploymentStatus oldDeploymentStatus = jrdi.getStatus();
         log.debug("Deployment [" + paasId + "] moved from status [" + oldDeploymentStatus + "] to [" + status + "]");
         jrdi.setStatus(status);
@@ -1575,6 +1577,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
             return;
         }
         pdlog.setLevel(PaaSDeploymentLogLevel.INFO);
+        log.debug(pdlog.toString());
         alienMonitorDao.save(pdlog);
     }
 
@@ -1605,45 +1608,4 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         }
     }
 
-    public class Worker implements Runnable {
-
-        public void run() {
-            AlienTask task;
-            while (true) {
-                synchronized(tasks) {
-                    while (tasks.isEmpty()) {
-                        log.debug("Worker " + Thread.currentThread().getName() + " waiting for a task");
-                        try {
-                            tasks.wait();
-                        } catch (InterruptedException e) {
-                            log.error("Interrupted while waiting for task");
-                            break;
-                        }
-                    }
-                    task = tasks.remove(0);
-                }
-                log.debug("Worker " + Thread.currentThread().getName() + " processing a new task");
-                switch(task.type) {
-                    case AlienTask.DEPLOY:
-                        doDeploy((DeployTask) task);
-                        break;
-                    case AlienTask.UNDEPLOY:
-                        doUndeploy((UndeployTask) task);
-                        break;
-                    case AlienTask.SCALE:
-                        doScale((ScaleTask) task);
-                        break;
-                    case AlienTask.WORKFLOW:
-                        doLaunchWorkflow((WorkflowTask) task);
-                        break;
-                    case AlienTask.OPERATION:
-                        doExecuteOperation((OperationTask) task);
-                        break;
-                    default:
-                        log.error("Unknown Task Type: " + task.type);
-                        break;
-                }
-            }
-        }
-    }
 }

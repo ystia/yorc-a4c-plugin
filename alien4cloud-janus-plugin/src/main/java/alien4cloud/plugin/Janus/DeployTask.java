@@ -16,9 +16,13 @@ public class DeployTask extends AlienTask {
     PaaSTopologyDeploymentContext ctx;
     IPaaSCallback<?> callback;
 
-    public DeployTask(PaaSTopologyDeploymentContext ctx, IPaaSCallback<?> callback) {
-        super(AlienTask.DEPLOY);
+    public DeployTask(PaaSTopologyDeploymentContext ctx, JanusPaaSProvider prov, IPaaSCallback<?> callback) {
+        super(AlienTask.DEPLOY, prov);
         this.ctx = ctx;
         this.callback = callback;
+    }
+
+    public void run() {
+        orchestrator.doDeploy(this);
     }
 }

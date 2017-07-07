@@ -18,11 +18,15 @@ public class ScaleTask extends AlienTask {
     String node;
     int nbi;
 
-    public ScaleTask(PaaSDeploymentContext ctx, String node, int nbi, IPaaSCallback<?> callback) {
-        super(AlienTask.SCALE);
+    public ScaleTask(PaaSDeploymentContext ctx, JanusPaaSProvider prov, String node, int nbi, IPaaSCallback<?> callback) {
+        super(AlienTask.SCALE, prov);
         this.ctx = ctx;
         this.node = node;
         this.nbi = nbi;
         this.callback = callback;
+    }
+
+    public void run() {
+        orchestrator.doScale(this);
     }
 }

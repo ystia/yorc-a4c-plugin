@@ -20,11 +20,15 @@ public class WorkflowTask extends AlienTask {
     String workflowName;
     Map<String, Object> inputs;
 
-    public WorkflowTask(PaaSDeploymentContext ctx, String workflowName, Map<String, Object> inputs, IPaaSCallback<?> callback) {
-        super(AlienTask.WORKFLOW);
+    public WorkflowTask(PaaSDeploymentContext ctx, JanusPaaSProvider prov, String workflowName, Map<String, Object> inputs, IPaaSCallback<?> callback) {
+        super(AlienTask.WORKFLOW, prov);
         this.ctx = ctx;
         this.workflowName = workflowName;
         this.inputs = inputs;
         this.callback = callback;
+    }
+
+    public void run() {
+        orchestrator.doLaunchWorkflow(this);
     }
 }
