@@ -3,7 +3,7 @@
   <parent>
     <artifactId>alien4cloud-janus-plugin-parent</artifactId>
     <groupId>alien4cloud</groupId>
-    <version>1.0.0-M2-SNAPSHOT</version>
+    <version>1.0.0</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
