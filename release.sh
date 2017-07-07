@@ -132,7 +132,10 @@ if [[ -z "${prerelease}" ]]; then
     if [[ "True" == "$(python -c "import semantic_version; print  semantic_version.Version('${version}') > semantic_version.Version('${masterTag}')" )" ]]; then
         # We should merge the tag to master as it is our highest release
         git checkout master
-        git merge --no-ff "janus-a4c-plugin-${version}" -X theirs -m "merging latest tag janus-a4c-plugin-${version} into master"
+        git merge --no-ff "janus-a4c-plugin-${version}" -X theirs -m "merging latest tag janus-a4c-plugin-${version} into master" || {
+                git merge --abort || true
+                git reset --hard "janus-a4c-plugin-${version}"
+        }
     fi
 fi
 
