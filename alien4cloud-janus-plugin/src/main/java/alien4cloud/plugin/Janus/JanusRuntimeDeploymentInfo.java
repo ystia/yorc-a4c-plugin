@@ -44,7 +44,5 @@ public class JanusRuntimeDeploymentInfo {
     // TaskId of the current deployment
     private String deployTaskId;
 
-    // Used to execute event check thread
-    private ExecutorService executor = Executors.newFixedThreadPool(2);
 
 }
