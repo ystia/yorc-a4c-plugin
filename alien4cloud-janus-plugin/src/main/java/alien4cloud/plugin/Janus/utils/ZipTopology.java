@@ -101,6 +101,9 @@ public class ZipTopology {
         // zout.setLevel(9);
         Closeable res = zout;
 
+        // remove input section
+        removeInputInTopology();
+
         // clean import topology (delete all precedent import)
         cleanImportInTopology();
 
@@ -237,6 +240,7 @@ public class ZipTopology {
      * @param da
      */
     private void addRemoteArtifactInTopology(String node, String key, DeploymentArtifact da) {
+        log.debug("");
         String oldFileName = "topology.yml";
         String tmpFileName = "tmp_topology.yml";
 
@@ -318,6 +322,7 @@ public class ZipTopology {
      * @param ymlPath path to be imported
      */
     private void addImportInTopology(String ymlPath) {
+        log.debug("");
         String oldFileName = "topology.yml";
         String tmpFileName = "tmp_topology.yml";
 
@@ -362,9 +367,66 @@ public class ZipTopology {
     }
 
     /**
+     * Remove input section in topology
+     * Inputs has been already processed by alien4cloud
+     * This is a workaround for a bug in alien4cloud 1.3
+     */
+    private void removeInputInTopology() {
+        log.debug("");
+        String oldFileName = "topology.yml";
+        String tmpFileName = "tmp1_topology.yml";
+
+        BufferedReader br = null;
+        BufferedWriter bw = null;
+
+        try {
+            bw = new BufferedWriter(new FileWriter(tmpFileName));
+            br = new BufferedReader(new FileReader(oldFileName));
+            String line;
+            boolean clean = false;
+            while ((line = br.readLine()) != null) {
+                if (line.contains("inputs:")) {
+                    clean = true;
+                    continue;
+                }
+                if (line.contains("node_templates:")) {
+                    clean = false;
+                }
+                if (!clean) {
+                    bw.append(line).append("\n");
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error while modifying topology.yml");
+            return;
+        } finally {
+            try {
+                if (br != null)
+                    br.close();
+            } catch (IOException e) {
+                log.error("Error closing " + oldFileName, e);
+            }
+            try {
+                if (bw != null)
+                    bw.close();
+            } catch (IOException e) {
+                log.error("Error closing " + tmpFileName, e);
+            }
+        }
+        // Once everything is complete, delete old file..
+        File oldFile = new File(oldFileName);
+        oldFile.delete();
+
+        // And rename tmp file's name to old file name
+        File newFile = new File(tmpFileName);
+        newFile.renameTo(oldFile);
+    }
+
+    /**
      * Remove all imports in topology.yml
      */
     private void cleanImportInTopology() {
+        log.debug("");
         String oldFileName = "topology.yml";
         String tmpFileName = "tmp_topology.yml";
 
