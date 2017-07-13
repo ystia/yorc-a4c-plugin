@@ -98,7 +98,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
 
     private ZipTopology zipTopology = new ZipTopology();
 
-    private RestClient restClient = RestClient.getInstance();
+    private RestClient restClient = new RestClient();
 
     private ArchiveExportService archiveExportService = new ArchiveExportService();
 
