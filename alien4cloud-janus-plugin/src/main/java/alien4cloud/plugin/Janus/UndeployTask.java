@@ -22,8 +22,6 @@ public class UndeployTask extends AlienTask {
     PaaSDeploymentContext ctx;
     IPaaSCallback<?> callback;
 
-    private RestClient restClient = RestClient.getInstance();
-
     private final int JANUS_UNDEPLOY_TIMEOUT = 1000 * 60 * 30;  //  30 mn
 
     public UndeployTask(PaaSDeploymentContext ctx, JanusPaaSProvider prov, IPaaSCallback<?> callback) {
