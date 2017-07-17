@@ -101,11 +101,8 @@ public class ZipTopology {
         // zout.setLevel(9);
         Closeable res = zout;
 
-        // remove input section
-        removeInputInTopology();
-
-        // clean import topology (delete all precedent import)
-        cleanImportInTopology();
+        // remove input section and clean import topology (delete all precedent import)
+        cleanTopology();
 
         if (deploymentContext.getLocations().get("_A4C_ALL").getDependencies().stream().filter(csar -> csar.getName().contains(("slurm"))).findFirst().isPresent()) {
             addImportInTopology("<janus-slurm-types.yml>");
@@ -371,10 +368,10 @@ public class ZipTopology {
      * Inputs has been already processed by alien4cloud
      * This is a workaround for a bug in alien4cloud 1.3
      */
-    private void removeInputInTopology() {
+    private void cleanTopology() {
         log.debug("");
-        String oldFileName = "topology.yml";
-        String tmpFileName = "tmp1_topology.yml";
+        String oldFileName = "original.yml";
+        String tmpFileName = "topology.yml";
 
         BufferedReader br = null;
         BufferedWriter bw = null;
@@ -388,6 +385,14 @@ public class ZipTopology {
                 if (line.contains("inputs:")) {
                     clean = true;
                     continue;
+                }
+                if (line.contains("imports:")) {
+                    bw.append(line).append("\n");
+                    clean = true;
+                    continue;
+                }
+                if (line.contains("topology_template:")) {
+                    clean = false;
                 }
                 if (line.contains("node_templates:")) {
                     clean = false;
@@ -413,66 +418,6 @@ public class ZipTopology {
                 log.error("Error closing " + tmpFileName, e);
             }
         }
-        // Once everything is complete, delete old file..
-        File oldFile = new File(oldFileName);
-        oldFile.delete();
-
-        // And rename tmp file's name to old file name
-        File newFile = new File(tmpFileName);
-        newFile.renameTo(oldFile);
-    }
-
-    /**
-     * Remove all imports in topology.yml
-     */
-    private void cleanImportInTopology() {
-        log.debug("");
-        String oldFileName = "topology.yml";
-        String tmpFileName = "tmp_topology.yml";
-
-        BufferedReader br = null;
-        BufferedWriter bw = null;
-
-        try {
-            bw = new BufferedWriter(new FileWriter(tmpFileName));
-            br = new BufferedReader(new FileReader(oldFileName));
-            String line;
-            boolean clean = false;
-            while ((line = br.readLine()) != null) {
-                if (!clean) {
-                    bw.append(line).append("\n");
-                }
-                if (line.contains("imports:")) {
-                    clean = true;
-                } else if (line.contains("topology_template:")) {
-                    bw.append("\n").append(line).append("\n");
-                    clean = false;
-                }
-            }
-        } catch (Exception e) {
-            log.error("Error while modifying topology.yml");
-            return;
-        } finally {
-            try {
-                if (br != null)
-                    br.close();
-            } catch (IOException e) {
-                log.error("Error closing " + oldFileName, e);
-            }
-            try {
-                if (bw != null)
-                    bw.close();
-            } catch (IOException e) {
-                log.error("Error closing " + tmpFileName, e);
-            }
-        }
-        // Once everything is complete, delete old file..
-        File oldFile = new File(oldFileName);
-        oldFile.delete();
-
-        // And rename tmp file's name to old file name
-        File newFile = new File(tmpFileName);
-        newFile.renameTo(oldFile);
     }
 
     private File removeLineBetween(File fileToRead, String begin, String end) throws IOException {
