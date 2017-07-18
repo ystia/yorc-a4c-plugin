@@ -37,8 +37,15 @@ public class ZipTopology {
      */
     private List<File> createListTopology(PaaSTopologyDeploymentContext deploymentContext) {
         List<File> files = new LinkedList();
-        for (PaaSNodeTemplate node : deploymentContext.getPaaSTopology().getComputes()) {
-            putCsarPathChildrenIntoFiles(node, files);
+        if (deploymentContext.getLocations().get("_A4C_ALL").getDependencies().stream().filter(csar -> csar.getName().contains(("kubernetes"))).findFirst().isPresent()) {
+            for (PaaSNodeTemplate node : deploymentContext.getPaaSTopology().getAllNodes().values()) {
+                String path = node.getCsarPath().getParent().toString();
+                files.add(new File(path));
+            }
+        } else {
+            for (PaaSNodeTemplate node : deploymentContext.getPaaSTopology().getComputes()) {
+                putCsarPathChildrenIntoFiles(node, files);
+            }
         }
         return files;
     }
