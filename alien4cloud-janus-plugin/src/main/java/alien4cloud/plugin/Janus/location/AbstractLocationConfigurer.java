@@ -120,10 +120,12 @@ public abstract class AbstractLocationConfigurer implements ILocationConfigurato
             log.debug("Sort ordering: " + mc.getSortOrdering());
             // capabilities
             Map<String, MatchingFilterDefinition> cap = mc.getCapabilities();
-            for (String kcap : cap.keySet()) {
-                log.debug("Capability " + kcap);
-                MatchingFilterDefinition mfd = cap.get(kcap);
-                printProperties(mfd.getProperties());
+            if (cap != null) {
+                for (String kcap : cap.keySet()) {
+                    log.debug("Capability " + kcap);
+                    MatchingFilterDefinition mfd = cap.get(kcap);
+                    printProperties(mfd.getProperties());
+                }
             }
             log.debug("Properties");
             printProperties(mc.getProperties());
