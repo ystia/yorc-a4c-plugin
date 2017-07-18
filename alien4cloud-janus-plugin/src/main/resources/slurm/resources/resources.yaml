@@ -13,10 +13,9 @@ node_types:
   janus.nodes.slurm.Compute:
     derived_from: tosca.nodes.Compute
     properties:
-      gpuType:
+      gres:
         type: string
         required: false
-        default: "none"
       user:
         type: string
         description: >

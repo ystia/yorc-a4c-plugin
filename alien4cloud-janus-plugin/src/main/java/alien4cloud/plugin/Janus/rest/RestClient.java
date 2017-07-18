@@ -128,7 +128,13 @@ public class RestClient {
 
     }
 
-    public String postTopologyToJanus() throws Exception {
+    /**
+     * Deploy a topology to janus
+     * @param deploymentId
+     * @return
+     * @throws Exception
+     */
+    public String putTopologyToJanus(String deploymentId) throws Exception {
         final InputStream stream;
 
         stream = new FileInputStream(new File("topology.zip"));
@@ -136,18 +142,18 @@ public class RestClient {
         stream.read(bytes);
         stream.close();
 
-        HttpResponse<JsonNode> postResponse = Unirest.post(providerConfiguration.getUrlJanus() + "/deployments")
+        HttpResponse<JsonNode> putResponse = Unirest.put(providerConfiguration.getUrlJanus() + "/deployments/" + deploymentId)
                 .header("accept", "application/json")
                 .header("Content-Type", "application/zip")
                 .body(bytes)
                 .asJson();
 
 
-        if (!postResponse.getStatusText().equals("Created")) {
-            throw new Exception("postTopologyToJanus: Janus returned an error : " + postResponse.getStatus());
+        if (!putResponse.getStatusText().equals("Created")) {
+            throw new Exception("putTopologyToJanus: Janus returned an error : " + putResponse.getStatus());
         }
 
-        return postResponse.getHeaders().getFirst("Location");
+        return putResponse.getHeaders().getFirst("Location");
     }
 
     /**
@@ -171,11 +177,15 @@ public class RestClient {
             throw new Exception("scaleNodeInJanus: Janus returned an error : " + postResponse.getStatus());
         }
 
-        String ret = postResponse.getHeaders().getFirst("Location");
-        log.debug("Scaling accepted: " + ret);
-        return ret;
+        return postResponse.getHeaders().getFirst("Location");
     }
 
+    /**
+     * Return the Deployment Status from Janus
+     * @param deploymentUrl
+     * @return Status Look at janus/deployments/structs.go to see all possible values
+     * @throws Exception
+     */
     public String getStatusFromJanus(String deploymentUrl) throws Exception {
         String fullUrl = providerConfiguration.getUrlJanus() + deploymentUrl;
         log.debug("getStatusFromJanus " + fullUrl);
@@ -238,12 +248,24 @@ public class RestClient {
         return objectMapper.readValue(new String(IOUtils.toByteArray(eventResponse.getRawBody()), CHARSET), EventResponse.class);
     }
 
-    public String undeployJanus(String deploymentUrl) throws UnirestException {
-        return Unirest.delete(providerConfiguration.getUrlJanus() + deploymentUrl + "?purge")
+    public String undeployJanus(String deploymentUrl) throws Exception {
+        log.debug("undeployJanus " + deploymentUrl);
+        HttpResponse<JsonNode> res = Unirest.delete(providerConfiguration.getUrlJanus() + deploymentUrl + "?purge")
                 .header("accept", "application/json")
-                .asJson()
-                .getStatusText();
+                .asJson();
+        String task = res.getHeaders().getFirst("Location");
+        if (task == null) {
+            throw(new Exception("Undeploy returned no TaskId"));
+        }
+        return task;
+    }
 
+    public String stopTask(String taskUrl) throws UnirestException {
+        log.debug("stop task " + taskUrl);
+        HttpResponse<JsonNode> res = Unirest.delete(providerConfiguration.getUrlJanus() + taskUrl)
+                .header("accept", "application/json")
+                .asJson();
+        return res.getHeaders().getFirst("Location");
     }
 
     public String postCustomCommandToJanus(String deploymentUrl, NodeOperationExecRequest request) throws Exception {

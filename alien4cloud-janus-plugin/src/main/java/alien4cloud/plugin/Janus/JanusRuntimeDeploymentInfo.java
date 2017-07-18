@@ -9,6 +9,7 @@ package alien4cloud.plugin.Janus;
 import alien4cloud.paas.model.DeploymentStatus;
 import alien4cloud.paas.model.InstanceInformation;
 import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
+import alien4cloud.plugin.Janus.rest.Response.Event;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +38,11 @@ public class JanusRuntimeDeploymentInfo {
     @NonNull
     private String deploymentUrl;
 
-    // Used to execute event check thread
-    private ExecutorService executor = Executors.newFixedThreadPool(2);
+    // Last event received from janus
+    private Event lastEvent;
+
+    // TaskId of the current deployment
+    private String deployTaskId;
+
 
 }

@@ -19,7 +19,7 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.stereotype.Component;
 
 /**
- * Factory for Mock implementation of orchestrator instance.
+ * Factory for Janus implementation of orchestrator instance.
  */
 @Component("Janus-orchestrator-factory")
 public class JanusOrchestratorFactory implements IOrchestratorPluginFactory<JanusOrchestrator, ProviderConfig> {

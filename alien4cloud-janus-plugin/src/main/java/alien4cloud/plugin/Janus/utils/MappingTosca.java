@@ -8,6 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import alien4cloud.model.deployment.DeploymentTopology;
 import alien4cloud.paas.model.PaaSNodeTemplate;
 import alien4cloud.paas.model.PaaSRelationshipTemplate;
 import alien4cloud.paas.model.PaaSTopology;
@@ -23,23 +24,25 @@ import lombok.extern.slf4j.Slf4j;
 import org.alien4cloud.tosca.model.definitions.AbstractPropertyValue;
 import org.alien4cloud.tosca.model.definitions.Interface;
 import org.alien4cloud.tosca.model.definitions.Operation;
+import org.alien4cloud.tosca.model.definitions.ScalarPropertyValue;
 import org.alien4cloud.tosca.model.templates.Capability;
 import org.alien4cloud.tosca.model.templates.NodeTemplate;
 import org.alien4cloud.tosca.model.templates.RelationshipTemplate;
-import org.alien4cloud.tosca.model.templates.Topology;
 import org.springframework.data.util.Pair;
 
 @Slf4j
 public class MappingTosca {
 
-    public static void addPreConfigureSteps(Topology topology, PaaSTopology paaSTopology) {
+    public static void addPreConfigureSteps(final PaaSTopologyDeploymentContext ctx) {
+        PaaSTopology ptopo = ctx.getPaaSTopology();
+        DeploymentTopology dtopo = ctx.getDeploymentTopology();
 
-        Workflow installWorkflow = topology.getWorkflows().get("install");
-        Workflow uninstallWorkflow = topology.getWorkflows().get("uninstall");
+        Workflow installWorkflow = dtopo.getWorkflows().get("install");
+        Workflow uninstallWorkflow = dtopo.getWorkflows().get("uninstall");
 
         List<Pair<String, AbstractStep>> targetSteps = new ArrayList<>();
 
-        for (Map.Entry<String, PaaSNodeTemplate> entryNode : paaSTopology.getAllNodes().entrySet()) {
+        for (Map.Entry<String, PaaSNodeTemplate> entryNode : ptopo.getAllNodes().entrySet()) {
             PaaSNodeTemplate node = entryNode.getValue();
             String nodeName = node.getId();
             List<AbstractStep> preConfSteps = new ArrayList<>();
@@ -70,7 +73,7 @@ public class MappingTosca {
 
                             AbstractStep step = newStep(entryOperation.getKey() + "_" + nodeName + "/" + requirementName + "/" + relation.getTemplate().getTarget(), nodeName, entryOperation.getKey() + "/" + requirementName + "/" + relation.getTemplate().getTarget());
 
-                            if (step.getName().contains("pre_configure_target") || step.getName().contains("post_configure_target") ||step.getName().contains("add_source")) {
+                            if (step.getName().contains("pre_configure_target") || step.getName().contains("post_configure_target") || step.getName().contains("add_source")) {
                                 targetSteps.add(Pair.of(relation.getTemplate().getTarget(), step));
                                 log.info("TARGET : " + step.getName());
                                 log.info("");
@@ -134,7 +137,7 @@ public class MappingTosca {
             String startStepMatch;
             String endStepMatch;
 
-            if(step.getStepAsString().contains("pre_")) {
+            if (step.getStepAsString().contains("pre_")) {
                 startStepMatch = "_configuring";
                 endStepMatch = "configure_";
             } else if (step.getStepAsString().contains("post_")) {
@@ -152,18 +155,6 @@ public class MappingTosca {
                     getNodeStepWithNameMatching(installWorkflow, nodeName, endStepMatch), steps);
             System.out.println(nodeName + " " + step.getStepAsString());
         }
-
-
-        // Parcours with "topology" instead of "PaasTopology", but cannot get the node type definition
-//        for (Map.Entry<String, NodeTemplate> entry : topology.getNodeTemplates().entrySet()) {
-//            if(entry == null) continue;
-//            if(entry.getValue() == null) continue;
-//            if(entry.getValue().getRelationships() == null) continue;
-//
-//            for (Map.Entry<String, RelationshipTemplate> entry2 : entry.getValue().getRelationships().entrySet()) {
-//                log.info(entry2.getKey() + " " + entry2.getValue());
-//            }
-//        }
 
     }
 
@@ -224,13 +215,35 @@ public class MappingTosca {
         return preConfStep;
     }
 
-    public static void generateOpenstackFIP(final PaaSTopologyDeploymentContext deploymentContext) {
+    public static void quoteProperties(final PaaSTopologyDeploymentContext ctx) {
+        PaaSTopology ptopo = ctx.getPaaSTopology();
 
-        Workflow installWorkflow = deploymentContext.getDeploymentTopology().getWorkflows().get("install");
-        Workflow uninstallWorkflow = deploymentContext.getDeploymentTopology().getWorkflows().get("uninstall");
+        for (PaaSNodeTemplate node : ptopo.getAllNodes().values()) {
+            NodeTemplate nt = node.getTemplate();
 
-        for (PaaSNodeTemplate nodeTemplate :
-                deploymentContext.getPaaSTopology().getNetworks()) {
+            Map<String, AbstractPropertyValue> ntProperties = nt.getProperties();
+            for (String prop : ntProperties.keySet()) {
+                AbstractPropertyValue absval = ntProperties.get(prop);
+                if (absval instanceof ScalarPropertyValue) {
+                    ScalarPropertyValue scaval = (ScalarPropertyValue) absval;
+                    if (scaval.getValue().contains("\"")) {
+                        scaval.setValue(scaval.getValue().replace("\"", "\\\""));
+                    }
+                    log.debug("Property: " + prop + "=" + ((ScalarPropertyValue) nt.getProperties().get(prop)).getValue());
+                }
+            }
+        }
+
+    }
+
+    public static void generateOpenstackFIP(final PaaSTopologyDeploymentContext ctx) {
+        PaaSTopology ptopo = ctx.getPaaSTopology();
+        DeploymentTopology dtopo = ctx.getDeploymentTopology();
+
+        Workflow installWorkflow = dtopo.getWorkflows().get("install");
+        Workflow uninstallWorkflow = dtopo.getWorkflows().get("uninstall");
+
+        for (PaaSNodeTemplate nodeTemplate : ptopo.getNetworks()) {
             if ("janus.nodes.openstack.PublicNetwork".equalsIgnoreCase(nodeTemplate.getTemplate().getType())) {
                 AbstractPropertyValue networkName = nodeTemplate.getTemplate().getProperties().get("floating_network_name");
                 for (PaaSRelationshipTemplate relationshipTemplate : nodeTemplate.getRelationshipTemplates()) {
@@ -248,11 +261,9 @@ public class MappingTosca {
                             properties, new LinkedHashMap<>(), new LinkedHashMap<>(),
                             new LinkedHashMap<>(), capabilities, new LinkedHashMap<>(), new LinkedHashMap<>());
 
-                    deploymentContext.getDeploymentTopology().getNodeTemplates()
-                            .put(fipName, fipNodeTemplate);
+                    dtopo.getNodeTemplates().put(fipName, fipNodeTemplate);
 
-                    NodeTemplate sourceNode =
-                            deploymentContext.getDeploymentTopology().getNodeTemplates().get(sourceName);
+                    NodeTemplate sourceNode = dtopo.getNodeTemplates().get(sourceName);
 
                     for (RelationshipTemplate sourceRelTemplate : sourceNode.getRelationships().values()) {
                         if ("network".equalsIgnoreCase(sourceRelTemplate.getRequirementName())) {
@@ -292,19 +303,19 @@ public class MappingTosca {
                     NodeActivityStep nodeUninstallStep =
                             (NodeActivityStep) getNodeStepWithNameMatching(uninstallWorkflow, nodeTemplate.getId(), "_uninstall");
                     SetStateActivity configuredActivity = new SetStateActivity();
-                                        configuredActivity.setNodeId(nodeTemplate.getId());
-                                        configuredActivity.setStateName("configured");
+                    configuredActivity.setNodeId(nodeTemplate.getId());
+                    configuredActivity.setStateName("configured");
                     nodeUninstallStep.setActivity(configuredActivity);
 
                     NodeActivityStep nodeInstallStep =
                             (NodeActivityStep) getNodeStepWithNameMatching(installWorkflow, nodeTemplate.getId(), "_install");
                     SetStateActivity startedActivity = new SetStateActivity();
-                                        startedActivity.setNodeId(nodeTemplate.getId());
-                                        startedActivity.setStateName("started");
+                    startedActivity.setNodeId(nodeTemplate.getId());
+                    startedActivity.setStateName("started");
                     nodeInstallStep.setActivity(startedActivity);
                 }
 
-                NodeTemplate depNodeTemplate = deploymentContext.getDeploymentTopology().getNodeTemplates().get(nodeTemplate.getId());
+                NodeTemplate depNodeTemplate = dtopo.getNodeTemplates().get(nodeTemplate.getId());
                 depNodeTemplate.setType("tosca.nodes.Root");
             }
         }

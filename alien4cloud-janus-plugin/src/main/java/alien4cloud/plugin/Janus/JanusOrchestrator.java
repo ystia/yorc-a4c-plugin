@@ -19,7 +19,7 @@ import javax.inject.Inject;
 import java.util.List;
 
 /**
- * Mock implementation for an orchestrator instance.
+ * Janus implementation for an orchestrator instance.
  */
 @Component
 @Scope(BeanDefinition.SCOPE_PROTOTYPE)

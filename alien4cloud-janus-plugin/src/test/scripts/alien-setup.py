@@ -206,7 +206,7 @@ class AlienClient(object):
 
     def upload_janus_plugin(self):
         logger.info("Uploading the janus plugin")
-        artifact = 'alien4cloud-janus-plugin-1.0.0-SNAPSHOT.zip'
+        artifact = glob.glob('alien4cloud-Janus-plugin-*.zip')[0]
         self.session.headers = {'accept': 'application/json'}
         payload = {'file': open(artifact, 'rb')}
         response = self.session.post("%s/rest/plugins" % self.alien_url, files=payload).json()
