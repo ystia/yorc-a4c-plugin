@@ -39,6 +39,7 @@ public class JanusOrchestrator extends JanusPaaSProvider {
     public List<PluginArchive> pluginArchives() {
         List<PluginArchive> archives = Lists.newArrayList();
         archives.add(archiveService.parsePluginArchives("commons/resources"));
+        archives.add(archiveService.parsePluginArchives("docker/resources"));
 
         return archives;
     }
