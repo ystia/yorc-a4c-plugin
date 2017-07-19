@@ -159,6 +159,9 @@ public class ZipTopology {
                                     file = removeLineBetween(kid, "imports:", "node_types:");
                                     addedImports = true;
                                 }
+                                if (deploymentContext.getLocations().get("_A4C_ALL").getDependencies().stream().filter(csar -> csar.getName().contains(("kubernetes"))).findFirst().isPresent()) {
+                                    file = matchKubernetesImplementation(file);
+                                }
                             }
                             copy(file, zout);
                         }
@@ -181,6 +184,33 @@ public class ZipTopology {
 
         zout.closeEntry();
         res.close();
+    }
+
+    private File matchKubernetesImplementation(File fileToRead) throws IOException {
+        File file = new File("tmp2.yml");
+        file.createNewFile();
+
+        FileWriter fw = new FileWriter(file);
+        BufferedWriter bw = new BufferedWriter(fw);
+        PrintWriter out = new PrintWriter(bw);
+
+        FileReader fr = new FileReader(fileToRead);
+        BufferedReader fin = new  BufferedReader(fr);
+        String line;
+        boolean clean = false;
+        for (; ; ) {
+            // Read a line.
+            line = fin.readLine();
+            if (line == null) {
+                break;
+            } else if (line.contains("tosca.artifacts.Deployment.Image.Container.Docker")) {
+                out.println(line+".Kubernetes");
+            } else {
+                out.println(line);
+            }
+        }
+        out.close();
+        return file;
     }
 
     /**
