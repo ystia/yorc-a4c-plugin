@@ -79,7 +79,8 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
     @Resource(name = "alien-monitor-es-dao")
     private IGenericSearchDAO alienMonitorDao;
 
-    private RestClient restClient = RestClient.getInstance();
+    //
+    private RestClient restClient = new RestClient();
 
     private TaskManager taskManager;
 
@@ -92,6 +93,11 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         // Start the TaskManager
         // TODO make sizes configurable
         taskManager = new TaskManager(3, 120, 3600);
+
+    }
+
+    public RestClient getRestClient() {
+        return restClient;
     }
 
     /**

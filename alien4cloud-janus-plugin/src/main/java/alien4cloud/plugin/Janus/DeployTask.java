@@ -58,7 +58,6 @@ public class DeployTask extends AlienTask {
 
     private ArchiveExportService archiveExportService = new ArchiveExportService();
     private ZipTopology zipTopology = new ZipTopology();
-    private RestClient restClient = RestClient.getInstance();
 
     private final int JANUS_DEPLOY_TIMEOUT = 1000 * 3600 * 24;  // 24 hours
 

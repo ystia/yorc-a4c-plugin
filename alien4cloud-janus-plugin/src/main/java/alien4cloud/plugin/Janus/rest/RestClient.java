@@ -57,17 +57,12 @@ public class RestClient {
     // Default long pooling duration on Janus endpoints is 15 min
     private static final long SOCKET_TIMEOUT = 900000;
     private static final long CONNECTION_TIMEOUT = 10000;
-    private static RestClient instance;
     private static ObjectMapper objectMapper;
     private ProviderConfig providerConfiguration;
 
-    public static synchronized RestClient getInstance() {
-        if (instance == null) {
-            instance = new RestClient();
-            RestClient.initObjectMapper();
-            Unirest.setTimeouts(CONNECTION_TIMEOUT, SOCKET_TIMEOUT);
-        }
-        return instance;
+    public RestClient() {
+        RestClient.initObjectMapper();
+        Unirest.setTimeouts(CONNECTION_TIMEOUT, SOCKET_TIMEOUT);
     }
 
     private static void initObjectMapper() {

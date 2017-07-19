@@ -25,8 +25,6 @@ public class WorkflowTask extends AlienTask {
     String workflowName;
     Map<String, Object> inputs;
 
-    private RestClient restClient = RestClient.getInstance();
-
     private final int JANUS_OPE_TIMEOUT = 1000 * 3600 * 4;  // 4 hours
     
     public WorkflowTask(PaaSDeploymentContext ctx, JanusPaaSProvider prov, String workflowName, Map<String, Object> inputs, IPaaSCallback<?> callback) {

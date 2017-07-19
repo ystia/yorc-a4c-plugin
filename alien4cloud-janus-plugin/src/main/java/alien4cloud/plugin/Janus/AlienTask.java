@@ -7,9 +7,12 @@
 package alien4cloud.plugin.Janus;
 
 
+import alien4cloud.plugin.Janus.rest.RestClient;
+
 public abstract class AlienTask {
 
     protected JanusPaaSProvider orchestrator;
+    protected RestClient restClient;
 
     /**
      * Constructor
@@ -17,6 +20,7 @@ public abstract class AlienTask {
      */
     public AlienTask(JanusPaaSProvider provider) {
         this.orchestrator = provider;
+        this.restClient = provider.getRestClient();
     }
 
     /**

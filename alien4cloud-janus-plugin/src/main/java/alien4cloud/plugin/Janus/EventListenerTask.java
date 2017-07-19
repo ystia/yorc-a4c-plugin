@@ -40,7 +40,6 @@ public class EventListenerTask extends AlienTask {
     public static final String EVT_SCALING    = "scaling";
     public static final String EVT_WORKFLOW   = "workflow";
 
-    private RestClient restClient = RestClient.getInstance();
 
     public EventListenerTask(PaaSDeploymentContext ctx, JanusPaaSProvider prov) {
         super(prov);
