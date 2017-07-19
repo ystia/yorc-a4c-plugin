@@ -23,8 +23,6 @@ public class ScaleTask extends AlienTask {
     String node;
     int nbi;
 
-    private RestClient restClient = RestClient.getInstance();
-
     private final int JANUS_SCALE_TIMEOUT = 1000 * 3600 * 4;  // 4 hours
 
     public ScaleTask(PaaSDeploymentContext ctx, JanusPaaSProvider prov, String node, int nbi, IPaaSCallback<?> callback) {

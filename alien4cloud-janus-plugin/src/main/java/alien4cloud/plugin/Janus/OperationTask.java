@@ -26,8 +26,6 @@ public class OperationTask extends AlienTask {
     NodeOperationExecRequest request;
     IPaaSCallback<Map<String, String>> callback;
 
-    private RestClient restClient = RestClient.getInstance();
-
     private final int JANUS_OPE_TIMEOUT = 1000 * 3600 * 4;  // 4 hours
 
     public OperationTask(PaaSTopologyDeploymentContext ctx, JanusPaaSProvider prov, NodeOperationExecRequest request, IPaaSCallback<Map<String, String>> callback) {

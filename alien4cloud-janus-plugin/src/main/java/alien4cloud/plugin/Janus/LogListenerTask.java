@@ -26,8 +26,6 @@ public class LogListenerTask extends AlienTask {
     // Needed Info
     PaaSDeploymentContext ctx;
 
-    private RestClient restClient = RestClient.getInstance();
-
     public LogListenerTask(PaaSDeploymentContext ctx, JanusPaaSProvider prov) {
         super(prov);
         this.ctx = ctx;
