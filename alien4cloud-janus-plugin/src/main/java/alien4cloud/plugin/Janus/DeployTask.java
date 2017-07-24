@@ -104,12 +104,10 @@ public class DeployTask extends AlienTask {
         String taskUrl;
         synchronized(this) {
             // Create the yml of our topology (after substitution)
-            // We use a local file named "topology.yml"
+            // We use local files here
             List<String> lines = Collections.singletonList(yaml);
-            Path file = Paths.get("topology.yml");
             Path orig = Paths.get("original.yml");
             try {
-                Files.write(file, lines, Charset.forName("UTF-8"));
                 Files.write(orig, lines, Charset.forName("UTF-8"));
             } catch (IOException e) {
                 orchestrator.doChangeStatus(paasId, DeploymentStatus.FAILURE);

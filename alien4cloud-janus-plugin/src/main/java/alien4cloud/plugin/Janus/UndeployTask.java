@@ -60,80 +60,89 @@ public class UndeployTask extends AlienTask {
         }
 
         log.debug("Undeploying " + paasId);
-        String taskUrl;
+        boolean done = false;
+        String taskUrl = null;
+        String status = "UNKNOWN";
         try {
             taskUrl = restClient.undeployJanus(deploymentUrl);
-        } catch (Exception e) {
-            orchestrator.changeStatus(paasId, DeploymentStatus.FAILURE);
-            callback.onFailure(e);
-            return;
-        }
-        String taskId = taskUrl.substring(taskUrl.lastIndexOf("/") + 1);
-        orchestrator.sendMessage(paasId, "Undeployment sent to Janus. taskId=" + taskId);
-
-        // wait for janus undeployment completion
-        boolean done = false;
-        long timeout = System.currentTimeMillis() + JANUS_UNDEPLOY_TIMEOUT;
-        Event evt;
-        while (!done && error == null) {
-            // Check if already done
-            // This may occur when undeploy is immediate
-            String status;
-            try {
-                status = restClient.getStatusFromJanus(deploymentUrl);
-            } catch (Exception e) {
-                // TODO Check error 404
-                // assumes it is undeployed
+            if (taskUrl == null) {
+                // Assumes already undeployed
                 status = "UNDEPLOYED";
+                orchestrator.changeStatus(paasId, DeploymentStatus.UNDEPLOYED);
+                done = true;
             }
-            log.debug("Status of deployment: " + status);
-            switch (status) {
-                case "UNDEPLOYED":
-                    // Undeployment OK.
-                    orchestrator.changeStatus(paasId, DeploymentStatus.UNDEPLOYED);
-                    break;
-                case "INITIAL":
-                    // No event will be received, and the undeployment should be straightforward
-                    timeout = System.currentTimeMillis() + 3000;
-                    break;
-                default:
-                    log.debug("Deployment Status is currently " + status);
-                    break;
-            }
-            // Wait an Event from Janus or timeout
-            synchronized (jrdi) {
-                long timetowait = timeout - System.currentTimeMillis();
-                if (timetowait <= 0) {
-                    log.warn("Timeout occured");
-                    break;
-                }
+        } catch (Exception e) {
+            log.debug("undeployJanus returned an exception: " + e);
+            orchestrator.changeStatus(paasId, DeploymentStatus.FAILURE);
+            error = e;
+            done = true;
+        }
+        if (! done) {
+            String taskId = taskUrl.substring(taskUrl.lastIndexOf("/") + 1);
+            orchestrator.sendMessage(paasId, "Undeployment sent to Janus. taskId=" + taskId);
+
+            // wait for janus undeployment completion
+            long timeout = System.currentTimeMillis() + JANUS_UNDEPLOY_TIMEOUT;
+            Event evt;
+            while (!done && error == null) {
+                // Check if already done
+                // This may occur when undeploy is immediate
                 try {
-                    jrdi.wait(timetowait);
-                } catch (InterruptedException e) {
-                    log.error("Interrupted while waiting for undeployment");
-                    break;
+                    status = restClient.getStatusFromJanus(deploymentUrl);
+                } catch (Exception e) {
+                    // TODO Check error 404
+                    // assumes it is undeployed
+                    status = "UNDEPLOYED";
                 }
-                evt = jrdi.getLastEvent();
-                if (evt != null && evt.getType().equals(EventListenerTask.EVT_DEPLOYMENT)) {
-                    jrdi.setLastEvent(null);
-                    switch (evt.getStatus()) {
-                        case "undeployment_failed":
-                            log.warn("Undeployment failed: " + paasId);
-                            orchestrator.doChangeStatus(paasId, DeploymentStatus.FAILURE);
-                            error = new Exception("Undeployment failed");
-                            break;
-                        case "undeployed":
-                            log.debug("Undeployment success: " + paasId);
-                            orchestrator.doChangeStatus(paasId, DeploymentStatus.UNDEPLOYED);
-                            done = true;
-                            break;
-                        case "undeploying":
-                        case "undeployment_in_progress":
-                            orchestrator.doChangeStatus(paasId, DeploymentStatus.UNDEPLOYMENT_IN_PROGRESS);
-                            break;
-                        default:
-                            orchestrator.sendMessage(paasId, "Undeployment: status=" + evt.getStatus());
-                            break;
+                log.debug("Status of deployment: " + status);
+                switch (status) {
+                    case "UNDEPLOYED":
+                        // Undeployment OK.
+                        orchestrator.changeStatus(paasId, DeploymentStatus.UNDEPLOYED);
+                        break;
+                    case "INITIAL":
+                        // No event will be received, and the undeployment should be straightforward
+                        timeout = System.currentTimeMillis() + 3000;
+                        break;
+                    default:
+                        log.debug("Deployment Status is currently " + status);
+                        break;
+                }
+                // Wait an Event from Janus or timeout
+                synchronized (jrdi) {
+                    long timetowait = timeout - System.currentTimeMillis();
+                    if (timetowait <= 0) {
+                        log.warn("Timeout occured");
+                        break;
+                    }
+                    try {
+                        jrdi.wait(timetowait);
+                    } catch (InterruptedException e) {
+                        log.error("Interrupted while waiting for undeployment");
+                        break;
+                    }
+                    evt = jrdi.getLastEvent();
+                    if (evt != null && evt.getType().equals(EventListenerTask.EVT_DEPLOYMENT)) {
+                        jrdi.setLastEvent(null);
+                        switch (evt.getStatus()) {
+                            case "undeployment_failed":
+                                log.warn("Undeployment failed: " + paasId);
+                                orchestrator.doChangeStatus(paasId, DeploymentStatus.FAILURE);
+                                error = new Exception("Undeployment failed");
+                                break;
+                            case "undeployed":
+                                log.debug("Undeployment success: " + paasId);
+                                orchestrator.doChangeStatus(paasId, DeploymentStatus.UNDEPLOYED);
+                                done = true;
+                                break;
+                            case "undeploying":
+                            case "undeployment_in_progress":
+                                orchestrator.doChangeStatus(paasId, DeploymentStatus.UNDEPLOYMENT_IN_PROGRESS);
+                                break;
+                            default:
+                                orchestrator.sendMessage(paasId, "Undeployment: status=" + evt.getStatus());
+                                break;
+                        }
                     }
                 }
             }

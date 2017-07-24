@@ -249,9 +249,6 @@ public class RestClient {
                 .header("accept", "application/json")
                 .asJson();
         String task = res.getHeaders().getFirst("Location");
-        if (task == null) {
-            throw(new Exception("Undeploy returned no TaskId"));
-        }
         return task;
     }
 
