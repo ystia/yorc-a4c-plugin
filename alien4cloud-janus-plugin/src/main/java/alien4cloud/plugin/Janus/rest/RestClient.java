@@ -10,8 +10,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 import java.util.Iterator;
 import java.security.KeyManagementException;
@@ -96,6 +98,13 @@ public class RestClient {
 
     public void setProviderConfiguration(ProviderConfig providerConfiguration) throws PluginConfigurationException {
         this.providerConfiguration = providerConfiguration;
+        log.debug("setProviderConfiguration JanusURL=" + providerConfiguration.getUrlJanus());
+        try {
+            getDeployments();
+        } catch (UnirestException e) {
+            log.warn("Cannot access Janus: " + e.getCause());
+            throw new PluginConfigurationException("Cannot access Janus: " + e.getCause());
+        }
         if (Boolean.TRUE.equals(providerConfiguration.getInsecureTLS())) {
             SSLContext sslContext;
             try {
@@ -121,6 +130,22 @@ public class RestClient {
             Unirest.setHttpClient(httpClient);
         }
 
+    }
+
+    /**
+     * Get the list of deployments
+     */
+    public List<String> getDeployments() throws UnirestException {
+        List<String> ret = new ArrayList<>();
+        String fullUrl = providerConfiguration.getUrlJanus() + "/deployments";
+        log.debug("getDeployments " + fullUrl);
+        HttpResponse<JsonNode> res = Unirest.get(fullUrl)
+                .header("accept", "application/json")
+                .asJson();
+
+        JSONObject obj = res.getBody().getObject();
+        log.debug("Deployments: " + obj);
+        return ret;
     }
 
     /**
