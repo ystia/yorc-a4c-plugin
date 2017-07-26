@@ -9,6 +9,7 @@ package alien4cloud.plugin.Janus;
 import alien4cloud.orchestrators.plugin.ILocationConfiguratorPlugin;
 import alien4cloud.orchestrators.plugin.model.PluginArchive;
 import alien4cloud.plugin.Janus.location.AbstractLocationConfigurerFactory;
+import alien4cloud.plugin.Janus.service.PluginArchiveService;
 import com.google.common.collect.Lists;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
@@ -26,6 +27,9 @@ public class JanusOrchestrator extends JanusPaaSProvider {
     @Inject
     private AbstractLocationConfigurerFactory janusLocationConfigurerFactory;
 
+    @Inject
+    private PluginArchiveService archiveService;
+
     @Override
     public ILocationConfiguratorPlugin getConfigurator(String locationType) {
         return janusLocationConfigurerFactory.newInstance(locationType);
@@ -33,6 +37,10 @@ public class JanusOrchestrator extends JanusPaaSProvider {
 
     @Override
     public List<PluginArchive> pluginArchives() {
-        return Lists.newArrayList();
+        List<PluginArchive> archives = Lists.newArrayList();
+        archives.add(archiveService.parsePluginArchives("commons/resources"));
+        archives.add(archiveService.parsePluginArchives("docker/resources"));
+
+        return archives;
     }
 }
