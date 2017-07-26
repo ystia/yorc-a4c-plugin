@@ -48,6 +48,7 @@ import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.ssl.SSLContexts;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 
@@ -133,7 +134,8 @@ public class RestClient {
     }
 
     /**
-     * Get the list of deployments
+     * Get the list of deployments known by janus
+     * @return List of deployments
      */
     public List<String> getDeployments() throws UnirestException {
         List<String> ret = new ArrayList<>();
@@ -142,9 +144,19 @@ public class RestClient {
         HttpResponse<JsonNode> res = Unirest.get(fullUrl)
                 .header("accept", "application/json")
                 .asJson();
-
-        JSONObject obj = res.getBody().getObject();
-        log.debug("Deployments: " + obj);
+        if (res == null) {
+            log.debug("Cannot reach Janus: null response");
+            return null;
+        }
+        if (res.getBody() != null) {
+            JSONObject obj = res.getBody().getObject();
+            JSONArray array = obj.getJSONArray("deployments");
+            for (int i = 0 ; i < array.length() ; i++) {
+                String depl = array.getJSONObject(i).getString("href");
+                log.debug("Found a deployment in janus: " + depl);
+                ret.add(depl);
+            }
+        }
         return ret;
     }
 
