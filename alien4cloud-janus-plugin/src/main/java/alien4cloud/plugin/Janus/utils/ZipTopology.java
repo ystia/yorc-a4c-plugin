@@ -156,7 +156,8 @@ public class ZipTopology {
                                 if (! addedImports) {
                                     log.debug("processing TOSCA " + name);
                                     addImportInTopology(parts[1]);
-                                    file = removeLineBetween(kid, "imports:", "node_types:");
+                                    //TODO: Improve to offer the possibility to place repositories anywhere and not just after import and before node_types
+                                    file = removeLineBetween(kid, "imports:", "repositories:");
                                     addedImports = true;
                                 }
                                 if (deploymentContext.getLocations().get("_A4C_ALL").getDependencies().stream().filter(csar -> csar.getName().contains(("kubernetes"))).findFirst().isPresent()) {
