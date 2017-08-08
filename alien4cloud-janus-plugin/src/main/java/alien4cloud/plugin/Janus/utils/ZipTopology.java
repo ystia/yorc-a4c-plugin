@@ -17,10 +17,7 @@ import java.nio.file.Path;
 import java.io.*;
 import java.net.URI;
 import java.nio.file.Paths;
-import java.util.Deque;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
@@ -157,7 +154,8 @@ public class ZipTopology {
                                     log.debug("processing TOSCA " + name);
                                     addImportInTopology(parts[1]);
                                     //TODO: Improve to offer the possibility to place repositories anywhere and not just after import and before node_types
-                                    file = removeLineBetween(kid, "imports:", "repositories:");
+                                    Set<String> end_token = new HashSet<>(Arrays.asList("node_types:","repositories:"));
+                                    file = removeLineBetween(kid, "imports:", end_token);
                                     addedImports = true;
                                 }
                                 if (deploymentContext.getLocations().get("_A4C_ALL").getDependencies().stream().filter(csar -> csar.getName().contains(("kubernetes"))).findFirst().isPresent()) {
@@ -460,7 +458,7 @@ public class ZipTopology {
         }
     }
 
-    private File removeLineBetween(File fileToRead, String begin, String end) throws IOException {
+    private File removeLineBetween(File fileToRead, String begin, Set<String> end) throws IOException {
         File file = new File("tmp.yml");
         file.createNewFile();
 
@@ -483,7 +481,7 @@ public class ZipTopology {
             }
             if (line.contains(begin)) {
                 clean = true;
-            } else if (line.contains(end)) {
+            } else if (end.contains(line)) {
                 out.println(line);
                 clean = false;
             }
