@@ -48,9 +48,6 @@ import alien4cloud.plugin.Janus.rest.Response.Link;
 import alien4cloud.plugin.Janus.rest.Response.LogEvent;
 import alien4cloud.plugin.Janus.rest.Response.LogResponse;
 import alien4cloud.plugin.Janus.rest.RestClient;
-import alien4cloud.tosca.ToscaUtils;
-import alien4cloud.tosca.normative.NormativeBlockStorageConstants;
-import alien4cloud.tosca.normative.NormativeComputeConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.alien4cloud.tosca.catalog.index.IToscaTypeSearchService;
 import org.alien4cloud.tosca.catalog.repository.ICsarRepositry;
@@ -59,7 +56,10 @@ import org.alien4cloud.tosca.model.templates.NodeTemplate;
 import org.alien4cloud.tosca.model.templates.Topology;
 import org.alien4cloud.tosca.model.types.NodeType;
 import org.alien4cloud.tosca.model.types.RelationshipType;
+import org.alien4cloud.tosca.normative.constants.NormativeComputeConstants;
 import org.elasticsearch.common.collect.Maps;
+
+import static org.alien4cloud.tosca.normative.ToscaNormativeUtil.isFromType;
 
 /**
  * a4c janus plugin
@@ -174,6 +174,16 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
             status = jrdi.getStatus();
         }
         callback.onSuccess(status);
+    }
+
+    /**
+     * Update a topology deployment.
+     *
+     * @param ctx the PaaSTopologyDeploymentContext of the deployment
+     * @param callback to call when update is done or has failed.
+     */
+    public void update(PaaSTopologyDeploymentContext ctx, IPaaSCallback<?> callback) {
+        callback.onFailure(new UnsupportedOperationException("update topology not supported in Janus"));
     }
 
     /**
@@ -306,7 +316,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
                 NodeTemplate nodeTemplate = topology.getNodeTemplates().get(node);
                 NodeType nodeType = toscaTypeSearchService.getRequiredElementInDependencies(NodeType.class, nodeTemplate.getType(),
                         topology.getDependencies());
-                if (ToscaUtils.isFromType(NormativeComputeConstants.COMPUTE_TYPE, nodeType)) {
+                if (isFromType(NormativeComputeConstants.COMPUTE_TYPE, nodeType)) {
                     for (Entry<String, InstanceInformation> nodeInstanceEntry : nodeInstances.entrySet()) {
                         String instance = nodeInstanceEntry.getKey();
                         InstanceInformation iinfo = nodeInstanceEntry.getValue();
@@ -358,7 +368,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
      * @throws PluginConfigurationException In case the PaaS provider configuration is incorrect.
      */
     @Override
-    public void setConfiguration(ProviderConfig configuration) throws PluginConfigurationException {
+    public void setConfiguration(String orchestratorId, ProviderConfig configuration) throws PluginConfigurationException {
         log.info("set config for JanusPaaSProvider");
         providerConfiguration = configuration;
         restClient.setProviderConfiguration(providerConfiguration);
