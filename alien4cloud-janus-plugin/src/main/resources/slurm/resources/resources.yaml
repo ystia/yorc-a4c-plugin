@@ -1,4 +1,4 @@
-tosca_definitions_version: alien_dsl_1_3_0
+tosca_definitions_version: alien_dsl_1_4_0
 
 template_name: janus-plugin-slurm-if-types
 template_author: Janus
@@ -7,7 +7,7 @@ template_version: ${janus.types.version}
 description: "Defines resources for the Janus plugin, slurm configuration."
 
 imports:
-  - tosca-normative-types:1.0.0-ALIEN12
+  - tosca-normative-types:1.0.0-ALIEN14
 
 node_types:
   janus.nodes.slurm.Compute:

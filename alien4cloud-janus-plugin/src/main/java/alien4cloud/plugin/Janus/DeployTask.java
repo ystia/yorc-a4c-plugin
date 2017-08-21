@@ -6,6 +6,8 @@
 */
 package alien4cloud.plugin.Janus;
 
+import static alien4cloud.paas.wf.util.WorkflowUtils.isOfType;
+
 import alien4cloud.model.deployment.DeploymentTopology;
 import alien4cloud.paas.IPaaSCallback;
 import alien4cloud.paas.model.DeploymentStatus;
@@ -19,8 +21,6 @@ import alien4cloud.plugin.Janus.utils.MappingTosca;
 import alien4cloud.plugin.Janus.utils.ShowTopology;
 import alien4cloud.plugin.Janus.utils.ZipTopology;
 import alien4cloud.topology.TopologyUtils;
-import alien4cloud.tosca.ToscaUtils;
-import alien4cloud.tosca.normative.NormativeRelationshipConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.alien4cloud.tosca.catalog.index.IToscaTypeSearchService;
 import org.alien4cloud.tosca.exporter.ArchiveExportService;
@@ -43,6 +43,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.alien4cloud.tosca.model.types.RelationshipType;
+import org.alien4cloud.tosca.normative.constants.NormativeRelationshipConstants;
 import org.elasticsearch.common.collect.Maps;
 
 import javax.inject.Inject;
@@ -257,7 +258,7 @@ public class DeployTask extends AlienTask {
         if (nodeTemplates.get(id).getRelationships() != null) {
             for (RelationshipTemplate rel : nodeTemplates.get(id).getRelationships().values()) {
                 RelationshipType relType = orchestrator.getRelationshipType(rel.getType());
-                if (ToscaUtils.isFromType(NormativeRelationshipConstants.HOSTED_ON, relType)) {
+                if (isOfType(relType, NormativeRelationshipConstants.HOSTED_ON)) {
                     return getScalingPolicy(rel.getTarget(), nodeTemplates);
                 }
             }

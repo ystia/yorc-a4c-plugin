@@ -12,7 +12,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import alien4cloud.common.AlienConstants;
+import alien4cloud.utils.AlienConstants;
 import alien4cloud.deployment.matching.services.nodes.MatchingConfigurations;
 import alien4cloud.deployment.matching.services.nodes.MatchingConfigurationsParser;
 import alien4cloud.model.deployment.matching.MatchingConfiguration;
