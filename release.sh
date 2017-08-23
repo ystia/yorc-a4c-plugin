@@ -60,7 +60,7 @@ git checkout ${branch}
 
 
 currentVersion=$(python -c "import xml.etree.ElementTree as ET; print(ET.parse(open('pom.xml')).getroot().find('{http://maven.apache.org/POM/4.0.0}version').text)")
-checkVers=$(echo ${currentVersion} | sed -e "s/-SNAPSHOT//")
+checkVers=$(echo ${currentVersion} | sed -e "s/-SNAPSHOT/-0/")
 if [[ "True" != "$(python -c "import semantic_version; print  semantic_version.Version('${version}') >= semantic_version.Version('${checkVers}')" )" ]]; then
     echo "Can't release version ${version} on top of branch ${branch} as its current version is ${currentVersion}" >&2
     exit 1
