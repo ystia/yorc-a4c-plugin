@@ -25,6 +25,7 @@ import org.springframework.stereotype.Component;
 public class JanusOrchestratorFactory implements IOrchestratorPluginFactory<JanusOrchestrator, ProviderConfig> {
     public static final String OPENSTACK = "OpenStack";
     public static final String SLURM = "Slurm";
+    public static final String KUBERNETES = "Kubernetes";
     private final Map<String, PropertyDefinition> deploymentProperties = Maps.newHashMap();
     @Resource
     private BeanFactory beanFactory;
@@ -51,14 +52,14 @@ public class JanusOrchestratorFactory implements IOrchestratorPluginFactory<Janu
 
     @Override
     public LocationSupport getLocationSupport() {
-        return new LocationSupport(true, new String[]{OPENSTACK, SLURM});
+        return new LocationSupport(true, new String[]{OPENSTACK, SLURM, KUBERNETES});
     }
 
     @Override
     public ArtifactSupport getArtifactSupport() {
         // support all type of implementations artifacts
         return new ArtifactSupport(new String[]{"tosca.artifacts.Implementation.Python",
-                "tosca.artifacts.Implementation.Bash", "tosca.artifacts.Implementation.Ansible"});
+                "tosca.artifacts.Implementation.Bash", "tosca.artifacts.Implementation.Ansible", "tosca.artifacts.Deployment.Image.Container.Docker", "tosca.artifacts.Deployment.Image.Container.Docker.Kubernetes"});
     }
 
     @Override
