@@ -19,7 +19,6 @@ import alien4cloud.paas.model.PaaSRelationshipTemplate;
 import alien4cloud.paas.model.PaaSTopology;
 import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
 import alien4cloud.paas.wf.Workflow;
-import alien4cloud.tosca.normative.NormativeRelationshipConstants;
 import alien4cloud.utils.FileUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.alien4cloud.tosca.catalog.index.ToscaTypeSearchService;

@@ -67,6 +67,6 @@ public class JanusOpenStackLocationConfigurer extends AbstractLocationConfigurer
                         JanusOpenStackLocationConfigurer.FLAVOR_ID_PROP,
                 resourceAccessor);
 
-        return resourceGeneratorService.generateComputeFromImageAndFlavor(imageContext, flavorContext, computeContext, resourceAccessor);
+        return resourceGeneratorService.generateComputeFromImageAndFlavor(imageContext, flavorContext, computeContext, null, resourceAccessor);
     }
 }

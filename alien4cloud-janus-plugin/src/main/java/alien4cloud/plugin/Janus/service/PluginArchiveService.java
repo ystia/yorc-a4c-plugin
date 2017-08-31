@@ -4,7 +4,7 @@ import java.nio.file.Path;
 
 import javax.inject.Inject;
 
-import alien4cloud.common.AlienConstants;
+import alien4cloud.utils.AlienConstants;
 import alien4cloud.orchestrators.plugin.model.PluginArchive;
 import alien4cloud.plugin.model.ManagedPlugin;
 import alien4cloud.tosca.model.ArchiveRoot;
