@@ -160,7 +160,7 @@ class AlienClient(object):
             data=json.dumps(payload)).json()
         if response["error"]:
             raise RuntimeError("Failed to create resource {1}:{0}: {2}".format(resource_type, resource_name, response["error"]))
-        res_id = response["data"]["id"]
+        res_id = response["data"]["resourceTemplate"]["id"]
         logger.info("Configuring Id {0}".format(res_id))
         payload = {'propertyName': 'id', 'propertyValue': resource_id}
         response = self.session.post(
@@ -178,7 +178,7 @@ class AlienClient(object):
             data=json.dumps(payload)).json()
         if response["error"]:
             raise RuntimeError("Failed to create resource {1}:{0}: {2}".format(resource_type, resource_name, response["error"]))
-        res_id = response["data"]["id"]
+        res_id = response["data"]["resourceTemplate"]["id"]
         payload = {'propertyName': 'size', 'propertyValue': size}
         response = self.session.post(
             "{0}/rest/orchestrators/{1}/locations/{2}/resources/{3}/template/properties".format(self.alien_url, orchestrator_id,
@@ -195,7 +195,7 @@ class AlienClient(object):
             data=json.dumps(payload)).json()
         if response["error"]:
             raise RuntimeError("Failed to create network resource {0}: {1}".format(network_name, response["error"]))
-        res_id = response["data"]["id"]
+        res_id = response["data"]["resourceTemplate"]["id"]
         payload = {'propertyName': 'floating_network_name', 'propertyValue': network_name}
         response = self.session.post(
             "{0}/rest/orchestrators/{1}/locations/{2}/resources/{3}/template/properties".format(self.alien_url, orchestrator_id,
@@ -206,7 +206,7 @@ class AlienClient(object):
 
     def upload_janus_plugin(self):
         logger.info("Uploading the janus plugin")
-        artifact = glob.glob('alien4cloud-janus-plugin-*.zip')[0]
+        artifact = glob.glob('alien4cloud-Janus-plugin-*.zip')[0]
         self.session.headers = {'accept': 'application/json'}
         payload = {'file': open(artifact, 'rb')}
         response = self.session.post("%s/rest/plugins" % self.alien_url, files=payload).json()

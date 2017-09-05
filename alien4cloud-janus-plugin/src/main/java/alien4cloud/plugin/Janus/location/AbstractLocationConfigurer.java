@@ -12,7 +12,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import alien4cloud.common.AlienConstants;
+import alien4cloud.utils.AlienConstants;
 import alien4cloud.deployment.matching.services.nodes.MatchingConfigurations;
 import alien4cloud.deployment.matching.services.nodes.MatchingConfigurationsParser;
 import alien4cloud.model.deployment.matching.MatchingConfiguration;
@@ -120,10 +120,12 @@ public abstract class AbstractLocationConfigurer implements ILocationConfigurato
             log.debug("Sort ordering: " + mc.getSortOrdering());
             // capabilities
             Map<String, MatchingFilterDefinition> cap = mc.getCapabilities();
-            for (String kcap : cap.keySet()) {
-                log.debug("Capability " + kcap);
-                MatchingFilterDefinition mfd = cap.get(kcap);
-                printProperties(mfd.getProperties());
+            if (cap != null) {
+                for (String kcap : cap.keySet()) {
+                    log.debug("Capability " + kcap);
+                    MatchingFilterDefinition mfd = cap.get(kcap);
+                    printProperties(mfd.getProperties());
+                }
             }
             log.debug("Properties");
             printProperties(mc.getProperties());

@@ -17,10 +17,7 @@ import java.nio.file.Path;
 import java.io.*;
 import java.net.URI;
 import java.nio.file.Paths;
-import java.util.Deque;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
@@ -37,8 +34,15 @@ public class ZipTopology {
      */
     private List<File> createListTopology(PaaSTopologyDeploymentContext deploymentContext) {
         List<File> files = new LinkedList();
-        for (PaaSNodeTemplate node : deploymentContext.getPaaSTopology().getComputes()) {
-            putCsarPathChildrenIntoFiles(node, files);
+        if (deploymentContext.getLocations().get("_A4C_ALL").getDependencies().stream().filter(csar -> csar.getName().contains(("kubernetes"))).findFirst().isPresent()) {
+            for (PaaSNodeTemplate node : deploymentContext.getPaaSTopology().getAllNodes().values()) {
+                String path = node.getCsarPath().getParent().toString();
+                files.add(new File(path));
+            }
+        } else {
+            for (PaaSNodeTemplate node : deploymentContext.getPaaSTopology().getComputes()) {
+                putCsarPathChildrenIntoFiles(node, files);
+            }
         }
         return files;
     }
@@ -101,11 +105,13 @@ public class ZipTopology {
         // zout.setLevel(9);
         Closeable res = zout;
 
-        // clean import topology (delete all precedent import)
-        cleanImportInTopology();
+        // remove input section and clean import topology (delete all precedent import)
+        cleanTopology();
 
         if (deploymentContext.getLocations().get("_A4C_ALL").getDependencies().stream().filter(csar -> csar.getName().contains(("slurm"))).findFirst().isPresent()) {
             addImportInTopology("<janus-slurm-types.yml>");
+        } else if (deploymentContext.getLocations().get("_A4C_ALL").getDependencies().stream().filter(csar -> csar.getName().contains(("kubernetes"))).findFirst().isPresent()) {
+            addImportInTopology("<janus-kubernetes-types.yml>");
         } else {
             addImportInTopology("<janus-openstack-types.yml>");
         }
@@ -147,8 +153,13 @@ public class ZipTopology {
                                 if (! addedImports) {
                                     log.debug("processing TOSCA " + name);
                                     addImportInTopology(parts[1]);
-                                    file = removeLineBetween(kid, "imports:", "node_types:");
+                                    //TODO: Improve to offer the possibility to place repositories anywhere and not just after import and before node_types
+                                    Set<String> end_token = new HashSet<>(Arrays.asList("node_types:","repositories:"));
+                                    file = removeLineBetween(kid, "imports:", end_token);
                                     addedImports = true;
+                                }
+                                if (deploymentContext.getLocations().get("_A4C_ALL").getDependencies().stream().filter(csar -> csar.getName().contains(("kubernetes"))).findFirst().isPresent()) {
+                                    file = matchKubernetesImplementation(file);
                                 }
                             }
                             copy(file, zout);
@@ -172,6 +183,33 @@ public class ZipTopology {
 
         zout.closeEntry();
         res.close();
+    }
+
+    private File matchKubernetesImplementation(File fileToRead) throws IOException {
+        File file = new File("tmp2.yml");
+        file.createNewFile();
+
+        FileWriter fw = new FileWriter(file);
+        BufferedWriter bw = new BufferedWriter(fw);
+        PrintWriter out = new PrintWriter(bw);
+
+        FileReader fr = new FileReader(fileToRead);
+        BufferedReader fin = new  BufferedReader(fr);
+        String line;
+        boolean clean = false;
+        for (; ; ) {
+            // Read a line.
+            line = fin.readLine();
+            if (line == null) {
+                break;
+            } else if (line.contains("tosca.artifacts.Deployment.Image.Container.Docker")) {
+                out.println(line+".Kubernetes");
+            } else {
+                out.println(line);
+            }
+        }
+        out.close();
+        return file;
     }
 
     /**
@@ -237,6 +275,7 @@ public class ZipTopology {
      * @param da
      */
     private void addRemoteArtifactInTopology(String node, String key, DeploymentArtifact da) {
+        log.debug("");
         String oldFileName = "topology.yml";
         String tmpFileName = "tmp_topology.yml";
 
@@ -318,6 +357,7 @@ public class ZipTopology {
      * @param ymlPath path to be imported
      */
     private void addImportInTopology(String ymlPath) {
+        log.debug("");
         String oldFileName = "topology.yml";
         String tmpFileName = "tmp_topology.yml";
 
@@ -362,11 +402,14 @@ public class ZipTopology {
     }
 
     /**
-     * Remove all imports in topology.yml
+     * Remove input section in topology
+     * Inputs has been already processed by alien4cloud
+     * This is a workaround for a bug in alien4cloud 1.3
      */
-    private void cleanImportInTopology() {
-        String oldFileName = "topology.yml";
-        String tmpFileName = "tmp_topology.yml";
+    private void cleanTopology() {
+        log.debug("");
+        String oldFileName = "original.yml";
+        String tmpFileName = "topology.yml";
 
         BufferedReader br = null;
         BufferedWriter bw = null;
@@ -377,14 +420,23 @@ public class ZipTopology {
             String line;
             boolean clean = false;
             while ((line = br.readLine()) != null) {
-                if (!clean) {
-                    bw.append(line).append("\n");
+                if (line.contains("inputs:")) {
+                    clean = true;
+                    continue;
                 }
                 if (line.contains("imports:")) {
+                    bw.append(line).append("\n");
                     clean = true;
-                } else if (line.contains("topology_template:")) {
-                    bw.append("\n").append(line).append("\n");
+                    continue;
+                }
+                if (line.contains("topology_template:")) {
                     clean = false;
+                }
+                if (line.contains("node_templates:")) {
+                    clean = false;
+                }
+                if (!clean) {
+                    bw.append(line).append("\n");
                 }
             }
         } catch (Exception e) {
@@ -404,16 +456,9 @@ public class ZipTopology {
                 log.error("Error closing " + tmpFileName, e);
             }
         }
-        // Once everything is complete, delete old file..
-        File oldFile = new File(oldFileName);
-        oldFile.delete();
-
-        // And rename tmp file's name to old file name
-        File newFile = new File(tmpFileName);
-        newFile.renameTo(oldFile);
     }
 
-    private File removeLineBetween(File fileToRead, String begin, String end) throws IOException {
+    private File removeLineBetween(File fileToRead, String begin, Set<String> end) throws IOException {
         File file = new File("tmp.yml");
         file.createNewFile();
 
@@ -436,7 +481,7 @@ public class ZipTopology {
             }
             if (line.contains(begin)) {
                 clean = true;
-            } else if (line.contains(end)) {
+            } else if (end.contains(line)) {
                 out.println(line);
                 clean = false;
             }

@@ -30,7 +30,7 @@ public class JanusOpenStackLocationConfigurer extends AbstractLocationConfigurer
     private static final String FLAVOR_ID_PROP = "flavor";
     @Override
     protected String[] getLocationArchivePaths() {
-        return new String[]{"commons/resources", "openstack/resources"};
+        return new String[]{"openstack/resources"};
     }
 
     @Override
@@ -67,6 +67,6 @@ public class JanusOpenStackLocationConfigurer extends AbstractLocationConfigurer
                         JanusOpenStackLocationConfigurer.FLAVOR_ID_PROP,
                 resourceAccessor);
 
-        return resourceGeneratorService.generateComputeFromImageAndFlavor(imageContext, flavorContext, computeContext, resourceAccessor);
+        return resourceGeneratorService.generateComputeFromImageAndFlavor(imageContext, flavorContext, computeContext, null, resourceAccessor);
     }
 }
