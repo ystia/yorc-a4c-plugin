@@ -11,6 +11,7 @@ import alien4cloud.paas.model.PaaSNodeTemplate;
 import alien4cloud.paas.model.PaaSTopology;
 import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
 import lombok.extern.slf4j.Slf4j;
+import org.alien4cloud.tosca.catalog.repository.CsarFileRepository;
 import org.alien4cloud.tosca.model.definitions.DeploymentArtifact;
 
 import java.nio.file.Path;
@@ -22,6 +23,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
 
+import javax.annotation.Resource;
 import static com.google.common.io.Files.copy;
 
 @Slf4j
@@ -92,17 +94,13 @@ public class ZipTopology {
 
     /**
      * Build the zip file that will be sent to janus at deployment
-     * @param zipfile
-     * @param deploymentContext
+     * @param deploymentContext all needed information about the deployment
      * @throws IOException
      */
-    public void buildZip(File zipfile, PaaSTopologyDeploymentContext deploymentContext) throws IOException {
-
+    public void buildZipOld(PaaSTopologyDeploymentContext deploymentContext) throws IOException {
+        File zipfile = new File("topology.zip");
         OutputStream out = new FileOutputStream(zipfile);
         ZipOutputStream zout = new ZipOutputStream(out);
-        // set the compression method and level
-        // zout.setMethod(ZipOutputStream.DEFLATED);
-        // zout.setLevel(9);
         Closeable res = zout;
 
         // remove input section and clean import topology (delete all precedent import)
@@ -404,7 +402,7 @@ public class ZipTopology {
     /**
      * Remove input section in topology
      * Inputs has been already processed by alien4cloud
-     * This is a workaround for a bug in alien4cloud 1.3
+     * This is a workaround for a bug in alien4cloud 1.3   (fixed in 1.4)
      */
     private void cleanTopology() {
         log.debug("");
