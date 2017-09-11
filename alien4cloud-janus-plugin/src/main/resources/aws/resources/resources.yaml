@@ -65,3 +65,28 @@ node_types:
         entry_schema:
           type: string
 
+  ##############################################
+  # Abstract resources used for auto-config
+  ##############################################
+  janus.nodes.aws.Image:
+    abstract: true
+    derived_from: tosca.nodes.Root
+    description: AWS location configuration type that represents an amazon image (ami).
+    properties:
+      id:
+        type: string
+    capabilities:
+      os:
+        type: tosca.capabilities.OperatingSystem
+
+  janus.nodes.aws.InstanceType:
+    abstract: true
+    derived_from: tosca.nodes.Root
+    description: AWS location configuration type that represents an amazon flavor.
+    properties:
+      id:
+        type: string
+    capabilities:
+      host:
+        type: tosca.capabilities.Container
+
