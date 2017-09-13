@@ -24,7 +24,6 @@ import alien4cloud.plugin.Janus.rest.Response.Event;
 import alien4cloud.plugin.Janus.rest.RestClient;
 import alien4cloud.plugin.Janus.utils.MappingTosca;
 import alien4cloud.plugin.Janus.utils.ShowTopology;
-import alien4cloud.plugin.Janus.utils.ZipTopology;
 import alien4cloud.topology.TopologyUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.alien4cloud.tosca.catalog.index.IToscaTypeSearchService;
@@ -82,7 +81,6 @@ public class DeployTask extends AlienTask {
     IPaaSCallback<?> callback;
 
     private ArchiveExportService archiveExportService = new ArchiveExportService();
-    private ZipTopology zipTopology = new ZipTopology();
 
     private final int JANUS_DEPLOY_TIMEOUT = 1000 * 3600 * 24;  // 24 hours
 
