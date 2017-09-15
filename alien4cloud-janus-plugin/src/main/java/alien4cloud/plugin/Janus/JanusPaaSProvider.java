@@ -6,6 +6,7 @@
 */
 package alien4cloud.plugin.Janus;
 
+import java.nio.file.Path;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.UUID;
@@ -13,6 +14,7 @@ import java.util.UUID;
 import javax.annotation.Resource;
 import javax.inject.Inject;
 
+import alien4cloud.component.repository.ArtifactLocalRepository;
 import alien4cloud.orchestrators.plugin.IOrchestratorPlugin;
 import alien4cloud.paas.exception.MaintenanceModeException;
 import alien4cloud.paas.exception.OperationExecutionException;
@@ -50,6 +52,7 @@ import alien4cloud.plugin.Janus.rest.Response.LogResponse;
 import alien4cloud.plugin.Janus.rest.RestClient;
 import lombok.extern.slf4j.Slf4j;
 import org.alien4cloud.tosca.catalog.index.IToscaTypeSearchService;
+import org.alien4cloud.tosca.catalog.repository.CsarFileRepository;
 import org.alien4cloud.tosca.catalog.repository.ICsarRepositry;
 import org.alien4cloud.tosca.exporter.ArchiveExportService;
 import org.alien4cloud.tosca.model.templates.NodeTemplate;
@@ -58,6 +61,7 @@ import org.alien4cloud.tosca.model.types.NodeType;
 import org.alien4cloud.tosca.model.types.RelationshipType;
 import org.alien4cloud.tosca.normative.constants.NormativeComputeConstants;
 import org.elasticsearch.common.collect.Maps;
+import org.springframework.stereotype.Component;
 
 import static org.alien4cloud.tosca.normative.ToscaNormativeUtil.isFromType;
 
@@ -79,6 +83,9 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
     @Resource(name = "alien-monitor-es-dao")
     private IGenericSearchDAO alienMonitorDao;
 
+    @Inject
+    private CsarFileRepository fileRepository;
+
     //
     private RestClient restClient = new RestClient();
 
@@ -93,7 +100,6 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         // Start the TaskManager
         // TODO make sizes configurable
         taskManager = new TaskManager(3, 120, 3600);
-
     }
 
     public RestClient getRestClient() {
@@ -129,6 +135,11 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         // TODO Stop threads listening log and events (maybe nothing to do)
     }
 
+    public Path getCSAR(String name, String vers) {
+        Path ret = fileRepository.getExpandedCSAR(name, vers);
+        return ret;
+    }
+
     public void saveLog(PaaSDeploymentLog pdlog) {
         log.debug(pdlog.toString());
         alienMonitorDao.save(pdlog);
@@ -155,6 +166,8 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
             log.info("Active deployment: " + key);
             doUpdateDeploymentInfo(ctx);
         }
+        // prov
+        log.info(fileRepository.getRootPath().toString());
     }
 
     /**

@@ -42,7 +42,7 @@ To deploy this new application, go on the |AppDepsBtn| sub-menu and :
 
 
 .. note:: To understand all configuration available for the deployment page, please refer to the
-          `Alien4Cloud application management section <http://alien4cloud.github.io/#/documentation/1.3.0/user_guide/application_management.html>`_ .
+          `Alien4Cloud application management section <http://alien4cloud.github.io/#/documentation/1.4.0/user_guide/application_management.html>`_ .
 
 
 Check that your application is up and running
@@ -66,7 +66,7 @@ When all nodes are deployed, go back in the |AppInfoBtn| sub-menu to get the Wel
 Next Steps: Define your own components
 --------------------------------------
 
-Please refer to `the Alien4Cloud dev guide <http://alien4cloud.github.io/community/index.html#/documentation/1.3.0/devops_guide/dev_ops_guide.html>`_
+Please refer to `the Alien4Cloud dev guide <http://alien4cloud.github.io/community/index.html#/documentation/1.4.0/devops_guide/dev_ops_guide.html>`_
 to write your own components.
 
 .. |ComponentsBtn| image:: _static/img/components-btn.png

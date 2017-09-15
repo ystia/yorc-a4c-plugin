@@ -10,8 +10,13 @@ To create an orchestrator, go to |AdminBtn| and in the |OrchBtn| sub-menu. Creat
 ``Janus Orchestrator Factory : 1.0.0-SNAPSHOT``.
 
 At this moment your orchestrator is created but not enabled. Click on your orchestrator to see the information page, and then
-click on the configuration menu icon |OrchConfigBtn|. In the Driver configuration part, add the URL
-(should respect the format: ``http://janus-ip:8800``) of your Janus server and return to the previous page to enable your orchestrator.
+click on the configuration menu icon |OrchConfigBtn|.
+
+In the Driver configuration part, add the URL of your Janus server (should respect the format: ``http://janus-ip:8800``) and return to the previous page to enable your orchestrator.
+
+If Janus is scured (ssl enabled):
+  * the janus URL should use the ``https`` protocol
+  * the CA authority used to sign the Janus certificates should be imported in the Java truststore ; otherwise, check ``insecureTL``
 
 
 Configure an OpenStack Location
