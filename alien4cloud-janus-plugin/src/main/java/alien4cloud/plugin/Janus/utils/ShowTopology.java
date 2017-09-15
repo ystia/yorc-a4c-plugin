@@ -49,11 +49,6 @@ import java.util.Map;
 @Slf4j
 public class ShowTopology {
 
-    @Resource
-    ArtifactLocalRepository localRepository;
-    @Resource
-    private CsarFileRepository fileRepository;
-
     /**
      * Print info about Artifact
      * @param da
