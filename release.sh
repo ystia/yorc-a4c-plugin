@@ -84,7 +84,8 @@ if [[ "develop" == "${branch}" ]] && [[ -z "${prerelease}" ]]; then
 fi
 
 if [[ -n "${prerelease}" ]]; then 
-    nextDevelopmentVersion="${version}-SNAPSHOT"
+    # in prerelease revert to version minus prerelease plus -SNAPSHOT
+    nextDevelopmentVersion="${major}.${minor}.${patch}-SNAPSHOT"
 else
     nextDevelopmentVersion=$(python -c "import semantic_version; v=semantic_version.Version('${version}'); print v.next_patch()" )
     nextDevelopmentVersion="${nextDevelopmentVersion}-SNAPSHOT"
