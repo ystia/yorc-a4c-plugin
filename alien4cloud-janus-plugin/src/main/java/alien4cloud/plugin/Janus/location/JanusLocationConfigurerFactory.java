@@ -4,10 +4,12 @@ import alien4cloud.orchestrators.plugin.ILocationConfiguratorPlugin;
 import alien4cloud.plugin.Janus.JanusOrchestratorFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Component that creates location configurer for Janus.
  */
+@Slf4j
 @Component
 @Scope("prototype")
 public class JanusLocationConfigurerFactory extends AbstractLocationConfigurerFactory {
@@ -20,12 +22,22 @@ public class JanusLocationConfigurerFactory extends AbstractLocationConfigurerFa
     @Override
     protected ILocationConfiguratorPlugin newInstanceBasedOnLocation(String locationType) {
         AbstractLocationConfigurer configurer = null;
-        if (JanusOrchestratorFactory.OPENSTACK.equals(locationType)) {
-            configurer = applicationContext.getBean(JanusOpenStackLocationConfigurer.class);
-        } else if (JanusOrchestratorFactory.SLURM.equals(locationType)) {
-            configurer = applicationContext.getBean(JanusSlurmLocationConfigurer.class);
-        } else if (JanusOrchestratorFactory.KUBERNETES.equals(locationType)) {
-            configurer = applicationContext.getBean(JanusKubernetesLocationConfigurer.class);
+        switch (locationType)
+        {
+            case JanusOrchestratorFactory.OPENSTACK:
+                configurer = applicationContext.getBean(JanusOpenStackLocationConfigurer.class);
+                break;
+            case JanusOrchestratorFactory.KUBERNETES:
+                configurer = applicationContext.getBean(JanusKubernetesLocationConfigurer.class);
+                break;
+            case JanusOrchestratorFactory.SLURM:
+                configurer = applicationContext.getBean(JanusSlurmLocationConfigurer.class);
+                break;
+            case JanusOrchestratorFactory.AWS:
+                configurer = applicationContext.getBean(JanusAWSLocationConfigurer.class);
+                break;
+            default:
+                log.warn("The \"%s\" location type is not handled", locationType);
         }
         return configurer;
     }
