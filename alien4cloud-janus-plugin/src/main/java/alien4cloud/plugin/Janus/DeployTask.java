@@ -314,6 +314,8 @@ public class DeployTask extends AlienTask {
                         }
                         continue;
                     }
+                    // assumes there is no empty line in the middle of the list.
+                    // TODO Use a yml parser to do a cleaner code.
                     inimport = false;
                 }
                 if (line.startsWith("imports:")) {
@@ -533,6 +535,7 @@ public class DeployTask extends AlienTask {
             URI base = directory.toURI();
             Deque<File> queue = new LinkedList<>();
             queue.push(directory);
+            boolean ymlfound = false;
             while (!queue.isEmpty()) {
                 directory = queue.pop();
                 for (File kid : directory.listFiles()) {
@@ -543,10 +546,12 @@ public class DeployTask extends AlienTask {
                         File file = kid;
                         createZipEntries(relative + name, zout);
                         if (name.endsWith(".yml") || name.endsWith(".yaml")) {
-                            ret += name;
+                            if (! ymlfound) {
+                                ret += name;
+                                ymlfound = true;
+                            }
                             // Remove all imports, since they should be all in the root yml
-                            Set<String> end_token = new HashSet<>(Arrays.asList("node_types:", "repositories:"));
-                            file = removeLineBetween(kid, "imports:", end_token);
+                            file = removeAllImports(kid);
                             if (location == LOC_KUBERNETES) {
                                 file = matchKubernetesImplementation(file);
                             }
@@ -561,7 +566,13 @@ public class DeployTask extends AlienTask {
         return ret;
     }
 
-    private File removeLineBetween(File fileToRead, String begin, Set<String> end) throws IOException {
+    /**
+     * Remove all imports in this yml file
+     * @param fileToRead
+     * @return new file identical, but with no import
+     * @throws IOException
+     */
+    private File removeAllImports(File fileToRead) throws IOException {
         File file = new File("tmp.yml");
         file.createNewFile();
 
@@ -572,22 +583,22 @@ public class DeployTask extends AlienTask {
         FileReader fr = new FileReader(fileToRead);
         BufferedReader fin = new  BufferedReader(fr);
         String line;
-        boolean clean = false;
-        for (; ; ) {
-            // Read a line.
-            line = fin.readLine();
-            if (line == null) {
-                break;
+        boolean inimport = false;
+        while ((line = fin.readLine()) != null) {
+            if (inimport) {
+                if (line.contains(":")) {
+                    // This is an import line: skip it.
+                    continue;
+                }
+                // assumes there is no empty line in the middle of the list.
+                // TODO Use a yml parser to do a cleaner code.
+                inimport = false;
             }
-            if (!clean) {
-                out.println(line);
+            if (line.startsWith("imports:")) {
+                inimport = true;
             }
-            if (line.contains(begin)) {
-                clean = true;
-            } else if (end.contains(line)) {
-                out.println(line);
-                clean = false;
-            }
+            // Write line without change
+            out.println(line);
         }
         out.close();
         return file;
