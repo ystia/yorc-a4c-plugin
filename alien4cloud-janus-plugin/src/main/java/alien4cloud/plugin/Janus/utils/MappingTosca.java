@@ -51,17 +51,24 @@ public class MappingTosca {
             List<AbstractStep> deleteSteps = new ArrayList<>();
 
             for (PaaSRelationshipTemplate relation : node.getRelationshipTemplates()) {
-                String relationType = relation.getTemplate().getType();
+                RelationshipTemplate rt = relation.getTemplate();
+                String tname = rt.getName();
+                String relationType = rt.getType();
                 if (relationType.contains("tosca.relationships")) {
+                    log.info("[addPreConfigureSteps] Forget " + tname + " type:" + relationType);
                     continue;
                 }
                 if (!nodeName.equals(relation.getSource())) {
+                    log.info("[addPreConfigureSteps] Forget: " + tname + " nodeName=" + nodeName + " source=" + relation.getSource());
                     continue;
                 }
+                log.info("[addPreConfigureSteps] ***** Process: " + tname + " type:" + relationType);
 
                 Map<String, Interface> interfacesMap = relation.getIndexedToscaElement().getInterfaces();
                 for (Map.Entry<String, Interface> entryInterface : interfacesMap.entrySet()) {
+                    log.info("[addPreConfigureSteps] entryInterface:" + entryInterface.getKey());
                     for (Map.Entry<String, Operation> entryOperation : entryInterface.getValue().getOperations().entrySet()) {
+                        log.info("[addPreConfigureSteps] entryOperation: " + entryOperation.getKey());
                         if (entryOperation.getValue().getImplementationArtifact() != null) {
                             String requirementName = relation.getTemplate().getRequirementName();
                             log.info("[addPreConfigureSteps] NodeId : " + nodeName);

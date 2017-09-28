@@ -111,7 +111,7 @@ public class DeployTask extends AlienTask {
         orchestrator.doChangeStatus(paasId, DeploymentStatus.INIT_DEPLOYMENT);
 
         // Show Topoloy for debug
-        // ShowTopology.topologyInLog(ctx);
+        ShowTopology.topologyInLog(ctx);
 
         // Change topology to be suitable for janus and tosca
         MappingTosca.addPreConfigureSteps(ctx);
