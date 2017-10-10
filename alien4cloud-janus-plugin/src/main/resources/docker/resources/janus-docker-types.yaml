@@ -13,7 +13,7 @@ artifact_types:
     derived_from: tosca.artifacts.Deployment.Image
 
 node_types:
-  janus.nodes.DockerContainer:
+  janus.nodes.DockerBaseContainer:
     derived_from: tosca.nodes.Container.Application
     description: >
       The TOSCA Container Application Docker node represents an application running in a Docker container.
@@ -44,16 +44,27 @@ node_types:
         required: false
         description: >
           Docker run command. Will override the Dockerfile CMD statement.
+
+  janus.nodes.DockerContainer:
+    derived_from: janus.nodes.DockerBaseContainer
+    description: >
+      The TOSCA Container Application Docker node represents an application running in a Docker container.
+      Properties defined in the node will be interpreted as the entrypoint's arguments.
     capabilities:
-      attach: janus.capabilities.DockerVolumeAttachment
+      attach:
+        type: janus.capabilities.DockerVolumeAttachment
     requirements:
       - host:
           capability: janus.capabilities.Container.Docker
           relationship: tosca.relationships.HostedOn
           occurrences: [0, 1]
 
-  janus.nodes.DockerVolume:
+  janus.nodes.DockerGenericVolume:
+    abstract: true
     derived_from: tosca.nodes.Root
+
+  janus.nodes.DockerVolume:
+    derived_from: janus.nodes.DockerGenericVolume
     properties:
       container_path:
         type: string

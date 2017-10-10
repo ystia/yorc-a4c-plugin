@@ -5,9 +5,91 @@ template_author: Janus
 template_version: ${janus.types.version}
 
 imports:
+  - tosca-normative-types:1.0.0-ALIEN14
   - janus-docker-types:${janus.types.version}
 
 artifact_types:
   tosca.artifacts.Deployment.Image.Container.Docker.Kubernetes:
     description: Docker Container Image
     derived_from: tosca.artifacts.Deployment.Image.Container.Docker
+
+node_types:
+  janus.nodes.KubernetesContainer:
+    derived_from: janus.nodes.DockerBaseContainer
+    description: >
+      TOSCA Container Application node that represents an application running in a Docker container deployed on a Kubernetes cluster.
+    capabilities:
+      mount:
+        type: janus.capabilities.kubernetes.VolumeMount
+    requirements:
+      - host:
+          capability: janus.capabilities.Container.Docker
+          relationship: tosca.relationships.HostedOn
+          occurrences: [0, 0]
+
+  janus.nodes.KubernetesVolume:
+    derived_from: janus.nodes.DockerGenericVolume
+    description: >
+      Kubernets Volume that can be monted by Kuubernetes containers within a Pod
+    properties:
+      name:
+        type: string
+        required: true
+        description: Specifies where the volume is mounted to the container.
+    capabilities:
+      povides:
+        type: janus.capabilities.kubernetes.Volume
+    requirements:
+      - use_volume:
+          capability: janus.capabilities.kubernetes.VolumeMount
+          relationship: janus.relationships.kubernetes.Volume
+
+  janus.nodes.kubernetes.Volume.EmptyDir:
+    derived_from: janus.nodes.KubernetesVolume
+    properties:
+      volume_type:
+        type: string
+        required: true
+        description: >
+          Specifies the volume type. Must be one of the supported kubernetes volume types.
+          For ex, emptyDir, hostPath, secret, etc.
+        default: emptyDir
+      medium:
+        type: string
+        description: >
+          What type of storage medium should back this directory. The default is "" which means to use the node's default medium.
+          Must be an empty string (default) or Memory.
+        required: false
+
+capability_types:
+  janus.capabilities.kubernetes.VolumeMount:
+    derived_from: tosca.capabilities.Attachment
+    description: >
+      Capability of a container to mount a volume
+    properties:
+      mountPath:
+        type: string
+        required: true
+        description: Path within the container at which the volume should be mounted. Must not contain ':'.
+      volume_name:
+        type: string
+        required: true
+        description: This must match the name of a kubernetes Volume.
+      readOnly:
+        type: boolean
+        required: false
+        description: Mounted read-only if true, read-write otherwise (false or unspecified). Defaults to false.
+      subPath:
+        type: string
+        required: false
+        description:  Path within the volume from which the container's volume should be mounted. Defaults to "" (volume's root).
+
+  janus.capabilities.kubernetes.Volume:
+    derived_from: tosca.capabilities.Root
+    description: >
+      Capability of a Volume that allows a particulat volume type to related to a volume
+
+relationship_types:
+  janus.relationships.kubernetes.Volume:
+    derived_from: tosca.relationships.AttachTo
+    valid_target_types: [ janus.capabilities.kubernetes.VolumeMount ]
