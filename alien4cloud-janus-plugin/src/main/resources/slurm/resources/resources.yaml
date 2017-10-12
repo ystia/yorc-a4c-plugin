@@ -25,6 +25,10 @@ node_types:
         description: >
           The user name used to connect to the Compute and provision it.
         required: true
+    attributes:
+      cuda_visible_devices:
+        type: string
+        description: Coma separated list of visibles GPU devices for the compute.
   janus.nodes.slurm.Cntk:
     derived_from: tosca.nodes.Compute
     properties:
