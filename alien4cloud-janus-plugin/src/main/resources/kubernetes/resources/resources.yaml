@@ -5,8 +5,8 @@ template_author: Janus
 template_version: ${janus.types.version}
 
 imports:
-  - tosca-normative-types:1.0.0-ALIEN14
   - janus-docker-types:${janus.types.version}
+
 
 artifact_types:
   tosca.artifacts.Deployment.Image.Container.Docker.Kubernetes:
@@ -15,37 +15,15 @@ artifact_types:
 
 node_types:
   janus.nodes.KubernetesContainer:
-    derived_from: janus.nodes.DockerBaseContainer
+    derived_from: janus.nodes.DockerContainer
     description: >
-      TOSCA Container Application node that represents an application running in a Docker container deployed on a Kubernetes cluster.
+      Represents an application running in a Kubernetes container
     capabilities:
       mount:
-        type: janus.capabilities.kubernetes.VolumeMount
-    requirements:
-      - host:
-          capability: janus.capabilities.Container.Docker
-          relationship: tosca.relationships.HostedOn
-          occurrences: [0, 0]
+        type: janus.capabilities.KubernetesVolumeMount
 
-  janus.nodes.KubernetesVolume:
-    derived_from: janus.nodes.DockerGenericVolume
-    description: >
-      Kubernets Volume that can be monted by Kuubernetes containers within a Pod
-    properties:
-      name:
-        type: string
-        required: true
-        description: Specifies where the volume is mounted to the container.
-    capabilities:
-      povides:
-        type: janus.capabilities.kubernetes.Volume
-    requirements:
-      - use_volume:
-          capability: janus.capabilities.kubernetes.VolumeMount
-          relationship: janus.relationships.kubernetes.Volume
-
-  janus.nodes.kubernetes.Volume.EmptyDir:
-    derived_from: janus.nodes.KubernetesVolume
+  janus.nodes.KubernetesVolume.EmptyDir:
+    derived_from: janus.nodes.DockerVolume
     properties:
       volume_type:
         type: string
@@ -62,10 +40,10 @@ node_types:
         required: false
 
 capability_types:
-  janus.capabilities.kubernetes.VolumeMount:
-    derived_from: tosca.capabilities.Attachment
+  janus.capabilities.KubernetesVolumeMount:
+    derived_from: janus.capabilities.DockerVolumeMount
     description: >
-      Capability of a container to mount a volume
+      Capability to mount a Kubernetes volume
     properties:
       mountPath:
         type: string
@@ -83,13 +61,3 @@ capability_types:
         type: string
         required: false
         description:  Path within the volume from which the container's volume should be mounted. Defaults to "" (volume's root).
-
-  janus.capabilities.kubernetes.Volume:
-    derived_from: tosca.capabilities.Root
-    description: >
-      Capability of a Volume that allows a particulat volume type to related to a volume
-
-relationship_types:
-  janus.relationships.kubernetes.Volume:
-    derived_from: tosca.relationships.AttachTo
-    valid_target_types: [ janus.capabilities.kubernetes.VolumeMount ]
