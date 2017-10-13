@@ -18,12 +18,26 @@ node_types:
     derived_from: janus.nodes.DockerContainer
     description: >
       Represents an application running in a Kubernetes container
+    requirements:
+      - use_volume:
+          capability: janus.capabilities.KubernetesVolume
+          relationship: janus.relationships.MountDockerVolume
+          occurrences: [ 0, UNBOUNDED ]
+
+  janus.nodes.KubernetesVolume:
+    derived_from: janus.nodes.DockerVolume
+    properties:
+      name:
+        type: string
+        required: true
+        description: >
+          The volume name
     capabilities:
       mount:
-        type: janus.capabilities.KubernetesVolumeMount
+        type: janus.capabilities.KubernetesVolume
 
   janus.nodes.KubernetesVolume.EmptyDir:
-    derived_from: janus.nodes.DockerVolume
+    derived_from: janus.nodes.KubernetesVolume
     properties:
       volume_type:
         type: string
@@ -40,19 +54,11 @@ node_types:
         required: false
 
 capability_types:
-  janus.capabilities.KubernetesVolumeMount:
-    derived_from: janus.capabilities.DockerVolumeMount
+  janus.capabilities.KubernetesVolume:
+    derived_from: janus.capabilities.DockerVolume
     description: >
       Capability to mount a Kubernetes volume
     properties:
-      mountPath:
-        type: string
-        required: true
-        description: Path within the container at which the volume should be mounted. Must not contain ':'.
-      volume_name:
-        type: string
-        required: true
-        description: This must match the name of a kubernetes Volume.
       readOnly:
         type: boolean
         required: false
