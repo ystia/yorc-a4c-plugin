@@ -4,6 +4,8 @@ template_name: janus-docker-types
 template_author: Janus
 template_version: ${janus.types.version}
 
+description: "Defines docker resources for the Janus plugin."
+
 imports:
   - tosca-normative-types:1.0.0-ALIEN14
 
