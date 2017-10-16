@@ -10,7 +10,7 @@ imports:
 
 artifact_types:
   tosca.artifacts.Deployment.Image.Container.Docker.Kubernetes:
-    description: Docker Container Image
+    description: Docker Container Image to be deployed by Kubernetes
     derived_from: tosca.artifacts.Deployment.Image.Container.Docker
 
 node_types:
