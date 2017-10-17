@@ -14,16 +14,6 @@ artifact_types:
     derived_from: tosca.artifacts.Deployment.Image.Container.Docker
 
 node_types:
-  janus.nodes.KubernetesContainer:
-    derived_from: janus.nodes.DockerContainer
-    description: >
-      Represents an application running in a Kubernetes container
-    requirements:
-      - use_volume:
-          capability: janus.capabilities.KubernetesVolume
-          relationship: janus.relationships.MountDockerVolume
-          occurrences: [ 0, UNBOUNDED ]
-
   janus.nodes.KubernetesVolume:
     derived_from: janus.nodes.DockerVolume
     properties:
