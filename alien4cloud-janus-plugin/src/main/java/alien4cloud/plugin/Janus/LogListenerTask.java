@@ -45,12 +45,9 @@ public class LogListenerTask extends AlienTask {
                     prevIndex = logResponse.getLast_index();
                     if (logResponse.getLogs() != null) {
                         for (LogEvent logEvent : logResponse.getLogs()) {
-                            log.debug("Received log from janus: " + logEvent.getLogs());
+                            log.debug("Received log from janus: " + logEvent.toString());
                             // add Premium Log
-                            PaaSDeploymentLog deploymentLog = new PaaSDeploymentLog();
-                            deploymentLog.setContent(logEvent.getLogs());
-                            deploymentLog.setTimestamp(logEvent.getDate());
-                            postLog(deploymentLog, paasId);
+                            postLog(toPaasDeploymentLog(logEvent), paasId);
                         }
                     }
                 }
@@ -76,6 +73,7 @@ public class LogListenerTask extends AlienTask {
      * @param paasId
      */
     private void postLog(PaaSDeploymentLog pdlog, String paasId) {
+        // The DeploymentId is overridden by A4C plugin here with UUID
         pdlog.setDeploymentId(orchestrator.getDeploymentId(paasId));
         pdlog.setDeploymentPaaSId(paasId);
         if (pdlog.getDeploymentId() == null) {
@@ -83,8 +81,24 @@ public class LogListenerTask extends AlienTask {
             Thread.dumpStack();
             return;
         }
-        pdlog.setLevel(PaaSDeploymentLogLevel.INFO);
         orchestrator.saveLog(pdlog);
+    }
+
+
+    private PaaSDeploymentLog toPaasDeploymentLog(final LogEvent pLogEvent) {
+        PaaSDeploymentLog deploymentLog = new PaaSDeploymentLog();
+        deploymentLog.setDeploymentId(pLogEvent.getDeploymentId());
+        deploymentLog.setContent(pLogEvent.getContent());
+        deploymentLog.setExecutionId(pLogEvent.getExecutionId());
+        deploymentLog.setInstanceId(pLogEvent.getInstanceId());
+        deploymentLog.setInterfaceName(pLogEvent.getInterfaceName());
+        deploymentLog.setLevel(PaaSDeploymentLogLevel.fromLevel(pLogEvent.getLevel().toLowerCase()));
+        deploymentLog.setType(pLogEvent.getType());
+        deploymentLog.setNodeId(pLogEvent.getNodeId());
+        deploymentLog.setTimestamp(pLogEvent.getDate());
+        deploymentLog.setWorkflowId(pLogEvent.getWorkflowId());
+        deploymentLog.setOperationName(pLogEvent.getOperationName());
+        return deploymentLog;
     }
 
 }
