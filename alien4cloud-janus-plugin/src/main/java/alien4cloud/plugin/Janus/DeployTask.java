@@ -555,9 +555,7 @@ public class DeployTask extends AlienTask {
 
                                 Yaml yaml = new Yaml();
                                 yaml.dump(topologyKid, new FileWriter(file));
-                            } catch (Exception e) {
-                                log.warn(e.getMessage());
-                            }
+                            } catch (Exception ignored) {}
                         }
                         copy(file, zout);
                     }
@@ -567,44 +565,6 @@ public class DeployTask extends AlienTask {
             log.error(e.getMessage());
         }
         return ret;
-    }
-
-    /**
-     * Remove all imports in this yml file
-     * @param fileToRead
-     * @return new file identical, but with no import
-     * @throws IOException
-     */
-    private File removeAllImports(File fileToRead) throws IOException {
-        File file = new File("tmp.yml");
-        file.createNewFile();
-
-        FileWriter fw = new FileWriter(file);
-        BufferedWriter bw = new BufferedWriter(fw);
-        PrintWriter out = new PrintWriter(bw);
-
-        FileReader fr = new FileReader(fileToRead);
-        BufferedReader fin = new  BufferedReader(fr);
-        String line;
-        boolean inimport = false;
-        while ((line = fin.readLine()) != null) {
-            if (inimport) {
-                if (line.contains(":")) {
-                    // This is an import line: skip it.
-                    continue;
-                }
-                // assumes there is no empty line in the middle of the list.
-                // TODO Use a yml parser to do a cleaner code.
-                inimport = false;
-            }
-            if (line.startsWith("imports:")) {
-                inimport = true;
-            }
-            // Write line without change
-            out.println(line);
-        }
-        out.close();
-        return file;
     }
 
     /**
