@@ -168,6 +168,11 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         }
         // prov
         log.info(fileRepository.getRootPath().toString());
+
+        // Listen Events and logs from janus about the deployment
+        log.info("Starting janus events & logs listeners");
+        addTask(new EventListenerTask(this));
+        addTask(new LogListenerTask(this));
     }
 
     /**
@@ -522,10 +527,10 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         }
 
         // Restart threads listening to janus log and events
-        if (ds != DeploymentStatus.UNDEPLOYED ) {
-            taskManager.addTask(new EventListenerTask(ctx, this));
-            taskManager.addTask(new LogListenerTask(ctx, this));
-        }
+//        if (ds != DeploymentStatus.UNDEPLOYED ) {
+//            taskManager.addTask(new EventListenerTask(ctx, this));
+//            taskManager.addTask(new LogListenerTask(ctx, this));
+//        }
     }
 
     /**
@@ -609,8 +614,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
      * @param node
      * @param instance
      */
-    public void updateInstanceAttributes(PaaSDeploymentContext ctx, InstanceInformation iinfo, String node, String instance) {
-        String paasId = ctx.getDeploymentPaaSId();
+    public void updateInstanceAttributes(String paasId, InstanceInformation iinfo, String node, String instance) {
         String url = "/deployments/" + paasId + "/nodes/" + node + "/instances/" + instance;
         InstanceInfosResponse instInfoRes;
         try {

@@ -23,46 +23,32 @@ import javax.annotation.Resource;
  */
 @Slf4j
 public class LogListenerTask extends AlienTask {
-    // Needed Info
-    PaaSDeploymentContext ctx;
 
-    public LogListenerTask(PaaSDeploymentContext ctx, JanusPaaSProvider prov) {
+    public LogListenerTask(JanusPaaSProvider prov) {
         super(prov);
-        this.ctx = ctx;
     }
 
     /**
      * Listen for Janus Logs
      */
     public void run() {
-        String paasId = ctx.getDeploymentPaaSId();
-        String deploymentUrl = "/deployments/" + paasId;
         int prevIndex = 1;
         while (true) {
             try {
-                LogResponse logResponse = restClient.getLogFromJanus(deploymentUrl, prevIndex);
+                log.info("Get logs from Janus from index " + prevIndex);
+                LogResponse logResponse = restClient.getLogFromJanus(prevIndex);
                 if (logResponse != null) {
                     prevIndex = logResponse.getLast_index();
                     if (logResponse.getLogs() != null) {
                         for (LogEvent logEvent : logResponse.getLogs()) {
                             log.debug("Received log from janus: " + logEvent.toString());
                             // add Premium Log
-                            postLog(toPaasDeploymentLog(logEvent), paasId);
+                            postLog(toPaasDeploymentLog(logEvent), logEvent.getDeploymentId());
                         }
                     }
                 }
-            } catch (InterruptedException e) {
-                log.error("listenJanusLog Stopped " + paasId);
-                return;
-            } catch (JanusRestException e) {
-                if (e.getHttpStatusCode() == 404) {
-                    log.warn("Stop listening to logs. Assuming " + paasId + " is undeployed.");
-                } else {
-                    log.warn("listenJanusLog Failed " + paasId, e);
-                }
-                return;
             } catch (Exception e) {
-                log.warn("listenJanusLog Failed " + paasId, e);
+                log.warn("listenJanusLog Failed", e);
                 return;
             }
         }
