@@ -33,3 +33,6 @@ node_types:
       cuda_visible_devices:
         type: string
         description: Coma separated list of visibles GPU devices for the compute.
+      job_id:
+        type: string
+        description: The ID of the job allocation.
