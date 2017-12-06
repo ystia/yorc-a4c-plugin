@@ -46,7 +46,7 @@ public class EventListenerTask extends AlienTask {
         int prevIndex = 1;
         while (true) {
             try {
-                log.info("Get events from Janus from index " + prevIndex);
+                log.debug("Get events from Janus from index " + prevIndex);
                 EventResponse eventResponse = restClient.getEventFromJanus(prevIndex);
                 if (eventResponse != null) {
                     prevIndex = eventResponse.getLast_index();
@@ -56,7 +56,7 @@ public class EventListenerTask extends AlienTask {
                             JanusRuntimeDeploymentInfo jrdi = orchestrator.getDeploymentInfo(paasId);
                             if (jrdi == null) {
                                 log.error("listenJanusEvents: no JanusRuntimeDeploymentInfo for " + paasId);
-                                return;
+                                continue;
                             }
                             Map<String, Map<String, InstanceInformation>> instanceInfo = jrdi.getInstanceInformations();
 
@@ -146,12 +146,14 @@ public class EventListenerTask extends AlienTask {
                         }
                     }
                 }
-            } catch (InterruptedException e) {
-                log.error("listenDeploymentEvent Stopped");
-                return;
             } catch (Exception e) {
-                log.warn("listenDeploymentEvent Failed", e);
-                return;
+                log.error("listenDeploymentEvent Failed", e);
+            } finally {
+                try {
+                    Thread.sleep(2000L);
+                } catch (InterruptedException e) {
+                    log.error("listenDeploymentEvent wait interrupted", e);
+                }
             }
         }
     }

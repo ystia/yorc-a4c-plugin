@@ -35,7 +35,7 @@ public class LogListenerTask extends AlienTask {
         int prevIndex = 1;
         while (true) {
             try {
-                log.info("Get logs from Janus from index " + prevIndex);
+                log.debug("Get logs from Janus from index " + prevIndex);
                 LogResponse logResponse = restClient.getLogFromJanus(prevIndex);
                 if (logResponse != null) {
                     prevIndex = logResponse.getLast_index();
@@ -49,7 +49,11 @@ public class LogListenerTask extends AlienTask {
                 }
             } catch (Exception e) {
                 log.warn("listenJanusLog Failed", e);
-                return;
+                try {
+                    Thread.sleep(2000L);
+                } catch (InterruptedException ex) {
+                    log.error("listenDeploymentEvent wait interrupted", ex);
+                }
             }
         }
     }
