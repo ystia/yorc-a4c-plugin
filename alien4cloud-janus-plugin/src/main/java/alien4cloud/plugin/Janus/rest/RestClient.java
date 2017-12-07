@@ -280,9 +280,9 @@ public class RestClient {
         return objectMapper.readValue(new String(IOUtils.toByteArray(eventResponse.getRawBody()), CHARSET), EventResponse.class);
     }
 
-    public String undeployJanus(String deploymentUrl) throws Exception {
+    public String undeployJanus(String deploymentUrl, boolean purge) throws Exception {
         log.debug("undeployJanus " + deploymentUrl);
-        HttpResponse<JsonNode> res = Unirest.delete(providerConfiguration.getUrlJanus() + deploymentUrl + "?purge")
+        HttpResponse<JsonNode> res = Unirest.delete(providerConfiguration.getUrlJanus() + deploymentUrl + (purge ? "?purge" : "") )
                 .header("accept", "application/json")
                 .asJson();
         String task = res.getHeaders().getFirst("Location");

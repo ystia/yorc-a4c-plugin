@@ -420,6 +420,17 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
             log.error("JanusRuntimeDeploymentInfo is null for paasId " + paasId);
             return;
         }
+
+        if (status.equals(DeploymentStatus.UNDEPLOYED)) {
+            try {
+                restClient.undeployJanus("/deployments/" + paasId, true);
+            } catch (Exception e) {
+                log.error("undeployJanus purge returned an exception: " + e);
+                changeStatus(paasId, DeploymentStatus.FAILURE);
+                return;
+            }
+        }
+
         DeploymentStatus oldDeploymentStatus = jrdi.getStatus();
         log.debug("Deployment [" + paasId + "] moved from status [" + oldDeploymentStatus + "] to [" + status + "]");
         jrdi.setStatus(status);

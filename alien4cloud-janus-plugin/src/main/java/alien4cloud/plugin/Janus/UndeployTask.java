@@ -64,7 +64,7 @@ public class UndeployTask extends AlienTask {
         String taskUrl = null;
         String status = "UNKNOWN";
         try {
-            taskUrl = restClient.undeployJanus(deploymentUrl);
+            taskUrl = restClient.undeployJanus(deploymentUrl, false);
             if (taskUrl == null) {
                 // Assumes already undeployed
                 status = "UNDEPLOYED";
