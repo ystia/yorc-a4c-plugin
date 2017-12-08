@@ -1,11 +1,11 @@
-tosca_definitions_version: alien_dsl_1_4_0
+tosca_definitions_version: ${alien4cloud.dsl.version}
 
 template_name: janus-openstack-types
 template_author: Janus
 template_version: ${janus.types.version}
 
 imports:
-  - tosca-normative-types:1.0.0-ALIEN14
+  - tosca-normative-types:${tosca.normative.types.version}
 
 node_types:
   janus.nodes.openstack.Compute:

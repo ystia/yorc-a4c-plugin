@@ -1,4 +1,4 @@
-tosca_definitions_version: alien_dsl_1_4_0
+tosca_definitions_version: ${alien4cloud.dsl.version}
 
 metadata:
   template_name: janus.tests.datatypes.topology
@@ -10,7 +10,7 @@ description: ""
 imports:
   - janus.tests.datatypes.linux:1.0-SNAPSHOT
   - janus.tests.datatypes.pub:1.0-SNAPSHOT
-  - tosca-normative-types:1.0.0-ALIEN14
+  - tosca-normative-types:${tosca.normative.types.version}
   - janus-types:1.0.0
 
 topology_template:
