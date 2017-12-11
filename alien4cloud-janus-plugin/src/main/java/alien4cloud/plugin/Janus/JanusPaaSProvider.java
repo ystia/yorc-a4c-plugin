@@ -536,12 +536,6 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         } catch (Exception e) {
             log.error(paasId + " : Cannot update DeploymentInfo ", e);
         }
-
-        // Restart threads listening to janus log and events
-//        if (ds != DeploymentStatus.UNDEPLOYED ) {
-//            taskManager.addTask(new EventListenerTask(ctx, this));
-//            taskManager.addTask(new LogListenerTask(ctx, this));
-//        }
     }
 
     /**

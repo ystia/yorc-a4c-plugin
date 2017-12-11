@@ -50,6 +50,7 @@ public class LogListenerTask extends AlienTask {
             } catch (Exception e) {
                 log.warn("listenJanusLog Failed", e);
                 try {
+                    // We will sleep for 2sec in order to limit logs flood if the janus server went down
                     Thread.sleep(2000L);
                 } catch (InterruptedException ex) {
                     log.error("listenDeploymentEvent wait interrupted", ex);

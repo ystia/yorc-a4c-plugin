@@ -148,11 +148,11 @@ public class EventListenerTask extends AlienTask {
                 }
             } catch (Exception e) {
                 log.error("listenDeploymentEvent Failed", e);
-            } finally {
                 try {
+                    // We will sleep for 2sec in order to limit logs flood if the janus server went down
                     Thread.sleep(2000L);
-                } catch (InterruptedException e) {
-                    log.error("listenDeploymentEvent wait interrupted", e);
+                } catch (InterruptedException ex) {
+                    log.error("listenDeploymentEvent wait interrupted", ex);
                 }
             }
         }
