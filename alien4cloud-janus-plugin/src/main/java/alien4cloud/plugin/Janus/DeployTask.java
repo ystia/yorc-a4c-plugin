@@ -6,7 +6,8 @@
 */
 package alien4cloud.plugin.Janus;
 
-import static alien4cloud.paas.wf.util.WorkflowUtils.isOfType;
+// ALIEN 2.0.0 Update
+//import static alien4cloud.paas.wf.util.WorkflowUtils.isOfType;
 import static com.google.common.io.Files.copy;
 
 import alien4cloud.component.repository.ArtifactRepositoryConstants;
@@ -24,7 +25,9 @@ import alien4cloud.plugin.Janus.rest.Response.Event;
 import alien4cloud.plugin.Janus.rest.RestClient;
 import alien4cloud.plugin.Janus.utils.MappingTosca;
 import alien4cloud.plugin.Janus.utils.ShowTopology;
-import alien4cloud.topology.TopologyUtils;
+
+// ALIEN 2.0.0 Update
+//import alien4cloud.topology.TopologyUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.alien4cloud.tosca.catalog.index.IToscaTypeSearchService;
 import org.alien4cloud.tosca.exporter.ArchiveExportService;
@@ -111,11 +114,12 @@ public class DeployTask extends AlienTask {
         orchestrator.doChangeStatus(paasId, DeploymentStatus.INIT_DEPLOYMENT);
 
         // Show Topoloy for debug
+        // ALIEN 2.0.0 Update
         ShowTopology.topologyInLog(ctx);
 
         // Change topology to be suitable for janus and tosca
-        MappingTosca.addPreConfigureSteps(ctx);
-        MappingTosca.generateOpenstackFIP(ctx);
+        //MappingTosca.addPreConfigureSteps(ctx);
+        //MappingTosca.generateOpenstackFIP(ctx);
         MappingTosca.quoteProperties(ctx);
 
         // Get the yaml of the application as built by from a4c
@@ -647,8 +651,10 @@ public class DeployTask extends AlienTask {
         for (Entry<String, NodeTemplate> nodeTemplateEntry : nodeTemplates.entrySet()) {
             Map<String, InstanceInformation> instanceInformations = Maps.newHashMap();
             currentInformations.put(nodeTemplateEntry.getKey(), instanceInformations);
-            ScalingPolicy policy = getScalingPolicy(nodeTemplateEntry.getKey(), nodeTemplates);
-            int initialInstances = policy != null ? policy.getInitialInstances() : 1;
+            // ALIEN 2.0.0 Update
+            //ScalingPolicy policy = getScalingPolicy(nodeTemplateEntry.getKey(), nodeTemplates);
+            //int initialInstances = policy != null ? policy.getInitialInstances() : 1;
+            int initialInstances = 1;
             for (int i = 0; i < initialInstances; i++) {
                 InstanceInformation newInstanceInformation = orchestrator.newInstance(i);
                 instanceInformations.put(String.valueOf(i), newInstanceInformation);
@@ -657,9 +663,13 @@ public class DeployTask extends AlienTask {
         return currentInformations;
     }
 
+    // ALIEN 2.0.0 Update
     private ScalingPolicy getScalingPolicy(String id, Map<String, NodeTemplate> nodeTemplates) {
+        NodeTemplate nt = nodeTemplates.get(id);
+        nt.getCapabilities();
+        nt.getRelationships();
         // Get the scaling of parent if not exist
-        Capability scalableCapability = TopologyUtils.getScalableCapability(nodeTemplates, id, false);
+        /*Capability scalableCapability = TopologyUtils.getScalableCapability(nodeTemplates, id, false);
         if (scalableCapability != null) {
             return TopologyUtils.getScalingPolicy(scalableCapability);
         }
@@ -670,7 +680,7 @@ public class DeployTask extends AlienTask {
                     return getScalingPolicy(rel.getTarget(), nodeTemplates);
                 }
             }
-        }
+        }*/
         return null;
     }
 
