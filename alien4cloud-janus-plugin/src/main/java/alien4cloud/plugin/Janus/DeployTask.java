@@ -555,6 +555,11 @@ public class DeployTask extends AlienTask {
 
                                 Yaml yaml = new Yaml();
                                 yaml.dump(topologyKid, new FileWriter(file));
+
+                                // We ignore exception for the *.yml files that are not perfect yaml
+                                // (like ansible playbook). Indeed for those files the YamlParser
+                                // throw an exception that is useless here because the files we want
+                                // to process are only tosca and so yaml-valid.
                             } catch (Exception ignored) {}
                         }
                         copy(file, zout);
