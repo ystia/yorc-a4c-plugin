@@ -47,6 +47,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -539,11 +540,7 @@ public class DeployTask extends AlienTask {
                         createZipEntries(relative + name, zout);
                         if (name.endsWith(".yml") || name.endsWith(".yaml")) {
                             if (! ymlfound) {
-                                ret += name;
-                                ymlfound = true;
-                            }
-                            // Remove all imports, since they should be all in the root yml
-                            try {
+                                // Remove all imports, since they should be all in the root yml
                                 TypeReference<Map<String,Object>> typeRef = new TypeReference<Map<String,Object>>() {};
                                 ObjectMapper objectMapper = YamlParserUtil.createYamlObjectMapper();
                                 Map<String, Object> topologyKid = objectMapper.readValue(kid, typeRef);
@@ -553,16 +550,18 @@ public class DeployTask extends AlienTask {
                                     matchKubernetesImplementation(topologyKid);
                                 }
 
+                                StringWriter out = new StringWriter();
                                 Yaml yaml = new Yaml();
-                                yaml.dump(topologyKid, new FileWriter(file));
-
-                                // We ignore exception for the *.yml files that are not perfect yaml
-                                // (like ansible playbook). Indeed for those files the YamlParser
-                                // throw an exception that is useless here because the files we want
-                                // to process are only tosca and so yaml-valid.
-                            } catch (Exception ignored) {}
+                                yaml.dump(topologyKid, out);
+                                zout.write(out.getBuffer().toString().getBytes());
+                                ret += name;
+                                ymlfound = true;
+                            } else {
+                                copy(file, zout);
+                            }
+                        } else {
+                            copy(file, zout);
                         }
-                        copy(file, zout);
                     }
                 }
             }
