@@ -15,4 +15,5 @@ public class Event {
     private String status;
     private String type;
     private String task_id;
+    private String deployment_id;
 }

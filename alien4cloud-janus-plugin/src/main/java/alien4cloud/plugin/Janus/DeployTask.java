@@ -156,10 +156,6 @@ public class DeployTask extends AlienTask {
         jrdi.setDeployTaskId(taskId);
         orchestrator.sendMessage(paasId, "Deployment sent to Janus. TaskId=" + taskId);
 
-        // Listen Events and logs from janus about the deployment
-        orchestrator.addTask(new EventListenerTask(ctx, orchestrator));
-        orchestrator.addTask(new LogListenerTask(ctx, orchestrator));
-
         // wait for janus deployment completion
         boolean done = false;
         long timeout = System.currentTimeMillis() + JANUS_DEPLOY_TIMEOUT;

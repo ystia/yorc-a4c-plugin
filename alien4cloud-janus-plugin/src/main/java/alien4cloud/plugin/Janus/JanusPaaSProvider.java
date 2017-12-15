@@ -168,6 +168,11 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         }
         // prov
         log.info(fileRepository.getRootPath().toString());
+
+        // Listen Events and logs from janus about the deployment
+        log.info("Starting janus events & logs listeners");
+        addTask(new EventListenerTask(this));
+        addTask(new LogListenerTask(this));
     }
 
     /**
@@ -415,6 +420,17 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
             log.error("JanusRuntimeDeploymentInfo is null for paasId " + paasId);
             return;
         }
+
+        if (status.equals(DeploymentStatus.UNDEPLOYED)) {
+            try {
+                restClient.undeployJanus("/deployments/" + paasId, true);
+            } catch (Exception e) {
+                log.error("undeployJanus purge returned an exception: " + e);
+                changeStatus(paasId, DeploymentStatus.FAILURE);
+                return;
+            }
+        }
+
         DeploymentStatus oldDeploymentStatus = jrdi.getStatus();
         log.debug("Deployment [" + paasId + "] moved from status [" + oldDeploymentStatus + "] to [" + status + "]");
         jrdi.setStatus(status);
@@ -520,12 +536,6 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
         } catch (Exception e) {
             log.error(paasId + " : Cannot update DeploymentInfo ", e);
         }
-
-        // Restart threads listening to janus log and events
-        if (ds != DeploymentStatus.UNDEPLOYED ) {
-            taskManager.addTask(new EventListenerTask(ctx, this));
-            taskManager.addTask(new LogListenerTask(ctx, this));
-        }
     }
 
     /**
@@ -609,8 +619,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
      * @param node
      * @param instance
      */
-    public void updateInstanceAttributes(PaaSDeploymentContext ctx, InstanceInformation iinfo, String node, String instance) {
-        String paasId = ctx.getDeploymentPaaSId();
+    public void updateInstanceAttributes(String paasId, InstanceInformation iinfo, String node, String instance) {
         String url = "/deployments/" + paasId + "/nodes/" + node + "/instances/" + instance;
         InstanceInfosResponse instInfoRes;
         try {

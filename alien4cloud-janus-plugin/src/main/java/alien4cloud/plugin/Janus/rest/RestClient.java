@@ -262,27 +262,27 @@ public class RestClient {
         return deployRes.getBody();
     }
 
-    public LogResponse getLogFromJanus(String deploymentUrl, int index) throws Exception {
+    public LogResponse getLogFromJanus(int index) throws Exception {
         HttpResponse<JsonNode> logRes =
-                Unirest.get(providerConfiguration.getUrlJanus() + deploymentUrl + "/logs?index=" + index + "&filter=")
+                Unirest.get(providerConfiguration.getUrlJanus() + "/logs?index=" + index + "&filter=")
                         .header("accept", "application/json")
                         .asJson();
         this.checkRestErrors(logRes);
         return objectMapper.readValue(new String(IOUtils.toByteArray(logRes.getRawBody()), CHARSET), LogResponse.class);
     }
 
-    public EventResponse getEventFromJanus(String deploymentUrl, int index) throws Exception {
+    public EventResponse getEventFromJanus(int index) throws Exception {
         HttpResponse<JsonNode> eventResponse =
-                Unirest.get(providerConfiguration.getUrlJanus() + deploymentUrl + "/events?index=" + index + "&filter=")
+                Unirest.get(providerConfiguration.getUrlJanus() + "/events?index=" + index + "&filter=")
                         .header("accept", "application/json")
                         .asJson();
         this.checkRestErrors(eventResponse);
         return objectMapper.readValue(new String(IOUtils.toByteArray(eventResponse.getRawBody()), CHARSET), EventResponse.class);
     }
 
-    public String undeployJanus(String deploymentUrl) throws Exception {
+    public String undeployJanus(String deploymentUrl, boolean purge) throws Exception {
         log.debug("undeployJanus " + deploymentUrl);
-        HttpResponse<JsonNode> res = Unirest.delete(providerConfiguration.getUrlJanus() + deploymentUrl + "?purge")
+        HttpResponse<JsonNode> res = Unirest.delete(providerConfiguration.getUrlJanus() + deploymentUrl + (purge ? "?purge" : "") )
                 .header("accept", "application/json")
                 .asJson();
         String task = res.getHeaders().getFirst("Location");
