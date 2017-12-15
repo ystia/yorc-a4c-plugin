@@ -8,37 +8,31 @@ package alien4cloud.plugin.Janus;
 
 // ALIEN 2.0.0 Update
 //import static alien4cloud.paas.wf.util.WorkflowUtils.isOfType;
-import static com.google.common.io.Files.copy;
-
 import alien4cloud.component.repository.ArtifactRepositoryConstants;
 import alien4cloud.model.deployment.DeploymentTopology;
 import alien4cloud.model.orchestrators.locations.Location;
 import alien4cloud.paas.IPaaSCallback;
 import alien4cloud.paas.model.DeploymentStatus;
 import alien4cloud.paas.model.InstanceInformation;
-import alien4cloud.paas.model.InstanceStatus;
 import alien4cloud.paas.model.PaaSNodeTemplate;
 import alien4cloud.paas.model.PaaSTopology;
 import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
-import alien4cloud.paas.plan.ToscaNodeLifecycleConstants;
 import alien4cloud.plugin.Janus.rest.Response.Event;
-import alien4cloud.plugin.Janus.rest.RestClient;
 import alien4cloud.plugin.Janus.utils.MappingTosca;
 import alien4cloud.plugin.Janus.utils.ShowTopology;
-
-// ALIEN 2.0.0 Update
-//import alien4cloud.topology.TopologyUtils;
+import alien4cloud.utils.YamlParserUtil;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.alien4cloud.tosca.catalog.index.IToscaTypeSearchService;
 import org.alien4cloud.tosca.exporter.ArchiveExportService;
 import org.alien4cloud.tosca.model.CSARDependency;
 import org.alien4cloud.tosca.model.Csar;
 import org.alien4cloud.tosca.model.definitions.DeploymentArtifact;
-import org.alien4cloud.tosca.model.templates.Capability;
 import org.alien4cloud.tosca.model.templates.NodeTemplate;
-import org.alien4cloud.tosca.model.templates.RelationshipTemplate;
 import org.alien4cloud.tosca.model.templates.ScalingPolicy;
 import org.alien4cloud.tosca.model.templates.Topology;
+import org.elasticsearch.common.collect.Maps;
+import org.yaml.snakeyaml.Yaml;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -49,16 +43,16 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -68,11 +62,11 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
 
-import org.alien4cloud.tosca.model.types.RelationshipType;
-import org.alien4cloud.tosca.normative.constants.NormativeRelationshipConstants;
-import org.elasticsearch.common.collect.Maps;
+import static com.google.common.io.Files.copy;
 
-import javax.inject.Inject;
+// ALIEN 2.0.0 Update
+//import alien4cloud.topology.TopologyUtils;
+
 
 /**
  * deployment task
@@ -161,10 +155,6 @@ public class DeployTask extends AlienTask {
         String taskId = taskUrl.substring(taskUrl.lastIndexOf("/") + 1);
         jrdi.setDeployTaskId(taskId);
         orchestrator.sendMessage(paasId, "Deployment sent to Janus. TaskId=" + taskId);
-
-        // Listen Events and logs from janus about the deployment
-        orchestrator.addTask(new EventListenerTask(ctx, orchestrator));
-        orchestrator.addTask(new LogListenerTask(ctx, orchestrator));
 
         // wait for janus deployment completion
         boolean done = false;
@@ -283,62 +273,52 @@ public class DeployTask extends AlienTask {
             }
         }
 
-        // Split yaml in lines
-        String [] yamllines = yaml.split("\n");
-        
         // Final zip file will be named topology.zip
-        File zip = new File("topology.zip");
-        OutputStream out = new FileOutputStream(zip);
-        ZipOutputStream zout = new ZipOutputStream(out);
-        Closeable res = zout;
+        final File zip = new File("topology.zip");
+        final OutputStream out = new FileOutputStream(zip);
+        final ZipOutputStream zout = new ZipOutputStream(out);
+        final Closeable res = zout;
 
-        // Parse original.yml to construct a correct topology.yml and the zip file
-        // containing all needed files.
+        final TypeReference<Map<String,Object>> typeRef
+                = new TypeReference<Map<String,Object>>() {};
+
+        final ObjectMapper objectMapper = YamlParserUtil.createYamlObjectMapper();
+        final Map<String, Object> topology = objectMapper.readValue(yaml, typeRef);
+
+        topology.remove("inputs");
+
+        final List<String> imports = ((List) topology.get("imports"));
+
+        final List<Map<String, String>> imps = new ArrayList<>();
+
+        final int finalLocation = location;
+        imports.forEach(k->{
+            if (k.contains("janus-")) {
+                final String ymlPath = k.substring(k.indexOf("janus-"), k.lastIndexOf(":"));
+                Map<String, String> m = new HashMap<>();
+
+                m.put("file", "<" + ymlPath + ".yml>");
+                imps.add(m);
+            } else if (!k.contains("tosca-normative-types")) {
+                // Add this csar to zip file
+                final String pack = k.substring(k.indexOf("- ") + 1);
+                final String module = pack.substring(0, pack.indexOf(":"));
+                final String version = pack.substring(pack.indexOf(":") + 1);
+                final String localpath = csar2zip(zout, module, version, finalLocation);
+
+                Map<String, String> m = new HashMap<>();
+                m.put("file", localpath);
+                imps.add(m);
+            }
+        });
+
+        imports.clear();
+        topology.put("imports", imps);
+
         String topoFileName = "topology.yml";
-        BufferedWriter bw = null;
-        try {
-            bw = new BufferedWriter(new FileWriter(topoFileName));
-            boolean inimport = false;
-            for (String line : yamllines) {
-                if (inimport) {
-                    if (line.contains(":")) {
-                        if (line.contains("janus-")) {
-                            // Use the janus types, without giving the version nb.
-                            String ymlPath = line.substring(line.indexOf("janus-"), line.lastIndexOf(":"));
-                            bw.append("  - path: <").append(ymlPath).append(".yml>\n");
-                        } else if (line.contains("tosca-normative-types")) {
-                            // Not needed: forget the line
-                        } else {
-                            // Add this csar to zip file
-                            String pack = line.substring(line.indexOf("- ") + 2);
-                            String module = pack.substring(0, pack.indexOf(":"));
-                            String version = pack.substring(pack.indexOf(":") + 1);
-                            String localpath = csar2zip(zout, module, version, location);
-                            bw.append("  - path: ").append(localpath).append("\n");
-                        }
-                        continue;
-                    }
-                    // assumes there is no empty line in the middle of the list.
-                    // TODO Use a yml parser to do a cleaner code.
-                    inimport = false;
-                }
-                if (line.startsWith("imports:")) {
-                    inimport = true;
-                }
-                // Write line without change
-                bw.append(line).append("\n");
-            }
-        } catch (IOException e) {
-            log.error("Error while building zip: " + e);
-            throw e;
-        } finally {
-            try {
-                if (bw != null)
-                    bw.close();
-            } catch (IOException e) {
-                log.error("Error closing " + topoFileName, e);
-            }
-        }
+        Yaml yml = new Yaml();
+        yml.dump(topology, new FileWriter(topoFileName));
+
         // Copy overwritten artifacts for each node
         PaaSTopology ptopo = ctx.getPaaSTopology();
         for (PaaSNodeTemplate node : ptopo.getAllNodes().values()) {
@@ -353,31 +333,36 @@ public class DeployTask extends AlienTask {
         res.close();
     }
 
-    private File matchKubernetesImplementation(File fileToRead) throws IOException {
-        File file = new File("tmp2.yml");
-        file.createNewFile();
-
-        FileWriter fw = new FileWriter(file);
-        BufferedWriter bw = new BufferedWriter(fw);
-        PrintWriter out = new PrintWriter(bw);
-
-        FileReader fr = new FileReader(fileToRead);
-        BufferedReader fin = new  BufferedReader(fr);
-        String line;
-        boolean clean = false;
-        for (; ; ) {
-            // Read a line.
-            line = fin.readLine();
-            if (line == null) {
-                break;
-            } else if (line.contains("tosca.artifacts.Deployment.Image.Container.Docker")) {
-                out.println(line+".Kubernetes");
-            } else {
-                out.println(line);
-            }
+    private Object getNestedValue(Map<String, Object> map, String path) {
+        String[] parts = path.split(".");
+        Object v = map;
+        for (String s : parts) {
+            if (v == null) return null;
+            v = ((Map<String, Object>)v).get(s);
         }
-        out.close();
-        return file;
+        return v;
+    }
+
+    private void setNestedValue(Map<String, Object> map, String path, Object value) {
+        String[] parts = path.split(".");
+        Object v = map;
+        for (int i = 0; i < parts.length-1; i++) {
+            v = ((Map<String, Object>)v).get(parts[i]);
+        }
+        if (v != null) {
+            ((Map<String, Object>)v).put(parts[parts.length-1], value);
+        }
+    }
+
+    private void matchKubernetesImplementation(Map<String, Object> topology) {
+        Map<String, HashMap> nodeTypes = ((Map) topology.get("node_types"));
+
+        nodeTypes.forEach((k,nodeType)->{
+            String t = (String) getNestedValue(nodeType, "interfaces.Standard.start.implementation.type");
+            if (t.equals("tosca.artifacts.Deployment.Image.Container.Docker")) {
+                setNestedValue(nodeType, "interfaces.Standard.start.implementation.type", "tosca.artifacts.Deployment.Image.Container.Docker.Kubernetes");
+            }
+        });
     }
 
     /**
@@ -551,16 +536,28 @@ public class DeployTask extends AlienTask {
                         createZipEntries(relative + name, zout);
                         if (name.endsWith(".yml") || name.endsWith(".yaml")) {
                             if (! ymlfound) {
+                                // Remove all imports, since they should be all in the root yml
+                                TypeReference<Map<String,Object>> typeRef = new TypeReference<Map<String,Object>>() {};
+                                ObjectMapper objectMapper = YamlParserUtil.createYamlObjectMapper();
+                                Map<String, Object> topologyKid = objectMapper.readValue(kid, typeRef);
+                                ((List) topologyKid.get("imports")).clear();
+
+                                if (location == LOC_KUBERNETES) {
+                                    matchKubernetesImplementation(topologyKid);
+                                }
+
+                                StringWriter out = new StringWriter();
+                                Yaml yaml = new Yaml();
+                                yaml.dump(topologyKid, out);
+                                zout.write(out.getBuffer().toString().getBytes());
                                 ret += name;
                                 ymlfound = true;
+                            } else {
+                                copy(file, zout);
                             }
-                            // Remove all imports, since they should be all in the root yml
-                            file = removeAllImports(kid);
-                            if (location == LOC_KUBERNETES) {
-                                file = matchKubernetesImplementation(file);
-                            }
+                        } else {
+                            copy(file, zout);
                         }
-                        copy(file, zout);
                     }
                 }
             }
@@ -568,44 +565,6 @@ public class DeployTask extends AlienTask {
             log.error(e.getMessage());
         }
         return ret;
-    }
-
-    /**
-     * Remove all imports in this yml file
-     * @param fileToRead
-     * @return new file identical, but with no import
-     * @throws IOException
-     */
-    private File removeAllImports(File fileToRead) throws IOException {
-        File file = new File("tmp.yml");
-        file.createNewFile();
-
-        FileWriter fw = new FileWriter(file);
-        BufferedWriter bw = new BufferedWriter(fw);
-        PrintWriter out = new PrintWriter(bw);
-
-        FileReader fr = new FileReader(fileToRead);
-        BufferedReader fin = new  BufferedReader(fr);
-        String line;
-        boolean inimport = false;
-        while ((line = fin.readLine()) != null) {
-            if (inimport) {
-                if (line.contains(":")) {
-                    // This is an import line: skip it.
-                    continue;
-                }
-                // assumes there is no empty line in the middle of the list.
-                // TODO Use a yml parser to do a cleaner code.
-                inimport = false;
-            }
-            if (line.startsWith("imports:")) {
-                inimport = true;
-            }
-            // Write line without change
-            out.println(line);
-        }
-        out.close();
-        return file;
     }
 
     /**
