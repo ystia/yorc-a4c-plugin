@@ -23,6 +23,10 @@ import alien4cloud.plugin.Janus.utils.ShowTopology;
 import alien4cloud.utils.YamlParserUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+// ALIEN 2.0.0 Update
+//import alien4cloud.topology.TopologyUtils;
+import alien4cloud.tosca.parser.ToscaParser;
 import lombok.extern.slf4j.Slf4j;
 import org.alien4cloud.tosca.exporter.ArchiveExportService;
 import org.alien4cloud.tosca.model.CSARDependency;
@@ -118,6 +122,7 @@ public class DeployTask extends AlienTask {
 
         // Get the yaml of the application as built by from a4c
         Csar myCsar = new Csar(paasId, dtopo.getArchiveVersion());
+        myCsar.setToscaDefinitionsVersion(ToscaParser.LATEST_DSL);
         String yaml = archiveExportService.getYaml(myCsar, dtopo);
 
         // This operation must be synchronized, because it uses the same files topology.yml and topology.zip

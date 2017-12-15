@@ -9,3 +9,6 @@ component_descriptors:
     name: Janus Orchestrator Factory
     description: >
       Alien Plugin for Janus
+  - bean_name: fip-modifier
+    name: Floting IP modifier for Janus PublicNetwork
+    description: Floting IP modifier for Janus PublicNetwork
