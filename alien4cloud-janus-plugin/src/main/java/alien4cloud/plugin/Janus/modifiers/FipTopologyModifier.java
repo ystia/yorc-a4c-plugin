@@ -13,6 +13,7 @@ import org.alien4cloud.tosca.model.templates.Topology;
 import org.alien4cloud.tosca.utils.TopologyNavigationUtil;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -51,7 +52,7 @@ public class FipTopologyModifier extends TopologyModifierSupport {
         publicNetworksNodes.forEach(newtworkNodeTemplate -> {
             final AbstractPropertyValue networkName = newtworkNodeTemplate.getProperties().get("floating_network_name");
 
-            for (NodeTemplate nodeTemplate : topology.getNodeTemplates().values()) {
+            for (NodeTemplate nodeTemplate : new ArrayList<>(topology.getNodeTemplates().values())) {
                 if (nodeTemplate.getRelationships() == null) continue;
                 nodeTemplate.getRelationships().forEach((rel, relationshipTemplate) -> {
                     if (relationshipTemplate.getTarget().equals(newtworkNodeTemplate.getName())) {

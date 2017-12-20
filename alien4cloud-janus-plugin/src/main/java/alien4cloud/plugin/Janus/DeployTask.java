@@ -123,7 +123,7 @@ public class DeployTask extends AlienTask {
         // Get the yaml of the application as built by from a4c
         Csar myCsar = new Csar(paasId, dtopo.getArchiveVersion());
         myCsar.setToscaDefinitionsVersion(ToscaParser.LATEST_DSL);
-        String yaml = archiveExportService.getYaml(myCsar, dtopo);
+        String yaml = archiveExportService.getYaml(myCsar, dtopo, true);
 
         // This operation must be synchronized, because it uses the same files topology.yml and topology.zip
         String taskUrl;

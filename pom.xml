@@ -4,12 +4,12 @@
   <parent>
     <groupId>alien4cloud</groupId>
     <artifactId>alien4cloud-parent</artifactId>
-    <version>2.0.0-SM4</version>
+    <version>2.0.0-SM5</version>
   </parent>
 
   <properties>
-    <alien4cloud.version>2.0.0-SM4</alien4cloud.version>
-    <tosca.normative.types.version>1.0.0-ALIEN20SM4</tosca.normative.types.version>
+    <alien4cloud.version>2.0.0-SM5</alien4cloud.version>
+    <tosca.normative.types.version>1.0.0-ALIEN20SM5</tosca.normative.types.version>
     <alien4cloud.dsl.version>alien_dsl_2_0_0</alien4cloud.dsl.version>
     <bdcf.samples.version>3.0-M6</bdcf.samples.version>
   </properties>
