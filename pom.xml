@@ -16,7 +16,7 @@
 
   <artifactId>alien4cloud-janus-plugin-parent</artifactId>
   <name>Alien 4 Cloud HPC PaaS provider Janus</name>
-  <version>2.1.0-SNAPSHOT</version>
+  <version>3.0.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <modules>
