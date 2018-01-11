@@ -14,7 +14,9 @@ capability_types:
 
 node_types:
   janus.nodes.openstack.FloatingIP:
-    derived_from: tosca.nodes.Root
+    #derived_from: tosca.nodes.Root
+    # This is a hack to force Alien to generate a delegate operation for this type
+    derived_from: tosca.nodes.Network
     properties:
       ip:
         type: string

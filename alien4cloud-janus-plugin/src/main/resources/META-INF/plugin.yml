@@ -10,5 +10,5 @@ component_descriptors:
     description: >
       Alien Plugin for Janus
   - bean_name: fip-modifier
-    name: Floting IP modifier for Janus PublicNetwork
-    description: Floting IP modifier for Janus PublicNetwork
+    name: Floating IP modifier for Janus PublicNetwork
+    description: Floating IP modifier for Janus PublicNetwork
