@@ -1,0 +1,5 @@
+#parse("$vtPath/tosca_type.vm")
+#if($type.validSources.size() > 0)
+${propertyUtils.indent($indent)}valid_source_types: [${janusUtils.join($type.validSources, ", ")}]
+#end## if validSources
+## TODO attributes

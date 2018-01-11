@@ -1,0 +1,15 @@
+description: ${utils.renderDescription(${type.description}, "")}
+#if("$!type.derivedFrom" != "" )
+${propertyUtils.indent($indent)}derived_from: ${type.derivedFrom.get(0)}
+#end## if derivedFrom not empty
+#if($utils.mapIsNotEmptyAndContainsNotnullValues($type.properties))
+${propertyUtils.indent($indent)}properties:
+#foreach($propertyEntry in $type.properties.entrySet())
+#set($indent= $indent + 1)
+${propertyUtils.indent($indent)}$propertyEntry.key:
+#set($property=$propertyEntry.value)
+#set($indent= $indent + 1)
+${propertyUtils.indent($indent)}#parse("$vtPath/property_def.vm")
+#set($indent= $indent - 2)
+#end## foreach properties
+#end## if properties

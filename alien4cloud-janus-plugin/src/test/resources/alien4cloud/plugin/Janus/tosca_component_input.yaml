@@ -1,0 +1,159 @@
+
+tosca_definitions_version: alien_dsl_2_0_0
+
+metadata:
+  template_name: org.janus.samples.bash
+  template_version: 1.0.0-SNAPSHOT
+  template_author: janus
+
+description: >
+  This is a sample used to test parsing and formatting
+  of a component into a DSL that matches Janus one.
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN14
+
+repositories:
+  mydocker_repo:
+    url: http://custom.repo.com
+    type: docker
+    credential:
+      protocol: test
+      token_type: password
+      user: opjsdpojds
+      token: test
+      keys:
+        k1: var1
+        who: "id:di"
+
+data_types:
+  tosca.datatypes.Root:
+    description: The TOSCA root Data Type all other TOSCA base Data Types derive from.
+  tosca.datatypes.Credential:
+    derived_from: tosca.datatypes.Root
+    description: The Credential type is a complex TOSCA data Type used when describing authorization credentials used to access network accessible resources.
+    properties:
+      protocol:
+        type: string
+        description: The optional protocol name.
+        required: false
+      token_type:
+        type: string
+        description: The required token type.
+        default: password
+      token:
+        type: string
+        description: The required token used as a credential for authorization or access to a networked resource.
+      keys:
+        type: map
+        description: The optional list of protocol-specific keys or assertions.
+        required: false
+        entry_schema:
+          type: string
+      user:
+        type: string
+        description: The optional user (name or ID) used for non-token based credentials.
+        required: false
+
+artifact_types:
+  tosca.artifacts.Root:
+    description: root type
+  tosca.artifacts.Implementation.Bash:
+    derived_from: tosca.artifacts.Root
+    description: Script artifact for the Unix Bash shell
+    mime_type: application/x-sh
+    file_ext: [ sh, bash ]
+
+capability_types:
+  tosca.capabilities.Root:
+    description: The TOSCA Artifact Type all other TOSCA Artifact Types derive from
+  tosca.capabilities.Test:
+    derived_from: tosca.capabilities.Root
+    description: The TOSCA Artifact Type all other TOSCA Artifact Types derive from
+    valid_source_types: [ MyType, OtherType ]
+  tosca.capabilities.Endpoint:
+    derived_from: tosca.capabilities.Root
+    description: >
+      This is the default TOSCA type that should be used or extended to define a network endpoint capability.
+      This includes the information to express a basic endpoint with a single port or a complex endpoint with multiple ports.
+      By default the Endpoint is assumed to represent an address on a private network unless otherwise specified.
+    properties:
+      protocol:
+        type: string
+        description: >
+          The name of the protocol (i.e., the protocol prefix) that the endpoint accepts (any OSI Layer 4-7 protocols)
+          Examples: http, https, ftp, tcp, udp, etc.
+        default: tcp
+      port:
+        type: integer
+        description: The optional port of the endpoint.
+        required: false
+        constraints:
+          - in_range: [ 1, 65535 ]
+      secure:
+        type: boolean
+        description: Requests for the endpoint to be secure and use credentials supplied on the ConnectsTo relationship.
+        default: false
+      url_path:
+        type: string
+        description: The optional URL path of the endpoint’s address if applicable for the protocol.
+        required: false
+      port_name:
+        type: string
+        description: The optional name (or ID) of the network port this endpoint should be bound to.
+        required: false
+      network_name:
+        type: string
+        description: >
+          The optional name (or ID) of the network this endpoint should be bound to.
+          network_name: PRIVATE | PUBLIC |<network_name> | <network_id>
+        required: false
+        default: PRIVATE
+      initiator:
+        type: string
+        description: The optional indicator of the direction of the connection.
+        default: source
+        constraints:
+          - valid_values: [ source, target, peer ]
+#    attributes:
+#      ip_address:
+#        type: string
+#        description: This is the IP address as propagated up by the associated node’s host (Compute) container.
+
+node_types:
+  org.janus.samples.python.Component:
+    derived_from: tosca.nodes.SoftwareComponent
+    description: >
+      Sample component to illustrate how to implement a Component lifecycle in Python
+    tags:
+      icon: /images/python.png
+    properties:
+      hello_message:
+        description: A simple message to print
+        type: string
+        required: true
+        default: "Hello World!"
+      outputVar1:
+        description: Dummy property used to test operation outputs
+        type: string
+        required: true
+        default: "ov1"
+      outputVar2:
+        description: Dummy property used to test operation outputs
+        type: string
+        required: true
+        default: "ov2"
+    attributes:
+      resolvedOutput1: { get_operation_output: [SELF, Standard, create, myVar1]}
+      resolvedOutput2: { get_operation_output: [SELF, Standard, create, myVar2]}
+    interfaces:
+      Standard:
+        create:
+          inputs:
+            var1: {get_property: [SELF, outputVar1]}
+            var2: {get_property: [SELF, outputVar2]}
+          implementation: scripts/create.sh
+        start:
+          inputs:
+            msg: {get_property: [SELF, hello_message]}
+          implementation: scripts/start.sh
