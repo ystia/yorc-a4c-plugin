@@ -25,10 +25,10 @@ import java.util.Set;
  * TODO: add logs using FlowExecutionContext
  */
 @Log
-@Component(value = "fip-modifier")
+@Component(value = FipTopologyModifier.JANUS_OPENSTACK_FIP_MODIFIER_TAG)
 public class FipTopologyModifier extends TopologyModifierSupport {
 
-    public static final String A4C_KUBERNETES_MODIFIER_TAG = "a4c_kubernetes-final-modifier";
+    public static final String JANUS_OPENSTACK_FIP_MODIFIER_TAG = "janus-openstack-fip-modifier";
 
     @Override
     @ToscaContextual
