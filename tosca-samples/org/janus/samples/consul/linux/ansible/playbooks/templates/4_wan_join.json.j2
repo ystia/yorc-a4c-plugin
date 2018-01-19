@@ -1,0 +1,4 @@
+{
+    "recursors": [{% for host in consul_wan_servers  %}"{{host}}"{% if not loop.last %}, {% endif %}{% endfor %}],
+    "retry_join_wan": [{% for host in consul_wan_servers  %}"{{host}}"{% if not loop.last %}, {% endif %}{% endfor %}]
+}

@@ -1,0 +1,13 @@
+- name: Start consul
+  hosts: all
+  strategy: free
+  become: yes
+  become_method: sudo
+  tasks:
+    - name: start consul
+      systemd:
+        name: consul
+        state: started
+
+    - name: log consul mode
+      debug: msg="Consul started in {{MODE}} mode"

@@ -1,0 +1,20 @@
+[Unit]
+Description=Consul service discovery agent
+Requires=network-online.target
+After=network.target
+
+[Service]
+User=consul
+Group=consul
+PIDFile=/run/consul/consul.pid
+Restart=on-failure
+ExecStartPre=/usr/bin/sh -c 'if [ -f "/run/consul/consul.pid" ] ; then  /usr/bin/rm -f /run/consul/consul.pid ; else /usr/bin/true ; fi'
+ExecStartPre={{INSTALL_DIR}}/consul validate {{CONFIG_DIR}}
+ExecStart={{INSTALL_DIR}}/consul agent $OPTIONS -pid-file=/run/consul/consul.pid -config-dir={{CONFIG_DIR}}
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop={{INSTALL_DIR}}/consul leave
+KillSignal=SIGINT
+TimeoutStopSec=5
+
+[Install]
+WantedBy=multi-user.target

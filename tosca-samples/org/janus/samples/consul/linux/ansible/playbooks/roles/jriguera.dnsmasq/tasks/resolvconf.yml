@@ -1,0 +1,18 @@
+---
+- name: Ensure that dnsmasq is running
+  service:
+    name: "{{ dnsmasq_daemon }}"
+    state: started
+  register: result
+  ignore_errors: True
+
+- name: Create global resolv.conf file
+  template:
+    src: resolv.conf.j2
+    dest: /etc/resolv.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify: reload dnsmasq
+  when: result.state is defined and result.state == 'started'
+ 
