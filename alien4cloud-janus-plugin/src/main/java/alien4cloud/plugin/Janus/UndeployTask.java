@@ -9,8 +9,8 @@ package alien4cloud.plugin.Janus;
 import alien4cloud.paas.IPaaSCallback;
 import alien4cloud.paas.model.DeploymentStatus;
 import alien4cloud.paas.model.PaaSDeploymentContext;
+import alien4cloud.plugin.Janus.rest.JanusRestException;
 import alien4cloud.plugin.Janus.rest.Response.Event;
-import alien4cloud.plugin.Janus.rest.RestClient;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -65,19 +65,26 @@ public class UndeployTask extends AlienTask {
         String status = "UNKNOWN";
         try {
             taskUrl = restClient.undeployJanus(deploymentUrl, false);
-            if (taskUrl == null) {
-                // Assumes already undeployed
-                status = "UNDEPLOYED";
-                orchestrator.changeStatus(paasId, DeploymentStatus.UNDEPLOYED);
-                done = true;
-            }
-        } catch (Exception e) {
-            log.debug("undeployJanus returned an exception: " + e);
-            orchestrator.changeStatus(paasId, DeploymentStatus.FAILURE);
-            error = e;
+            orchestrator.changeStatus(paasId, DeploymentStatus.UNDEPLOYED);
             done = true;
         }
-        if (! done) {
+        catch (JanusRestException jre) {
+            // Deployment is not found or already undeployed
+            if (jre.getHttpStatusCode() == 404 || jre.getHttpStatusCode() == 400 ) {
+                orchestrator.changeStatus(paasId, DeploymentStatus.UNDEPLOYED);
+                done = true;
+            } else {
+                log.debug("undeployJanus returned an exception: " + jre.getMessage());
+                orchestrator.changeStatus(paasId, DeploymentStatus.FAILURE);
+                error = jre;
+            }
+        }
+        catch (Exception e) {
+            log.error("undeployJanus returned an exception: " + e);
+            orchestrator.changeStatus(paasId, DeploymentStatus.FAILURE);
+            error = e;
+        }
+        if (! done && error == null) {
             String taskId = taskUrl.substring(taskUrl.lastIndexOf("/") + 1);
             orchestrator.sendMessage(paasId, "Undeployment sent to Janus. taskId=" + taskId);
 
@@ -89,14 +96,28 @@ public class UndeployTask extends AlienTask {
                 // This may occur when undeploy is immediate
                 try {
                     status = restClient.getStatusFromJanus(deploymentUrl);
-                } catch (Exception e) {
-                    // TODO Check error 404
-                    // assumes it is undeployed
-                    status = "UNDEPLOYED";
+                }
+                catch (JanusRestException jre){
+                    if (jre.getHttpStatusCode() == 404){
+                        // assumes it is undeployed
+                        status = "UNDEPLOYED";
+                    } else {
+                        log.error("undeployJanus returned an exception: " + jre.getMessage());
+                        orchestrator.changeStatus(paasId, DeploymentStatus.FAILURE);
+                        error = jre;
+                        break;
+                    }
+                }
+                catch (Exception e) {
+                    log.error("undeployJanus returned an exception: " + e.getMessage());
+                    orchestrator.changeStatus(paasId, DeploymentStatus.FAILURE);
+                    error = e;
+                    break;
                 }
                 log.debug("Status of deployment: " + status);
                 switch (status) {
                     case "UNDEPLOYED":
+                        log.debug("Undeployment OK");
                         // Undeployment OK.
                         orchestrator.changeStatus(paasId, DeploymentStatus.UNDEPLOYED);
                         break;
