@@ -11,11 +11,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
-import java.util.Iterator;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -33,7 +30,6 @@ import alien4cloud.plugin.Janus.rest.Response.JanusError;
 import alien4cloud.plugin.Janus.rest.Response.LogResponse;
 import alien4cloud.plugin.Janus.rest.Response.NodeInfosResponse;
 import alien4cloud.paas.model.NodeOperationExecRequest;
-import alien4cloud.rest.utils.JsonUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
@@ -50,7 +46,6 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.ssl.SSLContexts;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class RestClient {
@@ -225,12 +220,12 @@ public class RestClient {
                 .header("accept", "application/json")
                 .asJson();
 
-        JSONObject obj = res.getBody().getObject();
+        checkRestErrors(res);
 
+        JSONObject obj = res.getBody().getObject();
         if (!obj.has("status")) {
             throw new Exception("getStatusFromJanus returned no status");
         }
-
         return obj.getString("status");
     }
 
@@ -281,12 +276,14 @@ public class RestClient {
     }
 
     public String undeployJanus(String deploymentUrl, boolean purge) throws Exception {
-        log.debug("undeployJanus " + deploymentUrl);
+        log.debug("undeployJanus " + deploymentUrl + "with purge = " + purge);
         HttpResponse<JsonNode> res = Unirest.delete(providerConfiguration.getUrlJanus() + deploymentUrl + (purge ? "?purge" : "") )
                 .header("accept", "application/json")
                 .asJson();
-        String task = res.getHeaders().getFirst("Location");
-        return task;
+
+        log.debug(">>> Response status for undeployJanus is : " + res.getStatusText());
+        this.checkRestErrors(res);
+        return res.getHeaders().getFirst("Location");
     }
 
     public String stopTask(String taskUrl) throws UnirestException {
@@ -298,9 +295,6 @@ public class RestClient {
     }
 
     public String postCustomCommandToJanus(String deploymentUrl, NodeOperationExecRequest request) throws Exception {
-        final InputStream stream;
-
-
         JSONObject jobject = new JSONObject();
         jobject.put("node", request.getNodeTemplateName());
         jobject.put("name", request.getOperationName());
@@ -314,7 +308,7 @@ public class RestClient {
                 .body(bytes)
                 .asJson();
 
-        System.out.println(">>> Response status for custom POST is : " + postResponse.getStatusText());
+        log.debug(">>> Response status for custom POST is : " + postResponse.getStatusText());
         if (!postResponse.getStatusText().equals("Accepted")) {
             throw new Exception("postCustomCommandToJanus: Janus returned an error :" + postResponse.getStatus());
         }
