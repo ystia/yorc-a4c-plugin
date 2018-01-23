@@ -9,12 +9,10 @@ package alien4cloud.plugin.Janus;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.UUID;
 
 import javax.annotation.Resource;
 import javax.inject.Inject;
 
-import alien4cloud.component.repository.ArtifactLocalRepository;
 import alien4cloud.orchestrators.plugin.IOrchestratorPlugin;
 import alien4cloud.paas.exception.MaintenanceModeException;
 import alien4cloud.paas.exception.OperationExecutionException;
@@ -23,9 +21,7 @@ import alien4cloud.paas.model.PaaSWorkflowStepMonitorEvent;
 import alien4cloud.plugin.Janus.rest.JanusRestException;
 import alien4cloud.plugin.Janus.rest.Response.DeployInfosResponse;
 import alien4cloud.plugin.Janus.rest.Response.NodeInfosResponse;
-import alien4cloud.utils.MapUtil;
 import alien4cloud.dao.IGenericSearchDAO;
-import alien4cloud.model.deployment.Deployment;
 import alien4cloud.paas.IPaaSCallback;
 import alien4cloud.paas.exception.PluginConfigurationException;
 import alien4cloud.paas.model.AbstractMonitorEvent;
@@ -35,35 +31,23 @@ import alien4cloud.paas.model.InstanceStatus;
 import alien4cloud.paas.model.NodeOperationExecRequest;
 import alien4cloud.paas.model.PaaSDeploymentContext;
 import alien4cloud.paas.model.PaaSDeploymentLog;
-import alien4cloud.paas.model.PaaSDeploymentLogLevel;
 import alien4cloud.paas.model.PaaSDeploymentStatusMonitorEvent;
-import alien4cloud.paas.model.PaaSInstancePersistentResourceMonitorEvent;
 import alien4cloud.paas.model.PaaSInstanceStateMonitorEvent;
 import alien4cloud.paas.model.PaaSMessageMonitorEvent;
 import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
 import alien4cloud.paas.plan.ToscaNodeLifecycleConstants;
 import alien4cloud.plugin.Janus.rest.Response.AttributeResponse;
-import alien4cloud.plugin.Janus.rest.Response.Event;
-import alien4cloud.plugin.Janus.rest.Response.EventResponse;
 import alien4cloud.plugin.Janus.rest.Response.InstanceInfosResponse;
 import alien4cloud.plugin.Janus.rest.Response.Link;
-import alien4cloud.plugin.Janus.rest.Response.LogEvent;
-import alien4cloud.plugin.Janus.rest.Response.LogResponse;
 import alien4cloud.plugin.Janus.rest.RestClient;
 import lombok.extern.slf4j.Slf4j;
 import org.alien4cloud.tosca.catalog.index.IToscaTypeSearchService;
 import org.alien4cloud.tosca.catalog.repository.CsarFileRepository;
-import org.alien4cloud.tosca.catalog.repository.ICsarRepositry;
-import org.alien4cloud.tosca.exporter.ArchiveExportService;
 import org.alien4cloud.tosca.model.templates.NodeTemplate;
 import org.alien4cloud.tosca.model.templates.Topology;
 import org.alien4cloud.tosca.model.types.NodeType;
 import org.alien4cloud.tosca.model.types.RelationshipType;
-import org.alien4cloud.tosca.normative.constants.NormativeComputeConstants;
 import org.elasticsearch.common.collect.Maps;
-import org.springframework.stereotype.Component;
-
-//import static org.alien4cloud.tosca.normative.ToscaNormativeUtil.isFromType;
 
 /**
  * a4c janus plugin
@@ -86,12 +70,10 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
     @Inject
     private CsarFileRepository fileRepository;
 
-    //
     private RestClient restClient = new RestClient();
 
     private TaskManager taskManager;
 
-    private final int JANUS_OPE_TIMEOUT = 1000 * 3600 * 4;  // 4 hours
 
     /**
      * Default constructor
@@ -425,9 +407,28 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
 
         if (status.equals(DeploymentStatus.UNDEPLOYED)) {
             try {
+                log.debug("send deployment purge request to janus");
                 restClient.undeployJanus("/deployments/" + paasId, true);
-            } catch (Exception e) {
-                log.error("undeployJanus purge returned an exception: " + e);
+            }
+            catch(JanusRestException jre){
+                // If 400 code (bad request)  is returned, we retry requesting purge during at most 5 minutes
+                if (jre.getHttpStatusCode() == 400) {
+                    long timeout = System.currentTimeMillis() + 1000 * 60 * 5;
+                    long timetowait = timeout - System.currentTimeMillis();
+                    boolean retry = true;
+                    while (retry && timetowait > 0) {
+                        retry = retryDeploymentPurge(paasId);
+                    }
+                }
+                // 404 status code is ignored for purge failure
+                else if (jre.getHttpStatusCode() != 404){
+                    log.error("undeployJanus purge returned an exception: " + jre.getMessage());
+                    changeStatus(paasId, DeploymentStatus.FAILURE);
+                    return;
+                }
+            }
+            catch(Exception e){
+                log.error("undeployJanus purge returned an exception: " + e.getMessage());
                 changeStatus(paasId, DeploymentStatus.FAILURE);
                 return;
             }
@@ -445,6 +446,39 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
     // ------------------------------------------------------------------------------------------------------
     // private methods
     // ------------------------------------------------------------------------------------------------------
+
+    /**
+     * Retry deployment purge
+     * @param paasId
+     * @return boolean
+     */
+    private boolean retryDeploymentPurge(String paasId) {
+        boolean retry = false;
+        try{
+            // Wait for 2 seconds before retrying purge request
+            Thread.sleep(2000L);
+            restClient.undeployJanus("/deployments/" + paasId, true);
+        }
+        catch (InterruptedException ex) {
+            log.error("Waiting for purge requesting has been interrupted", ex);
+            retry = true;
+        }
+        catch(JanusRestException jre){
+            log.error("undeployJanus purge returned an exception: " + jre.getMessage());
+            if (jre.getHttpStatusCode() == 400){
+                retry = true;
+            }
+            // 404 status code is ignored for purge failure
+            else if (jre.getHttpStatusCode() != 404){
+                changeStatus(paasId, DeploymentStatus.FAILURE);
+            }
+        }
+        catch(Exception e){
+            log.error("undeployJanus purge returned an exception: " + e.getMessage());
+            changeStatus(paasId, DeploymentStatus.FAILURE);
+        }
+        return retry;
+    }
 
     /**
      * Notify a4c that a workflow has been started
@@ -617,7 +651,8 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
     /**
      * Ask Janus the values of all attributes for this node/instance
      * This method should never throw Exception.
-     * @param ctx
+     * @param paasId
+     * @param iinfo
      * @param node
      * @param instance
      */

@@ -17,6 +17,7 @@ import alien4cloud.paas.model.InstanceInformation;
 import alien4cloud.paas.model.PaaSNodeTemplate;
 import alien4cloud.paas.model.PaaSTopology;
 import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
+import alien4cloud.plugin.Janus.rest.JanusRestException;
 import alien4cloud.plugin.Janus.rest.Response.Event;
 import alien4cloud.plugin.Janus.utils.MappingTosca;
 import alien4cloud.plugin.Janus.utils.ShowTopology;
@@ -212,10 +213,22 @@ public class DeployTask extends AlienTask {
             String status;
             try {
                 status = restClient.getStatusFromJanus(deploymentUrl);
-            } catch (Exception e) {
-                // TODO Check error 404
-                // assumes it is undeployed
-                status = "UNDEPLOYED";
+            }
+            catch(JanusRestException jre) {
+                if (jre.getHttpStatusCode() == 404) {
+                    // assumes it is undeployed
+                    status = "UNDEPLOYED";
+                } else {
+                    log.error("deployJanus returned an exception: " + jre.getMessage());
+                    error = jre;
+                    break;
+                }
+
+            }
+            catch (Exception e) {
+                log.error("deployJanus returned an exception: " + e.getMessage());
+                error = e;
+                break;
             }
             switch (status) {
                 case "UNDEPLOYED":
