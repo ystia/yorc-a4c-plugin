@@ -465,12 +465,13 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
             retry = true;
         }
         catch(JanusRestException jre){
-            log.error("undeployJanus purge returned an exception: " + jre.getMessage());
             if (jre.getHttpStatusCode() == 400){
+                log.warn("Purge will be requested again later because Janus is still undeploying application with deployment id:" + paasId);
                 retry = true;
             }
             // 404 status code is ignored for purge failure
             else if (jre.getHttpStatusCode() != 404){
+                log.error("undeployJanus purge returned an exception: " + jre.getMessage());
                 changeStatus(paasId, DeploymentStatus.FAILURE);
             }
         }
