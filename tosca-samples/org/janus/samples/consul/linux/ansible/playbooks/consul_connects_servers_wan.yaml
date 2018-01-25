@@ -13,8 +13,9 @@
   tasks:
     - name: compute WAN servers
       set_fact: 
-        consul_wan_servers: "{{ consul_wan_servers }} + [ '{{ hostvars[inventory_hostname][item +'_SERVER_WAN_IP'] }}' ]"
-      with_items: "{{TARGET_INSTANCES.split(',')}}"
+        consul_wan_servers: "{{ consul_wan_servers }} + [ '{{ hostvars[inventory_hostname][item] }}' ]"
+      with_items: "{{ hostvars[inventory_hostname]  }}"
+      when: item | match(TARGET_NODE+'_.*_SERVER_WAN_IP')
 
     - name: Install servers config for consul
       template: 

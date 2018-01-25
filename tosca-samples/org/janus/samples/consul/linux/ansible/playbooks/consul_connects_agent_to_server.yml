@@ -13,8 +13,9 @@
   tasks:
     - name: compute consul servers
       set_fact: 
-        consul_servers: "{{ consul_servers }} + [ '{{ hostvars[inventory_hostname][item +'_SERVER_IP'] }}' ]"
-      with_items: "{{TARGET_INSTANCES.split(',')}}"
+        consul_servers: "{{ consul_servers }} + [ '{{ hostvars[inventory_hostname][item] }}' ]"
+      with_items: "{{ hostvars[inventory_hostname]  }}"
+      when: item | match(TARGET_NODE+'_.*_SERVER_IP')
 
     - name: Install servers config for consul
       template: 

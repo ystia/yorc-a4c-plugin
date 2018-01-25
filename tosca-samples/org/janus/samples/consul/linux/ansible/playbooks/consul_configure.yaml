@@ -13,10 +13,11 @@
         dest: "{{CONFIG_DIR}}/1_main_conf.json"
 
     - name: compute consul servers
-      set_fact: 
-        consul_servers: "{{ consul_servers }} + [ '{{ hostvars[inventory_hostname][item +'_IP_ADDRESS'] }}' ]"
-      with_items: "{{INSTANCES.split(',')}}"
-      when: MODE == "server"
+      set_fact:
+        consul_servers: "{{ consul_servers }} + [ '{{ hostvars[inventory_hostname][item] }}' ]"
+      with_items: "{{ hostvars[inventory_hostname]  }}"
+      when: MODE == "server" and item | match(NODE+'_.*_IP_ADDRESS')
+
 
     - name: Install servers config for consul
       template: 
