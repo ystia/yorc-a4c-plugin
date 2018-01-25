@@ -59,14 +59,17 @@ public class UndeployTask extends AlienTask {
             }
         }
 
-        log.debug("Undeploying " + paasId);
+        log.debug("Undeploying deployment Id:" + paasId);
         boolean done = false;
         String taskUrl = null;
-        String status = "UNKNOWN";
+        String status;
         try {
             taskUrl = restClient.undeployJanus(deploymentUrl, false);
-            orchestrator.changeStatus(paasId, DeploymentStatus.UNDEPLOYED);
-            done = true;
+            if (taskUrl == null) {
+                // Assumes already undeployed
+                orchestrator.changeStatus(paasId, DeploymentStatus.UNDEPLOYED);
+                done = true;
+            }
         }
         catch (JanusRestException jre) {
             // Deployment is not found or already undeployed
@@ -176,5 +179,4 @@ public class UndeployTask extends AlienTask {
             callback.onFailure(error);
         }
     }
-
 }
