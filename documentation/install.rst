@@ -6,7 +6,7 @@ Host requirements
 
   * A machine with Linux or MacOS Operating System: Alien4Cloud can run on windows OS too but we recommend Unix based OS. Moreover the default package only includes sh script.
   * JAVA: Ensure that you have at least JAVA version 8 or higher installed on your working station. If not, just install java following instructions `here <https://www.java.com/fr/download/manual.jsp>`_ .
-  * A supported web browser (`check versions here <http://alien4cloud.github.io/#/documentation/1.4.0/admin_guide/supported_platforms.html>`_ ).
+  * A supported web browser (`check versions here <http://alien4cloud.github.io/#/documentation/2.0.0/admin_guide/supported_platforms.html>`_ ).
 
 Execution environment requirements
 ----------------------------------
@@ -16,16 +16,16 @@ An HTTP(S) access to a running and properly configured (for OpenStack deployemen
 Alien4Cloud Setup
 -----------------
 
-Please refer to the `online documentation of Alien4Cloud (section "Install Alien4Cloud") <http://alien4cloud.github.io/#/documentation/1.4.0/getting_started/getting_started.html>`_ in order to install Alien4Cloud properly.
+Please refer to the `online documentation of Alien4Cloud (section "Install Alien4Cloud") <http://alien4cloud.github.io/#/documentation/2.0.0/getting_started/getting_started.html>`_ in order to install Alien4Cloud properly.
 
-Please be sure to use `Alien4Cloud 1.4.3.1 <http://fastconnect.org/maven/service/local/artifact/maven/redirect?r=opensource&g=alien4cloud&a=alien4cloud-dist&v=1.4.3.1&p=tar.gz&c=dist>`_ !
+Please be sure to use `Alien4Cloud 2.0.0 <http://fastconnect.org/maven/service/local/artifact/maven/redirect?r=opensource&g=alien4cloud&a=alien4cloud-dist&v=2.0.0-SM5&p=tar.gz&c=dist>`_ !
 
-Then start Alien4Cloud as described in the `online documentation (section "Start Alien4Cloud") <http://alien4cloud.github.io/#/documentation/1.4.0/getting_started/getting_started.html>`_
+Then start Alien4Cloud as described in the `online documentation (section "Start Alien4Cloud") <http://alien4cloud.github.io/#/documentation/2.0.0/getting_started/getting_started.html>`_
 
 Setup Alien4Cloud security
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Please refer to the `Security section of Alien4Cloud documentation <http://alien4cloud.github.io/#/documentation/1.4.0/admin_guide/security.html>`_ to run Alien4Cloud in secured mode.
+Please refer to the `Security section of Alien4Cloud documentation <http://alien4cloud.github.io/#/documentation/2.0.0/admin_guide/security.html>`_ to run Alien4Cloud in secured mode.
 The main steps are:
 
   * Generate key and PEM cerificate for the Alien4Cloud server. We advise you to use the same CA as the one used to sign the Janus PEM certificates (see "Run Janus in Secured mode" chapter in Janus documentation)

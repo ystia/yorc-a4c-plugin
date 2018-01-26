@@ -1,13 +1,35 @@
-tosca_definitions_version: alien_dsl_1_4_0
+tosca_definitions_version: ${alien4cloud.dsl.version}
 
 template_name: janus-openstack-types
 template_author: Janus
 template_version: ${janus.types.version}
 
 imports:
-  - tosca-normative-types:1.0.0-ALIEN14
+  - tosca-normative-types:${tosca.normative.types.version}
+
+capability_types:
+  # NOTE: Alien specific
+  janus.capabilities.openstack.FIPConnectivity:
+    derived_from: tosca.capabilities.Connectivity
 
 node_types:
+  janus.nodes.openstack.FloatingIP:
+    #derived_from: tosca.nodes.Root
+    # This is a hack to force Alien to generate a delegate operation for this type
+    derived_from: tosca.nodes.Network
+    properties:
+      ip:
+        type: string
+        description: A specific Floating IP to use. Note that either 'ip' or 'floating_network_name' should be specified and 'ip' take the precedence.
+        required: false
+      floating_network_name:
+        type: string
+        description: Name of the Pool of Floating IPs to use. Note that either 'ip' or 'floating_network_name' should be specified and 'ip' take the precedence.
+        required: false
+    capabilities:
+      connection:
+        type: janus.capabilities.openstack.FIPConnectivity
+
   janus.nodes.openstack.Compute:
     derived_from: tosca.nodes.Compute
     properties:

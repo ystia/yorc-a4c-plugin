@@ -47,10 +47,7 @@ import org.alien4cloud.tosca.model.templates.NodeTemplate;
 import org.alien4cloud.tosca.model.templates.Topology;
 import org.alien4cloud.tosca.model.types.NodeType;
 import org.alien4cloud.tosca.model.types.RelationshipType;
-import org.alien4cloud.tosca.normative.constants.NormativeComputeConstants;
 import org.elasticsearch.common.collect.Maps;
-
-import static org.alien4cloud.tosca.normative.ToscaNormativeUtil.isFromType;
 
 /**
  * a4c janus plugin
@@ -319,6 +316,8 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
                 NodeTemplate nodeTemplate = topology.getNodeTemplates().get(node);
                 NodeType nodeType = toscaTypeSearchService.getRequiredElementInDependencies(NodeType.class, nodeTemplate.getType(),
                         topology.getDependencies());
+                // ALIEN 2.0.0 Update
+                /*
                 if (isFromType(NormativeComputeConstants.COMPUTE_TYPE, nodeType)) {
                     for (Entry<String, InstanceInformation> nodeInstanceEntry : nodeInstances.entrySet()) {
                         String instance = nodeInstanceEntry.getKey();
@@ -327,7 +326,7 @@ public abstract class JanusPaaSProvider implements IOrchestratorPlugin<ProviderC
                             doSwitchInstanceMaintenanceMode(paasId, node, instance, iinfo, maintenanceModeOn);
                         }
                     }
-                }
+                }*/
             }
         }
 

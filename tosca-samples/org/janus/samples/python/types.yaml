@@ -1,5 +1,4 @@
-
-tosca_definitions_version: alien_dsl_1_4_0
+tosca_definitions_version: alien_dsl_2_0_0
 
 metadata:
   template_name: org.janus.samples.python
@@ -7,7 +6,7 @@ metadata:
   template_author: janus
 
 imports:
-  - tosca-normative-types:1.0.0-ALIEN14
+  - tosca-normative-types:1.0.0-ALIEN20SM5
 
 node_types:
   org.janus.samples.python.Component:

@@ -1,0 +1,771 @@
+tosca_definitions_version: alien_dsl_2_0_0
+
+metadata:
+  template_name: ConsulOnBS
+  template_version: 0.1.0-SNAPSHOT
+  template_author: admin
+
+description: "This topology illustrates how to setup block storage and partitions in order to persist data (Consul Servers' data in this use case)"
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN20SM5
+  - alien-extended-storage-types:2.0.0-SM5
+  - janus-types:1.0.0
+  - org.janus.samples.consul.linux.ansible:1.0.0-SNAPSHOT
+  - org.janus.samples.consul.pub:1.0.0-SNAPSHOT
+
+topology_template:
+  node_templates:
+    PublicNetwork:
+      metadata:
+        a4c_edit_x: 54
+        a4c_edit_y: "-29"
+      type: tosca.nodes.Network
+      properties:
+        ip_version: 4
+    ComputeCADC1:
+      metadata:
+        a4c_edit_x: "-237"
+        a4c_edit_y: "-3"
+      type: tosca.nodes.Compute
+      requirements:
+        - networkPublicNetworkConnection:
+            type_requirement: network
+            node: PublicNetwork
+            capability: tosca.capabilities.Connectivity
+            relationship: tosca.relationships.Network
+      capabilities:
+        scalable:
+          properties:
+            min_instances: 1
+            max_instances: 10
+            default_instances: 2
+        endpoint:
+          properties:
+            secure: true
+            protocol: tcp
+            network_name: PRIVATE
+            initiator: source
+    ComputeCSDC1:
+      metadata:
+        a4c_edit_x: 37
+        a4c_edit_y: "-5"
+      type: tosca.nodes.Compute
+      requirements:
+        - networkNetworkConnection:
+            type_requirement: network
+            node: PublicNetwork
+            capability: tosca.capabilities.Connectivity
+            relationship: tosca.relationships.Network
+      capabilities:
+        os:
+          properties:
+            type: linux
+        scalable:
+          properties:
+            min_instances: 1
+            max_instances: 7
+            default_instances: 3
+        endpoint:
+          properties:
+            secure: true
+            protocol: tcp
+            network_name: PRIVATE
+            initiator: source
+    ConsulAgentDC1:
+      type: org.janus.samples.consul.linux.ansible.nodes.ConsulAgent
+      properties:
+        install_dnsmasq: true
+        mode: agent
+        download_url: "https://releases.hashicorp.com/consul/1.0.2/consul_1.0.2_linux_amd64.zip"
+        install_dir: "/usr/local/bin"
+        data_dir: "/var/consul"
+        config_dir: "/etc/consul.d"
+        datacenter: dc1
+        domain: consul
+      requirements:
+        - joinServerConsulServerConsul_server:
+            type_requirement: consul_server
+            node: ConsulServerDC1
+            capability: org.janus.samples.consul.pub.capabilities.ConsulServer
+            relationship: org.janus.samples.consul.linux.ansible.relationships.JoinServer
+        - hostedOnComputeCaHost:
+            type_requirement: host
+            node: ComputeCADC1
+            capability: tosca.capabilities.Container
+            relationship: tosca.relationships.HostedOn
+      capabilities:
+        consul_agent:
+          properties:
+            api_port: 8500
+            protocol: tcp
+            secure: false
+            network_name: PRIVATE
+            initiator: source
+    ConsulServerDC1:
+      type: org.janus.samples.consul.linux.ansible.nodes.ConsulServer
+      properties:
+        install_dnsmasq: true
+        mode: server
+        download_url: "https://releases.hashicorp.com/consul/1.0.2/consul_1.0.2_linux_amd64.zip"
+        install_dir: "/usr/local/bin"
+        data_dir: "/consulfs/consul_data"
+        config_dir: "/etc/consul.d"
+        datacenter: dc1
+        domain: consul
+      requirements:
+        - hostedOnComputeHost:
+            type_requirement: host
+            node: ComputeCSDC1
+            capability: tosca.capabilities.Container
+            relationship: tosca.relationships.HostedOn
+        - dependsOnLinuxFileSystemFeature:
+            type_requirement: dependency
+            node: LinuxFileSystem
+            capability: tosca.capabilities.Node
+            relationship: tosca.relationships.DependsOn
+      capabilities:
+        consul_agent:
+          properties:
+            api_port: 8500
+            protocol: tcp
+            secure: false
+            network_name: PRIVATE
+            initiator: source
+    BlockStorage:
+      metadata:
+        a4c_edit_x: 152
+        a4c_edit_y: 137
+      type: tosca.nodes.BlockStorage
+      properties:
+        size: "1 GIB"
+        device: "/dev/vdb"
+      requirements:
+        - attachToComputeCsdc1Attach:
+            type_requirement: attachment
+            node: ComputeCSDC1
+            capability: tosca.capabilities.Attachment
+            relationship: tosca.relationships.AttachTo
+    LinuxFileSystem:
+      type: alien.nodes.LinuxFileSystem
+      properties:
+        fs_type: ext4
+        location: "/consulfs"
+      requirements:
+        - hostedOnComputeCsdc1Host:
+            type_requirement: host
+            node: ComputeCSDC1
+            capability: tosca.capabilities.Container
+            relationship: tosca.relationships.HostedOn
+        - linuxPartitionBlockStorageFeature:
+            type_requirement: partition
+            node: BlockStorage
+            capability: tosca.capabilities.Node
+            relationship: alien.relationships.LinuxPartition
+  workflows:
+    install:
+      steps:
+        Compute_install:
+          target: ComputeCSDC1
+          activities:
+            - delegate: install
+          on_success:
+            - ConsulServer_initial
+            - LinuxFileSystem_initial
+        ConsulServer_initial:
+          target: ConsulServerDC1
+          activities:
+            - set_state: initial
+          on_success:
+            - ConsulServer_creating
+        ConsulServer_creating:
+          target: ConsulServerDC1
+          activities:
+            - set_state: creating
+          on_success:
+            - ConsulServer_create
+        ConsulServer_created:
+          target: ConsulServerDC1
+          activities:
+            - set_state: created
+          on_success:
+            - ConsulServer_configuring
+        ConsulServer_configuring:
+          target: ConsulServerDC1
+          activities:
+            - set_state: configuring
+          on_success:
+            - ConsulServerDC1_dependsOnLinuxFileSystemFeature_pre_configure_source
+            - ConsulServer_hostedOnComputeHost_pre_configure_source
+            - ConsulAgent_joinServerConsulServerConsul_server_pre_configure_target
+            - ConsulServer_configure
+        ConsulServer_configured:
+          target: ConsulServerDC1
+          activities:
+            - set_state: configured
+          on_success:
+            - ConsulServer_starting
+        ConsulServer_starting:
+          target: ConsulServerDC1
+          activities:
+            - set_state: starting
+          on_success:
+            - ConsulServer_start
+        ConsulServer_started:
+          target: ConsulServerDC1
+          activities:
+            - set_state: started
+          on_success:
+            - ConsulServer_hostedOnComputeHost_add_target
+            - ConsulServerDC1_dependsOnLinuxFileSystemFeature_add_source
+            - ConsulAgent_initial
+            - ConsulServerDC1_dependsOnLinuxFileSystemFeature_add_target
+        ConsulServer_create:
+          target: ConsulServerDC1
+          activities:
+            - call_operation: Standard.create
+          on_success:
+            - ConsulServer_created
+        ConsulServer_configure:
+          target: ConsulServerDC1
+          activities:
+            - call_operation: Standard.configure
+          on_success:
+            - ConsulServerDC1_dependsOnLinuxFileSystemFeature_post_configure_source
+            - ConsulServer_hostedOnComputeHost_post_configure_source
+            - ConsulServer_configured
+            - ConsulAgent_joinServerConsulServerConsul_server_post_configure_target
+        ConsulServer_start:
+          target: ConsulServerDC1
+          activities:
+            - call_operation: Standard.start
+          on_success:
+            - ConsulServer_started
+        ConsulServer_hostedOnComputeHost_pre_configure_source:
+          target: ConsulServerDC1
+          target_relationship: hostedOnComputeHost
+          operation_host: SOURCE
+          activities:
+            - call_operation: Configure.pre_configure_source
+          on_success:
+            - ConsulServer_configure
+        ConsulServer_hostedOnComputeHost_post_configure_source:
+          target: ConsulServerDC1
+          target_relationship: hostedOnComputeHost
+          operation_host: SOURCE
+          activities:
+            - call_operation: Configure.post_configure_source
+          on_success:
+            - ConsulServer_configured
+        ConsulServer_hostedOnComputeHost_add_target:
+          target: ConsulServerDC1
+          target_relationship: hostedOnComputeHost
+          operation_host: SOURCE
+          activities:
+            - call_operation: Configure.add_target
+        Network_install:
+          target: PublicNetwork
+          activities:
+            - delegate: install
+          on_success:
+            - Compute_install
+            - Compute_install_1
+        Compute_install_1:
+          target: ComputeCADC1
+          activities:
+            - delegate: install
+          on_success:
+            - ConsulAgent_initial
+        ConsulAgent_initial:
+          target: ConsulAgentDC1
+          activities:
+            - set_state: initial
+          on_success:
+            - ConsulAgent_creating
+        ConsulAgent_creating:
+          target: ConsulAgentDC1
+          activities:
+            - set_state: creating
+          on_success:
+            - ConsulAgent_create
+        ConsulAgent_created:
+          target: ConsulAgentDC1
+          activities:
+            - set_state: created
+          on_success:
+            - ConsulAgent_configuring
+        ConsulAgent_configuring:
+          target: ConsulAgentDC1
+          activities:
+            - set_state: configuring
+          on_success:
+            - ConsulAgent_configure
+            - ConsulAgent_hostedOnComputeCaHost_pre_configure_source
+            - ConsulAgent_joinServerConsulServerConsul_server_pre_configure_source
+        ConsulAgent_configured:
+          target: ConsulAgentDC1
+          activities:
+            - set_state: configured
+          on_success:
+            - ConsulAgent_starting
+        ConsulAgent_starting:
+          target: ConsulAgentDC1
+          activities:
+            - set_state: starting
+          on_success:
+            - ConsulAgent_start
+        ConsulAgent_started:
+          target: ConsulAgentDC1
+          activities:
+            - set_state: started
+          on_success:
+            - ConsulAgent_joinServerConsulServerConsul_server_add_target
+            - ConsulAgent_hostedOnComputeCaHost_add_target
+            - ConsulAgent_joinServerConsulServerConsul_server_add_source
+        ConsulAgent_create:
+          target: ConsulAgentDC1
+          activities:
+            - call_operation: Standard.create
+          on_success:
+            - ConsulAgent_created
+        ConsulAgent_configure:
+          target: ConsulAgentDC1
+          activities:
+            - call_operation: Standard.configure
+          on_success:
+            - ConsulAgent_joinServerConsulServerConsul_server_post_configure_source
+            - ConsulAgent_configured
+            - ConsulAgent_hostedOnComputeCaHost_post_configure_source
+        ConsulAgent_start:
+          target: ConsulAgentDC1
+          activities:
+            - call_operation: Standard.start
+          on_success:
+            - ConsulAgent_started
+        ConsulAgent_hostedOnComputeCaHost_pre_configure_source:
+          target: ConsulAgentDC1
+          target_relationship: hostedOnComputeCaHost
+          operation_host: SOURCE
+          activities:
+            - call_operation: Configure.pre_configure_source
+          on_success:
+            - ConsulAgent_configure
+        ConsulAgent_hostedOnComputeCaHost_post_configure_source:
+          target: ConsulAgentDC1
+          target_relationship: hostedOnComputeCaHost
+          operation_host: SOURCE
+          activities:
+            - call_operation: Configure.post_configure_source
+          on_success:
+            - ConsulAgent_configured
+        ConsulAgent_hostedOnComputeCaHost_add_target:
+          target: ConsulAgentDC1
+          target_relationship: hostedOnComputeCaHost
+          operation_host: SOURCE
+          activities:
+            - call_operation: Configure.add_target
+        ConsulAgent_joinServerConsulServerConsul_server_pre_configure_source:
+          target: ConsulAgentDC1
+          target_relationship: joinServerConsulServerConsul_server
+          operation_host: SOURCE
+          activities:
+            - call_operation: Configure.pre_configure_source
+          on_success:
+            - ConsulAgent_configure
+        ConsulAgent_joinServerConsulServerConsul_server_pre_configure_target:
+          target: ConsulAgentDC1
+          target_relationship: joinServerConsulServerConsul_server
+          operation_host: TARGET
+          activities:
+            - call_operation: Configure.pre_configure_target
+          on_success:
+            - ConsulServer_configure
+        ConsulAgent_joinServerConsulServerConsul_server_post_configure_source:
+          target: ConsulAgentDC1
+          target_relationship: joinServerConsulServerConsul_server
+          operation_host: SOURCE
+          activities:
+            - call_operation: Configure.post_configure_source
+          on_success:
+            - ConsulAgent_configured
+        ConsulAgent_joinServerConsulServerConsul_server_post_configure_target:
+          target: ConsulAgentDC1
+          target_relationship: joinServerConsulServerConsul_server
+          operation_host: TARGET
+          activities:
+            - call_operation: Configure.post_configure_target
+          on_success:
+            - ConsulServer_configured
+        ConsulAgent_joinServerConsulServerConsul_server_add_source:
+          target: ConsulAgentDC1
+          target_relationship: joinServerConsulServerConsul_server
+          operation_host: TARGET
+          activities:
+            - call_operation: Configure.add_source
+        ConsulAgent_joinServerConsulServerConsul_server_add_target:
+          target: ConsulAgentDC1
+          target_relationship: joinServerConsulServerConsul_server
+          operation_host: SOURCE
+          activities:
+            - call_operation: Configure.add_target
+        BlockStorage_install:
+          target: BlockStorage
+          activities:
+            - delegate: install
+          on_success:
+            - Compute_install
+            - LinuxFileSystem_initial
+        LinuxFileSystem_initial:
+          target: LinuxFileSystem
+          activities:
+            - set_state: initial
+          on_success:
+            - LinuxFileSystem_creating
+        LinuxFileSystem_creating:
+          target: LinuxFileSystem
+          activities:
+            - set_state: creating
+          on_success:
+            - LinuxFileSystem_create
+        LinuxFileSystem_created:
+          target: LinuxFileSystem
+          activities:
+            - set_state: created
+          on_success:
+            - LinuxFileSystem_configuring
+        LinuxFileSystem_configuring:
+          target: LinuxFileSystem
+          activities:
+            - set_state: configuring
+          on_success:
+            - LinuxFileSystem_configure
+            - LinuxFileSystem_hostedOnComputeCsdc1Host_pre_configure_source
+            - ConsulServerDC1_dependsOnLinuxFileSystemFeature_pre_configure_target
+            - LinuxFileSystem_linuxPartitionBlockStorageFeature_pre_configure_source
+        LinuxFileSystem_configured:
+          target: LinuxFileSystem
+          activities:
+            - set_state: configured
+          on_success:
+            - LinuxFileSystem_starting
+        LinuxFileSystem_starting:
+          target: LinuxFileSystem
+          activities:
+            - set_state: starting
+          on_success:
+            - LinuxFileSystem_start
+        LinuxFileSystem_started:
+          target: LinuxFileSystem
+          activities:
+            - set_state: started
+          on_success:
+            - LinuxFileSystem_hostedOnComputeCsdc1Host_add_target
+            - ConsulServer_initial
+            - LinuxFileSystem_linuxPartitionBlockStorageFeature_add_target
+        LinuxFileSystem_create:
+          target: LinuxFileSystem
+          activities:
+            - call_operation: Standard.create
+          on_success:
+            - LinuxFileSystem_created
+        LinuxFileSystem_configure:
+          target: LinuxFileSystem
+          activities:
+            - call_operation: Standard.configure
+          on_success:
+            - LinuxFileSystem_linuxPartitionBlockStorageFeature_post_configure_source
+            - ConsulServerDC1_dependsOnLinuxFileSystemFeature_post_configure_target
+            - LinuxFileSystem_configured
+            - LinuxFileSystem_hostedOnComputeCsdc1Host_post_configure_source
+        LinuxFileSystem_start:
+          target: LinuxFileSystem
+          activities:
+            - call_operation: Standard.start
+          on_success:
+            - LinuxFileSystem_started
+        LinuxFileSystem_hostedOnComputeCsdc1Host_pre_configure_source:
+          target: LinuxFileSystem
+          target_relationship: hostedOnComputeCsdc1Host
+          operation_host: SOURCE
+          activities:
+            - call_operation: Configure.pre_configure_source
+          on_success:
+            - LinuxFileSystem_configure
+        LinuxFileSystem_hostedOnComputeCsdc1Host_post_configure_source:
+          target: LinuxFileSystem
+          target_relationship: hostedOnComputeCsdc1Host
+          operation_host: SOURCE
+          activities:
+            - call_operation: Configure.post_configure_source
+          on_success:
+            - LinuxFileSystem_configured
+        LinuxFileSystem_hostedOnComputeCsdc1Host_add_target:
+          target: LinuxFileSystem
+          target_relationship: hostedOnComputeCsdc1Host
+          operation_host: SOURCE
+          activities:
+            - call_operation: Configure.add_target
+        LinuxFileSystem_linuxPartitionBlockStorageFeature_pre_configure_source:
+          target: LinuxFileSystem
+          target_relationship: linuxPartitionBlockStorageFeature
+          operation_host: SOURCE
+          activities:
+            - call_operation: Configure.pre_configure_source
+          on_success:
+            - LinuxFileSystem_configure
+        LinuxFileSystem_linuxPartitionBlockStorageFeature_post_configure_source:
+          target: LinuxFileSystem
+          target_relationship: linuxPartitionBlockStorageFeature
+          operation_host: SOURCE
+          activities:
+            - call_operation: Configure.post_configure_source
+          on_success:
+            - LinuxFileSystem_configured
+        LinuxFileSystem_linuxPartitionBlockStorageFeature_add_target:
+          target: LinuxFileSystem
+          target_relationship: linuxPartitionBlockStorageFeature
+          operation_host: SOURCE
+          activities:
+            - call_operation: Configure.add_target
+        ConsulServerDC1_dependsOnLinuxFileSystemFeature_pre_configure_source:
+          target: ConsulServerDC1
+          target_relationship: dependsOnLinuxFileSystemFeature
+          operation_host: SOURCE
+          activities:
+            - call_operation: Configure.pre_configure_source
+          on_success:
+            - ConsulServer_configure
+        ConsulServerDC1_dependsOnLinuxFileSystemFeature_pre_configure_target:
+          target: ConsulServerDC1
+          target_relationship: dependsOnLinuxFileSystemFeature
+          operation_host: TARGET
+          activities:
+            - call_operation: Configure.pre_configure_target
+          on_success:
+            - LinuxFileSystem_configure
+        ConsulServerDC1_dependsOnLinuxFileSystemFeature_post_configure_source:
+          target: ConsulServerDC1
+          target_relationship: dependsOnLinuxFileSystemFeature
+          operation_host: SOURCE
+          activities:
+            - call_operation: Configure.post_configure_source
+          on_success:
+            - ConsulServer_configured
+        ConsulServerDC1_dependsOnLinuxFileSystemFeature_post_configure_target:
+          target: ConsulServerDC1
+          target_relationship: dependsOnLinuxFileSystemFeature
+          operation_host: TARGET
+          activities:
+            - call_operation: Configure.post_configure_target
+          on_success:
+            - LinuxFileSystem_configured
+        ConsulServerDC1_dependsOnLinuxFileSystemFeature_add_source:
+          target: ConsulServerDC1
+          target_relationship: dependsOnLinuxFileSystemFeature
+          operation_host: TARGET
+          activities:
+            - call_operation: Configure.add_source
+        ConsulServerDC1_dependsOnLinuxFileSystemFeature_add_target:
+          target: ConsulServerDC1
+          target_relationship: dependsOnLinuxFileSystemFeature
+          operation_host: SOURCE
+          activities:
+            - call_operation: Configure.add_target
+    uninstall:
+      steps:
+        Compute_uninstall:
+          target: ComputeCSDC1
+          activities:
+            - delegate: uninstall
+          on_success:
+            - BlockStorage_uninstall
+            - Network_uninstall
+        ConsulServer_stopping:
+          target: ConsulServerDC1
+          activities:
+            - set_state: stopping
+          on_success:
+            - ConsulServer_stop
+        ConsulServer_stopped:
+          target: ConsulServerDC1
+          activities:
+            - set_state: stopped
+          on_success:
+            - ConsulServer_deleting
+        ConsulServer_deleting:
+          target: ConsulServerDC1
+          activities:
+            - set_state: deleting
+          on_success:
+            - ConsulServer_delete
+        ConsulServer_deleted:
+          target: ConsulServerDC1
+          activities:
+            - set_state: deleted
+          on_success:
+            - Compute_uninstall
+            - LinuxFileSystem_stopping
+        ConsulServer_stop:
+          target: ConsulServerDC1
+          activities:
+            - call_operation: Standard.stop
+          on_success:
+            - ConsulServer_stopped
+        ConsulServer_delete:
+          target: ConsulServerDC1
+          activities:
+            - call_operation: Standard.delete
+          on_success:
+            - ConsulServer_deleted
+        ConsulServer_hostedOnComputeHost_remove_target:
+          target: ConsulServerDC1
+          target_relationship: hostedOnComputeHost
+          operation_host: SOURCE
+          activities:
+            - call_operation: Configure.remove_target
+          on_success:
+            - ConsulServer_stopping
+        Network_uninstall:
+          target: PublicNetwork
+          activities:
+            - delegate: uninstall
+        Compute_uninstall_1:
+          target: ComputeCADC1
+          activities:
+            - delegate: uninstall
+          on_success:
+            - Network_uninstall
+        ConsulAgent_stopping:
+          target: ConsulAgentDC1
+          activities:
+            - set_state: stopping
+          on_success:
+            - ConsulAgent_stop
+        ConsulAgent_stopped:
+          target: ConsulAgentDC1
+          activities:
+            - set_state: stopped
+          on_success:
+            - ConsulAgent_deleting
+        ConsulAgent_deleting:
+          target: ConsulAgentDC1
+          activities:
+            - set_state: deleting
+          on_success:
+            - ConsulAgent_delete
+        ConsulAgent_deleted:
+          target: ConsulAgentDC1
+          activities:
+            - set_state: deleted
+          on_success:
+            - ConsulServer_stopping
+            - Compute_uninstall_1
+        ConsulAgent_stop:
+          target: ConsulAgentDC1
+          activities:
+            - call_operation: Standard.stop
+          on_success:
+            - ConsulAgent_stopped
+        ConsulAgent_delete:
+          target: ConsulAgentDC1
+          activities:
+            - call_operation: Standard.delete
+          on_success:
+            - ConsulAgent_deleted
+        ConsulAgent_hostedOnComputeCaHost_remove_target:
+          target: ConsulAgentDC1
+          target_relationship: hostedOnComputeCaHost
+          operation_host: SOURCE
+          activities:
+            - call_operation: Configure.remove_target
+          on_success:
+            - ConsulAgent_stopping
+        ConsulAgent_joinServerConsulServerConsul_server_remove_source:
+          target: ConsulAgentDC1
+          target_relationship: joinServerConsulServerConsul_server
+          operation_host: TARGET
+          activities:
+            - call_operation: Configure.remove_source
+          on_success:
+            - ConsulAgent_stopping
+        ConsulAgent_joinServerConsulServerConsul_server_remove_target:
+          target: ConsulAgentDC1
+          target_relationship: joinServerConsulServerConsul_server
+          operation_host: SOURCE
+          activities:
+            - call_operation: Configure.remove_target
+          on_success:
+            - ConsulAgent_stopping
+        BlockStorage_uninstall:
+          target: BlockStorage
+          activities:
+            - delegate: uninstall
+        LinuxFileSystem_stopping:
+          target: LinuxFileSystem
+          activities:
+            - set_state: stopping
+          on_success:
+            - LinuxFileSystem_stop
+        LinuxFileSystem_stopped:
+          target: LinuxFileSystem
+          activities:
+            - set_state: stopped
+          on_success:
+            - LinuxFileSystem_deleting
+        LinuxFileSystem_deleting:
+          target: LinuxFileSystem
+          activities:
+            - set_state: deleting
+          on_success:
+            - LinuxFileSystem_delete
+        LinuxFileSystem_deleted:
+          target: LinuxFileSystem
+          activities:
+            - set_state: deleted
+          on_success:
+            - Compute_uninstall
+            - BlockStorage_uninstall
+        LinuxFileSystem_stop:
+          target: LinuxFileSystem
+          activities:
+            - call_operation: Standard.stop
+          on_success:
+            - LinuxFileSystem_stopped
+        LinuxFileSystem_delete:
+          target: LinuxFileSystem
+          activities:
+            - call_operation: Standard.delete
+          on_success:
+            - LinuxFileSystem_deleted
+        LinuxFileSystem_hostedOnComputeCsdc1Host_remove_target:
+          target: LinuxFileSystem
+          target_relationship: hostedOnComputeCsdc1Host
+          operation_host: SOURCE
+          activities:
+            - call_operation: Configure.remove_target
+          on_success:
+            - LinuxFileSystem_stopping
+        LinuxFileSystem_linuxPartitionBlockStorageFeature_remove_target:
+          target: LinuxFileSystem
+          target_relationship: linuxPartitionBlockStorageFeature
+          operation_host: SOURCE
+          activities:
+            - call_operation: Configure.remove_target
+          on_success:
+            - LinuxFileSystem_stopping
+        ConsulServerDC1_dependsOnLinuxFileSystemFeature_remove_source:
+          target: ConsulServerDC1
+          target_relationship: dependsOnLinuxFileSystemFeature
+          operation_host: TARGET
+          activities:
+            - call_operation: Configure.remove_source
+          on_success:
+            - ConsulServer_stopping
+        ConsulServerDC1_dependsOnLinuxFileSystemFeature_remove_target:
+          target: ConsulServerDC1
+          target_relationship: dependsOnLinuxFileSystemFeature
+          operation_host: SOURCE
+          activities:
+            - call_operation: Configure.remove_target
+          on_success:
+            - ConsulServer_stopping

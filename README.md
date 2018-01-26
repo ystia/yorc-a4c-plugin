@@ -7,12 +7,12 @@ This means that Janus will allocate nodes with Slurm, then deploy component (doc
 
 ## Requirements
 
-[Alien4Cloud version 1.4.3.1](http://alien4cloud.github.io/#/documentation/1.4.0/index.html)
+[Alien4Cloud version 2.0.0-SM5](http://alien4cloud.github.io/#/documentation/2.0.0/index.html)
 
 
 ## Installation
 ### Alien4Cloud
-* Download: [alien4Cloud v1.4.3.1 Download button](https://alien4cloud.github.io/)
+* Download: [alien4Cloud v2.0.0-SM5 Download button](https://alien4cloud.github.io/)
 * Run : alien4cloud.sh or alien4cloud.bat
 * Visit [a4c UI: login admin/admin](http://localhost:8088)
 

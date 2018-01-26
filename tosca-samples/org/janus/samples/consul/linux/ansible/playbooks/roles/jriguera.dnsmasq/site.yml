@@ -1,0 +1,23 @@
+---
+- hosts: all
+  become: true
+  roles:
+    - role: .
+      dnsmasq_conf_domain: "local"
+      dnsmasq_conf_hosts:
+        - ["192.168.1.10", "foo.mydomain.org", "foo" ]
+      dnsmasq_conf_dhcp:
+        # enp0s8 for Centos 7, eth1 for Ubuntu
+        - device: "{{ ansible_default_ipv4.interface }}"
+          range: ["10.0.1.100", "10.0.1.200", "infinite"]
+          ignore_names: True
+          generate_names: True
+          option:
+            - "option:router,{{ ansible_default_ipv4.gateway }}"
+            - "option:dns-server,{{ ansible_default_ipv4.address }}"
+          boot:
+            - "pxelinux.0"
+          tftp: "/tmp"
+
+#   - name: Display all variables/facts known for a host
+#     debug: var=hostvars[inventory_hostname]

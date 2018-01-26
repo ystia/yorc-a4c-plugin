@@ -6,6 +6,8 @@
 */
 package alien4cloud.plugin.Janus;
 
+// ALIEN 2.0.0 Update
+//import static alien4cloud.paas.wf.util.WorkflowUtils.isOfType;
 import alien4cloud.component.repository.ArtifactRepositoryConstants;
 import alien4cloud.model.deployment.DeploymentTopology;
 import alien4cloud.model.orchestrators.locations.Location;
@@ -19,22 +21,21 @@ import alien4cloud.plugin.Janus.rest.JanusRestException;
 import alien4cloud.plugin.Janus.rest.Response.Event;
 import alien4cloud.plugin.Janus.utils.MappingTosca;
 import alien4cloud.plugin.Janus.utils.ShowTopology;
-import alien4cloud.topology.TopologyUtils;
 import alien4cloud.utils.YamlParserUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+// ALIEN 2.0.0 Update
+//import alien4cloud.topology.TopologyUtils;
+import alien4cloud.tosca.parser.ToscaParser;
 import lombok.extern.slf4j.Slf4j;
 import org.alien4cloud.tosca.exporter.ArchiveExportService;
 import org.alien4cloud.tosca.model.CSARDependency;
 import org.alien4cloud.tosca.model.Csar;
 import org.alien4cloud.tosca.model.definitions.DeploymentArtifact;
-import org.alien4cloud.tosca.model.templates.Capability;
 import org.alien4cloud.tosca.model.templates.NodeTemplate;
-import org.alien4cloud.tosca.model.templates.RelationshipTemplate;
 import org.alien4cloud.tosca.model.templates.ScalingPolicy;
 import org.alien4cloud.tosca.model.templates.Topology;
-import org.alien4cloud.tosca.model.types.RelationshipType;
-import org.alien4cloud.tosca.normative.constants.NormativeRelationshipConstants;
 import org.elasticsearch.common.collect.Maps;
 import org.yaml.snakeyaml.Yaml;
 
@@ -66,8 +67,11 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
 
-import static alien4cloud.paas.wf.util.WorkflowUtils.isOfType;
 import static com.google.common.io.Files.copy;
+
+// ALIEN 2.0.0 Update
+//import alien4cloud.topology.TopologyUtils;
+
 
 /**
  * deployment task
@@ -109,16 +113,18 @@ public class DeployTask extends AlienTask {
         orchestrator.doChangeStatus(paasId, DeploymentStatus.INIT_DEPLOYMENT);
 
         // Show Topoloy for debug
+        // ALIEN 2.0.0 Update
         ShowTopology.topologyInLog(ctx);
 
         // Change topology to be suitable for janus and tosca
-        MappingTosca.addPreConfigureSteps(ctx);
-        MappingTosca.generateOpenstackFIP(ctx);
+        //MappingTosca.addPreConfigureSteps(ctx);
+        //MappingTosca.generateOpenstackFIP(ctx);
         MappingTosca.quoteProperties(ctx);
 
         // Get the yaml of the application as built by from a4c
         Csar myCsar = new Csar(paasId, dtopo.getArchiveVersion());
-        String yaml = archiveExportService.getYaml(myCsar, dtopo);
+        myCsar.setToscaDefinitionsVersion(ToscaParser.LATEST_DSL);
+        String yaml = archiveExportService.getYaml(myCsar, dtopo, true);
 
         // This operation must be synchronized, because it uses the same files topology.yml and topology.zip
         String taskUrl;
@@ -217,6 +223,7 @@ public class DeployTask extends AlienTask {
                     error = jre;
                     break;
                 }
+
             }
             catch (Exception e) {
                 log.error("deployJanus returned an exception: " + e.getMessage());
@@ -621,8 +628,10 @@ public class DeployTask extends AlienTask {
         for (Entry<String, NodeTemplate> nodeTemplateEntry : nodeTemplates.entrySet()) {
             Map<String, InstanceInformation> instanceInformations = Maps.newHashMap();
             currentInformations.put(nodeTemplateEntry.getKey(), instanceInformations);
-            ScalingPolicy policy = getScalingPolicy(nodeTemplateEntry.getKey(), nodeTemplates);
-            int initialInstances = policy != null ? policy.getInitialInstances() : 1;
+            // ALIEN 2.0.0 Update
+            //ScalingPolicy policy = getScalingPolicy(nodeTemplateEntry.getKey(), nodeTemplates);
+            //int initialInstances = policy != null ? policy.getInitialInstances() : 1;
+            int initialInstances = 1;
             for (int i = 0; i < initialInstances; i++) {
                 InstanceInformation newInstanceInformation = orchestrator.newInstance(i);
                 instanceInformations.put(String.valueOf(i), newInstanceInformation);
@@ -631,9 +640,13 @@ public class DeployTask extends AlienTask {
         return currentInformations;
     }
 
+    // ALIEN 2.0.0 Update
     private ScalingPolicy getScalingPolicy(String id, Map<String, NodeTemplate> nodeTemplates) {
+        NodeTemplate nt = nodeTemplates.get(id);
+        nt.getCapabilities();
+        nt.getRelationships();
         // Get the scaling of parent if not exist
-        Capability scalableCapability = TopologyUtils.getScalableCapability(nodeTemplates, id, false);
+        /*Capability scalableCapability = TopologyUtils.getScalableCapability(nodeTemplates, id, false);
         if (scalableCapability != null) {
             return TopologyUtils.getScalingPolicy(scalableCapability);
         }
@@ -644,7 +657,7 @@ public class DeployTask extends AlienTask {
                     return getScalingPolicy(rel.getTarget(), nodeTemplates);
                 }
             }
-        }
+        }*/
         return null;
     }
 

@@ -1,0 +1,13 @@
+- name: Stop consul
+  hosts: all
+  strategy: free
+  become: yes
+  become_method: sudo
+  tasks:
+    - name: stop consul
+      systemd:
+        name: consul
+        state: stopped
+
+    - name: log consul mode
+      debug: msg="Consul {{MODE}} stopped"
