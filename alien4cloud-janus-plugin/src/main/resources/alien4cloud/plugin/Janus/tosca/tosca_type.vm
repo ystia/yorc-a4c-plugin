@@ -1,4 +1,12 @@
-description: ${utils.renderDescription(${type.description}, "")}
+#if($type.tags.size() > 0)
+${propertyUtils.indent($indent)}metadata:
+#set($indent= $indent + 1)
+#foreach($tag in $type.tags)
+${propertyUtils.indent($indent)}$tag.name: ${propertyUtils.formatTextValue($indent,  $tag.value)}
+#end## foreach tags
+#set($indent= $indent - 1)
+#end## if tags
+${propertyUtils.indent($indent)}description: ${utils.renderDescription(${type.description}, "")}
 #if("$!type.derivedFrom" != "" )
 ${propertyUtils.indent($indent)}derived_from: ${type.derivedFrom.get(0)}
 #end## if derivedFrom not empty
