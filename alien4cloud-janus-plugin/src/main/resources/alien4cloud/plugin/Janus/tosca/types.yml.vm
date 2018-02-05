@@ -32,7 +32,7 @@ data_types:
   ${dtEntry.key}:
 #set($type = ${dtEntry.value})
 #set($indent = 2)
-    #parse("$vtPath/tosca_type.vm")
+#parse("$vtPath/tosca_type.vm")
 #end## foreach
 #end## if dataTypes
 #if($utils.mapIsNotEmptyAndContainsNotnullValues($archive.artifactTypes))
@@ -42,7 +42,7 @@ artifact_types:
   ${dtEntry.key}:
 #set($type = ${dtEntry.value})
 #set($indent = 2)
-    #parse("$vtPath/artifact_type.vm")
+#parse("$vtPath/artifact_type.vm")
 #end## foreach
 #end## if artifactTypes
 #if($utils.mapIsNotEmptyAndContainsNotnullValues($archive.capabilityTypes))
@@ -52,7 +52,16 @@ capability_types:
   ${dtEntry.key}:
 #set($type = ${dtEntry.value})
 #set($indent = 2)
-    #parse("$vtPath/capability_type.vm")
+#parse("$vtPath/capability_type.vm")
 #end## foreach
 #end## if capabilityTypes
+#if($utils.mapIsNotEmptyAndContainsNotnullValues($archive.nodeTypes))
 
+node_types:
+#foreach($entry in ${archive.nodeTypes.entrySet()})
+  ${entry.key}:
+#set($type = ${entry.value})
+#set($indent = 2)
+#parse("$vtPath/node_type.vm")
+#end## foreach
+#end## if nodeTypes
