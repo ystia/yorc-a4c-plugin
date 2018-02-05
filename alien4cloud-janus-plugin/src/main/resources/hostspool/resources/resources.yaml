@@ -1,0 +1,21 @@
+tosca_definitions_version: ${alien4cloud.dsl.version}
+
+template_name: janus-hostspool-types
+template_author: Janus
+template_version: ${janus.types.version}
+
+imports:
+  - tosca-normative-types:${tosca.normative.types.version}
+
+node_types:
+  janus.nodes.hostspool.Compute:
+    derived_from: tosca.nodes.Compute
+    properties:
+      tags:
+        type: list
+        entry_schema:
+          type: string
+    attributes:
+      hostname:
+        type: string
+        description: The hostname as known in the hosts pool

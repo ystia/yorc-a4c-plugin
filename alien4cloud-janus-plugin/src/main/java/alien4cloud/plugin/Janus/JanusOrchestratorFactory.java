@@ -26,6 +26,7 @@ public class JanusOrchestratorFactory implements IOrchestratorPluginFactory<Janu
     public static final String SLURM = "Slurm";
     public static final String KUBERNETES = "Kubernetes";
     public static final String AWS = "AWS";
+    public static final String HOSTS_POOL = "HostsPool";
     private final Map<String, PropertyDefinition> deploymentProperties = Maps.newHashMap();
     @Resource
     private BeanFactory beanFactory;
@@ -52,7 +53,7 @@ public class JanusOrchestratorFactory implements IOrchestratorPluginFactory<Janu
 
     @Override
     public LocationSupport getLocationSupport() {
-        return new LocationSupport(true, new String[]{AWS, OPENSTACK, SLURM, KUBERNETES});
+        return new LocationSupport(true, new String[]{AWS, OPENSTACK, SLURM, KUBERNETES, HOSTS_POOL});
     }
 
     @Override
