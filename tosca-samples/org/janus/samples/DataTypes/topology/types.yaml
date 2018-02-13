@@ -10,7 +10,7 @@ description: ""
 imports:
   - janus.tests.datatypes.linux:1.0-SNAPSHOT
   - janus.tests.datatypes.pub:1.0-SNAPSHOT
-  - tosca-normative-types:1.0.0-ALIEN20SM5
+  - tosca-normative-types:1.0.0-ALIEN20
   - janus-types:1.0.0
 
 topology_template:
