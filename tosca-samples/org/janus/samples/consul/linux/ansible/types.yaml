@@ -6,7 +6,7 @@ metadata:
   template_author: janus
 
 imports:
-  - tosca-normative-types:1.0.0-ALIEN20SM5
+  - tosca-normative-types:1.0.0-ALIEN20
   - janus-types:1.0.0
   - org.janus.samples.consul.pub:1.0.0-SNAPSHOT
 
