@@ -6,10 +6,11 @@ template_version: ${janus.types.version}
 
 imports:
   - tosca-normative-types:${tosca.normative.types.version}
+  - janus-types:${janus.types.version}
 
 node_types:
   janus.nodes.hostspool.Compute:
-    derived_from: tosca.nodes.Compute
+    derived_from: janus.nodes.Compute
     properties:
       filters:
         type: list

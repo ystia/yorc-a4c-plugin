@@ -14,7 +14,7 @@ click on the configuration menu icon |OrchConfigBtn|.
 
 In the Driver configuration part, add the URL of your Janus server (should respect the format: ``http://janus-ip:8800``) and return to the previous page to enable your orchestrator.
 
-If Janus is scured (ssl enabled):
+If Janus is secured (ssl enabled):
   * the janus URL should use the ``https`` protocol
   * the CA authority used to sign the Janus certificates should be imported in the Java truststore ; otherwise, check ``insecureTL``
 
@@ -38,9 +38,10 @@ is deployed.
 
 
 Click on the compute and set the ``image`` to the id of your image in OpenStack (in order to use our samples in next sections, please use
-an Ubuntu 14.04+ or Centos 7.2+ image), the ``flavor`` to ``3`` (medium for a default OpenStack config), the ``user`` to a user available in
-your image (generally ``ubuntu`` for Ubuntu cloud images). Finally, set ``key_pair`` to the OpenStack keypair that correspond to the
-private key that you stored under ``~/.ssh/janus.pem`` during your Janus server setup.
+an Ubuntu 14.04+ or Centos 7.2+ image), the ``flavor`` to ``3`` (medium for a default OpenStack config). Set ``key_pair`` to the OpenStack
+keypair that correspond to the private key that you stored under ``~/.ssh/janus.pem`` during your Janus server setup. Finally, in the ``endpoint``
+capability of the Compute, open the ``credentials`` complex type and set the ``user`` to a user available in your image (generally ``ubuntu``
+for Ubuntu cloud images)
 
 .. image:: _static/img/orchestrator-loc-conf-compute.png
    :alt: Compute configuration
