@@ -24,9 +24,9 @@ import lombok.Setter;
 @SuppressWarnings("PMD.UnusedPrivateField")
 public class ProviderConfig {
 
-    @FormPropertyDefinition(type = "string", description = "URL of a Janus REST API instance.", constraints = @FormPropertyConstraint
+    @FormPropertyDefinition(type = "string", defaultValue= "http://127.0.0.1:8800", description = "URL of a Janus REST API instance.", constraints = @FormPropertyConstraint
             (pattern = "https?://.+"))
-    private String urlJanus;
+    private String urlJanus= "http://127.0.0.1:8800";
 
     @FormPropertyDefinition(type = "boolean", description = "Do not check host certificate. This is not recommended for production use " +
             "and may expose to man in the middle attacks.")
