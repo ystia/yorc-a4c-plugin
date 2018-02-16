@@ -561,7 +561,9 @@ public class DeployTask extends AlienTask {
                                 ((List) topologyKid.get("imports")).clear();
 
                                 if (location == LOC_KUBERNETES) {
-                                    matchKubernetesImplementation(topologyKid);
+                                    // TODO - remove method call and method
+                                    //matchKubernetesImplementation(topologyKid);
+                                    log.debug("**** matchKubernetesImplementation : not needed any more probably !!! *****");
                                 }
 
                                 StringWriter out = new StringWriter();
