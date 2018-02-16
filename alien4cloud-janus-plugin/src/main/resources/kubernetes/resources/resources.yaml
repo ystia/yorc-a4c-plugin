@@ -6,14 +6,24 @@ template_version: ${janus.types.version}
 
 imports:
   - janus-docker-types:${janus.types.version}
-
+  - org.alien4cloud.kubernetes.api:${alien4cloud.kubernetes.api.version}
 
 artifact_types:
   tosca.artifacts.Deployment.Image.Container.Docker.Kubernetes:
     description: Docker Container Image to be deployed by Kubernetes
     derived_from: tosca.artifacts.Deployment.Image.Container.Docker
 
+  janus.artifacts.Deployment.Kubernetes:
+    description: Docker deployment descriptor
+    derived_from: tosca.artifacts.Deployment
+
 node_types:
+  janus.nodes.kubernetes.api.types.DeploymentResource:
+    derived_from: org.alien4cloud.kubernetes.api.types.DeploymentResource
+
+  janus.nodes.kubernetes.api.types.ServiceResource:
+    derived_from: org.alien4cloud.kubernetes.api.types.ServiceResource
+
   janus.nodes.KubernetesVolume:
     derived_from: janus.nodes.DockerVolume
     properties:
