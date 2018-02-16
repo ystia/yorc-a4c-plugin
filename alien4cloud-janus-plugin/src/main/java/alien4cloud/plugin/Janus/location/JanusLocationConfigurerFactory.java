@@ -22,6 +22,10 @@ public class JanusLocationConfigurerFactory extends AbstractLocationConfigurerFa
     @Override
     protected ILocationConfiguratorPlugin newInstanceBasedOnLocation(String locationType) {
         AbstractLocationConfigurer configurer = null;
+        if (locationType == null) {
+            log.warn("The location type is null");
+            return configurer;
+        }
         switch (locationType)
         {
             case JanusOrchestratorFactory.OPENSTACK:
