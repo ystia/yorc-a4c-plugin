@@ -11,7 +11,7 @@
 
       <properties>
           <httpclient.version>4.4.1</httpclient.version>
-          <janus.types.version>1.0.0</janus.types.version>
+          <janus.types.version>1.0.0-SNAPSHOT</janus.types.version>
       </properties>
 
     <dependencies>
