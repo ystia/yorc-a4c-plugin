@@ -6,10 +6,11 @@ template_version: ${janus.types.version}
 
 imports:
   - tosca-normative-types:${tosca.normative.types.version}
+  - janus-types:${janus.types.version}
 
 node_types:
   janus.nodes.aws.Compute:
-    derived_from: tosca.nodes.Compute
+    derived_from: janus.nodes.Compute
     properties:
       image_id:
         type: string
@@ -21,11 +22,6 @@ node_types:
         required: true
       key_name:
         type: string
-        required: true
-      user:
-        type: string
-        description: >
-          The user name used to connect to the Compute and provision it.
         required: true
       security_groups:
         type: string

@@ -36,6 +36,9 @@ public class JanusLocationConfigurerFactory extends AbstractLocationConfigurerFa
             case JanusOrchestratorFactory.AWS:
                 configurer = applicationContext.getBean(JanusAWSLocationConfigurer.class);
                 break;
+            case JanusOrchestratorFactory.HOSTS_POOL:
+                configurer = applicationContext.getBean(JanusHostsPoolLocationConfigurer.class);
+                break;
             default:
                 log.warn("The \"%s\" location type is not handled", locationType);
         }
