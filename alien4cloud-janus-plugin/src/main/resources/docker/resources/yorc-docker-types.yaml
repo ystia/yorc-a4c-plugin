@@ -1,10 +1,10 @@
 tosca_definitions_version: ${alien4cloud.dsl.version}
 
-template_name: janus-docker-types
-template_author: Janus
-template_version: ${janus.types.version}
+template_name: yorc-docker-types
+template_author: Yorc
+template_version: ${yorc.types.version}
 
-description: "Defines docker resources for the Janus plugin."
+description: "Defines docker resources for the Yorc plugin."
 
 imports:
   - tosca-normative-types:${tosca.normative.types.version}
@@ -15,7 +15,7 @@ artifact_types:
     derived_from: tosca.artifacts.Deployment.Image
 
 node_types:
-  janus.nodes.DockerContainer:
+  yorc.nodes.DockerContainer:
     derived_from: tosca.nodes.Root
     description: >
       The TOSCA Container Docker node represents an application running in a Docker container.
@@ -48,20 +48,20 @@ node_types:
           Docker run command. Will override the Dockerfile CMD statement.
     requirements:
       - use_volume:
-          capability: janus.capabilities.DockerVolume
-          relationship: janus.relationships.MountDockerVolume
+          capability: yorc.capabilities.DockerVolume
+          relationship: yorc.relationships.MountDockerVolume
           occurrences: [ 0, UNBOUNDED ]
 
-  janus.nodes.DockerVolume:
+  yorc.nodes.DockerVolume:
     derived_from: tosca.nodes.Root
     abstract: true
     capabilities:
       mount:
-        type: janus.capabilities.DockerVolume
+        type: yorc.capabilities.DockerVolume
 
 
 capability_types:
-  janus.capabilities.DockerVolume:
+  yorc.capabilities.DockerVolume:
     derived_from: tosca.capabilities.Root
     description: >
       Capability of a Docker Volume to be mounted in a Docker Container
@@ -72,6 +72,6 @@ capability_types:
         description: Path within the container at which the volume should be mounted. Must not contain ':' if used in K8S.
 
 relationship_types:
-  janus.relationships.MountDockerVolume:
+  yorc.relationships.MountDockerVolume:
     derived_from: tosca.relationships.Root
-    valid_target_types: [ janus.capabilities.DockerVolume ]
+    valid_target_types: [ yorc.capabilities.DockerVolume ]

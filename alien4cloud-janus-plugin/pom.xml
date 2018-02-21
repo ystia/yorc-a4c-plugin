@@ -84,7 +84,7 @@
               <configuration>
                 <attach>true</attach>
                 <descriptors>
-                  <descriptor>src/main/assembly/janus-plugin-assembly.xml</descriptor>
+                  <descriptor>src/main/assembly/yorc-plugin-assembly.xml</descriptor>
                 </descriptors>
               </configuration>
             </execution>

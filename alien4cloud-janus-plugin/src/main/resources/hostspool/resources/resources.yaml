@@ -1,16 +1,16 @@
 tosca_definitions_version: ${alien4cloud.dsl.version}
 
-template_name: janus-hostspool-types
-template_author: Janus
-template_version: ${janus.types.version}
+template_name: yorc-hostspool-types
+template_author: Yorc
+template_version: ${yorc.types.version}
 
 imports:
   - tosca-normative-types:${tosca.normative.types.version}
-  - janus-types:${janus.types.version}
+  - yorc-types:${yorc.types.version}
 
 node_types:
-  janus.nodes.hostspool.Compute:
-    derived_from: janus.nodes.Compute
+  yorc.nodes.hostspool.Compute:
+    derived_from: yorc.nodes.Compute
     properties:
       filters:
         type: list
@@ -23,7 +23,7 @@ node_types:
         description: The hostname as known in the hosts pool
     capabilities:
       endpoint:
-        type: janus.capabilities.Endpoint.ProvisioningAdmin
+        type: yorc.capabilities.Endpoint.ProvisioningAdmin
         properties:
           credentials:
-            user: "not significant, will be set by Janus itself"
+            user: "not significant, will be set by Yorc itself"
