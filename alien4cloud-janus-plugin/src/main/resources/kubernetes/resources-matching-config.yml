@@ -1,6 +1,6 @@
 
 matching_configurations:
-  janus.nodes.KubernetesContainer:
+  yorc.nodes.KubernetesContainer:
     properties:
       - image: { equal: "" }
       - cpu_share: { equal: "" }

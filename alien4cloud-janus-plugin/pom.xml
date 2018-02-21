@@ -11,7 +11,7 @@
 
       <properties>
           <httpclient.version>4.4.1</httpclient.version>
-          <janus.types.version>1.0.0</janus.types.version>
+          <yorc.types.version>1.0.0</yorc.types.version>
       </properties>
 
     <dependencies>
@@ -84,7 +84,7 @@
               <configuration>
                 <attach>true</attach>
                 <descriptors>
-                  <descriptor>src/main/assembly/janus-plugin-assembly.xml</descriptor>
+                  <descriptor>src/main/assembly/yorc-plugin-assembly.xml</descriptor>
                 </descriptors>
               </configuration>
             </execution>

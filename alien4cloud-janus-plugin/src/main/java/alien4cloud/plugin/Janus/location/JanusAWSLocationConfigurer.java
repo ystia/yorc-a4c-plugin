@@ -38,8 +38,8 @@ public class JanusAWSLocationConfigurer extends AbstractLocationConfigurer
 
   @Override
   public List<LocationResourceTemplate> instances(ILocationResourceAccessor resourceAccessor) {
-    ImageFlavorContext imageContext = resourceGeneratorService.buildContext("janus.nodes.aws.Image", "id", resourceAccessor);
-    ImageFlavorContext flavorContext = resourceGeneratorService.buildContext("janus.nodes.aws.InstanceType", "id", resourceAccessor);
+    ImageFlavorContext imageContext = resourceGeneratorService.buildContext("yorc.nodes.aws.Image", "id", resourceAccessor);
+    ImageFlavorContext flavorContext = resourceGeneratorService.buildContext("yorc.nodes.aws.InstanceType", "id", resourceAccessor);
     boolean canProceed = true;
 
     if (CollectionUtils.isEmpty(imageContext.getTemplates())) {
@@ -55,7 +55,7 @@ public class JanusAWSLocationConfigurer extends AbstractLocationConfigurer
       return null;
     }
     ComputeContext computeContext = resourceGeneratorService
-                                        .buildComputeContext("janus.nodes.aws.Compute", null, IMAGE_ID_PROP, FLAVOR_ID_PROP, resourceAccessor);
+                                        .buildComputeContext("yorc.nodes.aws.Compute", null, IMAGE_ID_PROP, FLAVOR_ID_PROP, resourceAccessor);
 
     return resourceGeneratorService.generateComputeFromImageAndFlavor(imageContext, flavorContext, computeContext, null, resourceAccessor);
   }

@@ -46,8 +46,8 @@ public class JanusOpenStackLocationConfigurer extends AbstractLocationConfigurer
 
     @Override
     public List<LocationResourceTemplate> instances(ILocationResourceAccessor resourceAccessor) {
-        ImageFlavorContext imageContext = resourceGeneratorService.buildContext("janus.nodes.openstack.Image", "id", resourceAccessor);
-        ImageFlavorContext flavorContext = resourceGeneratorService.buildContext("janus.nodes.openstack.Flavor", "id", resourceAccessor);
+        ImageFlavorContext imageContext = resourceGeneratorService.buildContext("yorc.nodes.openstack.Image", "id", resourceAccessor);
+        ImageFlavorContext flavorContext = resourceGeneratorService.buildContext("yorc.nodes.openstack.Flavor", "id", resourceAccessor);
         boolean canProceed = true;
 
         if (CollectionUtils.isEmpty(imageContext.getTemplates())) {
@@ -63,7 +63,7 @@ public class JanusOpenStackLocationConfigurer extends AbstractLocationConfigurer
             return null;
         }
         ComputeContext computeContext = resourceGeneratorService
-                .buildComputeContext("janus.nodes.openstack.Compute", null, JanusOpenStackLocationConfigurer.IMAGE_ID_PROP,
+                .buildComputeContext("yorc.nodes.openstack.Compute", null, JanusOpenStackLocationConfigurer.IMAGE_ID_PROP,
                         JanusOpenStackLocationConfigurer.FLAVOR_ID_PROP,
                 resourceAccessor);
 

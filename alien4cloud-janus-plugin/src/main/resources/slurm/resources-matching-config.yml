@@ -1,6 +1,6 @@
 
 matching_configurations:
-  janus.nodes.slurm.Compute:
+  yorc.nodes.slurm.Compute:
     capabilities:
       - host:
           properties:

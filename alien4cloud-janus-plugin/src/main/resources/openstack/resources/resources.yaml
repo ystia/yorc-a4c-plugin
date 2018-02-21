@@ -1,20 +1,20 @@
 tosca_definitions_version: ${alien4cloud.dsl.version}
 
-template_name: janus-openstack-types
-template_author: Janus
-template_version: ${janus.types.version}
+template_name: yorc-openstack-types
+template_author: Yorc
+template_version: ${yorc.types.version}
 
 imports:
   - tosca-normative-types:${tosca.normative.types.version}
-  - janus-types:${janus.types.version}
+  - yorc-types:${yorc.types.version}
 
 capability_types:
   # NOTE: Alien specific
-  janus.capabilities.openstack.FIPConnectivity:
+  yorc.capabilities.openstack.FIPConnectivity:
     derived_from: tosca.capabilities.Connectivity
 
 node_types:
-  janus.nodes.openstack.FloatingIP:
+  yorc.nodes.openstack.FloatingIP:
     #derived_from: tosca.nodes.Root
     # This is a hack to force Alien to generate a delegate operation for this type
     derived_from: tosca.nodes.Network
@@ -29,10 +29,10 @@ node_types:
         required: false
     capabilities:
       connection:
-        type: janus.capabilities.openstack.FIPConnectivity
+        type: yorc.capabilities.openstack.FIPConnectivity
 
-  janus.nodes.openstack.Compute:
-    derived_from: janus.nodes.Compute
+  yorc.nodes.openstack.Compute:
+    derived_from: yorc.nodes.Compute
     properties:
       image:
         type: string
@@ -74,7 +74,7 @@ node_types:
           Coma separated list of security groups to add to the Compute
         required: false
 
-  janus.nodes.openstack.BlockStorage:
+  yorc.nodes.openstack.BlockStorage:
     derived_from: tosca.nodes.BlockStorage
     properties:
       availability_zone:
@@ -93,7 +93,7 @@ node_types:
         required: false
         default: false
 
-  janus.nodes.openstack.PublicNetwork:
+  yorc.nodes.openstack.PublicNetwork:
     derived_from: tosca.nodes.Network
     properties:
       ip:
@@ -105,13 +105,13 @@ node_types:
         description: Name of the Pool of Floating IPs to use. Note that either 'ip' or 'floating_network_name' should be specified and 'ip' take the precedence.
         required: false
 
-  janus.nodes.openstack.Network:
+  yorc.nodes.openstack.Network:
     derived_from: tosca.nodes.Network
 
   ##############################################
   # Abstract resources used for auto-config
   ##############################################
-  janus.nodes.openstack.Image:
+  yorc.nodes.openstack.Image:
     abstract: true
     derived_from: tosca.nodes.Root
     properties:
@@ -121,7 +121,7 @@ node_types:
       os:
         type: tosca.capabilities.OperatingSystem
 
-  janus.nodes.openstack.Flavor:
+  yorc.nodes.openstack.Flavor:
     abstract: true
     derived_from: tosca.nodes.Root
     properties:
