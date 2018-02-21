@@ -1,6 +1,6 @@
 
 matching_configurations:
-  janus.nodes.aws.Compute:
+  yorc.nodes.aws.Compute:
     capabilities:
       - host:
           properties:

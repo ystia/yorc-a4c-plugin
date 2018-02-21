@@ -47,7 +47,7 @@ public class FipTopologyModifier extends TopologyModifierSupport {
         Csar csar = new Csar(topology.getArchiveName(), topology.getArchiveVersion());
 
         // for each Service create a node of type ServiceResource
-        Set<NodeTemplate> publicNetworksNodes = TopologyNavigationUtil.getNodesOfType(topology, "janus.nodes.openstack.PublicNetwork", false);
+        Set<NodeTemplate> publicNetworksNodes = TopologyNavigationUtil.getNodesOfType(topology, "yorc.nodes.openstack.PublicNetwork", false);
 
         publicNetworksNodes.forEach(newtworkNodeTemplate -> {
             final AbstractPropertyValue networkName = newtworkNodeTemplate.getProperties().get("floating_network_name");
@@ -62,17 +62,17 @@ public class FipTopologyModifier extends TopologyModifierSupport {
 
                         Map<String, Capability> capabilities = new LinkedHashMap<>();
                         Capability connectionCap = new Capability();
-                        connectionCap.setType("janus.capabilities.openstack.FIPConnectivity");
+                        connectionCap.setType("yorc.capabilities.openstack.FIPConnectivity");
                         capabilities.put("connection", connectionCap);
 
                         String fipName = "FIP" + nodeTemplate.getName();
 
-                        NodeTemplate nt = addNodeTemplate(csar, topology, fipName, "janus.nodes.openstack.FloatingIP", "1.0.0");
+                        NodeTemplate nt = addNodeTemplate(csar, topology, fipName, "yorc.nodes.openstack.FloatingIP", "1.0.0");
                         nt.setProperties(properties);
                         nt.setCapabilities(capabilities);
 
                         relationshipTemplate.setTarget(fipName);
-                        relationshipTemplate.setRequirementType("janus.capabilities.openstack.FIPConnectivity");
+                        relationshipTemplate.setRequirementType("yorc.capabilities.openstack.FIPConnectivity");
                     }
                 });
             }

@@ -119,10 +119,10 @@ class AlienClient(object):
 
     def create_resources_for_location(self, orchestrator_id, location_id, centos_image_id, public_net_name):
         logger.info("Creating Resources for the orchestrator")
-        self.create_resource_for_location(orchestrator_id, location_id, "janus.nodes.openstack.Image", "Centos", centos_image_id)
-        self.create_resource_for_location(orchestrator_id, location_id, "janus.nodes.openstack.Flavor", "Small", "2")
-        self.create_resource_for_location(orchestrator_id, location_id, "janus.nodes.openstack.Flavor", "Medium", "3")
-        self.create_resource_for_location(orchestrator_id, location_id, "janus.nodes.openstack.Flavor", "Large", "4")
+        self.create_resource_for_location(orchestrator_id, location_id, "yorc.nodes.openstack.Image", "Centos", centos_image_id)
+        self.create_resource_for_location(orchestrator_id, location_id, "yorc.nodes.openstack.Flavor", "Small", "2")
+        self.create_resource_for_location(orchestrator_id, location_id, "yorc.nodes.openstack.Flavor", "Medium", "3")
+        self.create_resource_for_location(orchestrator_id, location_id, "yorc.nodes.openstack.Flavor", "Large", "4")
 
         logger.info("auto-configure resources")
         response = self.session.get(
@@ -130,7 +130,7 @@ class AlienClient(object):
         if response["error"]:
             raise RuntimeError("Failed to auto-configure resources: {0}".format(response["error"]))
         for data in response["data"]:
-            if data["template"]["type"] == "janus.nodes.openstack.Compute":
+            if data["template"]["type"] == "yorc.nodes.openstack.Compute":
                 resource_id = data["id"]
                 payload = {'propertyName': 'user', 'propertyValue': 'cloud-user'}
                 response = self.session.post(
@@ -146,9 +146,9 @@ class AlienClient(object):
                     data=json.dumps(payload)).json()
                 if response["error"]:
                     raise RuntimeError("Failed to update key_pair for resource {0}: {1}".format(data["name"], response["error"]))
-        self.create_volume_for_location(orchestrator_id, location_id, "janus.nodes.openstack.BlockStorage", "Small_Volume", "10 GIB")
-        self.create_volume_for_location(orchestrator_id, location_id, "janus.nodes.openstack.BlockStorage", "Medium_Volume", "30 GIB")
-        self.create_volume_for_location(orchestrator_id, location_id, "janus.nodes.openstack.BlockStorage", "Large_Volume", "50 GIB")
+        self.create_volume_for_location(orchestrator_id, location_id, "yorc.nodes.openstack.BlockStorage", "Small_Volume", "10 GIB")
+        self.create_volume_for_location(orchestrator_id, location_id, "yorc.nodes.openstack.BlockStorage", "Medium_Volume", "30 GIB")
+        self.create_volume_for_location(orchestrator_id, location_id, "yorc.nodes.openstack.BlockStorage", "Large_Volume", "50 GIB")
 
         self.create_public_network_for_location(orchestrator_id, location_id, public_net_name)
 
@@ -189,7 +189,7 @@ class AlienClient(object):
 
     def create_public_network_for_location(self, orchestrator_id, location_id, network_name):
         logger.info("Creating Public Network %s", network_name)
-        payload = {'resourceType': 'janus.nodes.openstack.PublicNetwork', 'resourceName': network_name}
+        payload = {'resourceType': 'yorc.nodes.openstack.PublicNetwork', 'resourceName': network_name}
         response = self.session.post(
             "{0}/rest/orchestrators/{1}/locations/{2}/resources".format(self.alien_url, orchestrator_id, location_id),
             data=json.dumps(payload)).json()

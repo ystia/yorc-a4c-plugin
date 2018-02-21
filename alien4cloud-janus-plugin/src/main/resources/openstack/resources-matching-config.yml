@@ -1,6 +1,6 @@
 
 matching_configurations:
-  janus.nodes.openstack.Compute:
+  yorc.nodes.openstack.Compute:
     capabilities:
       - host:
           properties:

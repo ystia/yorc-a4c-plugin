@@ -1,6 +1,6 @@
 
 matching_configurations:
-  janus.nodes.hostspool.Compute:
+  yorc.nodes.hostspool.Compute:
     capabilities:
       - host:
           properties:
