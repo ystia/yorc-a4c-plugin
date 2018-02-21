@@ -31,7 +31,7 @@ Operation outputs should be defined in TOSCA as an attribute of the type that de
 ```yaml
 
 node_types:
-  org.janus.samples.python.Component:
+  org.ystia.yorc.samples.python.Component:
     attributes:
       resolvedOutput1: { get_operation_output: [SELF, Standard, create, myVar1]}
       resolvedOutput2: { get_operation_output: [SELF, Standard, create, myVar2]}
@@ -53,4 +53,4 @@ myVar2="Resolved {0}".format(environ['var2'])
 
 ## Outputs & logging
 
-Every message printed to Stdout or Stderr will appear in Janus/Alien logs.
+Every message printed to Stdout or Stderr will appear in Yorc/Alien logs.

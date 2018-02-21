@@ -1,22 +1,22 @@
 tosca_definitions_version: alien_dsl_2_0_0
 
 metadata:
-  template_name: org.janus.samples.consul.linux.ansible
+  template_name: org.ystia.yorc.samples.consul.linux.ansible
   template_version: 1.0.0-SNAPSHOT
-  template_author: janus
+  template_author: yorc
 
 imports:
   - tosca-normative-types:1.0.0-ALIEN20
-  - janus-types:1.0.0
-  - org.janus.samples.consul.pub:1.0.0-SNAPSHOT
+  - yorc-types:1.0.0
+  - org.ystia.yorc.samples.consul.pub:1.0.0-SNAPSHOT
 
 description: >
   This component allows to deploy Consul with Ansible
 
 
 node_types:
-  org.janus.samples.consul.linux.ansible.nodes.ConsulServer:
-    derived_from: org.janus.samples.consul.pub.nodes.ConsulServer
+  org.ystia.yorc.samples.consul.linux.ansible.nodes.ConsulServer:
+    derived_from: org.ystia.yorc.samples.consul.pub.nodes.ConsulServer
     description: Installation of a Consul Server on Linux using Ansible
     tags:
       icon: /images/consul-icon.png
@@ -30,8 +30,8 @@ node_types:
     requirements:
       - wan_server:
           # Optionally a server may join another server in another data center using the WAN interface
-          capability: org.janus.samples.consul.pub.capabilities.ConsulServerWAN
-          relationship: org.janus.samples.consul.linux.ansible.relationships.JoinServerWAN
+          capability: org.ystia.yorc.samples.consul.pub.capabilities.ConsulServerWAN
+          relationship: org.ystia.yorc.samples.consul.linux.ansible.relationships.JoinServerWAN
           occurrences: [0, 1]
     interfaces:
       Standard:
@@ -70,8 +70,8 @@ node_types:
             MAINT_MODE: "off"
           implementation: playbooks/consul_maint.yml
 
-  org.janus.samples.consul.linux.ansible.nodes.ConsulAgent:
-    derived_from: org.janus.samples.consul.pub.nodes.ConsulAgent
+  org.ystia.yorc.samples.consul.linux.ansible.nodes.ConsulAgent:
+    derived_from: org.ystia.yorc.samples.consul.pub.nodes.ConsulAgent
     description: Installation of a Consul Agent on Linux using Ansible
     tags:
       icon: /images/consul-icon.png
@@ -85,8 +85,8 @@ node_types:
     requirements:
       - consul_server:
           # An agent requires a server to operate
-          capability: org.janus.samples.consul.pub.capabilities.ConsulServer
-          relationship: org.janus.samples.consul.linux.ansible.relationships.JoinServer
+          capability: org.ystia.yorc.samples.consul.pub.capabilities.ConsulServer
+          relationship: org.ystia.yorc.samples.consul.linux.ansible.relationships.JoinServer
           occurrences: [1, 1]
     interfaces:
       Standard:
@@ -126,11 +126,11 @@ node_types:
           implementation: playbooks/consul_maint.yml
 
 relationship_types:
-  org.janus.samples.consul.linux.ansible.relationships.JoinServer:
+  org.ystia.yorc.samples.consul.linux.ansible.relationships.JoinServer:
     derived_from: tosca.relationships.ConnectsTo
     description: >
       Connects a Consul agent to a Consul server
-    valid_target_types: [ org.janus.samples.consul.pub.capabilities.ConsulServer ]
+    valid_target_types: [ org.ystia.yorc.samples.consul.pub.capabilities.ConsulServer ]
     interfaces:
       Configure:
         pre_configure_source:
@@ -139,11 +139,11 @@ relationship_types:
             CONFIG_DIR: { get_property: [SOURCE, config_dir] }
           implementation: playbooks/consul_connects_agent_to_server.yml
 
-  org.janus.samples.consul.linux.ansible.relationships.JoinServerWAN:
+  org.ystia.yorc.samples.consul.linux.ansible.relationships.JoinServerWAN:
     derived_from: tosca.relationships.ConnectsTo
     description: >
       Connects a Consul server to another Consul server using its WAN address
-    valid_target_types: [ org.janus.samples.consul.pub.capabilities.ConsulServerWAN ]
+    valid_target_types: [ org.ystia.yorc.samples.consul.pub.capabilities.ConsulServerWAN ]
     interfaces:
       Configure:
         pre_configure_source:

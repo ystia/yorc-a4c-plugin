@@ -1,15 +1,15 @@
 tosca_definitions_version: alien_dsl_2_0_0
 
 metadata:
-  template_name: org.janus.samples.python
+  template_name: org.ystia.yorc.samples.python
   template_version: 1.0.0-SNAPSHOT
-  template_author: janus
+  template_author: yorc
 
 imports:
   - tosca-normative-types:1.0.0-ALIEN20
 
 node_types:
-  org.janus.samples.python.Component:
+  org.ystia.yorc.samples.python.Component:
     derived_from: tosca.nodes.SoftwareComponent
     description: >
       Sample component to illustrate how to implement a Component lifecycle in Python

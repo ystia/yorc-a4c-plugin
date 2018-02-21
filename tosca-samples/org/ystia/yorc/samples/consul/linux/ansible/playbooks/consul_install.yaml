@@ -4,7 +4,7 @@
   strategy: free
   tasks:
     - set_fact:
-        janus_prov_user: "{{ ansible_user_id }}"
+        yorc_prov_user: "{{ ansible_user_id }}"
 
 - name: Install consul
   hosts: all
@@ -54,9 +54,9 @@
     - name: create Consul group
       group: name=consul
 
-    - name: Add "{{ janus_prov_user }}" to the consul group
+    - name: Add "{{ yorc_prov_user }}" to the consul group
       user:
-        name: "{{ janus_prov_user }}"
+        name: "{{ yorc_prov_user }}"
         append: yes
         group: consul
 

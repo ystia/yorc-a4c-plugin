@@ -1,22 +1,22 @@
 tosca_definitions_version: alien_dsl_2_0_0
 
 metadata:
-  template_name: janus.tests.datatypes.topology
+  template_name: yorc.tests.datatypes.topology
   template_version: 1.0-SNAPSHOT
-  template_author: Janus team
+  template_author: Yorc team
 
 description: ""
 
 imports:
-  - janus.tests.datatypes.linux:1.0-SNAPSHOT
-  - janus.tests.datatypes.pub:1.0-SNAPSHOT
+  - yorc.tests.datatypes.linux:1.0-SNAPSHOT
+  - yorc.tests.datatypes.pub:1.0-SNAPSHOT
   - tosca-normative-types:1.0.0-ALIEN20
-  - janus-types:1.0.0
+  - yorc-types:1.0.0
 
 topology_template:
   node_templates:
     ValueAssignmentNode1:
-      type: janus.tests.nodes.ValueAssignmentNode
+      type: yorc.tests.nodes.ValueAssignmentNode
       properties:
         list:
           - mylist0
@@ -68,7 +68,7 @@ topology_template:
             capability: tosca.capabilities.Container
             relationship: tosca.relationships.HostedOn
     ValueAssignmentNode2:
-          type: janus.tests.nodes.ValueAssignmentNode
+          type: yorc.tests.nodes.ValueAssignmentNode
           properties:
             list:
               - mylist0
@@ -120,9 +120,9 @@ topology_template:
                 capability: tosca.capabilities.Container
                 relationship: tosca.relationships.HostedOn
             - server:
-                capability: janus.tests.capabilities.ValueAssignmentEndpoint
+                capability: yorc.tests.capabilities.ValueAssignmentEndpoint
                 node: ValueAssignmentNode1
-                relationship: janus.tests.relationships.ValueAssignmentConnectsTo
+                relationship: yorc.tests.relationships.ValueAssignmentConnectsTo
     Compute:
       type: tosca.nodes.Compute
       capabilities:

@@ -11,9 +11,9 @@ description: >
 
 imports:
   - tosca-normative-types:1.0.0-ALIEN20
-  - janus-types:1.0.0
-  - org.janus.samples.consul.linux.ansible:1.0.0-SNAPSHOT
-  - org.janus.samples.consul.pub:1.0.0-SNAPSHOT
+  - yorc-types:1.0.0
+  - org.ystia.yorc.samples.consul.linux.ansible:1.0.0-SNAPSHOT
+  - org.ystia.yorc.samples.consul.pub:1.0.0-SNAPSHOT
 
 topology_template:
   node_templates:
@@ -90,7 +90,7 @@ topology_template:
             network_name: PRIVATE
             initiator: source
     ConsulAgentDC1:
-      type: org.janus.samples.consul.linux.ansible.nodes.ConsulAgent
+      type: org.ystia.yorc.samples.consul.linux.ansible.nodes.ConsulAgent
       properties:
         install_dnsmasq: true
         mode: agent
@@ -104,8 +104,8 @@ topology_template:
         - joinServerConsulServerConsul_server:
             type_requirement: consul_server
             node: ConsulServerDC1
-            capability: org.janus.samples.consul.pub.capabilities.ConsulServer
-            relationship: org.janus.samples.consul.linux.ansible.relationships.JoinServer
+            capability: org.ystia.yorc.samples.consul.pub.capabilities.ConsulServer
+            relationship: org.ystia.yorc.samples.consul.linux.ansible.relationships.JoinServer
         - hostedOnComputeCaHost:
             type_requirement: host
             node: ComputeCADC1
@@ -120,7 +120,7 @@ topology_template:
             network_name: PRIVATE
             initiator: source
     ConsulServerDC1:
-      type: org.janus.samples.consul.linux.ansible.nodes.ConsulServer
+      type: org.ystia.yorc.samples.consul.linux.ansible.nodes.ConsulServer
       properties:
         install_dnsmasq: true
         mode: server
@@ -139,8 +139,8 @@ topology_template:
         - joinServerWanConsulServerDc2Join_wan:
             type_requirement: wan_server
             node: ConsulServerDC2
-            capability: org.janus.samples.consul.pub.capabilities.ConsulServerWAN
-            relationship: org.janus.samples.consul.linux.ansible.relationships.JoinServerWAN
+            capability: org.ystia.yorc.samples.consul.pub.capabilities.ConsulServerWAN
+            relationship: org.ystia.yorc.samples.consul.linux.ansible.relationships.JoinServerWAN
       capabilities:
         consul_agent:
           properties:
@@ -215,7 +215,7 @@ topology_template:
             network_name: PRIVATE
             initiator: source
     ConsulServerDC2:
-      type: org.janus.samples.consul.linux.ansible.nodes.ConsulServer
+      type: org.ystia.yorc.samples.consul.linux.ansible.nodes.ConsulServer
       properties:
         install_dnsmasq: true
         mode: server
@@ -240,7 +240,7 @@ topology_template:
             network_name: PRIVATE
             initiator: source
     ConsulAgentDC2:
-      type: org.janus.samples.consul.linux.ansible.nodes.ConsulAgent
+      type: org.ystia.yorc.samples.consul.linux.ansible.nodes.ConsulAgent
       properties:
         install_dnsmasq: true
         mode: agent
@@ -259,8 +259,8 @@ topology_template:
         - joinServerConsulServerDc2Consul_server:
             type_requirement: consul_server
             node: ConsulServerDC2
-            capability: org.janus.samples.consul.pub.capabilities.ConsulServer
-            relationship: org.janus.samples.consul.linux.ansible.relationships.JoinServer
+            capability: org.ystia.yorc.samples.consul.pub.capabilities.ConsulServer
+            relationship: org.ystia.yorc.samples.consul.linux.ansible.relationships.JoinServer
       capabilities:
         consul_agent:
           properties:

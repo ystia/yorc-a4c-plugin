@@ -2,9 +2,9 @@ tosca_definitions_version: alien_dsl_2_0_0
 
 
 metadata:
-  template_name: janus.tests.datatypes.pub
+  template_name: yorc.tests.datatypes.pub
   template_version: 1.0-SNAPSHOT
-  template_author: Janus team
+  template_author: Yorc team
 
 description: Public interface types for the complex data type demo.
 
@@ -14,7 +14,7 @@ imports:
 
 
 data_types:
-  janus.tests.datatypes.ComplexType:
+  yorc.tests.datatypes.ComplexType:
     derived_from: tosca.datatypes.Root
     properties:
       literal:
@@ -26,14 +26,14 @@ data_types:
         type: map
         entry_schema: 
           type: integer
-  janus.tests.datatypes.SubComplexType:
-    derived_from: janus.tests.datatypes.ComplexType
-  janus.tests.datatypes.BaseType:
+  yorc.tests.datatypes.SubComplexType:
+    derived_from: yorc.tests.datatypes.ComplexType
+  yorc.tests.datatypes.BaseType:
     derived_from: tosca.datatypes.Root
     properties:
       nestedType:
-        type: janus.tests.datatypes.NestedType
-  janus.tests.datatypes.NestedType:
+        type: yorc.tests.datatypes.NestedType
+  yorc.tests.datatypes.NestedType:
     derived_from: tosca.datatypes.Root
     properties:
       listofstring:
@@ -41,18 +41,18 @@ data_types:
         entry_schema:
             type: string
       subcomplex:
-        type: janus.tests.datatypes.SubComplexType
+        type: yorc.tests.datatypes.SubComplexType
       listofcomplex:
         type: list
         entry_schema:
-          type: janus.tests.datatypes.ComplexType 
+          type: yorc.tests.datatypes.ComplexType 
       mapofcomplex:
         type: map
         entry_schema:
-          type: janus.tests.datatypes.ComplexType       
+          type: yorc.tests.datatypes.ComplexType       
 
 node_types:
-  janus.tests.nodes.AbstractValueAssignmentNode:
+  yorc.tests.nodes.AbstractValueAssignmentNode:
     abstract: true
     derived_from: tosca.nodes.Root
     properties:
@@ -73,22 +73,22 @@ node_types:
           type: string
         default: { def1: "map 1 default value", def2: "map 1 default value"}
       baseComplex:
-        type: janus.tests.datatypes.BaseType
+        type: yorc.tests.datatypes.BaseType
     attributes:
       concat_attr: { concat: [get_property: [SELF, port], concat: ["something", concat: [concat: ["hello", get_operation_output: [SELF, Standard, create, CREATE_OUTPUT]], "!"]] ] }
     capabilities:
       endpoint:
-        type: janus.tests.capabilities.ValueAssignmentEndpoint
+        type: yorc.tests.capabilities.ValueAssignmentEndpoint
     requirements:
       - host:
           capability: tosca.capabilities.Container
           relationship: tosca.relationships.HostedOn
       - server:
-          capability: janus.tests.capabilities.ValueAssignmentEndpoint
-          # relationship: janus.tests.relationships.ValueAssignmentConnectsTo
+          capability: yorc.tests.capabilities.ValueAssignmentEndpoint
+          # relationship: yorc.tests.relationships.ValueAssignmentConnectsTo
           occurrences: [0, 1]
 
 
 capability_types:
-  janus.tests.capabilities.ValueAssignmentEndpoint:
+  yorc.tests.capabilities.ValueAssignmentEndpoint:
     derived_from: tosca.capabilities.Endpoint

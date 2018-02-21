@@ -1,8 +1,8 @@
 # Consul sample
 
-This component is used to demonstrate several Janus features. 
+This component is used to demonstrate several Yorc features. 
 It take the excellent [Consul tool](https://www.consul.io) as example for modeling
-in TOSCA and deploying a real client/server software with Janus.
+in TOSCA and deploying a real client/server software with Yorc.
 
 ## Implement TOSCA lifecycle operations using Ansible
 
@@ -11,7 +11,7 @@ It uses several Ansible features like Jinja2 templating or role importing
 
 ### Restrictions
 
-Your playbooks should apply to the `all` hosts group. Janus handles setting up this group with the right
+Your playbooks should apply to the `all` hosts group. Yorc handles setting up this group with the right
 actual hosts.
 
 ```yaml
@@ -29,7 +29,7 @@ As an example given the following TOSCA (some parts omitted for brevity):
 
 ```yaml
 node_types:
-  org.janus.samples.consul.linux.ansible.nodes.ConsulServer:
+  org.ystia.yorc.samples.consul.linux.ansible.nodes.ConsulServer:
     interfaces:
       Standard:
         inputs:
@@ -82,7 +82,7 @@ Operation outputs should be defined in TOSCA as an attribute of the type that de
 
 ```yaml
 node_types:
-  org.janus.samples.consul.linux.ansible.nodes.ConsulServer:
+  org.ystia.yorc.samples.consul.linux.ansible.nodes.ConsulServer:
     attributes:
       outputval: { get_operation_output: [SELF, Standard, create, myVar1] }
     interfaces:
@@ -101,7 +101,7 @@ node_types:
           implementation: playbooks/consul_install.yaml
 ```
 
-In your playbook you just have to set a fact using the `set_fact` task and Janus will retrieve it.
+In your playbook you just have to set a fact using the `set_fact` task and Yorc will retrieve it.
 
 ```yaml
     - name: Set myVar1 operation output

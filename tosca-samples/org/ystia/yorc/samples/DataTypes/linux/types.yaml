@@ -1,26 +1,26 @@
 tosca_definitions_version: alien_dsl_2_0_0
 
 metadata:
-  template_name: janus.tests.datatypes.linux
+  template_name: yorc.tests.datatypes.linux
   template_version: 1.0-SNAPSHOT
-  template_author: Janus team
+  template_author: Yorc team
 
 description: Implementation for the the complex data type demo.
 
 imports:
   - tosca-normative-types:1.0.0-ALIEN20
-  - janus.tests.datatypes.pub:1.0-SNAPSHOT
-  - janus-types:1.0.0
+  - yorc.tests.datatypes.pub:1.0-SNAPSHOT
+  - yorc-types:1.0.0
 
 
 
 node_types:
-  janus.tests.nodes.ValueAssignmentNode:
-    derived_from: janus.tests.nodes.AbstractValueAssignmentNode
+  yorc.tests.nodes.ValueAssignmentNode:
+    derived_from: yorc.tests.nodes.AbstractValueAssignmentNode
     requirements:
       - server:
-          capability: janus.tests.capabilities.ValueAssignmentEndpoint
-          relationship: janus.tests.relationships.ValueAssignmentConnectsTo
+          capability: yorc.tests.capabilities.ValueAssignmentEndpoint
+          relationship: yorc.tests.relationships.ValueAssignmentConnectsTo
           occurrences: [0, 1]
     interfaces:
       custom:
@@ -28,7 +28,7 @@ node_types:
           inputs:
             input_concat: { get_attribute: [ SELF, concat_attr ] }
             input_complex:
-              type: janus.tests.datatypes.BaseType
+              type: yorc.tests.datatypes.BaseType
               required: true
               default:
                 nestedType:
@@ -92,7 +92,7 @@ node_types:
 
 
 relationship_types:
-  janus.tests.relationships.ValueAssignmentConnectsTo:
+  yorc.tests.relationships.ValueAssignmentConnectsTo:
     derived_from: tosca.relationships.ConnectsTo
     interfaces:
       Configure:

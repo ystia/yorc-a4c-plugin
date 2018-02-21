@@ -1,18 +1,17 @@
 tosca_definitions_version: alien_dsl_2_0_0
 
 metadata:
-  template_name: ConsulOnBS
+  template_name: ConsulSimpleTopology
   template_version: 0.1.0-SNAPSHOT
   template_author: admin
 
-description: "This topology illustrates how to setup block storage and partitions in order to persist data (Consul Servers' data in this use case)"
+description: "A simple topology used to demonstrate how to deploy a Consul cluster using Yorc"
 
 imports:
   - tosca-normative-types:1.0.0-ALIEN20
-  - alien-extended-storage-types:2.0.0-SNAPSHOT
-  - janus-types:1.0.0
-  - org.janus.samples.consul.linux.ansible:1.0.0-SNAPSHOT
-  - org.janus.samples.consul.pub:1.0.0-SNAPSHOT
+  - yorc-types:1.0.0
+  - org.ystia.yorc.samples.consul.linux.ansible:1.0.0-SNAPSHOT
+  - org.ystia.yorc.samples.consul.pub:1.0.0-SNAPSHOT
 
 topology_template:
   node_templates:
@@ -58,9 +57,6 @@ topology_template:
             capability: tosca.capabilities.Connectivity
             relationship: tosca.relationships.Network
       capabilities:
-        os:
-          properties:
-            type: linux
         scalable:
           properties:
             min_instances: 1
@@ -73,7 +69,7 @@ topology_template:
             network_name: PRIVATE
             initiator: source
     ConsulAgentDC1:
-      type: org.janus.samples.consul.linux.ansible.nodes.ConsulAgent
+      type: org.ystia.yorc.samples.consul.linux.ansible.nodes.ConsulAgent
       properties:
         install_dnsmasq: true
         mode: agent
@@ -87,8 +83,8 @@ topology_template:
         - joinServerConsulServerConsul_server:
             type_requirement: consul_server
             node: ConsulServerDC1
-            capability: org.janus.samples.consul.pub.capabilities.ConsulServer
-            relationship: org.janus.samples.consul.linux.ansible.relationships.JoinServer
+            capability: org.ystia.yorc.samples.consul.pub.capabilities.ConsulServer
+            relationship: org.ystia.yorc.samples.consul.linux.ansible.relationships.JoinServer
         - hostedOnComputeCaHost:
             type_requirement: host
             node: ComputeCADC1
@@ -103,13 +99,13 @@ topology_template:
             network_name: PRIVATE
             initiator: source
     ConsulServerDC1:
-      type: org.janus.samples.consul.linux.ansible.nodes.ConsulServer
+      type: org.ystia.yorc.samples.consul.linux.ansible.nodes.ConsulServer
       properties:
         install_dnsmasq: true
         mode: server
         download_url: "https://releases.hashicorp.com/consul/1.0.2/consul_1.0.2_linux_amd64.zip"
         install_dir: "/usr/local/bin"
-        data_dir: "/consulfs/consul_data"
+        data_dir: "/var/consul"
         config_dir: "/etc/consul.d"
         datacenter: dc1
         domain: consul
@@ -119,11 +115,6 @@ topology_template:
             node: ComputeCSDC1
             capability: tosca.capabilities.Container
             relationship: tosca.relationships.HostedOn
-        - dependsOnLinuxFileSystemFeature:
-            type_requirement: dependency
-            node: LinuxFileSystem
-            capability: tosca.capabilities.Node
-            relationship: tosca.relationships.DependsOn
       capabilities:
         consul_agent:
           properties:
@@ -132,33 +123,3 @@ topology_template:
             secure: false
             network_name: PRIVATE
             initiator: source
-    BlockStorage:
-      metadata:
-        a4c_edit_x: 152
-        a4c_edit_y: 137
-      type: tosca.nodes.BlockStorage
-      properties:
-        size: "1 GIB"
-        device: "/dev/vdb"
-      requirements:
-        - attachToComputeCsdc1Attach:
-            type_requirement: attachment
-            node: ComputeCSDC1
-            capability: tosca.capabilities.Attachment
-            relationship: tosca.relationships.AttachTo
-    LinuxFileSystem:
-      type: alien.nodes.LinuxFileSystem
-      properties:
-        fs_type: ext4
-        location: "/consulfs"
-      requirements:
-        - hostedOnComputeCsdc1Host:
-            type_requirement: host
-            node: ComputeCSDC1
-            capability: tosca.capabilities.Container
-            relationship: tosca.relationships.HostedOn
-        - linuxPartitionBlockStorageFeature:
-            type_requirement: partition
-            node: BlockStorage
-            capability: tosca.capabilities.Node
-            relationship: alien.relationships.LinuxPartition
