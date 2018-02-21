@@ -1,7 +1,7 @@
-# Alien4Cloud Janus Plugin
+# Alien4Cloud Yorc Plugin
 
-Janus plugin allows users to deploy their application in an HPC environment.
-This means that Janus will allocate nodes with Slurm, then deploy component (docker image, for example) on the allocated node.
+A4C Yorc plugin allows users to deploy their application in an HPC environment.
+This means that Yorc will allocate nodes with Slurm, then deploy component (docker image, for example) on the allocated node.
 
 [Check Build Status](http://129.184.11.224/view/Janus%20A4C%20Plugin/)
 
@@ -16,8 +16,8 @@ This means that Janus will allocate nodes with Slurm, then deploy component (doc
 * Run : alien4cloud.sh or alien4cloud.bat
 * Visit [a4c UI: login admin/admin](http://localhost:8088)
 
-### Plugin Janus
-In the folder of our plugin : alien4cloud-janus-plugin in the folder target we can find the zipped folder alien4cloud-janus-plugin-<version>
+### A4C Plugin Yorc
+In the folder of our plugin : alien4cloud-yorc-plugin in the folder target we can find the zipped folder alien4cloud-yorc-plugin-<version>
 Then go to administration tab -> plugins and here drag and drop your compressed folder.
 
 

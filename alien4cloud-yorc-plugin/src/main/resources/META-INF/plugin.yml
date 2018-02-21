@@ -1,0 +1,14 @@
+id: alien4cloud-yorc-plugin
+name: Yorc PaaS provider
+version: ${project.version}
+description: >
+  Plugin that contains a single paas provider for deployments on Hpc env.
+configuration_class: alien4cloud.plugin.Janus.YorcPluginConfiguration
+component_descriptors:
+  - bean_name: yorc-orchestrator-factory
+    name: Yorc Orchestrator Factory
+    description: >
+      Alien Plugin for Yorc
+  - bean_name: yorc-openstack-fip-modifier
+    name: Floating IP modifier for Yorc PublicNetwork
+    description: Floating IP modifier for Yorc PublicNetwork
