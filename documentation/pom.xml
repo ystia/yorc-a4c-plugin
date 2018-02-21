@@ -7,7 +7,7 @@
     </parent>
 
     <artifactId>alien4cloud-janus-plugin-doc</artifactId>
-    <name>Alien 4 Cloud HPC PaaS provider Janus :: Documentation</name>
+    <name>Alien 4 Cloud HPC PaaS provider Yorc :: Documentation</name>
     <packaging>pom</packaging>
 
     <build>
@@ -49,10 +49,10 @@
                   <goal>single</goal>
                 </goals>
                 <configuration>
-                  <finalName>alien4cloud-janus-plugin-documentation-${project.version}</finalName>
+                  <finalName>alien4cloud-yorc-plugin-documentation-${project.version}</finalName>
                   <attach>true</attach>
                   <descriptors>
-                    <descriptor>src/assembly/janus-plugin-doc-assembly.xml</descriptor>
+                    <descriptor>src/assembly/yorc-plugin-doc-assembly.xml</descriptor>
                   </descriptors>
                 </configuration>
               </execution>

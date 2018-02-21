@@ -6,7 +6,7 @@ Import Samples
 
 Click on the |ComponentsBtn| button in the navigation bar.
 
-Locate the ``welcome-<version>-csar.zip`` and ``welcome-basic-<version>-topo.zip`` in the janus distribution and drop them
+Locate the ``welcome-<version>-csar.zip`` and ``welcome-basic-<version>-topo.zip`` in the yorc distribution and drop them
 **in this order** into the catalog's drop area.
 
 Create a Welcome application
