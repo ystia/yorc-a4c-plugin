@@ -3,7 +3,7 @@ name: Yorc PaaS provider
 version: ${project.version}
 description: >
   Plugin that contains a single paas provider for deployments on Hpc env.
-configuration_class: alien4cloud.plugin.Janus.YorcPluginConfiguration
+configuration_class: org.ystia.yorc.alien4cloud.plugin.YorcPluginConfiguration
 component_descriptors:
   - bean_name: yorc-orchestrator-factory
     name: Yorc Orchestrator Factory
