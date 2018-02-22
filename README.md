@@ -22,5 +22,5 @@ Then go to administration tab -> plugins and here drag and drop your compressed 
 
 
 ## Quick Start
-With this plugin we have a class called JanusPaaSProvider which contains the method doDeploy.
+With this plugin we have a class called YorcPaaSProvider which contains the method doDeploy.
 In this method we can have access to the Topology bean.
