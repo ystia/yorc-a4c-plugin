@@ -14,13 +14,13 @@
     <bdcf.samples.version>3.0-M6</bdcf.samples.version>
   </properties>
 
-  <artifactId>alien4cloud-janus-plugin-parent</artifactId>
-  <name>Alien 4 Cloud HPC PaaS provider Janus</name>
+  <artifactId>alien4cloud-yorc-plugin-parent</artifactId>
+  <name>Alien 4 Cloud HPC PaaS provider Yorc</name>
   <version>3.0.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <modules>
-    <module>alien4cloud-janus-plugin</module>
+    <module>alien4cloud-yorc-plugin</module>
     <module>documentation</module>
     <module>distribution</module>
   </modules>
