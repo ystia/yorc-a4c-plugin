@@ -1,0 +1,271 @@
+tosca_definitions_version: alien_dsl_2_0_0
+
+metadata:
+  template_name: ConsulMultiDC
+  template_version: 0.1.0-SNAPSHOT
+  template_author: admin
+
+description: >
+  This topology demonstrate how to deploy 2 different Consul Data Centers (dc1 and dc2) on isolated networks
+  and bind them using their WAN interface.
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN20
+  - yorc-types:1.0.0
+  - org.ystia.yorc.samples.consul.linux.ansible:1.0.0-SNAPSHOT
+  - org.ystia.yorc.samples.consul.pub:1.0.0-SNAPSHOT
+
+topology_template:
+  node_templates:
+    PublicNetwork:
+      metadata:
+        a4c_edit_x: 54
+        a4c_edit_y: "-29"
+      type: tosca.nodes.Network
+      properties:
+        ip_version: 4
+    AppNetworkDC1:
+      metadata:
+        a4c_edit_x: "-368"
+        a4c_edit_y: "-201"
+      type: tosca.nodes.Network
+      properties:
+        ip_version: 4
+        cidr: "10.1.2.0/24"
+        network_name: AppNetDC1
+    ComputeCADC1:
+      metadata:
+        a4c_edit_x: "-237"
+        a4c_edit_y: "-3"
+      type: tosca.nodes.Compute
+      requirements:
+        - networkPublicNetworkConnection:
+            type_requirement: network
+            node: PublicNetwork
+            capability: tosca.capabilities.Connectivity
+            relationship: tosca.relationships.Network
+        - networkAppNetworkConnection:
+            type_requirement: network
+            node: AppNetworkDC1
+            capability: tosca.capabilities.Connectivity
+            relationship: tosca.relationships.Network
+      capabilities:
+        scalable:
+          properties:
+            min_instances: 1
+            max_instances: 10
+            default_instances: 2
+        endpoint:
+          properties:
+            secure: true
+            protocol: tcp
+            network_name: PRIVATE
+            initiator: source
+    ComputeCSDC1:
+      metadata:
+        a4c_edit_x: 37
+        a4c_edit_y: "-5"
+      type: tosca.nodes.Compute
+      requirements:
+        - networkNetworkConnection:
+            type_requirement: network
+            node: PublicNetwork
+            capability: tosca.capabilities.Connectivity
+            relationship: tosca.relationships.Network
+        - networkAppNetworkConnection:
+            type_requirement: network
+            node: AppNetworkDC1
+            capability: tosca.capabilities.Connectivity
+            relationship: tosca.relationships.Network
+      capabilities:
+        scalable:
+          properties:
+            min_instances: 1
+            max_instances: 7
+            default_instances: 3
+        endpoint:
+          properties:
+            secure: true
+            protocol: tcp
+            network_name: PRIVATE
+            initiator: source
+    ConsulAgentDC1:
+      type: org.ystia.yorc.samples.consul.linux.ansible.nodes.ConsulAgent
+      properties:
+        install_dnsmasq: true
+        mode: agent
+        download_url: "https://releases.hashicorp.com/consul/1.0.2/consul_1.0.2_linux_amd64.zip"
+        install_dir: "/usr/local/bin"
+        data_dir: "/var/consul"
+        config_dir: "/etc/consul.d"
+        datacenter: dc1
+        domain: consul
+      requirements:
+        - joinServerConsulServerConsul_server:
+            type_requirement: consul_server
+            node: ConsulServerDC1
+            capability: org.ystia.yorc.samples.consul.pub.capabilities.ConsulServer
+            relationship: org.ystia.yorc.samples.consul.linux.ansible.relationships.JoinServer
+        - hostedOnComputeCaHost:
+            type_requirement: host
+            node: ComputeCADC1
+            capability: tosca.capabilities.Container
+            relationship: tosca.relationships.HostedOn
+      capabilities:
+        consul_agent:
+          properties:
+            api_port: 8500
+            protocol: tcp
+            secure: false
+            network_name: PRIVATE
+            initiator: source
+    ConsulServerDC1:
+      type: org.ystia.yorc.samples.consul.linux.ansible.nodes.ConsulServer
+      properties:
+        install_dnsmasq: true
+        mode: server
+        download_url: "https://releases.hashicorp.com/consul/1.0.2/consul_1.0.2_linux_amd64.zip"
+        install_dir: "/usr/local/bin"
+        data_dir: "/var/consul"
+        config_dir: "/etc/consul.d"
+        datacenter: dc1
+        domain: consul
+      requirements:
+        - hostedOnComputeHost:
+            type_requirement: host
+            node: ComputeCSDC1
+            capability: tosca.capabilities.Container
+            relationship: tosca.relationships.HostedOn
+        - joinServerWanConsulServerDc2Join_wan:
+            type_requirement: wan_server
+            node: ConsulServerDC2
+            capability: org.ystia.yorc.samples.consul.pub.capabilities.ConsulServerWAN
+            relationship: org.ystia.yorc.samples.consul.linux.ansible.relationships.JoinServerWAN
+      capabilities:
+        consul_agent:
+          properties:
+            api_port: 8500
+            protocol: tcp
+            secure: false
+            network_name: PRIVATE
+            initiator: source
+    AppNetworkDC2:
+      metadata:
+        a4c_edit_x: "-247"
+        a4c_edit_y: "-208"
+      type: tosca.nodes.Network
+      properties:
+        ip_version: 4
+        cidr: "10.1.1.0/24"
+        network_name: AppNetDC2
+    ComputeCSDC2:
+      metadata:
+        a4c_edit_x: 609
+        a4c_edit_y: 22
+      type: tosca.nodes.Compute
+      requirements:
+        - networkPublicNetworkConnection:
+            type_requirement: network
+            node: PublicNetwork
+            capability: tosca.capabilities.Connectivity
+            relationship: tosca.relationships.Network
+        - networkAppNetworkDc2Connection:
+            type_requirement: network
+            node: AppNetworkDC2
+            capability: tosca.capabilities.Connectivity
+            relationship: tosca.relationships.Network
+      capabilities:
+        scalable:
+          properties:
+            min_instances: 1
+            max_instances: 10
+            default_instances: 3
+        endpoint:
+          properties:
+            secure: true
+            protocol: tcp
+            network_name: PRIVATE
+            initiator: source
+    ComputeCADC2:
+      metadata:
+        a4c_edit_x: 313
+        a4c_edit_y: 130
+      type: tosca.nodes.Compute
+      requirements:
+        - networkPublicNetworkConnection:
+            type_requirement: network
+            node: PublicNetwork
+            capability: tosca.capabilities.Connectivity
+            relationship: tosca.relationships.Network
+        - networkAppNetworkDc2Connection:
+            type_requirement: network
+            node: AppNetworkDC2
+            capability: tosca.capabilities.Connectivity
+            relationship: tosca.relationships.Network
+      capabilities:
+        scalable:
+          properties:
+            min_instances: 1
+            max_instances: 10
+            default_instances: 2
+        endpoint:
+          properties:
+            secure: true
+            protocol: tcp
+            network_name: PRIVATE
+            initiator: source
+    ConsulServerDC2:
+      type: org.ystia.yorc.samples.consul.linux.ansible.nodes.ConsulServer
+      properties:
+        install_dnsmasq: true
+        mode: server
+        download_url: "https://releases.hashicorp.com/consul/1.0.2/consul_1.0.2_linux_amd64.zip"
+        install_dir: "/usr/local/bin"
+        data_dir: "/var/consul"
+        config_dir: "/etc/consul.d"
+        datacenter: dc2
+        domain: consul
+      requirements:
+        - hostedOnComputeCsdc2Host:
+            type_requirement: host
+            node: ComputeCSDC2
+            capability: tosca.capabilities.Container
+            relationship: tosca.relationships.HostedOn
+      capabilities:
+        consul_agent:
+          properties:
+            api_port: 8500
+            protocol: tcp
+            secure: false
+            network_name: PRIVATE
+            initiator: source
+    ConsulAgentDC2:
+      type: org.ystia.yorc.samples.consul.linux.ansible.nodes.ConsulAgent
+      properties:
+        install_dnsmasq: true
+        mode: agent
+        download_url: "https://releases.hashicorp.com/consul/1.0.2/consul_1.0.2_linux_amd64.zip"
+        install_dir: "/usr/local/bin"
+        data_dir: "/var/consul"
+        config_dir: "/etc/consul.d"
+        datacenter: dc2
+        domain: consul
+      requirements:
+        - hostedOnComputeCadc2Host:
+            type_requirement: host
+            node: ComputeCADC2
+            capability: tosca.capabilities.Container
+            relationship: tosca.relationships.HostedOn
+        - joinServerConsulServerDc2Consul_server:
+            type_requirement: consul_server
+            node: ConsulServerDC2
+            capability: org.ystia.yorc.samples.consul.pub.capabilities.ConsulServer
+            relationship: org.ystia.yorc.samples.consul.linux.ansible.relationships.JoinServer
+      capabilities:
+        consul_agent:
+          properties:
+            api_port: 8500
+            protocol: tcp
+            secure: false
+            network_name: PRIVATE
+            initiator: source

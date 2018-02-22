@@ -1,0 +1,95 @@
+  <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+      <groupId>alien4cloud</groupId>
+      <artifactId>alien4cloud-yorc-plugin-parent</artifactId>
+      <version>3.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>alien4cloud-yorc-plugin</artifactId>
+    <name>Alien 4 Cloud HPC PaaS provider Yorc :: Plugin</name>
+
+      <properties>
+          <httpclient.version>4.4.1</httpclient.version>
+          <yorc.types.version>1.0.0-SNAPSHOT</yorc.types.version>
+      </properties>
+
+    <dependencies>
+      <dependency>
+        <groupId>alien4cloud</groupId>
+        <artifactId>alien4cloud-core</artifactId>
+        <version>${alien4cloud.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>alien4cloud</groupId>
+        <artifactId>alien4cloud-rest-api</artifactId>
+        <version>${alien4cloud.version}</version>
+        <scope>provided</scope>
+      </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.11</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+            <version>4.1.4.RELEASE</version>
+            <scope>test</scope>
+        </dependency>
+            <!-- Unirest dependency -->
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpasyncclient</artifactId>
+            <version>4.1.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20140107</version>
+        </dependency>
+        <dependency>
+            <groupId>com.mashape.unirest</groupId>
+            <artifactId>unirest-java</artifactId>
+            <version>1.4.9</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+
+      <resources>
+        <resource>
+          <directory>src/main/resources</directory>
+          <filtering>true</filtering>
+        </resource>
+      </resources>
+
+      <plugins>
+        <plugin>
+          <artifactId>maven-assembly-plugin</artifactId>
+          <configuration>
+            <appendAssemblyId>false</appendAssemblyId>
+            <ignoreDirFormatExtensions>true</ignoreDirFormatExtensions>
+            <attach>false</attach>
+          </configuration>
+          <executions>
+            <execution>
+              <id>assembly</id>
+              <phase>package</phase>
+              <goals>
+                <goal>single</goal>
+              </goals>
+              <configuration>
+                <attach>true</attach>
+                <descriptors>
+                  <descriptor>src/main/assembly/yorc-plugin-assembly.xml</descriptor>
+                </descriptors>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </build>
+  </project>

@@ -1,0 +1,132 @@
+tosca_definitions_version: alien_dsl_2_0_0
+
+metadata:
+  template_name: org.ystia.yorc.samples.consul.pub
+  template_version: 1.0.0-SNAPSHOT
+  template_author: yorc
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN20
+
+description: >
+  This component exposes public interfaces for Consul
+
+node_types:
+  org.ystia.yorc.samples.consul.pub.nodes.Consul:
+    derived_from: tosca.nodes.SoftwareComponent
+    abstract: true
+    description: Base component for Consul. It describes how both agents and servers work.
+    tags:
+      icon: /images/consul-icon.png
+    properties:
+      mode:
+        description: The mode (agent or server) for operating Consul
+        type: string
+        constraints:
+          - valid_values: [ "agent", "server" ]
+        required: true
+      download_url:
+        description: The URL used to download the consul archive.
+        type: string
+        required: true
+        default: https://releases.hashicorp.com/consul/1.0.2/consul_1.0.2_linux_amd64.zip
+      install_dir:
+        description: Installation directory for the Consul binary
+        type: string
+        required: true
+        default: /usr/local/bin
+      data_dir:
+        description: Path to a data directory to store agent state.
+        type: string
+        required: true
+        default: /var/consul
+      config_dir:
+        description: Path to the configuration directory of Consul
+        type: string
+        required: true
+        default: /etc/consul.d
+      datacenter:
+        description: >
+          Name of the DataCenter for this Consul.
+          When an agent joins a server they should be in the same data center.
+        type: string
+        required: true
+        default: dc1
+      domain:
+        description: >
+          DNS domain name for Consul DNS interface
+        type: string
+        required: true
+        default: consul
+    capabilities:
+      consul_agent:
+        type: org.ystia.yorc.samples.consul.pub.capabilities.ConsulAgent
+
+  org.ystia.yorc.samples.consul.pub.nodes.ConsulServer:
+    derived_from: org.ystia.yorc.samples.consul.pub.nodes.Consul
+    abstract: true
+    properties:
+      mode:
+        description: The mode for operating Consul 'server' in this case.
+        type: string
+        constraints:
+          - equal: "server"
+        required: true
+        default: "server"
+    capabilities:
+      consul_server:
+        type: org.ystia.yorc.samples.consul.pub.capabilities.ConsulServer
+      join_wan:
+        type: org.ystia.yorc.samples.consul.pub.capabilities.ConsulServerWAN
+    requirements:
+      - wan_server:
+          # Optionally a server may join another server in another data center using the WAN interface
+          capability: org.ystia.yorc.samples.consul.pub.capabilities.ConsulServerWAN
+          occurrences: [0, 1]
+
+  org.ystia.yorc.samples.consul.pub.nodes.ConsulAgent:
+    derived_from: org.ystia.yorc.samples.consul.pub.nodes.Consul
+    abstract: true
+    properties:
+      mode:
+        description: The mode for operating Consul 'agent' in this case.
+        type: string
+        constraints:
+          - equal: "agent"
+        required: true
+        default: "agent"
+    requirements:
+      - consul_server:
+          # An agent requires a server to operate
+          capability: org.ystia.yorc.samples.consul.pub.capabilities.ConsulServer
+          occurrences: [1, 1]
+
+
+capability_types:
+  org.ystia.yorc.samples.consul.pub.capabilities.ConsulAgent:
+    derived_from: tosca.capabilities.Endpoint
+    description: >
+      A ConsulAgent capability allows to binds to the Consul HTTP API.
+      Both agents and servers expose this capability
+    properties:
+      api_port:
+        type: integer
+        description: Port of the Consul HTTP API.
+        required: true
+        default: 8500
+  org.ystia.yorc.samples.consul.pub.capabilities.ConsulServer:
+    derived_from: tosca.capabilities.Root
+    description: >
+      A Consul Server exposes a capability that allows Consul Agents to join it.
+  org.ystia.yorc.samples.consul.pub.capabilities.ConsulServerWAN:
+    derived_from: tosca.capabilities.Root
+    description: >
+      A Consul Server exposes a capability that allows others Consul Servers to join it through the WAN interface.
+      This allows federation of multiples datacenters
+
+relationship_types:
+  org.ystia.yorc.samples.consul.pub.relationships.JoinConsulAgent:
+    derived_from: tosca.relationships.ConnectsTo
+    description: >
+      Joins to a Consul agent
+    valid_target_types: [ org.ystia.yorc.samples.consul.pub.capabilities.ConsulAgent ]

@@ -1,4 +1,4 @@
-Install Alien4Cloud Janus Plugin and requirements
+Install Alien4Cloud Yorc Plugin and requirements
 =================================================
 
 Host requirements
@@ -11,7 +11,7 @@ Host requirements
 Execution environment requirements
 ----------------------------------
 
-An HTTP(S) access to a running and properly configured (for OpenStack deployements) instance of Janus is required. Please refer to the Janus engine documentation for more details on how to set it up.
+An HTTP(S) access to a running and properly configured (for OpenStack deployements) instance of Yorc is required. Please refer to the Yorc engine documentation for more details on how to set it up.
 
 Alien4Cloud Setup
 -----------------
@@ -28,17 +28,17 @@ Setup Alien4Cloud security
 Please refer to the `Security section of Alien4Cloud documentation <http://alien4cloud.github.io/#/documentation/2.0.0/admin_guide/security.html>`_ to run Alien4Cloud in secured mode.
 The main steps are:
 
-  * Generate key and PEM cerificate for the Alien4Cloud server. We advise you to use the same CA as the one used to sign the Janus PEM certificates (see "Run Janus in Secured mode" chapter in Janus documentation)
+  * Generate key and PEM cerificate for the Alien4Cloud server. We advise you to use the same CA as the one used to sign the Yorc PEM certificates (see "Run Yorc in Secured mode" chapter in Yorc documentation)
   * Create a truststore and import the CA certificate to it
   * Create a keystore. Declare the keystore in the ssl section of the configuration file (**config/alien4cloud-config.yml**)
   * Import the CA certificate to the Java truststore
 
-Alien4Cloud Janus Plugin installation
+Alien4Cloud Yorc Plugin installation
 -------------------------------------
 
 Log into the Alien4Cloud UI as described in the previous paragraph.
 
-Then go to |AdminBtn| and in the |PluginsBtn| sub-menu. Then drop the file named alien4cloud-janus-plugin-1.0.0-SNAPSHOT.zip in the drop area.
+Then go to |AdminBtn| and in the |PluginsBtn| sub-menu. Then drop the file named alien4cloud-yorc-plugin-1.0.0-SNAPSHOT.zip in the drop area.
 
 The next step will be to configure a new **orchestrator** and a **location** (see the next section).
 

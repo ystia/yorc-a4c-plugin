@@ -96,9 +96,9 @@ qthelp:
 	@echo
 	@echo "Build finished; now you can run "qcollectiongenerator" with the" \
 	      ".qhcp project file in $(BUILDDIR)/qthelp, like this:"
-	@echo "# qcollectiongenerator $(BUILDDIR)/qthelp/Alien4CloudJanusPlugin.qhcp"
+	@echo "# qcollectiongenerator $(BUILDDIR)/qthelp/Alien4CloudYorcPlugin.qhcp"
 	@echo "To view the help file:"
-	@echo "# assistant -collectionFile $(BUILDDIR)/qthelp/Alien4CloudJanusPlugin.qhc"
+	@echo "# assistant -collectionFile $(BUILDDIR)/qthelp/Alien4CloudYorcPlugin.qhc"
 
 .PHONY: applehelp
 applehelp:
@@ -115,8 +115,8 @@ devhelp:
 	@echo
 	@echo "Build finished."
 	@echo "To view the help file:"
-	@echo "# mkdir -p $$HOME/.local/share/devhelp/Alien4CloudJanusPlugin"
-	@echo "# ln -s $(BUILDDIR)/devhelp $$HOME/.local/share/devhelp/Alien4CloudJanusPlugin"
+	@echo "# mkdir -p $$HOME/.local/share/devhelp/Alien4CloudYorcPlugin"
+	@echo "# ln -s $(BUILDDIR)/devhelp $$HOME/.local/share/devhelp/Alien4CloudYorcPlugin"
 	@echo "# devhelp"
 
 .PHONY: epub

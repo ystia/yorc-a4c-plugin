@@ -1,0 +1,14 @@
+
+matching_configurations:
+  yorc.nodes.KubernetesContainer:
+    properties:
+      - image: { equal: "" }
+      - cpu_share: { equal: "" }
+      - namespace: { equal: "" }
+      - imagePullPolicy: { equal: "Always" }
+      - cpu_limit: { equal: 0 }
+      - mem_share: { equal: "" }
+      - mem_limits: { equal: "" }
+      - docker_options: { equal: "" }
+      - docker_run_cmd: { equal: "" }
+      - gpuType: { equal: "" }
