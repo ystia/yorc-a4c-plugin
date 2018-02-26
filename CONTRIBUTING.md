@@ -58,4 +58,4 @@ TODO: sounds a good idea to include a checkstyle for this project
 
 You should apply the license header to the source files. This is enforced by the maven build.
 
-To automatically applying the license header is done using `mvn com.mycila:license-maven-plugin:format`
+To automatically apply the license header use `mvn com.mycila:license-maven-plugin:format`
