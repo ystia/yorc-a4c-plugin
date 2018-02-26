@@ -48,9 +48,14 @@ Please try to answer most of the questions asked in the issue template.
 Use [Github pull requests](https://github.com/ystia/yorc-a4c-plugin/pulls) to propose a PR.
 Please try to answer most of the questions asked in the pull request template.
 
-<!--
-TODO: sounds a good idea to include a checkstyle for this project
-
 ## Coding Style
 
+<!--
+TODO: sounds a good idea to include a checkstyle for this project
 -->
+
+### License headers
+
+You should apply the license header to the source files. This is enforced by the maven build.
+
+To automatically apply the license header use `mvn com.mycila:license-maven-plugin:format`
