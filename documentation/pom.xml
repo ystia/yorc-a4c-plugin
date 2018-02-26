@@ -24,7 +24,7 @@
     </parent>
 
     <artifactId>alien4cloud-yorc-plugin-doc</artifactId>
-    <name>Alien 4 Cloud HPC PaaS provider Yorc :: Documentation</name>
+    <name>Ystia Orchestrator PaaS provider for Alien4Cloud :: Documentation</name>
     <packaging>pom</packaging>
 
     <build>
