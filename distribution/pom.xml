@@ -24,7 +24,7 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>alien4cloud-yoc-plugin-distribution</artifactId>
+  <artifactId>alien4cloud-yorc-plugin-distribution</artifactId>
   <name>Alien 4 Cloud HPC PaaS provider Yorc :: Distribution</name>
   <packaging>pom</packaging>
 
