@@ -1,0 +1,35 @@
+{#
+Copyright 2018 Bull S.A.S. Atos Technologies - Bull, Rue Jean Jaures, B.P.68, 78340, Les Clayes-sous-Bois, France.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+#}
+[Unit]
+Description=Consul service discovery agent
+Requires=network-online.target
+After=network.target
+
+[Service]
+User=consul
+Group=consul
+PIDFile=/run/consul/consul.pid
+Restart=on-failure
+ExecStartPre=/usr/bin/sh -c 'if [ -f "/run/consul/consul.pid" ] ; then  /usr/bin/rm -f /run/consul/consul.pid ; else /usr/bin/true ; fi'
+ExecStartPre={{INSTALL_DIR}}/consul validate {{CONFIG_DIR}}
+ExecStart={{INSTALL_DIR}}/consul agent $OPTIONS -pid-file=/run/consul/consul.pid -config-dir={{CONFIG_DIR}}
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop={{INSTALL_DIR}}/consul leave
+KillSignal=SIGINT
+TimeoutStopSec=5
+
+[Install]
+WantedBy=multi-user.target

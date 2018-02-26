@@ -1,0 +1,58 @@
+#
+# Copyright 2018 Bull S.A.S. Atos Technologies - Bull, Rue Jean Jaures, B.P.68, 78340, Les Clayes-sous-Bois, France.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+- name: Show env
+  hosts: all
+  strategy: free
+
+  tasks:
+    - name: Display all variables/facts known for a host
+      debug:
+        msg: "input_litteral={{input_litteral}}"
+    - name: Display all variables/facts known for a host
+      debug:
+        msg: "input_list={{input_list}}"
+    - name: Display all variables/facts known for a host
+      debug:
+        msg: "input_list_ex={{input_list_ex}}"
+    - name: Display all variables/facts known for a host
+      debug:
+        msg: "input_map={{input_map}}"
+    - name: Display all variables/facts known for a host
+      debug:
+        msg: "input_map_ex={{input_map_ex}}"
+    - name: Display all variables/facts known for a host
+      debug:
+        msg: "input_empty={{input_empty}}"
+    - name: Display all variables/facts known for a host
+      debug:
+        msg: "input_propMapdef_all={{input_propMapdef_all}}"
+    - name: Display all variables/facts known for a host
+      debug:
+        msg: "input_propMapdef_def1={{input_propMapdef_def1}}"
+    - name: Display all variables/facts known for a host
+      debug:
+        msg: "input_propMapdef_def2={{input_propMapdef_def2}}"
+    - name: Display all variables/facts known for a host
+      debug:
+        msg: "input_propList_all={{input_propList_all}}"
+    - name: Display all variables/facts known for a host
+      debug:
+        msg: "input_propList_0_alien={{input_propList_0_alien}}"
+    - name: Display all variables/facts known for a host
+      debug:
+        msg: "input_propList_0_tosca={{input_propList_0_tosca}}"
+

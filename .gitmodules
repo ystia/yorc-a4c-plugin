@@ -1,3 +1,0 @@
-[submodule "alien4cloud-janus-plugin/src/integration-test/a4c-api-wrapper"]
-	path = alien4cloud-janus-plugin/src/integration-test/a4c-api-wrapper
-	url = ssh://git@stash.sdmc.ao-srv.com:7999/brbdcf/janus-a4c-api-wrapper.git

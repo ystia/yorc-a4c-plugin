@@ -1,0 +1,198 @@
+tosca_definitions_version: alien_dsl_2_0_0
+#
+# Copyright 2018 Bull S.A.S. Atos Technologies - Bull, Rue Jean Jaures, B.P.68, 78340, Les Clayes-sous-Bois, France.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+
+metadata:
+  template_name: yorc.tests.datatypes.linux
+  template_version: 1.0-SNAPSHOT
+  template_author: Yorc team
+
+description: Implementation for the the complex data type demo.
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN20
+  - yorc.tests.datatypes.pub:1.0-SNAPSHOT
+  - yorc-types:1.0.0
+
+
+
+node_types:
+  yorc.tests.nodes.ValueAssignmentNode:
+    derived_from: yorc.tests.nodes.AbstractValueAssignmentNode
+    requirements:
+      - server:
+          capability: yorc.tests.capabilities.ValueAssignmentEndpoint
+          relationship: yorc.tests.relationships.ValueAssignmentConnectsTo
+          occurrences: [0, 1]
+    interfaces:
+      custom:
+        publish:
+          inputs:
+            input_concat: { get_attribute: [ SELF, concat_attr ] }
+            input_complex:
+              type: yorc.tests.datatypes.BaseType
+              required: true
+              default:
+                nestedType:
+                  listofstring: ["typeDefL1", "typeDefL2"]
+                  subcomplex:
+                    literal: 4
+                  listofcomplex:
+                    - literal: 42
+                      mymap: {"nested": 1}
+                    - literal: 43
+                      mymap: {"nested": 2}
+                  mapofcomplex:
+                    m1: 
+                      literal: 52
+                      mymap: {"nested": 3}
+          implementation: scripts/show_inputs.sh
+      Standard:
+        create: scripts/create.sh
+        configure: 
+          inputs:
+            input_litteral: "testLiteral"
+            input_list: ["l1", "l2"]
+            input_list_ex:
+              - "le1"
+              - "le2"
+            input_map: {"key1": "value1", "key2": "value2"}
+            input_map_ex:
+              keyex1: value1
+              "keyex2": "value2"
+            input_empty: { get_property: [SELF, empty] }
+            input_propMapdef_all: { get_property: [SELF, map] }
+            # Alien notation
+            input_propMapdef_def1: { get_property: [SELF, "mapdef.def1"] }
+            # TOSCA standard
+            input_propMapdef_def2: { get_property: [SELF, mapdef, def1] }
+            input_propList_all: { get_property: [SELF, list] }
+            input_propList_0_alien: { get_property: [SELF, "list[0]"] }
+            input_propList_0_tosca: { get_property: [SELF, list, 0] }
+          implementation: scripts/show_inputs.sh
+        start:
+          inputs:
+            input_litteral: "testLiteral"
+            input_list: ["l1", "l2"]
+            input_list_ex:
+              - "le1"
+              - "le2"
+            input_map: {"key1": "value1", "key2": "value2"}
+            input_map_ex:
+              keyex1: value1
+              "keyex2": "value2"
+            input_empty: { get_property: [SELF, empty] }
+            input_propMapdef_all: { get_property: [SELF, map] }
+            # Alien notation
+            input_propMapdef_def1: { get_property: [SELF, "mapdef.def1"] }
+            # TOSCA standard
+            input_propMapdef_def2: { get_property: [SELF, mapdef, def1] }
+            input_propList_all: { get_property: [SELF, list] }
+            input_propList_0_alien: { get_property: [SELF, "list[0]"] }
+            input_propList_0_tosca: { get_property: [SELF, list, 0] }
+          implementation: scripts/show_inputs.yaml
+
+
+relationship_types:
+  yorc.tests.relationships.ValueAssignmentConnectsTo:
+    derived_from: tosca.relationships.ConnectsTo
+    interfaces:
+      Configure:
+        pre_configure_source:
+          inputs:
+            input_litteral: "testLiteral"
+            input_list: ["l1", "l2"]
+            input_list_ex:
+              - "le1"
+              - "le2"
+            input_map: {"key1": "value1", "key2": "value2"}
+            input_map_ex:
+              keyex1: value1
+              "keyex2": "value2"
+            input_empty: { get_property: [SOURCE, empty] }
+            input_propMapdef_all: { get_property: [SOURCE, map] }
+            # Alien notation
+            input_propMapdef_def1: { get_property: [SOURCE, "mapdef.def1"] }
+            # TOSCA standard
+            input_propMapdef_def2: { get_property: [SOURCE, mapdef, def1] }
+            input_propList_all: { get_property: [SOURCE, list] }
+            input_propList_0_alien: { get_property: [SOURCE, "list[0]"] }
+            input_propList_0_tosca: { get_property: [SOURCE, list, 0] }
+          implementation: scripts/show_inputs.sh
+        post_configure_source:
+          inputs:
+            input_litteral: "testLiteral"
+            input_list: ["l1", "l2"]
+            input_list_ex:
+              - "le1"
+              - "le2"
+            input_map: {"key1": "value1", "key2": "value2"}
+            input_map_ex:
+              keyex1: value1
+              "keyex2": "value2"
+            input_empty: { get_property: [SOURCE, empty] }
+            input_propMapdef_all: { get_property: [SOURCE, map] }
+            # Alien notation
+            input_propMapdef_def1: { get_property: [SOURCE, "mapdef.def1"] }
+            # TOSCA standard
+            input_propMapdef_def2: { get_property: [SOURCE, mapdef, def1] }
+            input_propList_all: { get_property: [SOURCE, list] }
+            input_propList_0_alien: { get_property: [SOURCE, "list[0]"] }
+            input_propList_0_tosca: { get_property: [SOURCE, list, 0] }
+          implementation: scripts/show_inputs.yaml
+        pre_configure_target:
+          inputs:
+            input_litteral: "testLiteral"
+            input_list: ["l1", "l2"]
+            input_list_ex:
+              - "le1"
+              - "le2"
+            input_map: {"key1": "value1", "key2": "value2"}
+            input_map_ex:
+              keyex1: value1
+              "keyex2": "value2"
+            input_empty: { get_property: [TARGET, empty] }
+            input_propMapdef_all: { get_property: [TARGET, map] }
+            # Alien notation
+            input_propMapdef_def1: { get_property: [TARGET, "mapdef.def1"] }
+            # TOSCA standard
+            input_propMapdef_def2: { get_property: [TARGET, mapdef, def1] }
+            input_propList_all: { get_property: [TARGET, list] }
+            input_propList_0_alien: { get_property: [TARGET, "list[0]"] }
+            input_propList_0_tosca: { get_property: [TARGET, list, 0] }
+          implementation: scripts/show_inputs.sh
+        post_configure_target:
+          inputs:
+            input_litteral: "testLiteral"
+            input_list: ["l1", "l2"]
+            input_list_ex:
+              - "le1"
+              - "le2"
+            input_map: {"key1": "value1", "key2": "value2"}
+            input_map_ex:
+              keyex1: value1
+              "keyex2": "value2"
+            input_empty: { get_property: [TARGET, empty] }
+            input_propMapdef_all: { get_property: [TARGET, map] }
+            # Alien notation
+            input_propMapdef_def1: { get_property: [TARGET, "mapdef.def1"] }
+            # TOSCA standard
+            input_propMapdef_def2: { get_property: [TARGET, mapdef, def1] }
+            input_propList_all: { get_property: [TARGET, list] }
+            input_propList_0_alien: { get_property: [TARGET, "list[0]"] }
+            input_propList_0_tosca: { get_property: [TARGET, list, 0] }
+          implementation: scripts/show_inputs.yaml

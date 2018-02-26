@@ -1,0 +1,63 @@
+tosca_definitions_version: alien_dsl_2_0_0
+#
+# Copyright 2018 Bull S.A.S. Atos Technologies - Bull, Rue Jean Jaures, B.P.68, 78340, Les Clayes-sous-Bois, France.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+
+metadata:
+  template_name: org.ystia.yorc.samples.python
+  template_version: 1.0.0-SNAPSHOT
+  template_author: yorc
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN20
+
+node_types:
+  org.ystia.yorc.samples.python.Component:
+    derived_from: tosca.nodes.SoftwareComponent
+    description: >
+      Sample component to illustrate how to implement a Component lifecycle in Python
+    tags:
+      icon: /images/python.png
+    properties:
+      hello_message:
+        description: A simple message to print
+        type: string
+        required: true
+        default: "Hello World!"
+      outputVar1:
+        description: Dummy property used to test operation outputs
+        type: string
+        required: true
+        default: "ov1"
+      outputVar2:
+        description: Dummy property used to test operation outputs
+        type: string
+        required: true
+        default: "ov2"
+    attributes:
+      resolvedOutput1: { get_operation_output: [SELF, Standard, create, myVar1]}
+      resolvedOutput2: { get_operation_output: [SELF, Standard, create, myVar2]}
+    interfaces:
+      Standard:
+        create:
+          inputs:
+            var1: {get_property: [SELF, outputVar1]}
+            var2: {get_property: [SELF, outputVar2]}
+          implementation: scripts/create.py
+        start:
+          inputs:
+            msg: {get_property: [SELF, hello_message]}
+          implementation: scripts/start.py

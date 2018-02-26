@@ -1,0 +1,155 @@
+tosca_definitions_version: alien_dsl_2_0_0
+#
+# Copyright 2018 Bull S.A.S. Atos Technologies - Bull, Rue Jean Jaures, B.P.68, 78340, Les Clayes-sous-Bois, France.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+
+metadata:
+  template_name: yorc.tests.datatypes.topology
+  template_version: 1.0-SNAPSHOT
+  template_author: Yorc team
+
+description: ""
+
+imports:
+  - yorc.tests.datatypes.linux:1.0-SNAPSHOT
+  - yorc.tests.datatypes.pub:1.0-SNAPSHOT
+  - tosca-normative-types:1.0.0-ALIEN20
+  - yorc-types:1.0.0
+
+topology_template:
+  node_templates:
+    ValueAssignmentNode1:
+      type: yorc.tests.nodes.ValueAssignmentNode
+      properties:
+        list:
+          - mylist0
+          - mylist1
+        map:
+          m1: 1
+        mapdef:
+          def1: "map 1 default value"
+          def2: "map 2 default value"
+        baseComplex:
+          nestedType:
+            listofstring:
+              - ls0
+              - ls2
+            subcomplex:
+              literal: 1
+              literalDefault: ComplexDataTypeDefault
+              mymap:
+                sc0: 0
+                sc1: 1
+            listofcomplex:
+              - literal: 2
+                mymap:
+                  loc0: 0
+                  loc1: 1
+                literalDefault: locLitDef
+              - literal: 3
+                literalDefault: loc1LitDef
+                mymap:
+                  loc10: 10
+                  loc11: 11
+            mapofcomplex:
+              moc0:
+                literal: 5
+                literalDefault: moc0LitDef
+                mymap:
+                  moc01: 01
+                  moc02: 02
+              moc1:
+                literal: 6
+                literalDefault: moc1LitDef
+                mymap:
+                  moc10: 10
+                  moc11: 11
+                  moc12: 12
+      requirements:
+        - host:
+            node: Compute
+            capability: tosca.capabilities.Container
+            relationship: tosca.relationships.HostedOn
+    ValueAssignmentNode2:
+          type: yorc.tests.nodes.ValueAssignmentNode
+          properties:
+            list:
+              - mylist0
+              - mylist1
+            map:
+              m1: 1
+            mapdef:
+              def1: "map 1 default value"
+              def2: "map 2 default value"
+            baseComplex:
+              nestedType:
+                listofstring:
+                  - ls0
+                  - ls2
+                subcomplex:
+                  literal: 1
+                  literalDefault: ComplexDataTypeDefault
+                  mymap:
+                    sc0: 0
+                    sc1: 1
+                listofcomplex:
+                  - literal: 2
+                    mymap:
+                      loc0: 0
+                      loc1: 1
+                    literalDefault: locLitDef
+                  - literal: 3
+                    literalDefault: loc1LitDef
+                    mymap:
+                      loc10: 10
+                      loc11: 11
+                mapofcomplex:
+                  moc0:
+                    literal: 5
+                    literalDefault: moc0LitDef
+                    mymap:
+                      moc01: 01
+                      moc02: 02
+                  moc1:
+                    literal: 6
+                    literalDefault: moc1LitDef
+                    mymap:
+                      moc10: 10
+                      moc11: 11
+                      moc12: 12
+          requirements:
+            - host:
+                node: Compute
+                capability: tosca.capabilities.Container
+                relationship: tosca.relationships.HostedOn
+            - server:
+                capability: yorc.tests.capabilities.ValueAssignmentEndpoint
+                node: ValueAssignmentNode1
+                relationship: yorc.tests.relationships.ValueAssignmentConnectsTo
+    Compute:
+      type: tosca.nodes.Compute
+      capabilities:
+        scalable:
+          properties:
+            min_instances: 1
+            max_instances: 1
+            default_instances: 1
+        endpoint:
+          properties:
+            secure: true
+            protocol: tcp
+            network_name: PRIVATE
+            initiator: source

@@ -1,0 +1,141 @@
+#
+# Copyright 2018 Bull S.A.S. Atos Technologies - Bull, Rue Jean Jaures, B.P.68, 78340, Les Clayes-sous-Bois, France.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+
+- name: Set connected user fact
+  hosts: all
+  strategy: free
+  tasks:
+    - set_fact:
+        yorc_prov_user: "{{ ansible_user_id }}"
+
+- name: Install consul
+  hosts: all
+  strategy: free
+  become: true
+  become_method: sudo
+  tasks:
+    - name: Backup original resolve.conf
+      copy:
+        src: /etc/resolv.conf
+        remote_src: yes
+        dest: /etc/resolv.conf.ori
+      when: INSTALL_DNSMASQ == "true"
+
+    - name: Install Dnsmasq using a 3rd party role
+      import_role:
+        name: jriguera.dnsmasq
+      vars:
+        dnsmasq_conf_no_hosts: True
+        dnsmasq_conf_servers:
+          - [ "/{{DOMAIN}}/127.0.0.1#8600" ]
+        dnsmasq_resolvconf: True
+        dnsmasq_conf_resolv: "/etc/resolv.conf.ori"
+        dnsmasq_conf_log: "DAEMON"
+      when: INSTALL_DNSMASQ == "true"
+
+    - name: RedHat - install prerequisites
+      yum:
+        name: "{{item}}"
+        state: present
+        update_cache: yes
+      with_items:
+        - zip
+        - unzip
+      when: ansible_os_family == 'RedHat'
+
+    - name: Debian - install prerequisites
+      apt:
+        name: "{{item}}"
+        state: present
+        update_cache: yes
+      with_items:
+        - zip
+        - unzip
+      when: ansible_os_family == 'Debian'
+
+    - name: create Consul group
+      group: name=consul
+
+    - name: Add "{{ yorc_prov_user }}" to the consul group
+      user:
+        name: "{{ yorc_prov_user }}"
+        append: yes
+        group: consul
+
+    - name: create Consul user
+      user:
+        name: consul
+        system: true
+        group: consul
+        home: "{{DATA_DIR}}"
+
+    - name: Setup permissions on config dir
+      file:
+        path: "{{CONFIG_DIR}}"
+        state: directory
+        owner: consul
+        group: consul
+        mode: "u=rwx,g=rwx,o=rx"
+
+    - name: Setup permissions on data dir
+      file:
+        path: "{{DATA_DIR}}"
+        state: directory
+        owner: consul
+        group: consul
+        mode: "u=rwx,g=rwx,o=rx"
+
+    - name: Setup permissions on /run/consul dir
+      file:
+        path: "/run/consul"
+        state: directory
+        owner: consul
+        group: consul
+        mode: "u=rwx,g=rwx,o=rx"
+
+    - name: Download Consul binary
+      get_url:
+        url: "{{DOWNLOAD_URL}}"
+        dest: /tmp/consul.zip
+
+    - name: copy consul bin
+      unarchive:
+        src: /tmp/consul.zip
+        remote_src: yes
+        dest: "{{INSTALL_DIR}}"
+        creates: "{{INSTALL_DIR}}/consul"
+        mode: "u=rx,g=rx,o=rx"
+
+    - name: Install consul systemd unit
+      template: 
+        src: consul.service.j2
+        dest: "/etc/systemd/system/consul.service"
+        mode: "u=rw,g=rw,o=r"
+
+    - name: Enable Consul Systemd Service
+      systemd:
+        name: consul
+        daemon_reload: yes
+        enabled: yes
+        state: stopped
+
+
+    - name: Install consul maintenance script
+      template: 
+        src: consul_maintenance.sh.j2
+        dest: "{{INSTALL_DIR}}/consul_maintenance.sh"
+        mode: "u=rwx,g=rx,o=rx"

@@ -1,6 +1,22 @@
+#
+# Copyright 2018 Bull S.A.S. Atos Technologies - Bull, Rue Jean Jaures, B.P.68, 78340, Les Clayes-sous-Bois, France.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
 # -*- coding: utf-8 -*-
 #
-# Alien4Cloud Janus Plugin documentation build configuration file, created by
+# Alien4Cloud Yorc Plugin documentation build configuration file, created by
 # sphinx-quickstart on Wed Mar 29 14:33:05 2017.
 #
 # This file is execfile()d with the current directory set to its
@@ -49,7 +65,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Alien4Cloud Janus Plugin'
+project = u'Alien4Cloud Yorc Plugin'
 copyright = u'2017, Atos BDS R&D'
 author = u'Atos BDS R&D'
 
@@ -124,7 +140,7 @@ html_theme = 'alabaster'
 
 # The name for this set of Sphinx documents.
 # "<project> v<release> documentation" by default.
-#html_title = u'Alien4Cloud Janus Plugin v1.0.0'
+#html_title = u'Alien4Cloud Yorc Plugin v1.0.0'
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 #html_short_title = None
@@ -206,7 +222,7 @@ html_static_path = ['_static']
 #html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'Alien4CloudJanusPlugindoc'
+htmlhelp_basename = 'Alien4CloudYorcPlugindoc'
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -228,7 +244,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'Alien4CloudJanusPlugin.tex', u'Alien4Cloud Janus Plugin Documentation',
+    (master_doc, 'Alien4CloudYorcPlugin.tex', u'Alien4Cloud Yorc Plugin Documentation',
      u'Atos BDS R\\&D', 'manual'),
 ]
 
@@ -258,7 +274,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'alien4cloudjanusplugin', u'Alien4Cloud Janus Plugin Documentation',
+    (master_doc, 'alien4cloudyorcplugin', u'Alien4Cloud Yorc Plugin Documentation',
      [author], 1)
 ]
 
@@ -272,8 +288,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'Alien4CloudJanusPlugin', u'Alien4Cloud Janus Plugin Documentation',
-     author, 'Alien4CloudJanusPlugin', 'One line description of project.',
+    (master_doc, 'Alien4CloudYorcPlugin', u'Alien4Cloud Yorc Plugin Documentation',
+     author, 'Alien4CloudYorcPlugin', 'One line description of project.',
      'Miscellaneous'),
 ]
 

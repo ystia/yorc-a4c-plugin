@@ -1,0 +1,110 @@
+tosca_definitions_version: alien_dsl_2_0_0
+#
+# Copyright 2018 Bull S.A.S. Atos Technologies - Bull, Rue Jean Jaures, B.P.68, 78340, Les Clayes-sous-Bois, France.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+
+
+metadata:
+  template_name: yorc.tests.datatypes.pub
+  template_version: 1.0-SNAPSHOT
+  template_author: Yorc team
+
+description: Public interface types for the complex data type demo.
+
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN20
+
+
+data_types:
+  yorc.tests.datatypes.ComplexType:
+    derived_from: tosca.datatypes.Root
+    properties:
+      literal:
+        type: integer
+      literalDefault:
+        type: string
+        default: ComplexDataTypeDefault
+      mymap:
+        type: map
+        entry_schema: 
+          type: integer
+  yorc.tests.datatypes.SubComplexType:
+    derived_from: yorc.tests.datatypes.ComplexType
+  yorc.tests.datatypes.BaseType:
+    derived_from: tosca.datatypes.Root
+    properties:
+      nestedType:
+        type: yorc.tests.datatypes.NestedType
+  yorc.tests.datatypes.NestedType:
+    derived_from: tosca.datatypes.Root
+    properties:
+      listofstring:
+        type: list
+        entry_schema:
+            type: string
+      subcomplex:
+        type: yorc.tests.datatypes.SubComplexType
+      listofcomplex:
+        type: list
+        entry_schema:
+          type: yorc.tests.datatypes.ComplexType 
+      mapofcomplex:
+        type: map
+        entry_schema:
+          type: yorc.tests.datatypes.ComplexType       
+
+node_types:
+  yorc.tests.nodes.AbstractValueAssignmentNode:
+    abstract: true
+    derived_from: tosca.nodes.Root
+    properties:
+      empty:
+        type: string
+        required: false
+      list:
+        type: list
+        entry_schema:
+          type: string
+      map:
+        type: map
+        entry_schema:
+          type: string
+      mapdef:
+        type: map
+        entry_schema:
+          type: string
+        default: { def1: "map 1 default value", def2: "map 1 default value"}
+      baseComplex:
+        type: yorc.tests.datatypes.BaseType
+    attributes:
+      concat_attr: { concat: [get_property: [SELF, port], concat: ["something", concat: [concat: ["hello", get_operation_output: [SELF, Standard, create, CREATE_OUTPUT]], "!"]] ] }
+    capabilities:
+      endpoint:
+        type: yorc.tests.capabilities.ValueAssignmentEndpoint
+    requirements:
+      - host:
+          capability: tosca.capabilities.Container
+          relationship: tosca.relationships.HostedOn
+      - server:
+          capability: yorc.tests.capabilities.ValueAssignmentEndpoint
+          # relationship: yorc.tests.relationships.ValueAssignmentConnectsTo
+          occurrences: [0, 1]
+
+
+capability_types:
+  yorc.tests.capabilities.ValueAssignmentEndpoint:
+    derived_from: tosca.capabilities.Endpoint

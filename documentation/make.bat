@@ -1,3 +1,19 @@
+@REM
+@REM Copyright 2018 Bull S.A.S. Atos Technologies - Bull, Rue Jean Jaures, B.P.68, 78340, Les Clayes-sous-Bois, France.
+@REM
+@REM Licensed under the Apache License, Version 2.0 (the "License");
+@REM you may not use this file except in compliance with the License.
+@REM You may obtain a copy of the License at
+@REM
+@REM     http://www.apache.org/licenses/LICENSE-2.0
+@REM
+@REM Unless required by applicable law or agreed to in writing, software
+@REM distributed under the License is distributed on an "AS IS" BASIS,
+@REM WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+@REM See the License for the specific language governing permissions and
+@REM limitations under the License.
+@REM
+
 @ECHO OFF
 
 REM Command file for Sphinx documentation
@@ -129,9 +145,9 @@ if "%1" == "qthelp" (
 	echo.
 	echo.Build finished; now you can run "qcollectiongenerator" with the ^
 .qhcp project file in %BUILDDIR%/qthelp, like this:
-	echo.^> qcollectiongenerator %BUILDDIR%\qthelp\Alien4CloudJanusPlugin.qhcp
+	echo.^> qcollectiongenerator %BUILDDIR%\qthelp\Alien4CloudYorcPlugin.qhcp
 	echo.To view the help file:
-	echo.^> assistant -collectionFile %BUILDDIR%\qthelp\Alien4CloudJanusPlugin.ghc
+	echo.^> assistant -collectionFile %BUILDDIR%\qthelp\Alien4CloudYorcPlugin.ghc
 	goto end
 )
 

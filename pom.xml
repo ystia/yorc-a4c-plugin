@@ -1,35 +1,65 @@
+<!--
+
+    Copyright 2018 Bull S.A.S. Atos Technologies - Bull, Rue Jean Jaures, B.P.68, 78340, Les Clayes-sous-Bois, France.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
     <groupId>alien4cloud</groupId>
     <artifactId>alien4cloud-parent</artifactId>
-    <version>2.0.0-SM5</version>
+    <version>2.0.0-RC1</version>
   </parent>
 
   <properties>
-    <alien4cloud.version>2.0.0-SM5</alien4cloud.version>
-    <tosca.normative.types.version>1.0.0-ALIEN20SM5</tosca.normative.types.version>
+    <alien4cloud.version>2.0.0-RC1</alien4cloud.version>
+    <tosca.normative.types.version>1.0.0-ALIEN20</tosca.normative.types.version>
     <alien4cloud.dsl.version>alien_dsl_2_0_0</alien4cloud.dsl.version>
-    <bdcf.samples.version>3.0-M6</bdcf.samples.version>
   </properties>
 
-  <artifactId>alien4cloud-janus-plugin-parent</artifactId>
-  <name>Alien 4 Cloud HPC PaaS provider Janus</name>
+  <artifactId>alien4cloud-yorc-plugin-parent</artifactId>
+  <name>Alien 4 Cloud HPC PaaS provider Yorc</name>
   <version>3.0.0-SNAPSHOT</version>
+  <inceptionYear>2018</inceptionYear>
   <packaging>pom</packaging>
 
   <modules>
-    <module>alien4cloud-janus-plugin</module>
+    <module>alien4cloud-yorc-plugin</module>
     <module>documentation</module>
     <module>distribution</module>
   </modules>
 
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <organization>
+    <name>Bull S.A.S. Atos Technologies - Bull, Rue Jean Jaures, B.P.68, 78340, Les Clayes-sous-Bois, France.</name>
+    <url>https://atos.net/en/products</url>
+  </organization>
+
+
   <scm>
-    <connection>scm:git:https://stash.sdmc.ao-srv.com/scm/brbdcf/janus-a4c-plugin.git</connection>
-    <developerConnection>scm:git:https://stash.sdmc.ao-srv.com/scm/brbdcf/janus-a4c-plugin.git</developerConnection>
-    <url>https://stash.sdmc.ao-srv.com/scm/brbdcf/janus-a4c-plugin/</url>
-    <tag>janus-a4c-plugin-2.0.0</tag>
+    <connection>scm:git:https://github.com/ystia/yorc-a4c-plugin.git</connection>
+    <developerConnection>scm:git:git@github.com/ystia/yorc-a4c-plugin.git</developerConnection>
+    <url>https://github.com/ystia/yorc-a4c-plugin/</url>
   </scm>
 
   <repositories>
@@ -41,73 +71,74 @@
       <id>repo.opensource.snapshot.fastconnect.org</id>
       <url>http://fastconnect.org/maven/content/repositories/opensource-snapshot</url>
     </repository>
-    <repository>
-      <id>starlings-repo-releases</id>
-      <name>Starlings Release Repository</name>
-      <url>https://novaforge.bull.com/nexus-default/nexus/content/repositories/starlings_nexus_release</url>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
-    <repository>
-      <id>starlings-repo-snapshots</id>
-      <name>Starlings Snapshot Repository</name>
-      <url>https://novaforge.bull.com/nexus-default/nexus/content/repositories/starlings_nexus_snapshot</url>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-    </repository>
   </repositories>
 
-  <pluginRepositories>
-    <pluginRepository>
-      <id>starlings-repo-plugin-releases</id>
-      <name>Starlings Release Repository</name>
-      <url>https://novaforge.bull.com/nexus-default/nexus/content/repositories/starlings_nexus_release</url>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </pluginRepository>
-    <pluginRepository>
-      <id>starlings-repo-plugin-snapshots</id>
-      <name>Starlings Snapshot Repository</name>
-      <url>https://novaforge.bull.com/nexus-default/nexus/content/repositories/starlings_nexus_snapshot</url>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-    </pluginRepository>
-  </pluginRepositories>
-
-
-  <distributionManagement>
-    <repository>
-      <id>dm-starlings-repo-releases</id>
-      <name>Starlings Release Repository</name>
-      <url>https://novaforge.bull.com/nexus-default/nexus/content/repositories/starlings_nexus_release</url>
-    </repository>
-    <snapshotRepository>
-      <id>dm-starlings-repo-snapshots</id>
-      <name>Starlings Snapshot Repository</name>
-      <url>https://novaforge.bull.com/nexus-default/nexus/content/repositories/starlings_nexus_snapshot</url>
-    </snapshotRepository>
-  </distributionManagement>
-
+  
   <build>
     <pluginManagement>
       <plugins>
         <plugin>
-              <artifactId>maven-release-plugin</artifactId>
-              <version>2.5.3</version>
-              <dependencies>
-                <dependency>
-                  <groupId>org.apache.maven.scm</groupId>
-                  <artifactId>maven-scm-provider-gitexe</artifactId>
-                  <version>1.9.5</version>
-                </dependency>
-               </dependencies>
-              </plugin>
+          <artifactId>maven-release-plugin</artifactId>
+          <version>2.5.3</version>
+          <dependencies>
+            <dependency>
+              <groupId>org.apache.maven.scm</groupId>
+              <artifactId>maven-scm-provider-gitexe</artifactId>
+              <version>1.9.5</version>
+            </dependency>
+          </dependencies>
+        </plugin>
+        <plugin>
+          <groupId>com.mycila</groupId>
+          <artifactId>license-maven-plugin</artifactId>
+          <version>3.0</version>
+          <inherited>true</inherited>
+          <configuration>
+            <header>${session.executionRootDirectory}/src/main/resources/license/header.txt</header>
+            <headerDefinitions>
+              <headerDefinition>${session.executionRootDirectory}/src/main/resources/license/headers_definitions.xml</headerDefinition>
+            </headerDefinitions>
+            <properties>
+              <owner>${project.organization.name}</owner>
+            </properties>
+            <mapping>
+              <types.yaml>TOSCA_DEF_STYLE</types.yaml>
+              <types.yml>TOSCA_DEF_STYLE</types.yml>
+              <j2>JINJA2_STYLE</j2>
+              <rst>SPHINX_STYLE</rst>
+            </mapping>
+            <excludes>
+              <exclude>LICENSE</exclude>
+              <exclude>**/Makefile</exclude>
+              <exclude>**/playbooks/roles/**</exclude>
+              <exclude>src/test/resources/**</exclude>
+              <exclude>src/main/resources/**</exclude>
+            </excludes>
+            <quite>true</quite>
+          </configuration>
+        </plugin>
       </plugins>
     </pluginManagement>
   </build>
-
+  <profiles>
+    <profile>
+      <id>license-check</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.mycila</groupId>
+            <artifactId>license-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+                <phase>validate</phase>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

@@ -1,0 +1,67 @@
+#
+# Copyright 2018 Bull S.A.S. Atos Technologies - Bull, Rue Jean Jaures, B.P.68, 78340, Les Clayes-sous-Bois, France.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+- name: Configure consul
+  hosts: all
+  strategy: free
+  become: yes
+  become_user: consul
+  become_method: sudo
+  vars:
+    consul_servers: []
+  tasks:
+    - name: Setup base config for consul
+      template:
+        src: 1_main_conf.json.j2
+        dest: "{{CONFIG_DIR}}/1_main_conf.json"
+
+    - name: compute consul servers
+      set_fact:
+        consul_servers: "{{ consul_servers }} + [ '{{ hostvars[inventory_hostname][item] }}' ]"
+      with_items: "{{ hostvars[inventory_hostname]  }}"
+      when: MODE == "server" and item | match(NODE+'_.*_IP_ADDRESS')
+
+
+    - name: Install servers config for consul
+      template: 
+        src: 2_server_conf.json.j2
+        dest: "{{CONFIG_DIR}}/2_server_conf.json"
+      when: MODE == "server"
+
+    - name: Install servers WAN config for consul
+      template: 
+        src: 3_wan_address.json.j2
+        dest: "{{CONFIG_DIR}}/3_wan_address.json"
+      when:  MODE == "server" and not(
+          (WAN_ADDRESS is undefined)
+          or
+          (WAN_ADDRESS is none)
+          or
+          (WAN_ADDRESS | trim == '')
+        )
+
+    - name: Install datacenter config for consul
+      template: 
+        src: 1_datacenter.json.j2
+        dest: "{{CONFIG_DIR}}/1_datacenter.json"
+
+    - name: log end servers
+      debug: msg="Consul configured to run in server mode"
+      when:  MODE == "server"
+
+    - name: log end agents
+      debug: msg="Consul configured to run in agent mode"
+      when:  MODE == "agent"

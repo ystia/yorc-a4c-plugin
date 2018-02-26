@@ -1,0 +1,17 @@
+tosca_definitions_version: ${alien4cloud.dsl.version}
+description: Single compute test
+template_name: single_compute_test
+template_version: 0.1.0-SNAPSHOT
+template_author: admin
+
+imports:
+  - tosca-normative-types:${tosca.normative.types.version}
+  - slurm-types:1.1.0-SNAPSHOT
+
+topology_template:
+  node_templates:
+    computexBD:
+      type: alien.nodes.slurm.Compute
+      properties:
+        image: 02ddfcbb-9534-44d7-974d-5cfd36dfbcab
+        flavor: 2

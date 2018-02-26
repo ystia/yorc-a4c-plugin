@@ -1,26 +1,47 @@
-# Alien4Cloud Janus Plugin
+# Alien4Cloud Yorc Plugin
 
-Janus plugin allows users to deploy their application in an HPC environment.
-This means that Janus will allocate nodes with Slurm, then deploy component (docker image, for example) on the allocated node.
+<!--
+TODO: add badges (travis...)
+-->
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
-[Check Build Status](http://129.184.11.224/view/Janus%20A4C%20Plugin/)
+This project is a plugin for [Alien4Cloud](http://alien4cloud.github.io) that enable it as UI companion of the [Ystia Orchestrator](https://github.com/ystia/yorc).
+
+We recommend first to understand what the Ystia Orchestrator and Alien4Cloud are before diving into this project that is the bridge between them.
 
 ## Requirements
 
-[Alien4Cloud version 1.4.3.1](http://alien4cloud.github.io/#/documentation/1.4.0/index.html)
-
+[Alien4Cloud version 2.0.0-RC1](http://alien4cloud.github.io/#/documentation/2.0.0/index.html)
 
 ## Installation
+
 ### Alien4Cloud
-* Download: [alien4Cloud v1.4.3.1 Download button](https://alien4cloud.github.io/)
+
+* Download: [alien4Cloud v2.0.0-RC1 Download button](https://alien4cloud.github.io/)
 * Run : alien4cloud.sh or alien4cloud.bat
 * Visit [a4c UI: login admin/admin](http://localhost:8088)
 
-### Plugin Janus
-In the folder of our plugin : alien4cloud-janus-plugin in the folder target we can find the zipped folder alien4cloud-janus-plugin-<version>
-Then go to administration tab -> plugins and here drag and drop your compressed folder.
+### Yorc Plugin
 
+Please visit our [github project releases page](https://github.com/ystia/yorc/releases) for downloading a release.
 
-## Quick Start
-With this plugin we have a class called JanusPaaSProvider which contains the method doDeploy.
-In this method we can have access to the Topology bean.
+Then follow our documentation to setup the Yorc plugin into Alien4Cloud
+
+## How to contribute to this project
+
+We warmly welcome any kind of contribution from feedbacks and constructive criticism to code changes.
+Please read our [contribution guidelines](CONTRIBUTING.md) for more information.
+
+<!--
+TODO: link to readthedoc.org
+
+## Documentation
+-->
+
+## Project History
+
+This work was originally developed by _Bull Atos Technologies_ under the project code name _Janus_. The project name changed to __Ystia Orchestrator **(Yorc)**__ during the version 3.0 development cycle.
+
+## Licensing
+
+The Yorc plugin for Alien4Cloud is licensed under the [Apache 2.0 License](LICENSE).

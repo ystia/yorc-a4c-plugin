@@ -1,13 +1,30 @@
+<!--
+
+    Copyright 2018 Bull S.A.S. Atos Technologies - Bull, Rue Jean Jaures, B.P.68, 78340, Les Clayes-sous-Bois, France.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
   <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
       <groupId>alien4cloud</groupId>
-      <artifactId>alien4cloud-janus-plugin-parent</artifactId>
+      <artifactId>alien4cloud-yorc-plugin-parent</artifactId>
       <version>3.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>alien4cloud-janus-plugin-doc</artifactId>
-    <name>Alien 4 Cloud HPC PaaS provider Janus :: Documentation</name>
+    <artifactId>alien4cloud-yorc-plugin-doc</artifactId>
+    <name>Alien 4 Cloud HPC PaaS provider Yorc :: Documentation</name>
     <packaging>pom</packaging>
 
     <build>
@@ -49,10 +66,10 @@
                   <goal>single</goal>
                 </goals>
                 <configuration>
-                  <finalName>alien4cloud-janus-plugin-documentation-${project.version}</finalName>
+                  <finalName>alien4cloud-yorc-plugin-documentation-${project.version}</finalName>
                   <attach>true</attach>
                   <descriptors>
-                    <descriptor>src/assembly/janus-plugin-doc-assembly.xml</descriptor>
+                    <descriptor>src/assembly/yorc-plugin-doc-assembly.xml</descriptor>
                   </descriptors>
                 </configuration>
               </execution>

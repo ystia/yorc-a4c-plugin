@@ -1,41 +1,44 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright 2018 Bull S.A.S. Atos Technologies - Bull, Rue Jean Jaures, B.P.68, 78340, Les Clayes-sous-Bois, France.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <parent>
-    <artifactId>alien4cloud-janus-plugin-parent</artifactId>
+    <artifactId>alien4cloud-yorc-plugin-parent</artifactId>
     <groupId>alien4cloud</groupId>
     <version>3.0.0-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>alien4cloud-janus-plugin-distribution</artifactId>
-  <name>Alien 4 Cloud HPC PaaS provider Janus :: Distribution</name>
+  <artifactId>alien4cloud-yorc-plugin-distribution</artifactId>
+  <name>Alien 4 Cloud HPC PaaS provider Yorc :: Distribution</name>
   <packaging>pom</packaging>
 
   <dependencies>
     <dependency>
       <groupId>alien4cloud</groupId>
-      <artifactId>alien4cloud-Janus-plugin</artifactId>
+      <artifactId>alien4cloud-yorc-plugin</artifactId>
       <version>${project.version}</version>
       <type>zip</type>
     </dependency>
     <dependency>
       <groupId>alien4cloud</groupId>
-      <artifactId>alien4cloud-janus-plugin-doc</artifactId>
+      <artifactId>alien4cloud-yorc-plugin-doc</artifactId>
       <version>${project.version}</version>
-      <type>zip</type>
-    </dependency>
-    <dependency>
-      <groupId>com.bull.bdcf.tosca.samples</groupId>
-      <artifactId>welcome</artifactId>
-      <version>${bdcf.samples.version}</version>
-      <classifier>csar</classifier>
-      <type>zip</type>
-    </dependency>
-    <dependency>
-      <groupId>com.bull.bdcf.tosca.samples</groupId>
-      <artifactId>welcome-basic</artifactId>
-      <version>${bdcf.samples.version}</version>
-      <classifier>topo</classifier>
       <type>zip</type>
     </dependency>
   </dependencies>
@@ -60,7 +63,7 @@
             <configuration>
               <attach>true</attach>
               <descriptors>
-                <descriptor>src/main/assembly/janus-plugin-dist-assembly.xml</descriptor>
+                <descriptor>src/main/assembly/yorc-plugin-dist-assembly.xml</descriptor>
               </descriptors>
             </configuration>
           </execution>
