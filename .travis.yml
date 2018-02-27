@@ -2,4 +2,6 @@ language: java
 jdk:
   - oraclejdk8
 
-install: "pip install sphinx semantic-version"
+install:
+  - "pip install --user sphinx"
+  - "pip install --user semantic-version"
