@@ -122,8 +122,9 @@ capability_types:
 node_types:
   org.janus.samples.python.Component:
     derived_from: tosca.nodes.SoftwareComponent
-    description: >
-      Sample component to illustrate how to implement a Component lifecycle in Python
+    description: |
+      Sample component to illustrate
+      how to implement a Component lifecycle in Python
     tags:
       icon: /images/python.png
     properties:
@@ -140,7 +141,7 @@ node_types:
       outputVar2:
         description: Dummy property used to test operation outputs
         type: string
-        required: true
+        required: false
         default: "ov2"
     attributes:
       resolvedOutput1: { get_operation_output: [SELF, Standard, create, myVar1]}
@@ -156,3 +157,12 @@ node_types:
           inputs:
             msg: {get_property: [SELF, hello_message]}
           implementation: scripts/start.sh
+    artifacts:
+      - myArtifact:
+          description: |
+            A deployment artifact
+            of type bash
+          type: tosca.artifacts.Implementation.Bash
+          file: somewhere/here.sh
+          repository: mydocker_repo
+          deploy_path: /a/path/not/used/now

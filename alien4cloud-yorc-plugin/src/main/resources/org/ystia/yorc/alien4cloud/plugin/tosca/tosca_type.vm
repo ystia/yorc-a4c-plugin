@@ -6,7 +6,7 @@ ${propertyUtils.indent($indent)}$tag.name: ${propertyUtils.formatTextValue($inde
 #end## foreach tags
 #set($indent= $indent - 1)
 #end## if tags
-${propertyUtils.indent($indent)}description: ${utils.renderDescription(${type.description}, "")}
+${propertyUtils.indent($indent)}description: ${utils.renderDescription(${type.description}, "${propertyUtils.indent($indent)}  ")}
 #if("$!type.derivedFrom" != "" )
 ${propertyUtils.indent($indent)}derived_from: ${type.derivedFrom.get(0)}
 #end## if derivedFrom not empty

@@ -8,6 +8,7 @@ import alien4cloud.tosca.model.ArchiveRoot;
 import alien4cloud.tosca.serializer.VelocityUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 /**
@@ -32,6 +33,7 @@ public class ToscaComponentExporter {
         velocityCtx.put("archive", archive);
         velocityCtx.put("vtPath", "org/ystia/yorc/alien4cloud/plugin/tosca");
         velocityCtx.put("janusUtils", new ToscaComponentUtils());
+        velocityCtx.put("stringsUtils", new StringUtils());
         try {
             StringWriter writer = new StringWriter();
             VelocityUtil.generate("org/ystia/yorc/alien4cloud/plugin/tosca/types.yml.vm", writer, velocityCtx);
