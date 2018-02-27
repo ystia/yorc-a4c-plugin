@@ -1,14 +1,6 @@
 language: java
 jdk:
-- oraclejdk8
-deploy:
-  provider: pages
-  local-dir: documentation/target/html
-  skip-cleanup: true
-  github-token: "$GITHUB_TOKEN"
-  keep-history: true
-  on:
-    branch: develop
-env:
-  global:
-    secure: nArQXKQdGa9QOpXsY7Bp6ZSvJdmxe8O1Cw9xsc7Qn+3hy0JF7n+BDK0iapVFZSigS0bF8KLol74+jNSWlqXaMzz1RbwY6i3lLDdpqnCl8yvmydhWX1JEOD95m8kL108lCdYewJ8z4GiS7eLhB23vLQ7Dl0CZBwj+mKO55TdVZf6PmUY7A8xhTqn82RSJ12x2WAQ0Pwu+zErIh4uMkFlG7IVBJLzbNMNbTceIcjIsHvrPf2PzHqQowhUxZItjdDu72jXuUl4Zp8f/wiyvFDG7EeLIhXkRkGsCf96Ven0vwMevRws6Ubgit9i9bJM4bX0UndGKrivwCcqPUtx7Xubly3ezWMVN6jqBxgbyYaEBZ01k0+YzOSENRI87otcDOI+l2eqixKgYpQm6dn5LkofzoXSZTJ7KcB6pP/YDIPepRYlVbeSLOqzmv4Sj5cZaq8G45m8oZ+3EpQT4fFKdmlCBtDF0wh89rX2ZjN43NO+EYIo7X68giNmDJRl5T+1m7usR+c4jz/3s7jh9yXxSEP0/ZZrFQ+Yr0nuCjMspfY9G1c81d24YuPO4nj/JyW4KdI2uezIU2CZXXh+LU22NyWLwKRIRaDE3Bgn7nHraHg6wstEsfKlXm9nFkMtrH8gxkcOb/iRvXYKQ+0RfkmWTatFU0RD2jOZITHivMrmU+HQ1oSQ=
+  - oraclejdk8
+
+install:
+  - script: "pip install sphinx semantic-version"
