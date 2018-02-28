@@ -8,8 +8,8 @@ install:
   - pip install --user semantic-version
 
 before_deploy:
-  - sed -i 's|@BRANCH@|${TRAVIS_BRANCH}|g' bintray.json
-  - sed -i 's|@BUILD@|${TRAVIS_BUILD_NUMBER}|g' bintray.json
+  - sed -i "s|@BRANCH@|${TRAVIS_BRANCH}|g" bintray.json
+  - sed -i "s|@BUILD@|${TRAVIS_BUILD_NUMBER}|g" bintray.json
   - cat bintray.json
 
 deploy:
@@ -19,6 +19,7 @@ deploy:
   key: $BINTRAY_API_KEY
   on:
     all_branches: true
+  skip_cleanup: true
 
 env:
   global:
