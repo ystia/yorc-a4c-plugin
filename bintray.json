@@ -13,8 +13,8 @@
 
   "files":
   [
-    {"includePattern": "distribution/target/alien4cloud-yorc-plugin-distribution-(*).zip", "uploadPattern": "@BRANCH@/builds/@BUILD@"},
-    {"includePattern": "alien4cloud-yorc-plugin/target/alien4cloud-yorc-plugin-(*).zip", "uploadPattern": "@BRANCH@/builds/@BUILD@"}
+    {"includePattern": "./distribution/target/alien4cloud-yorc-plugin-distribution-(*).zip", "uploadPattern": "@BRANCH@/builds/@BUILD@"},
+    {"includePattern": "./alien4cloud-yorc-plugin/target/alien4cloud-yorc-plugin-(*).zip", "uploadPattern": "@BRANCH@/builds/@BUILD@"}
   ],
   "publish": true
 }

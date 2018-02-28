@@ -10,9 +10,7 @@ install:
 before_deploy:
   - sed -i "s|@BRANCH@|${TRAVIS_BRANCH}|g" bintray.json
   - sed -i "s|@BUILD@|${TRAVIS_BUILD_NUMBER}|g" bintray.json
-  - cat bintray.json
-  - pwd
-  - ls -ltr
+  - ll distribution/target
 
 deploy:
   provider: bintray
