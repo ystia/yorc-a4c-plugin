@@ -11,15 +11,17 @@ before_deploy:
   - sed -i "s|@BRANCH@|${TRAVIS_BRANCH}|g" bintray.json
   - sed -i "s|@BUILD@|${TRAVIS_BUILD_NUMBER}|g" bintray.json
   - cat bintray.json
+  - pwd
+  - ls -ltr
 
 deploy:
   provider: bintray
   file: bintray.json
   user: stebenoist
   key: $BINTRAY_API_KEY
+  skip_cleanup: true
   on:
     all_branches: true
-  skip_cleanup: true
 
 env:
   global:
