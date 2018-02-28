@@ -1,0 +1,20 @@
+{
+  "package": {
+    "name": "distribution",
+    "repo": "yorc-a4c-plugin",
+    "subject": "ystia",
+    "vcs_url": "https://github.com/ystia/yorc-a4c-plugin.git",
+    "licenses": ["Apache-2.0"]
+  },
+
+  "version": {
+    "name": "3.0.0"
+  },
+
+  "files":
+  [
+    {"includePattern": "distribution/target/alien4cloud-yorc-plugin-distribution-(*).zip", "uploadPattern": "@BRANCH@/builds/@BUILD@"},
+    {"includePattern": "alien4cloud-yorc-plugin/target/alien4cloud-yorc-plugin-(*).zip", "uploadPattern": "@BRANCH@/builds/@BUILD@"}
+  ],
+  "publish": true
+}

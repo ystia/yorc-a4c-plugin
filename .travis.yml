@@ -1,7 +1,25 @@
 language: java
+
 jdk:
   - oraclejdk8
 
 install:
-  - "pip install --user sphinx"
-  - "pip install --user semantic-version"
+  - pip install --user sphinx
+  - pip install --user semantic-version
+
+before_deploy:
+  - sed -i 's|@BRANCH@|${TRAVIS_BRANCH}|g' bintray.json
+  - sed -i 's|@BUILD@|${TRAVIS_BUILD_NUMBER}|g' bintray.json
+  - cat bintray.json
+
+deploy:
+  provider: bintray
+  file: bintray.json
+  user: stebenoist
+  key: $BINTRAY_API_KEY
+  on:
+    all_branches: true
+
+env:
+  global:
+    secure: UYRcG6VFZrs26zy+L3p6AgfAfIjCU9VTHHeaTqDZ7mYSKl7ijn4Av/tYna/gblftq9k5Lh1pPW54q2pkdl0d9KPA6fDbsi1AGpBg3smVZ3znzC+N6Y/MUZvyI6UkmjC00tCwCBouB2E8mQ/7xLBfX/bY4QqZBiOWr86eTULBhW1og0PbATBggPLdrHXouC3NVB8/MrhWBssoGNYnBxeHDmmPklhwx1tHEfEIh+QKsDOmm4AVLVb/ZFLziIr/eQ0k8vqU9/nRKZY1ZQ4gOmnWZ/74AC7e2EwcYWcjVK62rE4ePE86LL3zpqfnFFgu/v5d5l8m8yoMTOYx09pL/6Zbw280ahit/P7oDUtSyx+Vejv3hPDkupmKcxqeTEpkRxmDWNu6dYOeuMGo3P3uVbKA7SaqZTjxNDhxAvaMxwUg4rR44o1Vxwz6VVAZPIcMdoYlN/LDn1oJCx4bWL9p+P0MIPZp4H0NnE5N//MgZLoy2GueBGSVrx7c272H8FaC+er7ZzItCm3qUKAKR4CYoogdDK9avuhw+Wy180FfVE1dUZzNKkEZfDKxz33AXqwnsaCtcmMkv/qccpVtTJ1NnVuvaHRReMT2bLZhQLBk73/380lrbc6XPlJJh1l7YzP0IarChWVxynA4qb5qIXTiuoXifSfV5xcDNT8UkKuh5Vw1bXM=
