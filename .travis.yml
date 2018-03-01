@@ -7,8 +7,15 @@ install:
   - pip install --user sphinx
   - pip install --user semantic-version
 
-after_success:
-  - ./deploy.sh
+script:
+  - mvn clean install
+
+deploy:
+  skip_cleanup: true
+  provider: script
+  script: bash deploy.sh
+  on:
+    all_branches: true
 
 env:
   global:
