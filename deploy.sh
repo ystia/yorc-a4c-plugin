@@ -48,6 +48,7 @@ get_version () {
 ############################################### Main ###############################################
 cd $TRAVIS_BUILD_DIR
 ls -ltr
+ls -ltr distribution
 echo "Travis build directory is: \"$TRAVIS_BUILD_DIR\""
 #### Check the env var BINTRAY_API_KEY is set
 if [[ ! -n "$BINTRAY_API_KEY" ]]; then
