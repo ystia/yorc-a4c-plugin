@@ -4,8 +4,7 @@ jdk:
   - oraclejdk8
 
 install:
-  - pip install --user sphinx
-  - pip install --user semantic-version
+  - pip install --user --upgrade sphinx semantic-version requests urllib3[secure]
 
 script:
   - mvn clean install
@@ -16,6 +15,16 @@ deploy:
   script: bash deploy.sh
   on:
     all_branches: true
+
+addons:
+  apt:
+    packages:
+    - latexmk
+    - texlive-binaries
+    - texlive-fonts-recommended
+    - texlive-latex-base
+    - texlive-latex-extra
+    - texlive-latex-recommended
 
 env:
   global:
