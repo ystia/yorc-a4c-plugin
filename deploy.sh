@@ -19,6 +19,7 @@
 #set -e
 
 #### Test variables
+#TRAVIS_BUILD_DIR="."
 #TRAVIS_TAG="3.0.0-RC1"
 #TRAVIS_PULL_REQUEST="42"
 #TRAVIS_BRANCH="my_branch"
@@ -45,6 +46,9 @@ get_version () {
 }
 
 ############################################### Main ###############################################
+cd $TRAVIS_BUILD_DIR
+ls -ltr
+echo "Travis build directory is: \"$TRAVIS_BUILD_DIR\""
 #### Check the env var BINTRAY_API_KEY is set
 if [[ ! -n "$BINTRAY_API_KEY" ]]; then
     echo "The env variable BINTRAY_API_KEY is not set" >&2
