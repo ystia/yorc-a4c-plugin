@@ -3,13 +3,13 @@ tosca_definitions_version: alien_dsl_2_0_0
 metadata:
   template_name: org.ystia.yorc.samples.containers.mysql
   template_version: 1.0.0-SNAPSHOT
-  template_author: Janus team
+  template_author: Yorc team
 
 imports:
   - tosca-normative-types:1.0.0-ALIEN20
   - yorc-docker-types:1.0.0
 
-description: Janus MySQL Container
+description: Yorc MySQL Container
 
 repositories:
   docker:
