@@ -1,13 +1,13 @@
 tosca_definitions_version: alien_dsl_2_0_0
 
 metadata:
-  template_name: org.janus.samples.bash
+  template_name: org.yorc.samples.bash
   template_version: 1.0.0-SNAPSHOT
-  template_author: janus
+  template_author: yorc
 
 description: >
   This is a sample used to test parsing and formatting
-  of a component into a DSL that matches Janus one.
+  of a component into a DSL that matches Yorc one.
 
 imports:
   - tosca-normative-types:1.0.0-ALIEN14
@@ -21,9 +21,6 @@ repositories:
       token_type: password
       user: opjsdpojds
       token: test
-      keys:
-        k1: var1
-        who: "id:di"
 
 data_types:
   tosca.datatypes.Root:
@@ -114,13 +111,21 @@ capability_types:
         default: source
         constraints:
           - valid_values: [ source, target, peer ]
-#    attributes:
-#      ip_address:
-#        type: string
-#        description: This is the IP address as propagated up by the associated node’s host (Compute) container.
+      # ports:
+      #   type: map
+      #   description: The optional map of ports the Endpoint supports (if more than one).
+      #   required: false
+      #   constraints:
+      #     - min_length: 1
+      #   entry_schema:
+      #     type: tosca.datatypes.network.PortSpec
+    attributes:
+      ip_address:
+        type: string
+        description: This is the IP address as propagated up by the associated node’s host (Compute) container.
 
 node_types:
-  org.janus.samples.python.Component:
+  org.yorc.samples.python.Component:
     derived_from: tosca.nodes.SoftwareComponent
     description: |
       Sample component to illustrate
@@ -146,8 +151,38 @@ node_types:
     attributes:
       resolvedOutput1: { get_operation_output: [SELF, Standard, create, myVar1]}
       resolvedOutput2: { get_operation_output: [SELF, Standard, create, myVar2]}
+      cuda_visible_devices:
+        type: string
+        description: Coma separated list of visibles GPU devices for the compute.
+        default: "none"
+    capabilities:
+      myCap:
+        type: tosca.capabilities.Endpoint
+        description: |
+          A very wide
+          description
+        properties:
+          protocol: "ssh"
+          network_name: { get_attribute: [SELF, resolvedOutput1] }
+        valid_source_types: [ "tosca.nodes.Compute", "tosca:.nodes.Root" ]
+        occurrences: [1, 2]
+      myOtherCap:
+        type: tosca.capabilities.Endpoint
+    requirements:
+      - host:
+          capability: tosca.capabilities.Root
+          relationship: tosca.relationships.Root
+          node: tosca.nodes.Root
+          occurrences: [1, 1]
+      - filesystem_endpoint:
+          capability: tosca.capabilities.Root
+          relationship: tosca.relationships.Root
+          occurrences: [0,1]
+      - shortcut: tosca.capabilities.Root
     interfaces:
       Standard:
+        inputs:
+          debug: "true"
         create:
           inputs:
             var1: {get_property: [SELF, outputVar1]}
@@ -157,6 +192,17 @@ node_types:
           inputs:
             msg: {get_property: [SELF, hello_message]}
           implementation: scripts/start.sh
+      custom:
+        inputs:
+          verbose:
+            type: boolean
+            description: enable verbose output
+            default: false
+        my_ops:
+          inputs:
+            myInput: "test"
+            var1: {get_property: [SELF, outputVar1]}
+          implementation: scripts/op.sh
     artifacts:
       - myArtifact:
           description: |
@@ -166,3 +212,103 @@ node_types:
           file: somewhere/here.sh
           repository: mydocker_repo
           deploy_path: /a/path/not/used/now
+
+relationship_types:
+  tosca.relationships.Root:
+    description: "rel root"
+    
+  org.yorc.samples.relationships.MyRel:
+    derived_from: tosca.relationships.Root
+    metadata:
+      icon: /images/python.png
+    properties:
+      hello_message:
+        description: A simple message to print
+        type: string
+        required: true
+        default: "Hello World!"
+      outputVar1:
+        description: Dummy property used to test operation outputs
+        type: string
+        required: true
+        default: "ov1"
+      outputVar2:
+        description: Dummy property used to test operation outputs
+        type: string
+        required: false
+        default: "ov2"
+    attributes:
+      resolvedOutput1: { get_operation_output: [SELF, Standard, create, myVar1]}
+      resolvedOutput2: { get_operation_output: [SELF, Standard, create, myVar2]}
+      cuda_visible_devices:
+        type: string
+        description: Coma separated list of visibles GPU devices for the compute.
+        default: "none"
+    interfaces:
+      Configure:
+        inputs:
+          debug: "true"
+        pre_configure_source:
+          inputs:
+            var1: {get_property: [SELF, outputVar1]}
+            var2: {get_property: [SELF, outputVar2]}
+          implementation: scripts/create.sh
+        add_target:
+          inputs:
+            msg: {get_property: [SELF, hello_message]}
+          implementation: scripts/start.sh
+      custom:
+        inputs:
+          verbose:
+            type: boolean
+            description: enable verbose output
+            default: false
+        my_ops:
+          inputs:
+            myInput: "test"
+            var1: {get_property: [SELF, outputVar1]}
+          implementation: scripts/op.sh
+    artifacts:
+      - myArtifact:
+          description: |
+            A deployment artifact
+            of type bash
+          type: tosca.artifacts.Implementation.Bash
+          file: somewhere/here.sh
+          repository: mydocker_repo
+          deploy_path: /a/path/not/used/now
+
+policy_types:
+  tosca.policies.Root:
+    description: The TOSCA Policy Type all other TOSCA Policy Types derive from
+  yorc.samples.CustomPolicy:
+    derived_from: tosca.policies.Root
+    metadata:
+      d1: var1
+    description: a description
+    properties:
+      protocol:
+        type: string
+        description: >
+          The name of the protocol (i.e., the protocol prefix) that the endpoint accepts (any OSI Layer 4-7 protocols)
+          Examples: http, https, ftp, tcp, udp, etc.
+        default: tcp
+    targets: [ tosca.nodes.Root ]
+    triggers:
+      t1:
+        description: the first trigger
+        event_type: myEvent
+        schedule:
+          start_time: 2016-04-04-15T00:00:00Z
+          end_time: 2216-04-04-15T00:00:00Z
+        target_filter:
+          node: tosca.nodes.SoftwareComponent
+          requirement: host
+          capability: myCap
+        condition:
+          constraints:
+            - in_range: [1, 10]
+          period: 5d
+          evaluations: 10
+          method: average
+        action: scripts/doIt.sh

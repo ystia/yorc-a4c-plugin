@@ -1,0 +1,19 @@
+#if($stringsUtils.isNotBlank($requirement.type))
+${propertyUtils.indent($indent)}capability: $requirement.type
+#end## if type
+#if($!requirement.description)
+${propertyUtils.indent($indent)}description: ${utils.renderDescription(${requirement.description}, "${propertyUtils.indent($indent)}  ")}
+#end## if description
+#if($stringsUtils.isNotBlank($requirement.capabilityType))
+${propertyUtils.indent($indent)}capability: $requirement.capabilityType
+#end## if capabilityType
+#if($stringsUtils.isNotBlank($requirement.nodeType))
+${propertyUtils.indent($indent)}node: $requirement.nodeType
+#end## if nodeType
+#if($stringsUtils.isNotBlank($requirement.relationshipType))
+${propertyUtils.indent($indent)}relationship: $requirement.relationshipType
+#end## if relationshipType
+#set($occ=${yorcUtils.formatOccurrences($requirement.lowerBound, $requirement.upperBound)})
+#if($occ != "occurrences: [1, 1]")
+${propertyUtils.indent($indent)}$occ
+#end## if occurrences

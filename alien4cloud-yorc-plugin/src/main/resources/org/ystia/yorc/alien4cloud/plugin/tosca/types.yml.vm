@@ -21,7 +21,7 @@ repositories:
 #end## if type not empty
     url: ${propertyUtils.renderScalar($repositoryEntry.value.url)}
 #if(!${utils.isNull($repositoryEntry.value.credential)} && ${utils.mapIsNotEmptyAndContainsNotnullValues($repositoryEntry.value.credential.value)})
-    credential: ${propertyUtils.formatPropertyValue(2, $repositoryEntry.value.credential)}
+    credential:${propertyUtils.formatPropertyValue(2, $repositoryEntry.value.credential)}
 #end## if credential not null
 #end## foreach
 #end## if repositories
@@ -65,3 +65,23 @@ node_types:
 #parse("$vtPath/node_type.vm")
 #end## foreach
 #end## if nodeTypes
+#if($utils.mapIsNotEmptyAndContainsNotnullValues($archive.relationshipTypes))
+
+relationship_types:
+#foreach($entry in ${archive.relationshipTypes.entrySet()})
+  ${entry.key}:
+#set($type = ${entry.value})
+#set($indent = 2)
+#parse("$vtPath/relationship_type.vm")
+#end## foreach
+#end## if relationshipTypes
+#if($utils.mapIsNotEmptyAndContainsNotnullValues($archive.policyTypes))
+
+policy_types:
+#foreach($entry in ${archive.policyTypes.entrySet()})
+  ${entry.key}:
+#set($type = ${entry.value})
+#set($indent = 2)
+#parse("$vtPath/policy_type.vm")
+#end## foreach
+#end## if relationshipTypes
