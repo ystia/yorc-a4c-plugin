@@ -1,8 +1,6 @@
 # Alien4Cloud Yorc Plugin
 
-<!--
-TODO: add badges (travis...)
--->
+[![Build Status](https://travis-ci.org/ystia/yorc-a4c-plugin.svg?branch=develop)](https://travis-ci.org/ystia/yorc-a4c-plugin)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
 This project is a plugin for [Alien4Cloud](http://alien4cloud.github.io) that enable it as UI companion of the [Ystia Orchestrator](https://github.com/ystia/yorc).
