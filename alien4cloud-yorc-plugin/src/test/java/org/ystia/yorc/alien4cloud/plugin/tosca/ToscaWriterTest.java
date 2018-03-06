@@ -12,6 +12,7 @@ import org.alien4cloud.tosca.model.types.DataType;
 import org.alien4cloud.tosca.model.types.NodeType;
 import org.alien4cloud.tosca.model.types.RelationshipType;
 import org.alien4cloud.tosca.normative.constants.NormativeCredentialConstant;
+import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -35,7 +36,7 @@ public class ToscaWriterTest extends AbstractToscaParserTest {
 
 
     @Test
-    public void testComponentUpdateSnake() throws Exception {
+    public void testComponentSerialization() throws Exception {
         Mockito.reset(csarRepositorySearchService);
 
         Csar csar = new Csar("tosca-normative-types", "1.0.0-ALIEN14");
@@ -55,13 +56,7 @@ public class ToscaWriterTest extends AbstractToscaParserTest {
         Mockito.when(csarRepositorySearchService
                         .getElementInDependencies(Mockito.eq(DataType.class), Mockito.eq(NormativeCredentialConstant.DATA_TYPE), Mockito.any(Set.class)))
                 .thenReturn(Mockito.mock(DataType.class));
-//        CapabilityType mockedCapabilityResult = Mockito.mock(CapabilityType.class);
-//        Mockito.when(csarRepositorySearchService.getElementInDependencies(Mockito.eq(CapabilityType.class),
-//                Mockito.eq("tosca.capabilities.Root"), Mockito.any(Set.class))).thenReturn(mockedCapabilityResult);
-//
-//        Mockito.when(csarRepositorySearchService
-//                .getElementInDependencies(Mockito.eq(CapabilityType.class), Mockito.eq("tosca.capabilities.Endpoint"),
-//                        Mockito.any(Set.class))).thenReturn(mockedCapabilityResult);
+
         RelationshipType hostedOn = new RelationshipType();
         Mockito.when(csarRepositorySearchService
                 .getElementInDependencies(Mockito.eq(RelationshipType.class), Mockito.eq("tosca.relationships.HostedOn"),
@@ -71,9 +66,14 @@ public class ToscaWriterTest extends AbstractToscaParserTest {
         ParsingResult<ArchiveRoot>
                 parsingResult = parser.parseFile(Paths.get(getRootDirectory(), "tosca_component_input.yaml"));
         System.out.println(parsingResult.getContext().getParsingErrors());
-        Assert.assertEquals(0, parsingResult.getContext().getParsingErrors().size());
+        assertNoBlocker(parsingResult);
 
+        String resultYaml = toscaComponentExporter.getYaml(parsingResult.getResult());
+        System.out.println(resultYaml);
+        String expectedResult = FileUtils.readFileToString(Paths.get(getRootDirectory(), "tosca_component_output.yaml").toFile());
+        // Make some whitespaces change here as IDEs have auto-format features that will overwrite them in the file
+        expectedResult = expectedResult.replaceAll("verbose:\\n", "verbose: \n");
 
-        System.out.println(toscaComponentExporter.getYaml(parsingResult.getResult()));
+        Assert.assertEquals(expectedResult, resultYaml);
     }
 }

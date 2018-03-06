@@ -1,4 +1,44 @@
 #parse("$vtPath/tosca_type.vm")
+#if($utils.mapIsNotEmptyAndContainsNotnullValues($type.attributes))
+${propertyUtils.indent($indent)}attributes:
+#foreach($attributeEntry in $type.attributes.entrySet())
+#if($attributeEntry.value.isDefinition())
+#set($attribute=$attributeEntry.value)
+${propertyUtils.indent($indent)}  $attributeEntry.key:
+#set($indent= $indent + 2)
+${propertyUtils.indent($indent)}#parse("$vtPath/attribute_def.vm")
+#set($indent= $indent - 2)
+#else
+#set($indentAttr= $indent + 1)
+${propertyUtils.indent($indent)}  $attributeEntry.key: ${propertyUtils.formatPropertyValue($indentAttr, $attributeEntry.value)}
+#end## if attribute.isDefinition
+#end## foreach attribute
+#end## if attributes
+#if($utils.doesInterfacesContainsImplementedOperation($type.interfaces))
+${propertyUtils.indent($indent)}interfaces:
+#foreach($interfaceEntry in ${type.interfaces.entrySet()})
+#if($utils.doesInterfaceContainsImplementedOperation($interfaceEntry.value))
+${propertyUtils.indent($indent)}  ${interfaceEntry.key}:
+#foreach($operationEntry in ${interfaceEntry.value.operations.entrySet()})
+#if($utils.isOperationImplemented($operationEntry.value))
+#set($enableImplementationArtifactShortNotation = $utils.canUseShortNotationForImplementationArtifact($operationEntry.value))
+#if($enableImplementationArtifactShortNotation)
+${propertyUtils.indent($indent)}    ${operationEntry.key}: $operationEntry.value.implementationArtifact.artifactRef
+#else
+${propertyUtils.indent($indent)}    ${operationEntry.key}:
+#if($utils.mapIsNotEmptyAndContainsNotnullValues($operationEntry.value.inputParameters))
+#set($indentProps=$indent + 4)
+${propertyUtils.indent($indent)}      inputs:$yorcUtils.formatOperationInputs($indentProps, $operationEntry.value.inputParameters)
+#end
+${propertyUtils.indent($indent)}      implementation:
+#set($indentImpl=$indent + 4)
+${utils.formatArtifact($operationEntry.value.implementationArtifact, $indentImpl)}
+#end## if inputParameters not empty
+#end## if isOperationImplemented
+#end## of operations iteration
+#end## if doesInterfaceContainsImplementedOperation
+#end## of interfaces iteration
+#end## if doesInterfacesContainsImplementedOperation
 #if($utils.mapIsNotEmptyAndContainsNotnullValues($type.artifacts))
 ${propertyUtils.indent($indent)}artifacts:
 #foreach($artifactEntry in $type.artifacts.entrySet())

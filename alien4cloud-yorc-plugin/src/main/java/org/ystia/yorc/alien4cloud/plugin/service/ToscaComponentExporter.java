@@ -29,11 +29,8 @@ public class ToscaComponentExporter {
      * @return The TOSCA yaml file that describe the archive in Janus format.
      */
     public String getYaml(ArchiveRoot archive) {
-        Map<String, Object> velocityCtx = new HashMap<>();
+        Map<String, Object> velocityCtx = getVelocityContext();
         velocityCtx.put("archive", archive);
-        velocityCtx.put("vtPath", "org/ystia/yorc/alien4cloud/plugin/tosca");
-        velocityCtx.put("janusUtils", new ToscaComponentUtils());
-        velocityCtx.put("stringsUtils", new StringUtils());
         try {
             StringWriter writer = new StringWriter();
             VelocityUtil.generate("org/ystia/yorc/alien4cloud/plugin/tosca/types.yml.vm", writer, velocityCtx);
@@ -42,5 +39,13 @@ public class ToscaComponentExporter {
             log.error("Exception while templating YAML for archive " + archive.getArchive().getName(), e);
             return ExceptionUtils.getFullStackTrace(e);
         }
+    }
+
+    static Map<String, Object> getVelocityContext() {
+        Map<String, Object> velocityCtx = new HashMap<>();
+        velocityCtx.put("vtPath", "org/ystia/yorc/alien4cloud/plugin/tosca");
+        velocityCtx.put("yorcUtils", new ToscaComponentUtils());
+        velocityCtx.put("stringsUtils", new StringUtils());
+        return velocityCtx;
     }
 }

@@ -1,0 +1,16 @@
+${propertyUtils.indent($indent)}type: $capability.type
+#if($!capability.description)
+${propertyUtils.indent($indent)}description: ${utils.renderDescription(${capability.description}, "${propertyUtils.indent($indent)}  ")}
+#end## if description
+#if($capability.properties.size() > 0)
+#set($indentProps=$indent + 1)
+${propertyUtils.indent($indent)}properties:${propertyUtils.formatProperties($indentProps, $capability.properties)}
+## TODO attributes not parsed by Alien
+#end## if properties
+#if($capability.validSources.size() > 0)
+${propertyUtils.indent($indent)}valid_source_types: [${yorcUtils.join($capability.validSources, ", ")}]
+#end## if validSources
+#set($occ=${yorcUtils.formatOccurrences(1, $capability.upperBound)})
+#if($occ != "occurrences: [1, UNBOUNDED]")
+${propertyUtils.indent($indent)}$occ
+#end## if occurrences
