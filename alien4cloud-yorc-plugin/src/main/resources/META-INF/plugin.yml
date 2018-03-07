@@ -1,5 +1,5 @@
 id: alien4cloud-yorc-plugin
-name: Yorc PaaS provider
+name: Yorc Orchestrator Provider
 version: ${project.version}
 description: >
   Plugin that contains a single paas provider for deployments on Hpc env.
@@ -12,3 +12,8 @@ component_descriptors:
   - bean_name: yorc-openstack-fip-modifier
     name: Floating IP modifier for Yorc PublicNetwork
     description: Floating IP modifier for Yorc PublicNetwork
+  - bean_name: yorc-kubernetes-modifier
+    name: Yorc Modifier for Kubernetes
+    description: Yorc Modifier for Kubernetes
+dependencies:
+  - alien4cloud-kubernetes-plugin
