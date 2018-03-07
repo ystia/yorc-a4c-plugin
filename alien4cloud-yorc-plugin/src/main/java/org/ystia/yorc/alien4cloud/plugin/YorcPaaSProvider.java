@@ -16,19 +16,21 @@
 package org.ystia.yorc.alien4cloud.plugin;
 
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.annotation.Resource;
 import javax.inject.Inject;
 
+import alien4cloud.component.ICSARRepositorySearchService;
+import alien4cloud.dao.IGenericSearchDAO;
 import alien4cloud.orchestrators.plugin.IOrchestratorPlugin;
+import alien4cloud.paas.IPaaSCallback;
 import alien4cloud.paas.exception.MaintenanceModeException;
 import alien4cloud.paas.exception.OperationExecutionException;
-import alien4cloud.paas.model.PaaSWorkflowMonitorEvent;
-import alien4cloud.paas.model.PaaSWorkflowStepMonitorEvent;
-import alien4cloud.dao.IGenericSearchDAO;
-import alien4cloud.paas.IPaaSCallback;
 import alien4cloud.paas.exception.PluginConfigurationException;
 import alien4cloud.paas.model.AbstractMonitorEvent;
 import alien4cloud.paas.model.DeploymentStatus;
@@ -41,7 +43,10 @@ import alien4cloud.paas.model.PaaSDeploymentStatusMonitorEvent;
 import alien4cloud.paas.model.PaaSInstanceStateMonitorEvent;
 import alien4cloud.paas.model.PaaSMessageMonitorEvent;
 import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
+import alien4cloud.paas.model.PaaSWorkflowMonitorEvent;
+import alien4cloud.paas.model.PaaSWorkflowStepMonitorEvent;
 import alien4cloud.paas.plan.ToscaNodeLifecycleConstants;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.alien4cloud.tosca.catalog.index.IToscaTypeSearchService;
 import org.alien4cloud.tosca.catalog.repository.CsarFileRepository;
@@ -50,9 +55,14 @@ import org.alien4cloud.tosca.model.templates.Topology;
 import org.alien4cloud.tosca.model.types.NodeType;
 import org.alien4cloud.tosca.model.types.RelationshipType;
 import org.elasticsearch.common.collect.Maps;
-import org.ystia.yorc.alien4cloud.plugin.rest.Response.*;
+import org.ystia.yorc.alien4cloud.plugin.rest.Response.AttributeResponse;
+import org.ystia.yorc.alien4cloud.plugin.rest.Response.DeployInfosResponse;
+import org.ystia.yorc.alien4cloud.plugin.rest.Response.InstanceInfosResponse;
+import org.ystia.yorc.alien4cloud.plugin.rest.Response.Link;
+import org.ystia.yorc.alien4cloud.plugin.rest.Response.NodeInfosResponse;
 import org.ystia.yorc.alien4cloud.plugin.rest.RestClient;
 import org.ystia.yorc.alien4cloud.plugin.rest.YorcRestException;
+import org.ystia.yorc.alien4cloud.plugin.service.ToscaTopologyExporter;
 
 /**
  * a4c yorc plugin
@@ -78,6 +88,13 @@ public abstract class YorcPaaSProvider implements IOrchestratorPlugin<ProviderCo
     private RestClient restClient = new RestClient();
 
     private TaskManager taskManager;
+
+    @Resource
+    private ICSARRepositorySearchService csarRepoSearchService;
+
+    @Resource
+    @Getter
+    private ToscaTopologyExporter toscaTopologyExporter;
 
 
     /**
@@ -199,7 +216,7 @@ public abstract class YorcPaaSProvider implements IOrchestratorPlugin<ProviderCo
      */
     @Override
     public void deploy(PaaSTopologyDeploymentContext ctx, IPaaSCallback<?> callback) {
-        addTask(new DeployTask(ctx, this, callback));
+        addTask(new DeployTask(ctx, this, callback, csarRepoSearchService));
     }
 
     /**
