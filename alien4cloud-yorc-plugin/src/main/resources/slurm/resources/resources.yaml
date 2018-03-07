@@ -10,6 +10,12 @@ imports:
   - tosca-normative-types:${tosca.normative.types.version}
   - yorc-types:${yorc.types.version}
 
+
+artifact_types:
+  yorc.artifacts.Deployment.SlurmJob:
+    description: Slurm Job deployment descriptor
+    derived_from: tosca.artifacts.Deployment
+
 node_types:
   yorc.nodes.slurm.Compute:
     derived_from: yorc.nodes.Compute
@@ -35,3 +41,17 @@ node_types:
       partition:
         type: string
         description: Slurm partition where the nodes are deployed.
+
+  yorc.nodes.slurm.Job:
+    derived_from: org.alien4cloud.nodes.Job
+    properties:
+      cores:
+        type: integer
+        required: false
+        description: Specify the cores number required to run the jobs
+    interfaces:
+      tosca.interfaces.node.lifecycle.Runnable:
+        run:
+          implementation:
+            file:
+            type: yorc.artifacts.Deployment.SlurmJob

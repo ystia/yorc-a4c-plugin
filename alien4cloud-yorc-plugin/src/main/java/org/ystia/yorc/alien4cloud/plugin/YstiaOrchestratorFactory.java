@@ -69,7 +69,7 @@ public class YstiaOrchestratorFactory implements IOrchestratorPluginFactory<Ysti
     public ArtifactSupport getArtifactSupport() {
         // support all type of implementations artifacts
         return new ArtifactSupport(new String[]{"tosca.artifacts.Implementation.Python",
-                "tosca.artifacts.Implementation.Bash", "tosca.artifacts.Implementation.Ansible", "tosca.artifacts.Deployment.Image.Container.Docker", "tosca.artifacts.Deployment.Image.Container.Docker.Kubernetes"});
+                "tosca.artifacts.Implementation.Bash", "tosca.artifacts.Implementation.Ansible", "tosca.artifacts.Deployment.Image.Container.Docker", "tosca.artifacts.Deployment.Image.Container.Docker.Kubernetes", "yorc.artifacts.Deployment.SlurmJob"});
     }
 
     @Override
