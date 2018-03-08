@@ -1,0 +1,58 @@
+tosca_definitions_version: alien_dsl_2_0_0
+#
+# Copyright 2018 Bull S.A.S. Atos Technologies - Bull, Rue Jean Jaures, B.P.68, 78340, Les Clayes-sous-Bois, France.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+
+metadata:
+  template_name: org.ystia.yorc.samples.job
+  template_version: 1.0.0-SNAPSHOT
+  template_author: yorc
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN20
+  - yorc-types:1.0.0
+
+node_types:
+  org.ystia.yorc.samples.job.Component:
+    derived_from: org.alien4cloud.nodes.Job
+    description: >
+      Sample component to show how to run a job
+    tags:
+      icon: /images/slurm.png
+    properties:
+      n_tasks:
+        description: number of tasks to run
+        type: integer
+        required: false
+        default: 4
+      n_nodes:
+        description: minimum number of nodes allocated to the job
+        type: integer
+        required: false
+        default: 1
+    interfaces:
+      tosca.interfaces.node.lifecycle.Runnable:
+        run:
+          inputs:
+            n_tasks: {get_property: [SELF, n_tasks]}
+            n_nodes: {get_property: [SELF, n_nodes]}
+          implementation:
+            primary:
+              file: scripts/srun.sh
+              type: yorc.artifacts.Deployment.SlurmJob
+            dependencies:
+              - file: scripts/test.mpi
+                type: tosca.artifacts.Implementation.Bash
