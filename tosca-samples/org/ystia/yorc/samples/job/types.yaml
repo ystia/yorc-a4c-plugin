@@ -24,6 +24,7 @@ metadata:
 imports:
   - tosca-normative-types:1.0.0-ALIEN20
   - yorc-types:1.0.0
+  - yorc-slurm-types:1.0.0
 
 node_types:
   org.ystia.yorc.samples.job.Component:
@@ -50,9 +51,9 @@ node_types:
             n_tasks: {get_property: [SELF, n_tasks]}
             n_nodes: {get_property: [SELF, n_nodes]}
           implementation:
-            primary:
-              file: scripts/srun.sh
-              type: yorc.artifacts.Deployment.SlurmJob
-            dependencies:
-              - file: scripts/test.mpi
-                type: tosca.artifacts.Implementation.Bash
+            file: scripts/srun.sh
+            type: yorc.artifacts.Deployment.SlurmJob
+    artifacts:
+      - scripts:
+          file: scripts
+          type: tosca.artifacts.File
