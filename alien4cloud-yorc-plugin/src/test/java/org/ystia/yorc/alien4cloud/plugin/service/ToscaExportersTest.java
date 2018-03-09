@@ -147,8 +147,8 @@ public class ToscaExportersTest extends AbstractPluginTest {
                 "description: \"\"\n" +
                 "\n" +
                 "imports:\n" +
-                "  - <yorc-types>\n" +
-                "  - <yorc-openstack-types>\n" +
+                "  - <yorc-types.yml>\n" +
+                "  - <yorc-openstack-types.yml>\n" +
                 "  - mycomponent-pub/3.0.0/mycomponent-pub.yaml\n" +
                 "  - mycomponent-impl/3.0.0/mycomponent-impl.yaml\n" +
                 "\n" +

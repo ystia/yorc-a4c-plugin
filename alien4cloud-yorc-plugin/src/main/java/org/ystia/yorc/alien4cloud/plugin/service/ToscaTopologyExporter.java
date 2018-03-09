@@ -24,7 +24,7 @@ import org.springframework.stereotype.Service;
 import static alien4cloud.utils.AlienUtils.safe;
 
 /**
- * A {@code ToscaComponentExporter} is a ...
+ * A {@code ToscaComponentExporter} exports a {@link Topology} into a YAML
  *
  * @author Loic Albertin
  */
@@ -111,7 +111,7 @@ public class ToscaTopologyExporter {
                     }
                     Csar csar = csarRepoSearchService.getArchive(d.getName(), d.getVersion());
                     if (CSARSource.valueOf(csar.getImportSource()) == CSARSource.ORCHESTRATOR) {
-                        sb.append("<").append(d.getName()).append(">");
+                        sb.append("<").append(d.getName()).append(".yml>");
                     } else {
                         sb.append(d.getName()).append("/").append(d.getVersion()).append("/").append(csar.getYamlFilePath());
                     }

@@ -24,7 +24,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.StringWriter;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
@@ -32,7 +31,6 @@ import java.nio.file.Paths;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -51,19 +49,21 @@ import alien4cloud.paas.model.InstanceInformation;
 import alien4cloud.paas.model.PaaSNodeTemplate;
 import alien4cloud.paas.model.PaaSTopology;
 import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
+import alien4cloud.tosca.model.ArchiveRoot;
+import alien4cloud.tosca.parser.ParsingError;
+import alien4cloud.tosca.parser.ParsingErrorLevel;
+import alien4cloud.tosca.parser.ParsingResult;
 import alien4cloud.tosca.parser.ToscaParser;
-import alien4cloud.utils.YamlParserUtil;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.alien4cloud.tosca.exporter.ArchiveExportService;
 import org.alien4cloud.tosca.model.CSARDependency;
 import org.alien4cloud.tosca.model.Csar;
 import org.alien4cloud.tosca.model.definitions.DeploymentArtifact;
+import org.alien4cloud.tosca.model.definitions.Interface;
+import org.alien4cloud.tosca.model.definitions.Operation;
 import org.alien4cloud.tosca.model.templates.NodeTemplate;
 import org.alien4cloud.tosca.model.templates.Topology;
 import org.elasticsearch.common.collect.Maps;
-import org.yaml.snakeyaml.Yaml;
 import org.ystia.yorc.alien4cloud.plugin.rest.Response.Event;
 import org.ystia.yorc.alien4cloud.plugin.rest.YorcRestException;
 import org.ystia.yorc.alien4cloud.plugin.utils.MappingTosca;
@@ -286,7 +286,7 @@ public class DeployTask extends AlienTask {
             if (!"tosca-normative-types".equals(d.getName())) {
                 Csar csar = csarRepoSearchService.getArchive(d.getName(), d.getVersion());
                 if (CSARSource.ORCHESTRATOR != CSARSource.valueOf(csar.getImportSource())) {
-                    csar2zip(zout, d.getName(), d.getVersion(), finalLocation);
+                    csar2zip(zout, csar, finalLocation);
                 }
             }
         });
@@ -333,6 +333,18 @@ public class DeployTask extends AlienTask {
         }
     }
 
+    private void matchKubernetesImplementation(ArchiveRoot root) {
+        root.getNodeTypes().forEach((k, t) -> {
+            Interface ifce = t.getInterfaces().get("tosca.interfaces.node.lifecycle.Standard");
+            if (ifce != null) {
+                Operation start = ifce.getOperations().get("start");
+                if (start != null &&
+                        start.getImplementationArtifact().getArtifactType().equals("tosca.artifacts.Deployment.Image.Container.Docker")) {
+                    start.getImplementationArtifact().setArtifactType("tosca.artifacts.Deployment.Image.Container.Docker.Kubernetes");
+                }
+            }
+        });
+    }
     private void matchKubernetesImplementation(Map<String, Object> topology) {
         Map<String, HashMap> nodeTypes = ((Map) topology.get("node_types"));
 
@@ -343,6 +355,7 @@ public class DeployTask extends AlienTask {
             }
         });
     }
+
 
     /**
      * Copy artifacts to archive
@@ -488,22 +501,20 @@ public class DeployTask extends AlienTask {
      * Get csar and add entries in zip file for it
      * @return relative path to the yml, ex: welcome-types/3.0-SNAPSHOT/welcome-types.yaml
      */
-    private String csar2zip(ZipOutputStream zout, String module, String version, int location) {
+    private String csar2zip(ZipOutputStream zout, Csar csar, int location) {
         // Get path directory to the needed info:
         // should be something like: ...../runtime/csar/<module>/<version>/expanded
         // We should have a yml or a yaml here
-        Path csarPath = orchestrator.getCSAR(module, version);
+        Path csarPath = orchestrator.getCSAR(csar.getName(), csar.getVersion());
         String dirname = csarPath.toString();
         File directory = new File(dirname);
-        String relative = dirname.substring(dirname.indexOf("csar/") + 5);
-        relative = relative.substring(0, relative.lastIndexOf("/") + 1);
-        String ret = relative;
+        String relative = csar.getName() + "/" + csar.getVersion() + "/";
+        String ret = relative + csar.getYamlFilePath();
         try {
             // All files under this directory must be put in the zip
             URI base = directory.toURI();
             Deque<File> queue = new LinkedList<>();
             queue.push(directory);
-            boolean ymlfound = false;
             while (!queue.isEmpty()) {
                 directory = queue.pop();
                 for (File kid : directory.listFiles()) {
@@ -513,27 +524,30 @@ public class DeployTask extends AlienTask {
                     } else {
                         File file = kid;
                         createZipEntries(relative + name, zout);
-                        if (name.endsWith(".yml") || name.endsWith(".yaml")) {
-                            if (! ymlfound) {
-                                // Remove all imports, since they should be all in the root yml
-                                TypeReference<Map<String,Object>> typeRef = new TypeReference<Map<String,Object>>() {};
-                                ObjectMapper objectMapper = YamlParserUtil.createYamlObjectMapper();
-                                Map<String, Object> topologyKid = objectMapper.readValue(kid, typeRef);
-                                ((List) topologyKid.get("imports")).clear();
-
-                                if (location == LOC_KUBERNETES) {
-                                    matchKubernetesImplementation(topologyKid);
+                        if (name.equals(csar.getYamlFilePath())) {
+                            ParsingResult<ArchiveRoot> parsingResult =
+                                    orchestrator.getParser().parseFile(Paths.get(file.getAbsolutePath()));
+                            if (parsingResult.getContext().getParsingErrors().size() > 0) {
+                                Boolean hasFatalError = false;
+                                for (ParsingError error :
+                                        parsingResult.getContext().getParsingErrors()) {
+                                    if (error.getErrorLevel().equals(ParsingErrorLevel.ERROR)) {
+                                        log.error(error.toString());
+                                        hasFatalError = true;
+                                    } else {
+                                        log.warn(error.toString());
+                                    }
                                 }
-
-                                StringWriter out = new StringWriter();
-                                Yaml yaml = new Yaml();
-                                yaml.dump(topologyKid, out);
-                                zout.write(out.getBuffer().toString().getBytes());
-                                ret += name;
-                                ymlfound = true;
-                            } else {
-                                copy(file, zout);
+                                if (hasFatalError) {
+                                    continue;
+                                }
                             }
+                            ArchiveRoot root = parsingResult.getResult();
+                            if (location == LOC_KUBERNETES) {
+                                matchKubernetesImplementation(root);
+                            }
+                            String yaml = orchestrator.getToscaComponentExporter().getYaml(root);
+                            zout.write(yaml.getBytes(Charset.forName("UTF-8")));
                         } else {
                             copy(file, zout);
                         }

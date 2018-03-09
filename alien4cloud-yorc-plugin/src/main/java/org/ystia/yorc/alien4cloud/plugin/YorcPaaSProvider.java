@@ -46,6 +46,7 @@ import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
 import alien4cloud.paas.model.PaaSWorkflowMonitorEvent;
 import alien4cloud.paas.model.PaaSWorkflowStepMonitorEvent;
 import alien4cloud.paas.plan.ToscaNodeLifecycleConstants;
+import alien4cloud.tosca.parser.ToscaParser;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.alien4cloud.tosca.catalog.index.IToscaTypeSearchService;
@@ -62,6 +63,7 @@ import org.ystia.yorc.alien4cloud.plugin.rest.Response.Link;
 import org.ystia.yorc.alien4cloud.plugin.rest.Response.NodeInfosResponse;
 import org.ystia.yorc.alien4cloud.plugin.rest.RestClient;
 import org.ystia.yorc.alien4cloud.plugin.rest.YorcRestException;
+import org.ystia.yorc.alien4cloud.plugin.service.ToscaComponentExporter;
 import org.ystia.yorc.alien4cloud.plugin.service.ToscaTopologyExporter;
 
 /**
@@ -95,6 +97,14 @@ public abstract class YorcPaaSProvider implements IOrchestratorPlugin<ProviderCo
     @Resource
     @Getter
     private ToscaTopologyExporter toscaTopologyExporter;
+
+    @Resource
+    @Getter
+    private ToscaComponentExporter toscaComponentExporter;
+
+    @Resource
+    @Getter
+    private ToscaParser parser;
 
 
     /**
