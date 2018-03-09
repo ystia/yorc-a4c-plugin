@@ -139,7 +139,7 @@ node_types:
           implementation:
             file: scripts/op.sh
             type: tosca.artifacts.Implementation.Bash
-      tosca.interfaces.node.lifecycle.Standard:
+      Standard:
         start:
           inputs:
             msg: { get_property: [SELF, hello_message] }
@@ -219,7 +219,7 @@ relationship_types:
         description: "Coma separated list of visibles GPU devices for the compute."
         default: none
     interfaces:
-      tosca.interfaces.relationship.Configure:
+      Configure:
         pre_configure_source:
           inputs:
             var1: { get_property: [SELF, outputVar1] }

@@ -18,7 +18,7 @@ ${propertyUtils.indent($indent)}  $attributeEntry.key: ${propertyUtils.formatPro
 ${propertyUtils.indent($indent)}interfaces:
 #foreach($interfaceEntry in ${type.interfaces.entrySet()})
 #if($utils.doesInterfaceContainsImplementedOperation($interfaceEntry.value))
-${propertyUtils.indent($indent)}  ${interfaceEntry.key}:
+${propertyUtils.indent($indent)}  ${yorcUtils.shortInterfaceName($interfaceEntry.key)}:
 #foreach($operationEntry in ${interfaceEntry.value.operations.entrySet()})
 #if($utils.isOperationImplemented($operationEntry.value))
 #set($enableImplementationArtifactShortNotation = $utils.canUseShortNotationForImplementationArtifact($operationEntry.value))

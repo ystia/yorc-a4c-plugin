@@ -5,6 +5,8 @@ import java.io.StringWriter;
 import java.util.Collection;
 import java.util.Map;
 
+import alien4cloud.paas.plan.ToscaNodeLifecycleConstants;
+import alien4cloud.paas.plan.ToscaRelationshipLifecycleConstants;
 import alien4cloud.tosca.serializer.ToscaPropertySerializerUtils;
 import alien4cloud.tosca.serializer.VelocityUtil;
 import org.alien4cloud.tosca.model.definitions.AbstractPropertyValue;
@@ -14,7 +16,7 @@ import org.alien4cloud.tosca.model.definitions.PropertyDefinition;
 import org.alien4cloud.tosca.model.definitions.PropertyValue;
 
 /**
- * A {@code ToscaComponentUtils} is a ...
+ * A {@code ToscaComponentUtils} is a helper class for Velocity generation
  *
  * @author Loic Albertin
  */
@@ -81,5 +83,14 @@ public class ToscaComponentUtils {
             }
         }
         return buffer.toString();
+    }
+
+    public static String shortInterfaceName(String interfaceName) {
+        if (ToscaNodeLifecycleConstants.STANDARD.equals(interfaceName)) {
+            return ToscaNodeLifecycleConstants.STANDARD_SHORT;
+        } else if (ToscaRelationshipLifecycleConstants.CONFIGURE.equals(interfaceName)) {
+            return ToscaRelationshipLifecycleConstants.CONFIGURE_SHORT;
+        }
+        return interfaceName;
     }
 }
