@@ -79,6 +79,8 @@ public class KubernetesTopologyModifier extends TopologyModifierSupport {
     private void doProcess(Topology topology, FlowExecutionContext context) {
         log.info("~~~~~~~~~ Yorc Plugin : Processing topology " + topology.getId());
 
+        Csar csar = new Csar(topology.getArchiveName(), topology.getArchiveVersion());
+
         // Import yorc-kubernetes-types
         Csar yorcKubernetesTypesCsar = csarRepoService.getArchive(YORC_KUBERNETES_TYPES_ARCHIVE_NAME, YORC_KUBERNETES_TYPES_ARCHIVE_VERSION);
         if (yorcKubernetesTypesCsar == null) {
@@ -101,29 +103,24 @@ public class KubernetesTopologyModifier extends TopologyModifierSupport {
         Set<NodeTemplate> serviceNodes = TopologyNavigationUtil.getNodesOfType(topology, K8S_TYPES_SERVICE_RESOURCE, false);
 
         serviceNodes.forEach(serviceNodeTemplate -> {
-            String type = serviceNodeTemplate.getType();
-            serviceNodeTemplate.setType(replaceServiceType(type));
-            log.info("~~~~~~~~~ Yorc Plugin : >>> service resource node " + serviceNodeTemplate.getName() + " now has type " + serviceNodeTemplate.getType());
+
+            NodeTemplate yorcServiceNodeTemplate = replaceNode(csar, topology, serviceNodeTemplate, YORC_KUBERNETES_TYPES_SERVICE_RESOURCE, YORC_KUBERNETES_TYPES_ARCHIVE_VERSION);
+
+            log.info("~~~~~~~~~ Yorc Plugin : >>> service resource node " + yorcServiceNodeTemplate.getName() + " now has type " + yorcServiceNodeTemplate.getType());
         });
 
         // Treat deployment resource types
         Set<NodeTemplate> deploymentNodes = TopologyNavigationUtil.getNodesOfType(topology, K8S_TYPES_DEPLOYMENT_RESOURCE, false);
         deploymentNodes.forEach(deploymentNodeTemplate -> {
-            String type = deploymentNodeTemplate.getType();
-            deploymentNodeTemplate.setType(replaceDeploymentType(type));
-            log.info("~~~~~~~~~ Yorc Plugin : >>> deployment resource node " + deploymentNodeTemplate.getName() + " now has type " + deploymentNodeTemplate.getType());
+
+            NodeTemplate yorcDeploymentNodeTemplate = replaceNode(csar, topology, deploymentNodeTemplate, YORC_KUBERNETES_TYPES_DEPLOYMENT_RESOURCE, YORC_KUBERNETES_TYPES_ARCHIVE_VERSION);
+
+            log.info("~~~~~~~~~ Yorc Plugin : >>> deployment resource node " + yorcDeploymentNodeTemplate.getName() + " now has type " + yorcDeploymentNodeTemplate.getType());
         });
 
         log.info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ");
 
     }
 
-    private String replaceServiceType(String type) {
-        return type.replaceAll(K8S_TYPES_SERVICE_RESOURCE, YORC_KUBERNETES_TYPES_SERVICE_RESOURCE);
-    }
-
-    private String replaceDeploymentType(String type) {
-        return type.replaceAll(K8S_TYPES_DEPLOYMENT_RESOURCE, YORC_KUBERNETES_TYPES_DEPLOYMENT_RESOURCE);
-    }
 
 }
