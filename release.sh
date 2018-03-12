@@ -123,10 +123,10 @@ echo "Building version v${version}"
 set +x
 mvn release:clean release:prepare ${mvnOpts} --batch-mode -Dtag=v${version} -DreleaseVersion=${version} -DdevelopmentVersion=${nextDevelopmentVersion}
 echo "Tag done. Publishing release..."
-if [ "${dryRun}" = true ] ; then
-    mvnOpts="${mvnOpts} -DdryRun=true"
-fi
-mvn release:perform --batch-mode ${mvnOpts}
+#if [ "${dryRun}" = true ] ; then
+#    mvnOpts="${mvnOpts} -DdryRun=true"
+#fi
+# mvn release:perform --batch-mode ${mvnOpts}
 set -x
 
 if [[ "develop" == "${branch}" ]] && [[ -z "${prerelease}" ]]; then
