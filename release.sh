@@ -84,12 +84,12 @@ fi
 
 # Check branch tags
 branchTag=$(git describe --abbrev=0 --tags ${branch}) || {
-    branchTag="janus-a4c-plugin-0.0.0"
+    branchTag="v0.0.0"
 }
-branchTag=$(echo $branchTag | sed -e 's/^janus-a4c-plugin-\(.*\)$/\1/')
+branchTag=$(echo $branchTag | sed -e 's/^janus-a4c-plugin-\(.*\)$/\1/' -e 's/^v\(.*\)$/\1/')
 
 if [[ "True" != "$(python -c "import semantic_version; print  semantic_version.Version('${version}') > semantic_version.Version('${branchTag}')" )" ]]; then
-    echo "Can't release version ${version} on top of branch ${branch} as it contains a newer tag: janus-a4c-plugin-${branchTag}" >&2
+    echo "Can't release version ${version} on top of branch ${branch} as it contains a newer tag: v${branchTag}" >&2
     exit 1
 fi
 
@@ -119,9 +119,9 @@ fi
 ####################################################
 # Make our build
 ####################################################
-echo "Building version janus-a4c-plugin-${version}"
+echo "Building version v${version}"
 set +x
-mvn release:clean release:prepare ${mvnOpts} --batch-mode -Dtag=janus-a4c-plugin-${version} -DreleaseVersion=${version} -DdevelopmentVersion=${nextDevelopmentVersion}
+mvn release:clean release:prepare ${mvnOpts} --batch-mode -Dtag=v${version} -DreleaseVersion=${version} -DdevelopmentVersion=${nextDevelopmentVersion}
 echo "Tag done. Publishing release..."
 if [ "${dryRun}" = true ] ; then
     mvnOpts="${mvnOpts} -DdryRun=true"
@@ -132,7 +132,7 @@ set -x
 if [[ "develop" == "${branch}" ]] && [[ -z "${prerelease}" ]]; then
     # merge back to develop and update version
     git checkout develop
-    git merge --no-ff "janus-a4c-plugin-${version}" -m "merging latest tag janus-a4c-plugin-${version} into develop"
+    git merge --no-ff "v${version}" -m "merging latest tag v${version} into develop"
     nextDevelopmentVersion=$(python -c "import semantic_version; v=semantic_version.Version('${version}'); print v.next_minor()" )
     nextDevelopmentVersion="${nextDevelopmentVersion}-SNAPSHOT"
     mvn --batch-mode release:update-versions -DdevelopmentVersion=${nextDevelopmentVersion}
@@ -142,16 +142,16 @@ fi
 if [[ -z "${prerelease}" ]]; then
     # Merge on master only final version
     masterTag=$(git describe --abbrev=0 --tags master) || {
-        masterTag="janus-a4c-plugin-0.0.0"
+        masterTag="v0.0.0"
     }
-    masterTag=$(echo ${masterTag} | sed -e 's/^janus-a4c-plugin-\(.*\)$/\1/')
+    masterTag=$(echo ${masterTag} | sed -e 's/^janus-a4c-plugin-\(.*\)$/\1/' -e 's/^v\(.*\)$/\1/')
 
     if [[ "True" == "$(python -c "import semantic_version; print  semantic_version.Version('${version}') > semantic_version.Version('${masterTag}')" )" ]]; then
         # We should merge the tag to master as it is our highest release
         git checkout master
-        git merge --no-ff "janus-a4c-plugin-${version}" -X theirs -m "merging latest tag janus-a4c-plugin-${version} into master" || {
+        git merge --no-ff "v${version}" -X theirs -m "merging latest tag v${version} into master" || {
                 git merge --abort || true
-                git reset --hard "janus-a4c-plugin-${version}"
+                git reset --hard "v${version}"
         }
     fi
 fi
