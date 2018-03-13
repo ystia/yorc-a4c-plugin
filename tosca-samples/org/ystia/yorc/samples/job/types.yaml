@@ -34,12 +34,12 @@ node_types:
     tags:
       icon: /images/slurm.png
     properties:
-      n_tasks:
+      tasks:
         description: number of tasks to run
         type: integer
         required: false
         default: 4
-      n_nodes:
+      nodes:
         description: minimum number of nodes allocated to the job
         type: integer
         required: false
@@ -48,11 +48,11 @@ node_types:
       tosca.interfaces.node.lifecycle.Runnable:
         run:
           inputs:
-            n_tasks: {get_property: [SELF, n_tasks]}
-            n_nodes: {get_property: [SELF, n_nodes]}
+            n_tasks: {get_property: [SELF, tasks]}
+            n_nodes: {get_property: [SELF, nodes]}
           implementation:
             file: scripts/srun.sh
-            type: yorc.artifacts.Deployment.SlurmJob
+            type: yorc.artifacts.Deployment.SlurmJobScript
     artifacts:
       - scripts:
           file: scripts
