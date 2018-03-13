@@ -26,7 +26,7 @@ metadata:
   template_version: ${template_version}
   template_author: ${template_author}
 
-description: ${utils.renderDescription(${template_description}, "")}
+description: ${utils.renderDescription(${template_description}, "  ")}
 #if($utils.collectionIsNotEmpty($topology.dependencies))
 
 imports:

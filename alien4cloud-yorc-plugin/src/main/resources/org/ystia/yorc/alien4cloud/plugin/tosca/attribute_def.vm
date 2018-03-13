@@ -1,6 +1,6 @@
 type: $attribute.type
 #if($!attribute.description)
-${propertyUtils.indent($indent)}description: ${utils.renderDescription(${attribute.description}, "")}
+${propertyUtils.indent($indent)}description: ${utils.renderDescription(${attribute.description}, "${propertyUtils.indent($indent)}  ")}
 #end## if description
 #if(!$utils.isNull($attribute.default))
 ${propertyUtils.indent($indent)}default: ${propertyUtils.formatTextValue($indent, $attribute.default)}

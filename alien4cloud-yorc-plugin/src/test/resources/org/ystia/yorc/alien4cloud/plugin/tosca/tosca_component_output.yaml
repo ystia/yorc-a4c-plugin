@@ -200,7 +200,9 @@ relationship_types:
     properties:
       hello_message:
         type: string
-        description: "A simple message to print"
+        description: |
+          A simple message to print
+          This description is multiline
         default: "Hello World!"
       outputVar1:
         type: string

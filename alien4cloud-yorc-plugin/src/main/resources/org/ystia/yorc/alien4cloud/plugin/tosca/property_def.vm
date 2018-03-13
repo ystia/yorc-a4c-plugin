@@ -1,6 +1,6 @@
 type: $property.type
 #if($!property.description)
-${propertyUtils.indent($indent)}description: ${utils.renderDescription(${property.description}, "")}
+${propertyUtils.indent($indent)}description: ${utils.renderDescription(${property.description}, "${propertyUtils.indent($indent)}  ")}
 #end## if description
 #if(!$property.required)
 ${propertyUtils.indent($indent)}required: $property.required

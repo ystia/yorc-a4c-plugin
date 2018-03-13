@@ -223,7 +223,9 @@ relationship_types:
       icon: /images/python.png
     properties:
       hello_message:
-        description: A simple message to print
+        description: |
+          A simple message to print
+          This description is multiline
         type: string
         required: true
         default: "Hello World!"
