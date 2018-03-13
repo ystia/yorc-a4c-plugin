@@ -1,0 +1,54 @@
+tosca_definitions_version: alien_dsl_2_0_0
+
+metadata:
+  template_name: org.ystia.yorc.samples.containers.k8smysql
+  template_version: 1.0.0-SNAPSHOT
+  template_author: Yorc team
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN20
+  - docker-types:2.0.0-SNAPSHOT
+
+description: Yorc MySQL Container to be deployed on K8S
+
+repositories:
+  docker:
+    url: https://hub.docker.com/
+    type: http
+
+node_types:
+  org.ystia.yorc.samples.k8smysql.nodes.MySQL:
+    derived_from: tosca.nodes.Container.Application.DockerContainer
+    tags:
+      icon: images/mysql.png
+    properties:
+      docker_ports:
+        type: string
+        required: false
+        default: "3306"
+      db_name:
+        type: string
+        required: true
+      db_user:
+        type: string
+        required: true
+        default: "mysql"
+      db_password:
+        type: string
+        required: true
+        default: "mysql"
+    capabilities:
+      msql_db:
+        type: org.ystia.yorc.samples.k8smysql.capabilities.endpoint.mysqlDB
+    interfaces:
+      Standard:
+        create:
+          implementation:
+            file: httpd/latest
+            repository: docker
+            type: tosca.artifacts.Deployment.Image.Container.Docker
+
+capability_types:
+  org.ystia.yorc.samples.k8smysql.capabilities.endpoint.mysqlDB:
+    derived_from: tosca.capabilities.Endpoint.Database
+
