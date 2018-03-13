@@ -1,6 +1,7 @@
 package org.ystia.yorc.alien4cloud.plugin.service;
 
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -17,6 +18,7 @@ import alien4cloud.tosca.parser.impl.ErrorCode;
 import com.google.common.collect.Lists;
 import org.alien4cloud.tosca.model.CSARDependency;
 import org.alien4cloud.tosca.model.Csar;
+import org.alien4cloud.tosca.model.definitions.DeploymentArtifact;
 import org.alien4cloud.tosca.model.templates.Topology;
 import org.alien4cloud.tosca.model.types.DataType;
 import org.alien4cloud.tosca.model.types.NodeType;
@@ -63,9 +65,18 @@ public class ToscaExportersTest extends AbstractPluginTest {
     public void testComponentSerialization() throws Exception {
         Mockito.reset(repositorySearchService);
         String rootDir = "src/test/resources/org/ystia/yorc/alien4cloud/plugin/tosca";
-        Csar csar = new Csar("tosca-normative-types", "1.0.0-ALIEN14");
+        Csar csar = new Csar("tosca-normative-types", "1.0.0-ALIEN20");
         Mockito.when(repositorySearchService.getArchive(csar.getName(), csar.getVersion())).thenReturn(csar);
         NodeType mockedResult = Mockito.mock(NodeType.class);
+        Mockito.when(mockedResult.getArchiveName()).thenReturn("tosca-normative-types");
+        Mockito.when(mockedResult.getArchiveVersion()).thenReturn("1.0.0-ALIEN20");
+        DeploymentArtifact da = Mockito.mock(DeploymentArtifact.class);
+        Mockito.when(da.getArtifactPath()).thenReturn("test");
+        Mockito.when(da.getArtifactRef()).thenReturn("test");
+        Mockito.when(da.getArtifactType()).thenReturn("file");
+        Mockito.when(da.getArchiveName()).thenReturn("tosca-normative-types");
+        Mockito.when(da.getArchiveVersion()).thenReturn("1.0.0-ALIEN20");
+        Mockito.when(mockedResult.getArtifacts()).thenReturn(Collections.singletonMap("SoftwareComponentArtifact", da));
         Mockito.when(repositorySearchService
                 .getElementInDependencies(Mockito.eq(NodeType.class), Mockito.eq("tosca.nodes.SoftwareComponent"),
                         Mockito.any(Set.class))).thenReturn(mockedResult);

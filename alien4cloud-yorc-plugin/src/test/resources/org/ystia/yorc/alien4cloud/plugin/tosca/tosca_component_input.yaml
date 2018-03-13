@@ -5,12 +5,12 @@ metadata:
   template_version: 1.0.0-SNAPSHOT
   template_author: yorc
 
-description: >
+description: |
   This is a sample used to test parsing and formatting
   of a component into a DSL that matches Yorc one.
 
 imports:
-  - tosca-normative-types:1.0.0-ALIEN14
+  - tosca-normative-types:1.0.0-ALIEN20
 
 repositories:
   mydocker_repo:

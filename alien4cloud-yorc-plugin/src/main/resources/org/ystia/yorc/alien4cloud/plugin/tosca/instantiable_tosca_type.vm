@@ -42,6 +42,7 @@ ${utils.formatArtifact($operationEntry.value.implementationArtifact, $indentImpl
 #if($utils.mapIsNotEmptyAndContainsNotnullValues($type.artifacts))
 ${propertyUtils.indent($indent)}artifacts:
 #foreach($artifactEntry in $type.artifacts.entrySet())
+#if($yorcUtils.areFromSameArchive($type, $artifactEntry.value))
 ${propertyUtils.indent($indent)}  $artifactEntry.key:
 #if($stringsUtils.isNotBlank($artifactEntry.value.description))
 ${propertyUtils.indent($indent)}    description: ${utils.renderDescription(${artifactEntry.value.description}, "${propertyUtils.indent($indent)}      ")}
@@ -58,5 +59,6 @@ ${propertyUtils.indent($indent)}    repository: ${propertyUtils.renderScalar($ar
 #if($stringsUtils.isNotBlank($artifactEntry.value.deployPath))
 ${propertyUtils.indent($indent)}    deploy_path: ${propertyUtils.renderScalar($artifactEntry.value.deployPath)}
 #end## if deployPath
+#end## if from same archive
 #end## foreach artifact
-#end## if artifact
+#end## if artifacts

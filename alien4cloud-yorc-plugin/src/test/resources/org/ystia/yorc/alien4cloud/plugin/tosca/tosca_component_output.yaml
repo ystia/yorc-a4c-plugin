@@ -5,7 +5,9 @@ metadata:
   template_version: 1.0.0-SNAPSHOT
   template_author: yorc
 
-description: "This is a sample used to test parsing and formatting of a component into a DSL that matches Yorc one."
+description: |
+  This is a sample used to test parsing and formatting
+  of a component into a DSL that matches Yorc one.
 
 repositories:
   mydocker_repo:
