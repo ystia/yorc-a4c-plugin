@@ -89,21 +89,22 @@ public class KubernetesTopologyModifier extends TopologyModifierSupport {
             return;
         }
 
-        CSARDependency yorcKubernetesTypesDependency = new CSARDependency();
-        yorcKubernetesTypesDependency.setName(YORC_KUBERNETES_TYPES_ARCHIVE_NAME);
-        yorcKubernetesTypesDependency.setVersion(YORC_KUBERNETES_TYPES_ARCHIVE_VERSION);
-        yorcKubernetesTypesDependency.setHash(yorcKubernetesTypesCsar.getDefinitionHash());
-
-        topology.getDependencies().add(yorcKubernetesTypesDependency);
+        // not necessary since the replaceNode will ensure dependencies will be correct
+        //
+        // CSARDependency yorcKubernetesTypesDependency = new CSARDependency();
+        // yorcKubernetesTypesDependency.setName(YORC_KUBERNETES_TYPES_ARCHIVE_NAME);
+        // yorcKubernetesTypesDependency.setVersion(YORC_KUBERNETES_TYPES_ARCHIVE_VERSION);
+        // yorcKubernetesTypesDependency.setHash(yorcKubernetesTypesCsar.getDefinitionHash());
+        //
+        // topology.getDependencies().add(yorcKubernetesTypesDependency);
         log.info("~~~~~~~~~ Yorc Plugin : Yorc kubernetes types archive added as dependency to the topology");
 
         // Transform alien kubernetes resource types to yorc kubernetes resource types
         //
-        // Treat service resource types
-        transformKubernetesResourceTypes(topology,  csar, "service", YORC_KUBERNETES_TYPES_ARCHIVE_VERSION);
-
         // Treat deployment resource types
         transformKubernetesResourceTypes(topology,  csar, "deployment", YORC_KUBERNETES_TYPES_ARCHIVE_VERSION);
+        // Treat service resource types
+        transformKubernetesResourceTypes(topology,  csar, "service", YORC_KUBERNETES_TYPES_ARCHIVE_VERSION);
 
 
         log.info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ");
