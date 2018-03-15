@@ -5,7 +5,6 @@ template_author: Yorc
 template_version: ${yorc.types.version}
 
 imports:
-  - yorc-docker-types:${yorc.types.version}
   - org.alien4cloud.kubernetes.api:${alien4cloud.kubernetes.api.version}
 
 artifact_types:
