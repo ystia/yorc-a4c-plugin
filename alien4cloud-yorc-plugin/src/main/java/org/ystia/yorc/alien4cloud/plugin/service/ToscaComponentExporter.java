@@ -12,7 +12,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 /**
- * A {@code ToscaComponentExporter} is a ...
+ * A {@code ToscaComponentExporter} exports an {@link ArchiveRoot} into a YAML compatible with the Yorc engine DSL.
  *
  * @author Loic Albertin
  */

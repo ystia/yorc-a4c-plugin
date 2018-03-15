@@ -24,7 +24,7 @@ import org.springframework.stereotype.Service;
 import static alien4cloud.utils.AlienUtils.safe;
 
 /**
- * A {@code ToscaComponentExporter} exports a {@link Topology} into a YAML
+ * A {@code ToscaTopologyExporter} exports a {@link Topology} into a YAML compatible with the Yorc engine DSL.
  *
  * @author Loic Albertin
  */
