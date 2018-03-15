@@ -6,7 +6,7 @@ ${propertyUtils.indent($indent)}description: ${utils.renderDescription(${propert
 ${propertyUtils.indent($indent)}required: $property.required
 #end## if !required
 #if(!$utils.isNull($property.default))
-${propertyUtils.indent($indent)}default: ${propertyUtils.formatPropertyValue(0, $property.default)}
+${propertyUtils.indent($indent)}default: ${propertyUtils.formatPropertyValue($indent, $property.default)}
 #end## if default
 ## Status and metadata on prop_def not yet parsed by alien
 ##${propertyUtils.indent($indent)}status: <status_value>

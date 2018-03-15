@@ -120,6 +120,14 @@ node_types:
         description: "Dummy property used to test operation outputs"
         required: false
         default: ov2
+      mapProp:
+        type: map
+        required: false
+        default:
+          m1: v1
+          m2: v2
+        entry_schema:
+          type: string
     attributes:
       resolvedOutput1: { get_operation_output: [SELF, Standard, create, myVar1] }
       resolvedOutput2: { get_operation_output: [SELF, Standard, create, myVar2] }
