@@ -58,8 +58,9 @@
 
   <scm>
     <connection>scm:git:https://github.com/ystia/yorc-a4c-plugin.git</connection>
-    <developerConnection>scm:git:git@github.com/ystia/yorc-a4c-plugin.git</developerConnection>
+    <developerConnection>scm:git:git@github.com:ystia/yorc-a4c-plugin.git</developerConnection>
     <url>https://github.com/ystia/yorc-a4c-plugin/</url>
+    <tag>HEAD</tag>
   </scm>
 
   <repositories>
