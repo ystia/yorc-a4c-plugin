@@ -138,9 +138,7 @@ node_types:
               description: "enable verbose output"
               default: false
 
-          implementation:
-            file: scripts/op.sh
-            type: tosca.artifacts.Implementation.Bash
+          implementation: scripts/op.sh
       Standard:
         start:
           inputs:
@@ -154,9 +152,7 @@ node_types:
             var1: { get_property: [SELF, outputVar1] }
             var2: { get_property: [SELF, outputVar2] }
             debug: true
-          implementation:
-            file: scripts/create.sh
-            type: tosca.artifacts.Implementation.Bash
+          implementation: scripts/create.sh
     artifacts:
       myArtifact:
         description: |
@@ -229,16 +225,12 @@ relationship_types:
             var1: { get_property: [SELF, outputVar1] }
             var2: { get_property: [SELF, outputVar2] }
             debug: true
-          implementation:
-            file: scripts/create.sh
-            type: tosca.artifacts.Implementation.Bash
+          implementation: scripts/create.sh
         add_target:
           inputs:
             msg: { get_property: [SELF, hello_message] }
             debug: true
-          implementation:
-            file: scripts/start.sh
-            type: tosca.artifacts.Implementation.Bash
+          implementation: scripts/start.sh
       custom:
         my_ops:
           inputs:
@@ -249,9 +241,7 @@ relationship_types:
               description: "enable verbose output"
               default: false
 
-          implementation:
-            file: scripts/op.sh
-            type: tosca.artifacts.Implementation.Bash
+          implementation: scripts/op.sh
     artifacts:
       myArtifact:
         description: |

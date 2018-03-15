@@ -49,11 +49,14 @@ import alien4cloud.paas.model.InstanceInformation;
 import alien4cloud.paas.model.PaaSNodeTemplate;
 import alien4cloud.paas.model.PaaSTopology;
 import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
+import alien4cloud.tosca.context.ToscaContext;
 import alien4cloud.tosca.model.ArchiveRoot;
 import alien4cloud.tosca.parser.ParsingError;
 import alien4cloud.tosca.parser.ParsingErrorLevel;
+import alien4cloud.tosca.parser.ParsingException;
 import alien4cloud.tosca.parser.ParsingResult;
 import alien4cloud.tosca.parser.ToscaParser;
+import com.google.common.collect.Sets;
 import lombok.extern.slf4j.Slf4j;
 import org.alien4cloud.tosca.exporter.ArchiveExportService;
 import org.alien4cloud.tosca.model.CSARDependency;
@@ -126,7 +129,7 @@ public class DeployTask extends AlienTask {
             // Create the yml of our topology and build our zip topology
             try {
                 buildZip(ctx);
-            } catch (IOException e) {
+            } catch (Throwable e) {
                 orchestrator.doChangeStatus(paasId, DeploymentStatus.FAILURE);
                 callback.onFailure(e);
                 return;
@@ -282,11 +285,16 @@ public class DeployTask extends AlienTask {
         final Closeable res = zout;
 
         final int finalLocation = location;
+
         this.ctx.getDeploymentTopology().getDependencies().forEach(d -> {
             if (!"tosca-normative-types".equals(d.getName())) {
                 Csar csar = csarRepoSearchService.getArchive(d.getName(), d.getVersion());
                 if (CSARSource.ORCHESTRATOR != CSARSource.valueOf(csar.getImportSource())) {
-                    csar2zip(zout, csar, finalLocation);
+                    try {
+                        csar2zip(zout, csar, finalLocation);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             }
         });
@@ -501,7 +509,7 @@ public class DeployTask extends AlienTask {
      * Get csar and add entries in zip file for it
      * @return relative path to the yml, ex: welcome-types/3.0-SNAPSHOT/welcome-types.yaml
      */
-    private String csar2zip(ZipOutputStream zout, Csar csar, int location) {
+    private String csar2zip(ZipOutputStream zout, Csar csar, int location) throws IOException, ParsingException {
         // Get path directory to the needed info:
         // should be something like: ...../runtime/csar/<module>/<version>/expanded
         // We should have a yml or a yaml here
@@ -510,7 +518,6 @@ public class DeployTask extends AlienTask {
         File directory = new File(dirname);
         String relative = csar.getName() + "/" + csar.getVersion() + "/";
         String ret = relative + csar.getYamlFilePath();
-        try {
             // All files under this directory must be put in the zip
             URI base = directory.toURI();
             Deque<File> queue = new LinkedList<>();
@@ -525,8 +532,14 @@ public class DeployTask extends AlienTask {
                         File file = kid;
                         createZipEntries(relative + name, zout);
                         if (name.equals(csar.getYamlFilePath())) {
-                            ParsingResult<ArchiveRoot> parsingResult =
-                                    orchestrator.getParser().parseFile(Paths.get(file.getAbsolutePath()));
+                            ToscaContext.Context oldCtx = ToscaContext.get();
+                            ParsingResult<ArchiveRoot> parsingResult;
+                            try {
+                                ToscaContext.init(Sets.newHashSet());
+                                parsingResult = orchestrator.getParser().parseFile(Paths.get(file.getAbsolutePath()));
+                            } finally {
+                                ToscaContext.set(oldCtx);
+                            }
                             if (parsingResult.getContext().getParsingErrors().size() > 0) {
                                 Boolean hasFatalError = false;
                                 for (ParsingError error :
@@ -554,9 +567,6 @@ public class DeployTask extends AlienTask {
                     }
                 }
             }
-        } catch (Exception e) {
-            log.error(e.getMessage());
-        }
         return ret;
     }
 

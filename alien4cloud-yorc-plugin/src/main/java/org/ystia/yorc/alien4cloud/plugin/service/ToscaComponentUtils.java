@@ -9,13 +9,13 @@ import alien4cloud.paas.plan.ToscaNodeLifecycleConstants;
 import alien4cloud.paas.plan.ToscaRelationshipLifecycleConstants;
 import alien4cloud.tosca.serializer.ToscaPropertySerializerUtils;
 import alien4cloud.tosca.serializer.VelocityUtil;
-import org.alien4cloud.tosca.model.definitions.AbstractArtifact;
 import org.alien4cloud.tosca.model.definitions.AbstractPropertyValue;
 import org.alien4cloud.tosca.model.definitions.AttributeDefinition;
 import org.alien4cloud.tosca.model.definitions.IValue;
+import org.alien4cloud.tosca.model.definitions.Operation;
 import org.alien4cloud.tosca.model.definitions.PropertyDefinition;
 import org.alien4cloud.tosca.model.definitions.PropertyValue;
-import org.alien4cloud.tosca.model.types.AbstractToscaType;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * A {@code ToscaComponentUtils} is a helper class for Velocity generation
@@ -96,8 +96,9 @@ public class ToscaComponentUtils {
         return interfaceName;
     }
 
-    public static boolean areFromSameArchive(AbstractToscaType toscaType, AbstractArtifact artifact) {
-        return toscaType.getArchiveName().equals(artifact.getArchiveName()) &&
-                toscaType.getArchiveVersion().equals(artifact.getArchiveVersion());
+
+    public static boolean canUseShortNotationForOperationImplementation(Operation operation) {
+        return StringUtils.isEmpty(operation.getImplementationArtifact().getArtifactType()) &&
+                StringUtils.isEmpty(operation.getImplementationArtifact().getRepositoryName());
     }
 }

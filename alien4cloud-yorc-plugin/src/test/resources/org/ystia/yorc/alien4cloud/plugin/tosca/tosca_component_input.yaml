@@ -191,7 +191,9 @@ node_types:
         start:
           inputs:
             msg: {get_property: [SELF, hello_message]}
-          implementation: scripts/start.sh
+          implementation:
+            file: scripts/start.sh
+            type: tosca.artifacts.Implementation.Bash
       custom:
         inputs:
           verbose:

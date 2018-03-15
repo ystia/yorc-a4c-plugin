@@ -43,7 +43,7 @@ public class ToscaExportersTest extends AbstractPluginTest {
     private ICSARRepositorySearchService repositorySearchService;
     @Resource
     private ToscaTopologyExporter toscaTopologyExporter;
-    @Resource
+    @Resource(name = "yorc-tosca-parser")
     private ToscaParser parser;
 
     public static int countErrorByLevelAndCode(ParsingResult<?> parsingResult, ParsingErrorLevel errorLevel, ErrorCode errorCode) {

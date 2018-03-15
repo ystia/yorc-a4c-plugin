@@ -102,7 +102,7 @@ public abstract class YorcPaaSProvider implements IOrchestratorPlugin<ProviderCo
     @Getter
     private ToscaComponentExporter toscaComponentExporter;
 
-    @Resource
+    @Resource(name = "yorc-tosca-parser")
     @Getter
     private ToscaParser parser;
 
