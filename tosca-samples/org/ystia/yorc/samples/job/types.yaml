@@ -28,22 +28,11 @@ imports:
 
 node_types:
   org.ystia.yorc.samples.job.Component:
-    derived_from: org.alien4cloud.nodes.Job
+    derived_from: yorc.nodes.slurm.Job
     description: >
       Sample component to show how to run a job
     tags:
       icon: /images/slurm.png
-    properties:
-      tasks:
-        description: number of tasks to run
-        type: integer
-        required: false
-        default: 4
-      nodes:
-        description: minimum number of nodes allocated to the job
-        type: integer
-        required: false
-        default: 1
     interfaces:
       tosca.interfaces.node.lifecycle.Runnable:
         run:
@@ -51,7 +40,7 @@ node_types:
             n_tasks: {get_property: [SELF, tasks]}
             n_nodes: {get_property: [SELF, nodes]}
           implementation:
-            file: scripts/srun.sh
+            file: scripts/test.mpi
             type: yorc.artifacts.Deployment.SlurmJobScript
     artifacts:
       - scripts:
