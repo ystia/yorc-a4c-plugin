@@ -226,12 +226,14 @@ relationship_types:
         type: string
         description: "Coma separated list of visibles GPU devices for the compute."
         default: none
+      a1: { concat: [ lit, { concat: [ { get_attribute: [TARGET, something] }, { concat: [ { get_property: [TARGET, whatever] }, { get_attribute: [TARGET, whatever] }, "!", { get_operation_output: [TARGET, Standard, create, CREATE_OUTPUT] } ] }, "?" ] } ] }
     interfaces:
       Configure:
         pre_configure_source:
           inputs:
             var1: { get_property: [SELF, outputVar1] }
             var2: { get_property: [SELF, outputVar2] }
+            var3: { concat: [ lit, { concat: [ { get_attribute: [TARGET, something] }, { concat: [ { get_property: [TARGET, whatever] }, { get_attribute: [TARGET, whatever] }, "!", { get_operation_output: [TARGET, Standard, create, CREATE_OUTPUT] } ] }, "?" ] } ] }
             debug: true
           implementation: scripts/create.sh
         add_target:
