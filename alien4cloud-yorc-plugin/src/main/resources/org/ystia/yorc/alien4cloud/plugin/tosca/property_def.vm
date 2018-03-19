@@ -1,0 +1,22 @@
+type: $property.type
+#if($!property.description)
+${propertyUtils.indent($indent)}description: ${utils.renderDescription(${property.description}, "${propertyUtils.indent($indent)}  ")}
+#end## if description
+#if(!$property.required)
+${propertyUtils.indent($indent)}required: $property.required
+#end## if !required
+#if(!$utils.isNull($property.default))
+${propertyUtils.indent($indent)}default: ${propertyUtils.formatPropertyValue($indent, $property.default)}
+#end## if default
+## Status and metadata on prop_def not yet parsed by alien
+##${propertyUtils.indent($indent)}status: <status_value>
+##${propertyUtils.indent($indent)}metadata:
+##${propertyUtils.indent($indent)}  <metadata_map>
+## Do entry_schema at the end
+#if(!$utils.isNull($property.entrySchema))
+#set($property=$property.entrySchema)
+${propertyUtils.indent($indent)}entry_schema:
+#set($indent= $indent + 1)
+${propertyUtils.indent($indent)}#parse("$vtPath/property_def.vm")
+#set($indent= $indent - 1)
+#end##if entrySchema

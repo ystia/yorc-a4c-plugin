@@ -1,0 +1,54 @@
+#parse("$vtPath/tosca_type.vm")
+#if($type.targets.size() > 0)
+${propertyUtils.indent($indent)}targets: [${yorcUtils.join($type.targets, ", ")}]
+#end## if validSources
+#if($utils.mapIsNotEmptyAndContainsNotnullValues($type.triggers))
+${propertyUtils.indent($indent)}triggers:
+#foreach($triggerEntry in ${type.triggers.entrySet()})
+${propertyUtils.indent($indent)}  ${triggerEntry.key}:
+#set($trigger=$triggerEntry.value)
+#if($!$trigger.description)
+${propertyUtils.indent($indent)}    description: ${utils.renderDescription(${trigger.description}, "${propertyUtils.indent($indent)}      ")}
+#end## if trigger.description
+#if($stringsUtils.isNotBlank($trigger.eventType))
+${propertyUtils.indent($indent)}    event_type: $trigger.eventType
+#end## if trigger.eventType
+#if(!$utils.isNull($trigger.timeInterval))
+${propertyUtils.indent($indent)}    schedule:
+${propertyUtils.indent($indent)}      start_time: $trigger.timeInterval.startTime
+${propertyUtils.indent($indent)}      end_time: $trigger.timeInterval.endTime
+#end## if trigger.timeInterval
+#if(!$utils.isNull($trigger.eventFilter))
+${propertyUtils.indent($indent)}    target_filter:
+#if($stringsUtils.isNotBlank($trigger.eventFilter.node))
+${propertyUtils.indent($indent)}      node: $trigger.eventFilter.node
+#end## if trigger.eventFilter.node
+#if($stringsUtils.isNotBlank($trigger.eventFilter.requirement))
+${propertyUtils.indent($indent)}      requirement: $trigger.eventFilter.requirement
+#end## if trigger.eventFilter.requirement
+#if($stringsUtils.isNotBlank($trigger.eventFilter.capability))
+${propertyUtils.indent($indent)}      capability: $trigger.eventFilter.capability
+#end## if trigger.eventFilter.capability
+#end## if trigger.eventFilter
+#if(!$utils.isNull($trigger.condition))
+${propertyUtils.indent($indent)}    condition:
+${propertyUtils.indent($indent)}      evaluations: $trigger.condition.evaluations
+#if($stringsUtils.isNotBlank($trigger.condition.period))
+${propertyUtils.indent($indent)}      period: ${propertyUtils.renderScalar($trigger.condition.period)}
+#end## if trigger.condition.period
+#if($stringsUtils.isNotBlank($trigger.condition.method))
+${propertyUtils.indent($indent)}      method: ${propertyUtils.renderScalar($trigger.condition.method)}
+#end## if trigger.condition.method
+#if($utils.collectionIsNotEmpty($trigger.condition.constraints))
+${propertyUtils.indent($indent)}      constraints:
+#foreach($constraint in $trigger.condition.constraints)
+${propertyUtils.indent($indent)}        - ${utils.renderConstraint($constraint)}
+#end## foreach trigger.condition.constraint
+#end## if trigger.condition.constraints not empty
+#end## if trigger.condition
+#if($stringsUtils.isNotBlank($trigger.actionWorkflow))
+${propertyUtils.indent($indent)}    action: $trigger.actionWorkflow
+## TODO actionOperation not parsed by alien
+#end## if trigger.actionWF
+#end## foreach trigger
+#end## if triggers

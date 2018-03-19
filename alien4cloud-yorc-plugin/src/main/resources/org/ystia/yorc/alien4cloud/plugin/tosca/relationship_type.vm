@@ -1,0 +1,7 @@
+#parse("$vtPath/instantiable_tosca_type.vm")
+#if($type.validSources.size() > 0)
+${propertyUtils.indent($indent)}valid_source_types: [${yorcUtils.join($type.validSources, ", ")}]
+#end## if validSources
+#if($type.validTargets.size() > 0)
+${propertyUtils.indent($indent)}valid_source_types: [${yorcUtils.join($type.validTargets, ", ")}]
+#end## if validTarget
