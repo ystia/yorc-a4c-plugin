@@ -1,0 +1,87 @@
+tosca_definitions_version: ${archive.archive.toscaDefinitionsVersion}
+
+metadata:
+  template_name: ${archive.archive.name}
+  template_version: ${archive.archive.version}
+  template_author: ${archive.archive.templateAuthor}
+
+#if("$!archive.archive.description" != "" )
+description: ${utils.renderDescription(${archive.archive.description}, "  ")}
+#end## if description not empty
+#if($utils.mapIsNotEmptyAndContainsNotnullValues($archive.repositories))
+
+repositories:
+#foreach($repositoryEntry in ${archive.repositories.entrySet()})
+  ${repositoryEntry.key}:
+#if("$!repositoryEntry.value.description" != "" )
+    description: ${utils.renderDescription(${repositoryEntry.value.description}, "    ")}
+#end## if description not empty
+#if("$!repositoryEntry.value.type" != "" )
+    type: ${repositoryEntry.value.type}
+#end## if type not empty
+    url: ${propertyUtils.renderScalar($repositoryEntry.value.url)}
+#if(!${utils.isNull($repositoryEntry.value.credential)} && ${utils.mapIsNotEmptyAndContainsNotnullValues($repositoryEntry.value.credential.value)})
+    credential:${propertyUtils.formatPropertyValue(2, $repositoryEntry.value.credential)}
+#end## if credential not null
+#end## foreach
+#end## if repositories
+#if($utils.mapIsNotEmptyAndContainsNotnullValues($archive.dataTypes))
+
+data_types:
+#foreach($dtEntry in ${archive.dataTypes.entrySet()})
+  ${dtEntry.key}:
+#set($type = ${dtEntry.value})
+#set($indent = 2)
+#parse("$vtPath/tosca_type.vm")
+#end## foreach
+#end## if dataTypes
+#if($utils.mapIsNotEmptyAndContainsNotnullValues($archive.artifactTypes))
+
+artifact_types:
+#foreach($dtEntry in ${archive.artifactTypes.entrySet()})
+  ${dtEntry.key}:
+#set($type = ${dtEntry.value})
+#set($indent = 2)
+#parse("$vtPath/artifact_type.vm")
+#end## foreach
+#end## if artifactTypes
+#if($utils.mapIsNotEmptyAndContainsNotnullValues($archive.capabilityTypes))
+
+capability_types:
+#foreach($dtEntry in ${archive.capabilityTypes.entrySet()})
+  ${dtEntry.key}:
+#set($type = ${dtEntry.value})
+#set($indent = 2)
+#parse("$vtPath/capability_type.vm")
+#end## foreach
+#end## if capabilityTypes
+#if($utils.mapIsNotEmptyAndContainsNotnullValues($archive.nodeTypes))
+
+node_types:
+#foreach($entry in ${archive.nodeTypes.entrySet()})
+  ${entry.key}:
+#set($type = ${entry.value})
+#set($indent = 2)
+#parse("$vtPath/node_type.vm")
+#end## foreach
+#end## if nodeTypes
+#if($utils.mapIsNotEmptyAndContainsNotnullValues($archive.relationshipTypes))
+
+relationship_types:
+#foreach($entry in ${archive.relationshipTypes.entrySet()})
+  ${entry.key}:
+#set($type = ${entry.value})
+#set($indent = 2)
+#parse("$vtPath/relationship_type.vm")
+#end## foreach
+#end## if relationshipTypes
+#if($utils.mapIsNotEmptyAndContainsNotnullValues($archive.policyTypes))
+
+policy_types:
+#foreach($entry in ${archive.policyTypes.entrySet()})
+  ${entry.key}:
+#set($type = ${entry.value})
+#set($indent = 2)
+#parse("$vtPath/policy_type.vm")
+#end## foreach
+#end## if relationshipTypes

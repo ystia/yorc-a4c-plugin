@@ -15,34 +15,6 @@
  */
 package org.ystia.yorc.alien4cloud.plugin;
 
-import alien4cloud.component.repository.ArtifactRepositoryConstants;
-import alien4cloud.model.deployment.DeploymentTopology;
-import alien4cloud.model.orchestrators.locations.Location;
-import alien4cloud.paas.IPaaSCallback;
-import alien4cloud.paas.model.DeploymentStatus;
-import alien4cloud.paas.model.InstanceInformation;
-import alien4cloud.paas.model.PaaSNodeTemplate;
-import alien4cloud.paas.model.PaaSTopology;
-import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
-import alien4cloud.utils.YamlParserUtil;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import alien4cloud.tosca.parser.ToscaParser;
-import lombok.extern.slf4j.Slf4j;
-import org.alien4cloud.tosca.exporter.ArchiveExportService;
-import org.alien4cloud.tosca.model.CSARDependency;
-import org.alien4cloud.tosca.model.Csar;
-import org.alien4cloud.tosca.model.definitions.DeploymentArtifact;
-import org.alien4cloud.tosca.model.templates.NodeTemplate;
-import org.alien4cloud.tosca.model.templates.Topology;
-import org.elasticsearch.common.collect.Maps;
-import org.yaml.snakeyaml.Yaml;
-import org.ystia.yorc.alien4cloud.plugin.rest.Response.Event;
-import org.ystia.yorc.alien4cloud.plugin.rest.YorcRestException;
-import org.ystia.yorc.alien4cloud.plugin.utils.MappingTosca;
-import org.ystia.yorc.alien4cloud.plugin.utils.ShowTopology;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.Closeable;
@@ -52,24 +24,53 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.StringWriter;
 import java.net.URI;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
+
+import alien4cloud.component.ICSARRepositorySearchService;
+import alien4cloud.component.repository.ArtifactRepositoryConstants;
+import alien4cloud.model.components.CSARSource;
+import alien4cloud.model.deployment.DeploymentTopology;
+import alien4cloud.model.orchestrators.locations.Location;
+import alien4cloud.paas.IPaaSCallback;
+import alien4cloud.paas.model.DeploymentStatus;
+import alien4cloud.paas.model.InstanceInformation;
+import alien4cloud.paas.model.PaaSNodeTemplate;
+import alien4cloud.paas.model.PaaSTopology;
+import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
+import alien4cloud.tosca.context.ToscaContext;
+import alien4cloud.tosca.model.ArchiveRoot;
+import alien4cloud.tosca.parser.ParsingError;
+import alien4cloud.tosca.parser.ParsingErrorLevel;
+import alien4cloud.tosca.parser.ParsingException;
+import alien4cloud.tosca.parser.ParsingResult;
+import alien4cloud.tosca.parser.ToscaParser;
+import com.google.common.collect.Sets;
+import lombok.extern.slf4j.Slf4j;
+import org.alien4cloud.tosca.exporter.ArchiveExportService;
+import org.alien4cloud.tosca.model.CSARDependency;
+import org.alien4cloud.tosca.model.Csar;
+import org.alien4cloud.tosca.model.definitions.DeploymentArtifact;
+import org.alien4cloud.tosca.model.definitions.Interface;
+import org.alien4cloud.tosca.model.definitions.Operation;
+import org.alien4cloud.tosca.model.templates.NodeTemplate;
+import org.alien4cloud.tosca.model.templates.Topology;
+import org.elasticsearch.common.collect.Maps;
+import org.ystia.yorc.alien4cloud.plugin.rest.Response.Event;
+import org.ystia.yorc.alien4cloud.plugin.rest.YorcRestException;
+import org.ystia.yorc.alien4cloud.plugin.utils.MappingTosca;
+import org.ystia.yorc.alien4cloud.plugin.utils.ShowTopology;
 
 import static com.google.common.io.Files.copy;
 
@@ -82,15 +83,19 @@ public class DeployTask extends AlienTask {
     // Needed Info
     PaaSTopologyDeploymentContext ctx;
     IPaaSCallback<?> callback;
+    private ICSARRepositorySearchService csarRepoSearchService;
 
     private ArchiveExportService archiveExportService = new ArchiveExportService();
 
+
     private final int YORC_DEPLOY_TIMEOUT = 1000 * 3600 * 24;  // 24 hours
 
-    public DeployTask(PaaSTopologyDeploymentContext ctx, YorcPaaSProvider prov, IPaaSCallback<?> callback) {
+    public DeployTask(PaaSTopologyDeploymentContext ctx, YorcPaaSProvider prov, IPaaSCallback<?> callback,
+            ICSARRepositorySearchService csarRepoSearchService) {
         super(prov);
         this.ctx = ctx;
         this.callback = callback;
+        this.csarRepoSearchService = csarRepoSearchService;
     }
 
     /**
@@ -117,27 +122,14 @@ public class DeployTask extends AlienTask {
         ShowTopology.topologyInLog(ctx);
         MappingTosca.quoteProperties(ctx);
 
-        // Get the yaml of the application as built by from a4c
-        Csar myCsar = new Csar(paasId, dtopo.getArchiveVersion());
-        myCsar.setToscaDefinitionsVersion(ToscaParser.LATEST_DSL);
-        String yaml = archiveExportService.getYaml(myCsar, dtopo, true);
-
         // This operation must be synchronized, because it uses the same files topology.yml and topology.zip
         String taskUrl;
         synchronized(this) {
-            // This is for debug only
-            Path orig = Paths.get("original.yml");
-            List<String> lines = Collections.singletonList(yaml);
-            try {
-                Files.write(orig, lines, Charset.forName("UTF-8"));
-            } catch (IOException e) {
-                log.warn("Cannot create original.yml");
-            }
 
             // Create the yml of our topology and build our zip topology
             try {
-                buildZip(ctx, yaml);
-            } catch (IOException e) {
+                buildZip(ctx);
+            } catch (Throwable e) {
                 orchestrator.doChangeStatus(paasId, DeploymentStatus.FAILURE);
                 callback.onFailure(e);
                 return;
@@ -264,10 +256,9 @@ public class DeployTask extends AlienTask {
      * Create the zip for yorc, with a modified yaml and all needed archives.
      * Assumes a file original.yml exists in the current directory
      * @param ctx all needed information about the deployment
-     * @param yaml original yml
      * @throws IOException
      */
-    private void buildZip(PaaSTopologyDeploymentContext ctx, String yaml) throws IOException {
+    private void buildZip(PaaSTopologyDeploymentContext ctx) throws IOException {
         // Check location
         int location = LOC_OPENSTACK;
         Location loc = ctx.getLocations().get("_A4C_ALL");
@@ -293,45 +284,21 @@ public class DeployTask extends AlienTask {
         final ZipOutputStream zout = new ZipOutputStream(out);
         final Closeable res = zout;
 
-        final TypeReference<Map<String,Object>> typeRef
-                = new TypeReference<Map<String,Object>>() {};
-
-        final ObjectMapper objectMapper = YamlParserUtil.createYamlObjectMapper();
-        final Map<String, Object> topology = objectMapper.readValue(yaml, typeRef);
-
-        topology.remove("inputs");
-
-        final List<String> imports = ((List) topology.get("imports"));
-
-        final List<Map<String, String>> imps = new ArrayList<>();
-
         final int finalLocation = location;
-        imports.forEach(k->{
-            if (k.contains("yorc-")) {
-                final String ymlPath = k.substring(k.indexOf("yorc-"), k.lastIndexOf(":"));
-                Map<String, String> m = new HashMap<>();
 
-                m.put("file", "<" + ymlPath + ".yml>");
-                imps.add(m);
-            } else if (!k.contains("tosca-normative-types")) {
-                // Add this csar to zip file
-                final String pack = k.substring(k.indexOf("- ") + 1);
-                final String module = pack.substring(0, pack.indexOf(":"));
-                final String version = pack.substring(pack.indexOf(":") + 1);
-                final String localpath = csar2zip(zout, module, version, finalLocation);
-
-                Map<String, String> m = new HashMap<>();
-                m.put("file", localpath);
-                imps.add(m);
+        this.ctx.getDeploymentTopology().getDependencies().forEach(d -> {
+            if (!"tosca-normative-types".equals(d.getName())) {
+                Csar csar = csarRepoSearchService.getArchive(d.getName(), d.getVersion());
+                if (CSARSource.ORCHESTRATOR != CSARSource.valueOf(csar.getImportSource())) {
+                    try {
+                        csar2zip(zout, csar, finalLocation);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }
             }
         });
 
-        imports.clear();
-        topology.put("imports", imps);
-
-        String topoFileName = "topology.yml";
-        Yaml yml = new Yaml();
-        yml.dump(topology, new FileWriter(topoFileName));
 
         // Copy overwritten artifacts for each node
         PaaSTopology ptopo = ctx.getPaaSTopology();
@@ -339,11 +306,17 @@ public class DeployTask extends AlienTask {
             copyArtifacts(node, zout);
         }
 
+        String topoFileName = "topology.yml";
         // Copy modified topology
         createZipEntries(topoFileName, zout);
-        copy(new File(topoFileName), zout);
-
+        // Get the yaml of the application as built by from a4c
+        DeploymentTopology dtopo = ctx.getDeploymentTopology();
+        Csar myCsar = new Csar(ctx.getDeploymentPaaSId(), dtopo.getArchiveVersion());
+        myCsar.setToscaDefinitionsVersion(ToscaParser.LATEST_DSL);
+        String yaml = orchestrator.getToscaTopologyExporter().getYaml(myCsar, dtopo, true);
+        zout.write(yaml.getBytes(Charset.forName("UTF-8")));
         zout.closeEntry();
+
         res.close();
     }
 
@@ -368,6 +341,18 @@ public class DeployTask extends AlienTask {
         }
     }
 
+    private void matchKubernetesImplementation(ArchiveRoot root) {
+        root.getNodeTypes().forEach((k, t) -> {
+            Interface ifce = t.getInterfaces().get("tosca.interfaces.node.lifecycle.Standard");
+            if (ifce != null) {
+                Operation start = ifce.getOperations().get("start");
+                if (start != null &&
+                        start.getImplementationArtifact().getArtifactType().equals("tosca.artifacts.Deployment.Image.Container.Docker")) {
+                    start.getImplementationArtifact().setArtifactType("tosca.artifacts.Deployment.Image.Container.Docker.Kubernetes");
+                }
+            }
+        });
+    }
     private void matchKubernetesImplementation(Map<String, Object> topology) {
         Map<String, HashMap> nodeTypes = ((Map) topology.get("node_types"));
 
@@ -378,6 +363,7 @@ public class DeployTask extends AlienTask {
             }
         });
     }
+
 
     /**
      * Copy artifacts to archive
@@ -523,22 +509,19 @@ public class DeployTask extends AlienTask {
      * Get csar and add entries in zip file for it
      * @return relative path to the yml, ex: welcome-types/3.0-SNAPSHOT/welcome-types.yaml
      */
-    private String csar2zip(ZipOutputStream zout, String module, String version, int location) {
+    private String csar2zip(ZipOutputStream zout, Csar csar, int location) throws IOException, ParsingException {
         // Get path directory to the needed info:
         // should be something like: ...../runtime/csar/<module>/<version>/expanded
         // We should have a yml or a yaml here
-        Path csarpath = orchestrator.getCSAR(module, version);
-        String dirname = csarpath.toString();
+        Path csarPath = orchestrator.getCSAR(csar.getName(), csar.getVersion());
+        String dirname = csarPath.toString();
         File directory = new File(dirname);
-        String relative = dirname.substring(dirname.indexOf("csar/") + 5);
-        relative = relative.substring(0, relative.lastIndexOf("/") + 1);
-        String ret = relative;
-        try {
+        String relative = csar.getName() + "/" + csar.getVersion() + "/";
+        String ret = relative + csar.getYamlFilePath();
             // All files under this directory must be put in the zip
             URI base = directory.toURI();
             Deque<File> queue = new LinkedList<>();
             queue.push(directory);
-            boolean ymlfound = false;
             while (!queue.isEmpty()) {
                 directory = queue.pop();
                 for (File kid : directory.listFiles()) {
@@ -548,36 +531,42 @@ public class DeployTask extends AlienTask {
                     } else {
                         File file = kid;
                         createZipEntries(relative + name, zout);
-                        if (name.endsWith(".yml") || name.endsWith(".yaml")) {
-                            if (! ymlfound) {
-                                // Remove all imports, since they should be all in the root yml
-                                TypeReference<Map<String,Object>> typeRef = new TypeReference<Map<String,Object>>() {};
-                                ObjectMapper objectMapper = YamlParserUtil.createYamlObjectMapper();
-                                Map<String, Object> topologyKid = objectMapper.readValue(kid, typeRef);
-                                ((List) topologyKid.get("imports")).clear();
-
-                                if (location == LOC_KUBERNETES) {
-                                    matchKubernetesImplementation(topologyKid);
-                                }
-
-                                StringWriter out = new StringWriter();
-                                Yaml yaml = new Yaml();
-                                yaml.dump(topologyKid, out);
-                                zout.write(out.getBuffer().toString().getBytes());
-                                ret += name;
-                                ymlfound = true;
-                            } else {
-                                copy(file, zout);
+                        if (name.equals(csar.getYamlFilePath())) {
+                            ToscaContext.Context oldCtx = ToscaContext.get();
+                            ParsingResult<ArchiveRoot> parsingResult;
+                            try {
+                                ToscaContext.init(Sets.newHashSet());
+                                parsingResult = orchestrator.getParser().parseFile(Paths.get(file.getAbsolutePath()));
+                            } finally {
+                                ToscaContext.set(oldCtx);
                             }
+                            if (parsingResult.getContext().getParsingErrors().size() > 0) {
+                                Boolean hasFatalError = false;
+                                for (ParsingError error :
+                                        parsingResult.getContext().getParsingErrors()) {
+                                    if (error.getErrorLevel().equals(ParsingErrorLevel.ERROR)) {
+                                        log.error(error.toString());
+                                        hasFatalError = true;
+                                    } else {
+                                        log.warn(error.toString());
+                                    }
+                                }
+                                if (hasFatalError) {
+                                    continue;
+                                }
+                            }
+                            ArchiveRoot root = parsingResult.getResult();
+                            if (location == LOC_KUBERNETES) {
+                                matchKubernetesImplementation(root);
+                            }
+                            String yaml = orchestrator.getToscaComponentExporter().getYaml(root);
+                            zout.write(yaml.getBytes(Charset.forName("UTF-8")));
                         } else {
                             copy(file, zout);
                         }
                     }
                 }
             }
-        } catch (Exception e) {
-            log.error(e.getMessage());
-        }
         return ret;
     }
 
