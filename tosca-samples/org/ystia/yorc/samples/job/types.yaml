@@ -27,19 +27,14 @@ imports:
   - yorc-slurm-types:1.0.0
 
 topology_template:
-  inputs:
-    arg:
-      type: string
-      required: true
-      default: "world"
   node_templates:
     Job:
       type: org.ystia.yorc.samples.job.Component
       properties:
         name: job_test
         tasks: 4
-        nodes: 1
-        extra_job_options: [mpi=pmi2]
+        extra_options: [mpi=pmi2]
+        exec_args: [Slurm]
 
 node_types:
   org.ystia.yorc.samples.job.Component:
@@ -52,7 +47,7 @@ node_types:
       tosca.interfaces.node.lifecycle.Runnable:
         run:
           inputs:
-            name: {get_input: arg}
+            args: {get_property: [SELF, exec_args]}
           implementation:
             file: scripts/test.mpi
             type: yorc.artifacts.Deployment.SlurmJobScript
