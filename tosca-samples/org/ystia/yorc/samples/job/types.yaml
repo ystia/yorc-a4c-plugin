@@ -49,9 +49,5 @@ node_types:
           inputs:
             args: {get_property: [SELF, exec_args]}
           implementation:
-            file: scripts/test.mpi
-            type: yorc.artifacts.Deployment.SlurmJobScript
-    artifacts:
-      - scripts:
-          file: scripts
-          type: tosca.artifacts.File
+            file: bin/test.mpi
+            type: yorc.artifacts.Deployment.SlurmJobBin

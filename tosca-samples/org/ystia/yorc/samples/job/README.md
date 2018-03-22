@@ -7,7 +7,7 @@ There is a 30s delay to allow retrieving job information (job ID and job state) 
 
 ## Run operation implementation
 
-This sample demonstrates how to provide run operation implementation with the executable script run by the job and how to retrieve arguments from the job exec_arg property.
+This sample demonstrates how to provide run operation implementation with the executable run by the job and how to retrieve arguments from the job exec_arg property.
 
 Given the following TOSCA operation definition:
 ```yaml
@@ -17,12 +17,12 @@ Given the following TOSCA operation definition:
           inputs:
             args: {get_property: [SELF, exec_args]}
           implementation:
-            file: scripts/test.mpi
-            type: yorc.artifacts.Deployment.SlurmJobScript
+            file: bin/test.mpi
+            type: yorc.artifacts.Deployment.SlurmJobBin
 ```
 
 An executable file needs to be provided.
-The implementation type must be `yorc.artifacts.Deployment.SlurmJobScript`.
+The implementation type must be `yorc.artifacts.Deployment.SlurmJobBin`.
 
 
 ## Outputs & logging
