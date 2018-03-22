@@ -106,7 +106,7 @@ public class ToscaExportersTest extends AbstractPluginTest {
 
         String resultYaml = toscaComponentExporter.getYaml(parsingResult.getResult());
         System.out.println(resultYaml);
-        String expectedResult = FileUtils.readFileToString(Paths.get(rootDir, "tosca_component_output.yaml").toFile());
+        String expectedResult = FileUtils.readFileToString(Paths.get(rootDir, "tosca_component_output.yaml").toFile(), "UTF-8");
         // Make some whitespaces change here as IDEs have auto-format features that will overwrite them in the file
         expectedResult = expectedResult.replaceAll("verbose:\\n", "verbose: \n");
         expectedResult = expectedResult.replaceAll("default:\\n", "default: \n");
