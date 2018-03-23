@@ -2,6 +2,7 @@ package org.ystia.yorc.alien4cloud.plugin.modifiers;
 
 import lombok.extern.java.Log;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import alien4cloud.paas.wf.validation.WorkflowValidator;
@@ -29,7 +30,7 @@ import java.util.Set;
  * Created by danesa on 02/03/18.
  *
  */
-@Log
+@Slf4j
 @Component(value = KubernetesTopologyModifier.YORC_KUBERNETES_MODIFIER_TAG)
 public class KubernetesTopologyModifier extends TopologyModifierSupport {
 
@@ -128,7 +129,7 @@ public class KubernetesTopologyModifier extends TopologyModifierSupport {
 
             NodeTemplate yorcServiceNodeTemplate = replaceNode(csar, topology, serviceNodeTemplate, effectiveTargetResourceType, resourceArchiveVersion);
 
-            log.info("Yorc K8S Plugin : k8s service resource node " + yorcServiceNodeTemplate.getName() + " now has type " + yorcServiceNodeTemplate.getType());
+            log.debug("Yorc K8S Plugin : k8s service resource node " + yorcServiceNodeTemplate.getName() + " now has type " + yorcServiceNodeTemplate.getType());
         });
     }
 
