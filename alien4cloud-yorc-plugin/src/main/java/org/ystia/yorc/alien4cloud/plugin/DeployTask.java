@@ -119,8 +119,8 @@ public class DeployTask extends AlienTask {
         orchestrator.doChangeStatus(paasId, DeploymentStatus.INIT_DEPLOYMENT);
 
         // Show Topoloy for debug
-        ShowTopology.topologyInLog(ctx);
-        MappingTosca.quoteProperties(ctx);
+        //ShowTopology.topologyInLog(ctx);
+        //MappingTosca.quoteProperties(ctx);
 
         // This operation must be synchronized, because it uses the same files topology.yml and topology.zip
         String taskUrl;
@@ -341,30 +341,6 @@ public class DeployTask extends AlienTask {
         }
     }
 
-    private void matchKubernetesImplementation(ArchiveRoot root) {
-        root.getNodeTypes().forEach((k, t) -> {
-            Interface ifce = t.getInterfaces().get("tosca.interfaces.node.lifecycle.Standard");
-            if (ifce != null) {
-                Operation start = ifce.getOperations().get("start");
-                if (start != null &&
-                        start.getImplementationArtifact().getArtifactType().equals("tosca.artifacts.Deployment.Image.Container.Docker")) {
-                    start.getImplementationArtifact().setArtifactType("tosca.artifacts.Deployment.Image.Container.Docker.Kubernetes");
-                }
-            }
-        });
-    }
-    private void matchKubernetesImplementation(Map<String, Object> topology) {
-        Map<String, HashMap> nodeTypes = ((Map) topology.get("node_types"));
-
-        nodeTypes.forEach((k,nodeType)->{
-            String t = (String) getNestedValue(nodeType, "interfaces.Standard.start.implementation.type");
-            if (t.equals("tosca.artifacts.Deployment.Image.Container.Docker")) {
-                setNestedValue(nodeType, "interfaces.Standard.start.implementation.type", "tosca.artifacts.Deployment.Image.Container.Docker.Kubernetes");
-            }
-        });
-    }
-
-
     /**
      * Copy artifacts to archive
      * @param node
@@ -556,9 +532,6 @@ public class DeployTask extends AlienTask {
                                 }
                             }
                             ArchiveRoot root = parsingResult.getResult();
-                            if (location == LOC_KUBERNETES) {
-                                matchKubernetesImplementation(root);
-                            }
                             String yaml = orchestrator.getToscaComponentExporter().getYaml(root);
                             zout.write(yaml.getBytes(Charset.forName("UTF-8")));
                         } else {
