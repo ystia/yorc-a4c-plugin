@@ -1,0 +1,328 @@
+tosca_definitions_version: alien_dsl_2_0_0
+
+metadata:
+  template_name: org.yorc.samples.bash
+  template_version: 1.0.0-SNAPSHOT
+  template_author: yorc
+
+description: |
+  This is a sample used to test parsing and formatting
+  of a component into a DSL that matches Yorc one.
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN20
+
+repositories:
+  mydocker_repo:
+    url: http://custom.repo.com
+    type: docker
+    credential:
+      protocol: test
+      token_type: password
+      user: opjsdpojds
+      token: test
+
+data_types:
+  tosca.datatypes.Root:
+    description: The TOSCA root Data Type all other TOSCA base Data Types derive from.
+  tosca.datatypes.Credential:
+    derived_from: tosca.datatypes.Root
+    description: The Credential type is a complex TOSCA data Type used when describing authorization credentials used to access network accessible resources.
+    properties:
+      protocol:
+        type: string
+        description: The optional protocol name.
+        required: false
+      token_type:
+        type: string
+        description: The required token type.
+        default: password
+      token:
+        type: string
+        description: The required token used as a credential for authorization or access to a networked resource.
+      keys:
+        type: map
+        description: The optional list of protocol-specific keys or assertions.
+        required: false
+        entry_schema:
+          type: string
+      user:
+        type: string
+        description: The optional user (name or ID) used for non-token based credentials.
+        required: false
+
+artifact_types:
+  tosca.artifacts.Root:
+    description: root type
+  tosca.artifacts.Implementation.Bash:
+    derived_from: tosca.artifacts.Root
+    description: Script artifact for the Unix Bash shell
+    mime_type: application/x-sh
+    file_ext: [ sh, bash ]
+
+capability_types:
+  tosca.capabilities.Root:
+    description: The TOSCA Artifact Type all other TOSCA Artifact Types derive from
+  tosca.capabilities.Test:
+    derived_from: tosca.capabilities.Root
+    description: The TOSCA Artifact Type all other TOSCA Artifact Types derive from
+    valid_source_types: [ MyType, OtherType ]
+  tosca.capabilities.Endpoint:
+    derived_from: tosca.capabilities.Root
+    description: >
+      This is the default TOSCA type that should be used or extended to define a network endpoint capability.
+      This includes the information to express a basic endpoint with a single port or a complex endpoint with multiple ports.
+      By default the Endpoint is assumed to represent an address on a private network unless otherwise specified.
+    properties:
+      protocol:
+        type: string
+        description: >
+          The name of the protocol (i.e., the protocol prefix) that the endpoint accepts (any OSI Layer 4-7 protocols)
+          Examples: http, https, ftp, tcp, udp, etc.
+        default: tcp
+      port:
+        type: integer
+        description: The optional port of the endpoint.
+        required: false
+        constraints:
+          - in_range: [ 1, 65535 ]
+      secure:
+        type: boolean
+        description: Requests for the endpoint to be secure and use credentials supplied on the ConnectsTo relationship.
+        default: false
+      url_path:
+        type: string
+        description: The optional URL path of the endpoint’s address if applicable for the protocol.
+        required: false
+      port_name:
+        type: string
+        description: The optional name (or ID) of the network port this endpoint should be bound to.
+        required: false
+      network_name:
+        type: string
+        description: >
+          The optional name (or ID) of the network this endpoint should be bound to.
+          network_name: PRIVATE | PUBLIC |<network_name> | <network_id>
+        required: false
+        default: PRIVATE
+      initiator:
+        type: string
+        description: The optional indicator of the direction of the connection.
+        default: source
+        constraints:
+          - valid_values: [ source, target, peer ]
+      # ports:
+      #   type: map
+      #   description: The optional map of ports the Endpoint supports (if more than one).
+      #   required: false
+      #   constraints:
+      #     - min_length: 1
+      #   entry_schema:
+      #     type: tosca.datatypes.network.PortSpec
+    attributes:
+      ip_address:
+        type: string
+        description: This is the IP address as propagated up by the associated node’s host (Compute) container.
+
+node_types:
+  org.yorc.samples.python.Component:
+    derived_from: tosca.nodes.SoftwareComponent
+    description: |
+      Sample component to illustrate
+      how to implement a Component lifecycle in Python
+    tags:
+      icon: /images/python.png
+    properties:
+      hello_message:
+        description: A simple message to print
+        type: string
+        required: true
+        default: "Hello World!"
+      outputVar1:
+        description: Dummy property used to test operation outputs
+        type: string
+        required: true
+        default: "ov1"
+      outputVar2:
+        description: Dummy property used to test operation outputs
+        type: string
+        required: false
+        default: "ov2"
+      mapProp:
+        type: map
+        required: false
+        entry_schema:
+          type: string
+        default:
+          m1: v1
+          m2: v2
+    attributes:
+      resolvedOutput1: { get_operation_output: [SELF, Standard, create, myVar1]}
+      resolvedOutput2: { get_operation_output: [SELF, Standard, create, myVar2]}
+      cuda_visible_devices:
+        type: string
+        description: Coma separated list of visibles GPU devices for the compute.
+        default: "none"
+    capabilities:
+      myCap:
+        type: tosca.capabilities.Endpoint
+        description: |
+          A very wide
+          description
+        properties:
+          protocol: "ssh"
+          network_name: { get_attribute: [SELF, resolvedOutput1] }
+        valid_source_types: [ "tosca.nodes.Compute", "tosca:.nodes.Root" ]
+        occurrences: [1, 2]
+      myOtherCap:
+        type: tosca.capabilities.Endpoint
+    requirements:
+      - host:
+          capability: tosca.capabilities.Root
+          relationship: tosca.relationships.Root
+          node: tosca.nodes.Root
+          occurrences: [1, 1]
+      - filesystem_endpoint:
+          capability: tosca.capabilities.Root
+          relationship: tosca.relationships.Root
+          occurrences: [0,1]
+      - shortcut: tosca.capabilities.Root
+    interfaces:
+      Standard:
+        inputs:
+          debug: "true"
+        create:
+          inputs:
+            var1: {get_property: [SELF, outputVar1]}
+            var2: {get_property: [SELF, outputVar2]}
+          implementation: scripts/create.sh
+        start:
+          inputs:
+            msg: {get_property: [SELF, hello_message]}
+          implementation:
+            file: scripts/start.sh
+            type: tosca.artifacts.Implementation.Bash
+      custom:
+        inputs:
+          verbose:
+            type: boolean
+            description: enable verbose output
+            default: false
+        my_ops:
+          inputs:
+            myInput: "test"
+            var1: {get_property: [SELF, outputVar1]}
+          implementation: scripts/op.sh
+    artifacts:
+      - myArtifact:
+          description: |
+            A deployment artifact
+            of type bash
+          type: tosca.artifacts.Implementation.Bash
+          file: somewhere/here.sh
+          repository: mydocker_repo
+          deploy_path: /a/path/not/used/now
+
+relationship_types:
+  tosca.relationships.Root:
+    description: "rel root"
+    
+  org.yorc.samples.relationships.MyRel:
+    derived_from: tosca.relationships.Root
+    metadata:
+      icon: /images/python.png
+    properties:
+      hello_message:
+        description: |
+          A simple message to print
+          This description is multiline
+        type: string
+        required: true
+        default: "Hello World!"
+      outputVar1:
+        description: Dummy property used to test operation outputs
+        type: string
+        required: true
+        default: "ov1"
+      outputVar2:
+        description: Dummy property used to test operation outputs
+        type: string
+        required: false
+        default: "ov2"
+    attributes:
+      resolvedOutput1: { get_operation_output: [SELF, Standard, create, myVar1]}
+      resolvedOutput2: { get_operation_output: [SELF, Standard, create, myVar2]}
+      cuda_visible_devices:
+        type: string
+        description: Coma separated list of visibles GPU devices for the compute.
+        default: "none"
+      a1: { concat: ["lit", concat: [ get_attribute: [TARGET, "something"], concat: [ get_property: [ TARGET, "whatever" ], get_attribute: [ TARGET, "whatever" ], "!", get_operation_output: [TARGET, Standard, create, CREATE_OUTPUT] ], "?" ] ]}
+    interfaces:
+      Configure:
+        inputs:
+          debug: "true"
+        pre_configure_source:
+          inputs:
+            var1: {get_property: [SELF, outputVar1]}
+            var2: {get_property: [SELF, outputVar2]}
+            var3: { concat: ["lit", concat: [ get_attribute: [TARGET, "something"], concat: [ get_property: [ TARGET, "whatever" ], get_attribute: [ TARGET, "whatever" ], "!", get_operation_output: [TARGET, Standard, create, CREATE_OUTPUT] ], "?" ] ]}
+          implementation: scripts/create.sh
+        add_target:
+          inputs:
+            msg: {get_property: [SELF, hello_message]}
+          implementation: scripts/start.sh
+      custom:
+        inputs:
+          verbose:
+            type: boolean
+            description: enable verbose output
+            default: false
+        my_ops:
+          inputs:
+            myInput: "test"
+            var1: {get_property: [SELF, outputVar1]}
+          implementation: scripts/op.sh
+    artifacts:
+      - myArtifact:
+          description: |
+            A deployment artifact
+            of type bash
+          type: tosca.artifacts.Implementation.Bash
+          file: somewhere/here.sh
+          repository: mydocker_repo
+          deploy_path: /a/path/not/used/now
+
+policy_types:
+  tosca.policies.Root:
+    description: The TOSCA Policy Type all other TOSCA Policy Types derive from
+  yorc.samples.CustomPolicy:
+    derived_from: tosca.policies.Root
+    metadata:
+      d1: var1
+    description: a description
+    properties:
+      protocol:
+        type: string
+        description: >
+          The name of the protocol (i.e., the protocol prefix) that the endpoint accepts (any OSI Layer 4-7 protocols)
+          Examples: http, https, ftp, tcp, udp, etc.
+        default: tcp
+    targets: [ tosca.nodes.Root ]
+    triggers:
+      t1:
+        description: the first trigger
+        event_type: myEvent
+        schedule:
+          start_time: 2016-04-04-15T00:00:00Z
+          end_time: 2216-04-04-15T00:00:00Z
+        target_filter:
+          node: tosca.nodes.SoftwareComponent
+          requirement: host
+          capability: myCap
+        condition:
+          constraints:
+            - in_range: [1, 10]
+          period: 5d
+          evaluations: 10
+          method: average
+        action: scripts/doIt.sh

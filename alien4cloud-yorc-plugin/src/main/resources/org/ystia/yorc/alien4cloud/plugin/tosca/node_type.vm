@@ -1,0 +1,19 @@
+#parse("$vtPath/instantiable_tosca_type.vm")
+#if(!$utils.isNull($type.capabilities) && $type.capabilities.size() > 0)
+${propertyUtils.indent($indent)}capabilities:
+#foreach($capability in $type.capabilities)
+${propertyUtils.indent($indent)}  $capability.id:
+#set($indent=$indent + 2)
+#parse("$vtPath/capability_def.vm")
+#set($indent=$indent - 2)
+#end## foreach capability
+#end## if capabilities
+#if(!$utils.isNull($type.requirements) && $type.requirements.size() > 0)
+${propertyUtils.indent($indent)}requirements:
+#foreach($requirement in $type.requirements)
+${propertyUtils.indent($indent)}  - $requirement.id:
+#set($indent=$indent + 3)
+#parse("$vtPath/requirement_def.vm")
+#set($indent=$indent - 3)
+#end## foreach requirement
+#end## if requirements

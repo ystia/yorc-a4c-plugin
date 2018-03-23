@@ -1,0 +1,7 @@
+#parse("$vtPath/tosca_type.vm")
+#if($!type.mimeType)
+${propertyUtils.indent($indent)}mime_type: ${propertyUtils.renderScalar($type.mimeType)}
+#end## if mimeType
+#if(${utils.collectionIsNotEmpty($type.fileExt)})
+${propertyUtils.indent($indent)}file_ext: [${utils.getCsvToString($type.fileExt)}]
+#end## if fileExt

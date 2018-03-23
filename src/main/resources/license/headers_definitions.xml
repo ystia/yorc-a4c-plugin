@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<additionalHeaders>
+    <tosca_def_style>
+        <firstLine>#</firstLine>
+        <beforeEachLine># </beforeEachLine>
+        <endLine>#EOL</endLine>
+        <!-- <afterEachLine></afterEachLine> -->
+        <skipLine>^tosca_definitions_version:.*$</skipLine>
+        <firstLineDetectionPattern>#.*$</firstLineDetectionPattern>
+        <lastLineDetectionPattern>#.*$</lastLineDetectionPattern>
+        <allowBlankLines>false</allowBlankLines>
+        <isMultiline>false</isMultiline>
+        <padLines>false</padLines>
+    </tosca_def_style>
+    <jinja2_style>
+        <firstLine>{#</firstLine>
+        <!-- <beforeEachLine></beforeEachLine> -->
+        <endLine>#}</endLine>
+        <!-- <afterEachLine></afterEachLine> -->
+        <!-- <skipLine></skipLine> -->
+        <firstLineDetectionPattern>\{#.*$</firstLineDetectionPattern>
+        <lastLineDetectionPattern>.*#\}$</lastLineDetectionPattern>
+        <allowBlankLines>false</allowBlankLines>
+        <isMultiline>true</isMultiline>
+        <padLines>true</padLines>
+    </jinja2_style>
+    <sphinx_style>
+        <firstLine>..</firstLine>
+        <beforeEachLine>   </beforeEachLine>
+        <endLine>   ---EOL</endLine>
+        <!-- <afterEachLine></afterEachLine> -->
+        <!-- <skipLine></skipLine> -->
+        <firstLineDetectionPattern>^\.\..*$</firstLineDetectionPattern>
+        <lastLineDetectionPattern>^   ---$</lastLineDetectionPattern>
+        <allowBlankLines>false</allowBlankLines>
+        <isMultiline>false</isMultiline>
+        <padLines>false</padLines>
+    </sphinx_style>
+</additionalHeaders>

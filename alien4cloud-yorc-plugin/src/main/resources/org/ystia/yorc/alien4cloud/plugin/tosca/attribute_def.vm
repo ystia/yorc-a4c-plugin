@@ -1,0 +1,16 @@
+type: $attribute.type
+#if($!attribute.description)
+${propertyUtils.indent($indent)}description: ${utils.renderDescription(${attribute.description}, "${propertyUtils.indent($indent)}  ")}
+#end## if description
+#if(!$utils.isNull($attribute.default))
+${propertyUtils.indent($indent)}default: ${propertyUtils.formatTextValue($indent, $attribute.default)}
+#end## if default
+##${propertyUtils.indent($indent)}status: <status_value>
+## Do entry_schema at the end
+#if(!$utils.isNull($attribute.entrySchema))
+#set($property=$attribute.entrySchema)
+${propertyUtils.indent($indent)}entry_schema:
+#set($indent= $indent + 1)
+${propertyUtils.indent($indent)}#parse("$vtPath/property_def.vm")
+#set($indent= $indent - 1)
+#end##if entrySchema

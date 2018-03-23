@@ -1,0 +1,19 @@
+#parse("$vtPath/tosca_type.vm")
+#if($utils.mapIsNotEmptyAndContainsNotnullValues($type.attributes))
+${propertyUtils.indent($indent)}attributes:
+#foreach($attributeEntry in $type.attributes.entrySet())
+#if($attributeEntry.value.isDefinition())
+#set($attribute=$attributeEntry.value)
+${propertyUtils.indent($indent)}  $attributeEntry.key:
+#set($indent= $indent + 2)
+${propertyUtils.indent($indent)}#parse("$vtPath/attribute_def.vm")
+#set($indent= $indent - 2)
+#else
+#set($indentAttr= $indent + 1)
+${propertyUtils.indent($indent)}  $attributeEntry.key: ${propertyUtils.formatPropertyValue($indentAttr, $attributeEntry.value)}
+#end## if attribute.isDefinition
+#end## foreach attribute
+#end## if attributes
+#if($type.validSources.size() > 0)
+${propertyUtils.indent($indent)}valid_source_types: [${yorcUtils.join($type.validSources, ", ")}]
+#end## if validSources
