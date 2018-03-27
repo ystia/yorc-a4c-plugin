@@ -118,7 +118,7 @@ public class FipTopologyModifier extends TopologyModifierSupport {
 
                         // The public network Node Template will be removed
                         // now that a Floating IP Node Template Node
-                        // provides the reauired connectivity
+                        // provides the required connectivity
                         nodesToRemove.add(networkNodeTemplate);
 
                         // Creating a new relationship between the Node template
