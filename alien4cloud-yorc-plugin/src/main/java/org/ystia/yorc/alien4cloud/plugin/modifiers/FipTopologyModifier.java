@@ -31,11 +31,11 @@ import org.alien4cloud.tosca.normative.constants.NormativeRelationshipConstants;
 import org.alien4cloud.tosca.utils.TopologyNavigationUtil;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.HashSet;
 import javax.inject.Inject;
 
 /**
@@ -73,7 +73,7 @@ public class FipTopologyModifier extends TopologyModifierSupport {
         String fipConnectivityCap = "yorc.capabilities.openstack.FIPConnectivity";
         String fipNodeType = "yorc.nodes.openstack.FloatingIP";
         NodeType fipType = toscaTypeSearchService.findMostRecent(NodeType.class, fipNodeType);
-        List<NodeTemplate> nodesToRemove = new ArrayList<NodeTemplate>();
+        Set<NodeTemplate> nodesToRemove = new HashSet<NodeTemplate>();
 
         publicNetworksNodes.forEach(networkNodeTemplate -> {
             final AbstractPropertyValue networkName = networkNodeTemplate.getProperties().get("floating_network_name");
