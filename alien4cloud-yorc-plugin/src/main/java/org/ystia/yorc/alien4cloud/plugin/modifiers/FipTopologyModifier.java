@@ -17,7 +17,9 @@ package org.ystia.yorc.alien4cloud.plugin.modifiers;
 
 import alien4cloud.paas.wf.validation.WorkflowValidator;
 import alien4cloud.tosca.context.ToscaContextual;
+
 import lombok.extern.slf4j.Slf4j;
+
 import org.alien4cloud.tosca.catalog.index.IToscaTypeSearchService;
 import org.alien4cloud.alm.deployment.configuration.flow.FlowExecutionContext;
 import org.alien4cloud.alm.deployment.configuration.flow.TopologyModifierSupport;
@@ -32,10 +34,10 @@ import org.alien4cloud.tosca.utils.TopologyNavigationUtil;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.HashSet;
 import javax.inject.Inject;
 
 /**
