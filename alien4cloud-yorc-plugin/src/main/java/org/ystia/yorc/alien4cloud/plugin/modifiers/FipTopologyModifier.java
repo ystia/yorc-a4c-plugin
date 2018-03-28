@@ -18,6 +18,7 @@ package org.ystia.yorc.alien4cloud.plugin.modifiers;
 import alien4cloud.paas.wf.validation.WorkflowValidator;
 import alien4cloud.tosca.context.ToscaContextual;
 
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.alien4cloud.tosca.catalog.index.IToscaTypeSearchService;
@@ -36,6 +37,7 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.inject.Inject;
@@ -76,6 +78,7 @@ public class FipTopologyModifier extends TopologyModifierSupport {
         String fipNodeType = "yorc.nodes.openstack.FloatingIP";
         NodeType fipType = toscaTypeSearchService.findMostRecent(NodeType.class, fipNodeType);
         Set<NodeTemplate> nodesToRemove = new HashSet<NodeTemplate>();
+        List<NetworkRelationshipConfig> relationshipsToAdd = new ArrayList<NetworkRelationshipConfig>();
 
         publicNetworksNodes.forEach(networkNodeTemplate -> {
             final AbstractPropertyValue networkName = networkNodeTemplate.getProperties().get("floating_network_name");
@@ -125,21 +128,21 @@ public class FipTopologyModifier extends TopologyModifierSupport {
 
                         // Creating a new relationship between the Node template
                         // and the Floating IP node.
-                        // Not attempting to re-use and modify the relationship
+                        // Not attempting to re-use/modify the relationship
                         // existing between the Node Template and the Public
                         // Network, as once the Public Network will be removed,
-                        // all related relationhips will be removed
-                        addRelationshipTemplate(
-                            csar,
-                            topology,
+                        // all related relationhips will be removed.
+                        // The new relationship will be created outside of the
+                        // foreach loops, as its creation modifies elements on
+                        // which these loops are iterating.
+                        relationshipsToAdd.add(new NetworkRelationshipConfig(
                             nodeTemplate, // source
                             fipNodeTemplate.getName(), // target
-                            NormativeRelationshipConstants.NETWORK,
                             relationshipTemplate.getRequirementName(),
-                            fipConnectivityCap);
+                            relationshipTemplate.getTargetedCapabilityName()));
 
                         context.log().info(
-                            "Template <{}> created to provide a Floating IP to <{}> on <{}>.",
+                            "<{}> created to provide a Floating IP address to <{}> on network <{}>.",
                             fipName,
                             nodeTemplate.getName(),
                             networkNodeTemplate.getName());
@@ -147,6 +150,29 @@ public class FipTopologyModifier extends TopologyModifierSupport {
                 });
             }
         });
+
+        // Removing Public Network nodes for which a new Floating IP Node 
+        // template was created
         nodesToRemove.forEach(pnn -> removeNode(topology, pnn));
+
+        // Creating a relationship between each new Floating IP Node Template
+        // and the Source Node Template having a connectivity requirement  
+        relationshipsToAdd.forEach( rel -> addRelationshipTemplate(
+            csar,
+            topology,
+            rel.sourceNode,
+            rel.targetNodeName,
+            NormativeRelationshipConstants.NETWORK,
+            rel.requirementName,
+            rel.targetCapabilityName));
     }
+
+    @AllArgsConstructor
+    private class NetworkRelationshipConfig {
+        private NodeTemplate sourceNode;
+        private String targetNodeName;
+        private String requirementName;
+        private String targetCapabilityName;
+    }
+
 }

@@ -82,7 +82,7 @@ public class OpenStackBSComputeWFModifier extends TopologyModifierSupport {
             if ("tosca.capabilities.Attachment".equals(rt.getRequirementType())) {
                 // Attachment found
                 context.getLog()
-                        .info("Found a BlockStorage {} with an attachment on {}. Let's swap their workflow steps to match Yorc " +
+                        .info("Found a BlockStorage <{}> with an attachment on <{}>. Let's swap their workflow steps to match Yorc " +
                                         "expectations.",
                                 bs.getName(), rt.getTarget());
                 String computeNodeName = rt.getTarget();
