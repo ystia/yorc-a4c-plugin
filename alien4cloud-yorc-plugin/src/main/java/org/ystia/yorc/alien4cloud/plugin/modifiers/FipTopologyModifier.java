@@ -142,7 +142,7 @@ public class FipTopologyModifier extends TopologyModifierSupport {
                             relationshipTemplate.getTargetedCapabilityName()));
 
                         context.log().info(
-                            "<{}> created to provide a Floating IP address to <{}> on network <{}>.",
+                            "<{}> created to provide a Floating IP address to <{}> on network <{}>",
                             fipName,
                             nodeTemplate.getName(),
                             networkNodeTemplate.getName());
