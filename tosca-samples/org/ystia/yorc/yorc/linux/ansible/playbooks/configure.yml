@@ -1,0 +1,38 @@
+#
+# Copyright 2018 Bull S.A.S. Atos Technologies - Bull, Rue Jean Jaures, B.P.68, 78340, Les Clayes-sous-Bois, France.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+- name: Install Yorc
+  hosts: all
+  strategy: free
+  become: true
+  become_method: sudo
+  tasks:
+    - name: Yorc config
+      template: 
+        src: config.yorc.yaml.j2
+        dest: "/tmp/yorc.d/01.config.yorc.yaml"
+        mode: "u=rw,g=rw,o=r"
+    - name: Assemble config file
+      assemble:
+        src: /tmp/yorc.d/
+        dest: /etc/yorc/config.yorc.yaml
+        owner: yorc
+        group: yorc
+        mode: "u=rw,g=rw,o=r"
+    - name: Delete config fragment directory
+      file:
+        path: /tmp/yorc.d/
+        state: absent
