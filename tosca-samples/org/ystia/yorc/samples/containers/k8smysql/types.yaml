@@ -6,8 +6,8 @@ metadata:
   template_author: Yorc team
 
 imports:
-  - tosca-normative-types:1.0.0-ALIEN20
-  - docker-types:2.0.0-SNAPSHOT
+  - tosca-normative-types:1.0.0-ALIEN20SM4
+  - docker-types:2.0.0-SM4
 
 description: Yorc MySQL Container to be deployed on K8S
 
@@ -22,10 +22,6 @@ node_types:
     tags:
       icon: images/mysql.png
     properties:
-      docker_ports:
-        type: string
-        required: false
-        default: "3306"
       db_name:
         type: string
         required: true
@@ -39,16 +35,20 @@ node_types:
         default: "mysql"
     capabilities:
       msql_db:
-        type: org.ystia.yorc.samples.k8smysql.capabilities.endpoint.mysqlDB
+        type: org.ystia.yorc.samples.k8smysql.capabilities.MysqlDB
     interfaces:
       Standard:
         create:
           implementation:
-            file: httpd/latest
+            file: mysql:8.0.2
             repository: docker
             type: tosca.artifacts.Deployment.Image.Container.Docker
 
 capability_types:
-  org.ystia.yorc.samples.k8smysql.capabilities.endpoint.mysqlDB:
+  org.ystia.yorc.samples.k8smysql.capabilities.MysqlDB:
     derived_from: tosca.capabilities.Endpoint.Database
+    properties:
+      port:
+        type: integer
+        default: 3306
 
