@@ -32,7 +32,7 @@ Please read our [contribution guidelines](CONTRIBUTING.md) for more information.
 
 ## Documentation
 
-The project documentation is available on [readthedocs](http://yorc.readthedocs.io/en/latest/)
+The project documentation is available on [readthedocs](http://yorc-a4c-plugin.readthedocs.io/en/latest/)
 
 ## Project History
 
