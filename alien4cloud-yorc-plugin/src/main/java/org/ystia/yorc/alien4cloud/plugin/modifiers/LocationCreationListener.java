@@ -19,9 +19,11 @@ import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.inject.Inject;
 
+import alien4cloud.model.orchestrators.Orchestrator;
 import alien4cloud.model.orchestrators.locations.LocationModifierReference;
 import alien4cloud.orchestrators.locations.events.AfterLocationCreated;
 import alien4cloud.orchestrators.locations.services.LocationModifierService;
+import alien4cloud.orchestrators.services.OrchestratorService;
 import alien4cloud.plugin.model.ManagedPlugin;
 import lombok.extern.slf4j.Slf4j;
 import org.alien4cloud.alm.deployment.configuration.flow.modifiers.FlowPhases;
@@ -46,8 +48,12 @@ public class LocationCreationListener implements ApplicationListener<AfterLocati
     @Resource
     private LocationModifierService locationModifierService;
 
+    @Resource
+    private OrchestratorService orchestratorService;
+
     private LocationModifierReference openstackFipModifierRef;
     private LocationModifierReference openstackBSWFModifierRef;
+    private LocationModifierReference wfOperationHostModifierRef;
 
     @PostConstruct
     public synchronized void init() {
@@ -59,15 +65,26 @@ public class LocationCreationListener implements ApplicationListener<AfterLocati
         openstackBSWFModifierRef.setPluginId(selfContext.getPlugin().getId());
         openstackBSWFModifierRef.setBeanName(OpenStackBSComputeWFModifier.YORC_OPENSTACK_BS_WF_MODIFIER_TAG);
         openstackBSWFModifierRef.setPhase(FlowPhases.POST_MATCHED_NODE_SETUP);
+        wfOperationHostModifierRef = new LocationModifierReference();
+        wfOperationHostModifierRef.setPluginId(selfContext.getPlugin().getId());
+        wfOperationHostModifierRef.setBeanName(OperationHostModifier.YORC_WF_OPERATION_HOST_MODIFIER_TAG);
+        wfOperationHostModifierRef.setPhase(FlowPhases.POST_MATCHED_NODE_SETUP);
     }
 
 
     @Override
     public void onApplicationEvent(AfterLocationCreated event) {
-       log.debug("Got location creation event for infrastructure type {}", event.getLocation().getInfrastructureType());
-       if (YstiaOrchestratorFactory.OPENSTACK.equals(event.getLocation().getInfrastructureType())) {
-           locationModifierService.add(event.getLocation(), openstackFipModifierRef);
-           locationModifierService.add(event.getLocation(), openstackBSWFModifierRef);
-       }
+        log.debug("Got location creation event for infrastructure type {}", event.getLocation().getInfrastructureType());
+
+        Orchestrator orchestrator = orchestratorService.getOrFail(event.getLocation().getOrchestratorId());
+
+        if (orchestrator.getPluginId().equals(selfContext.getPlugin().getId())) {
+            if (YstiaOrchestratorFactory.OPENSTACK.equals(event.getLocation().getInfrastructureType())) {
+                locationModifierService.add(event.getLocation(), openstackFipModifierRef);
+                locationModifierService.add(event.getLocation(), openstackBSWFModifierRef);
+            }
+            locationModifierService.add(event.getLocation(), wfOperationHostModifierRef);
+        }
+
     }
 }
