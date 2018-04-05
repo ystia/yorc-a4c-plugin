@@ -30,11 +30,9 @@ Then follow our documentation to setup the Yorc plugin into Alien4Cloud
 We warmly welcome any kind of contribution from feedbacks and constructive criticism to code changes.
 Please read our [contribution guidelines](CONTRIBUTING.md) for more information.
 
-<!--
-TODO: link to readthedoc.org
-
 ## Documentation
--->
+
+The project documentation is available on [readthedocs](http://yorc.readthedocs.io/en/latest/)
 
 ## Project History
 
