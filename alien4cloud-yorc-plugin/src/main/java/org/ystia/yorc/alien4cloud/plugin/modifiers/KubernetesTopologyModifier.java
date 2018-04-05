@@ -103,6 +103,7 @@ public class KubernetesTopologyModifier extends TopologyModifierSupport {
         String sourceResourceType = null;
         String targetResourceType = null;
 
+        log.debug("Yorc K8S Plugin : transform K8S resource type : " + resourceType);
         switch (resourceType) {
             case "service" :
                 sourceResourceType = K8S_TYPES_SERVICE_RESOURCE;
@@ -129,7 +130,7 @@ public class KubernetesTopologyModifier extends TopologyModifierSupport {
 
             NodeTemplate yorcServiceNodeTemplate = replaceNode(csar, topology, serviceNodeTemplate, effectiveTargetResourceType, resourceArchiveVersion);
 
-            log.debug("Yorc K8S Plugin : k8s service resource node " + yorcServiceNodeTemplate.getName() + " now has type " + yorcServiceNodeTemplate.getType());
+            log.debug("Yorc K8S Plugin : k8s resource node " + yorcServiceNodeTemplate.getName() + " now has type " + yorcServiceNodeTemplate.getType());
         });
     }
 
