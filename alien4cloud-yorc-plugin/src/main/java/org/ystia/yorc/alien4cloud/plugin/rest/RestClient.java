@@ -62,7 +62,7 @@ public class RestClient {
 
     public RestClient() {
         RestClient.initObjectMapper();
-        Unirest.setTimeouts(CONNECTION_TIMEOUT, SOCKET_TIMEOUT);
+        //Unirest.setTimeouts(CONNECTION_TIMEOUT, SOCKET_TIMEOUT);
     }
 
     private static void initObjectMapper() {
@@ -97,12 +97,11 @@ public class RestClient {
     public void setProviderConfiguration(ProviderConfig providerConfiguration) throws PluginConfigurationException {
         this.providerConfiguration = providerConfiguration;
         log.debug("setProviderConfiguration YorcURL=" + providerConfiguration.getUrlYorc());
-        try {
-            getDeployments();
-        } catch (UnirestException e) {
-            log.warn("Cannot access Yorc: " + e.getCause());
-            throw new PluginConfigurationException("Cannot access Yorc: " + e.getCause());
-        }
+
+        RequestConfig clientConfig = RequestConfig.custom().setConnectTimeout(((Long) CONNECTION_TIMEOUT).intValue())
+                .setSocketTimeout(((Long) SOCKET_TIMEOUT).intValue()).setConnectionRequestTimeout(((Long) SOCKET_TIMEOUT).intValue())
+                .build();
+
         if (Boolean.TRUE.equals(providerConfiguration.getInsecureTLS())) {
             SSLContext sslContext;
             try {
@@ -116,9 +115,6 @@ public class RestClient {
             SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
                     sslContext,
                     NoopHostnameVerifier.INSTANCE);
-            RequestConfig clientConfig = RequestConfig.custom().setConnectTimeout(((Long) CONNECTION_TIMEOUT).intValue())
-                    .setSocketTimeout(((Long) SOCKET_TIMEOUT).intValue()).setConnectionRequestTimeout(((Long) SOCKET_TIMEOUT).intValue())
-                    .build();
             CloseableHttpClient httpClient = HttpClients
                     .custom()
                     .setDefaultRequestConfig(clientConfig)
@@ -126,7 +122,36 @@ public class RestClient {
                     .setSSLSocketFactory(sslsf)
                     .build();
             Unirest.setHttpClient(httpClient);
+        }else{
+            SSLContext sslContext = null;
+            File ksFile = new File("/root/cert-and-key-with-ca.jks");
+            File tsFile = new File("/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.161-0.b14.el7_4.x86_64/jre/lib/security/cacerts");
+            try {
+                sslContext = SSLContexts.custom()
+                        .loadKeyMaterial(ksFile, "123456".toCharArray(), "1234".toCharArray())
+                        .loadTrustMaterial(tsFile, "changeit".toCharArray())
+                        .build();
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new PluginConfigurationException("Failed to create SSL context", e);
+            }
+
+
+            CloseableHttpClient httpClient = HttpClients
+                    .custom()
+                    .setDefaultRequestConfig(clientConfig)
+                    .setSslcontext(sslContext)
+                    .build();
+            Unirest.setHttpClient(httpClient);
         }
+
+        try {
+            getDeployments();
+        } catch (UnirestException e) {
+            log.warn("Cannot access Yorc: " + e.getCause());
+            throw new PluginConfigurationException("Cannot access Yorc: " + e.getCause());
+        }
+
 
     }
 
