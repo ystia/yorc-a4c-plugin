@@ -28,7 +28,7 @@
 
       <properties>
         <httpclient.version>4.4.1</httpclient.version>
-        <yorc.types.version>1.0.0</yorc.types.version>
+        <yorc.types.version>1.0.0-SNAPSHOT</yorc.types.version>
         <skipTests>false</skipTests>
       </properties>
 
