@@ -97,6 +97,10 @@ capability_types:
         type: string
         description: "The optional indicator of the direction of the connection."
         default: source
+    attributes:
+      ip_address:
+        type: string
+        description: "This is the IP address as propagated up by the associated node’s host (Compute) container."
 
 node_types:
   org.yorc.samples.python.Component:
