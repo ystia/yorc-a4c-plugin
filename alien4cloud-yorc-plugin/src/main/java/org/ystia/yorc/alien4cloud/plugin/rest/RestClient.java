@@ -122,20 +122,14 @@ public class RestClient {
                     .setSSLSocketFactory(sslsf)
                     .build();
             Unirest.setHttpClient(httpClient);
-        }else{
-            SSLContext sslContext = null;
-            File ksFile = new File("/root/cert-and-key-with-ca.jks");
-            File tsFile = new File("/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.161-0.b14.el7_4.x86_64/jre/lib/security/cacerts");
-            try {
-                sslContext = SSLContexts.custom()
-                        .loadKeyMaterial(ksFile, "123456".toCharArray(), "1234".toCharArray())
-                        .loadTrustMaterial(tsFile, "changeit".toCharArray())
-                        .build();
-            } catch (Exception e) {
-                e.printStackTrace();
-                throw new PluginConfigurationException("Failed to create SSL context", e);
+        }else if (providerConfiguration.getUrlYorc().startsWith("https")){
+            if(System.getProperty("javax.net.ssl.keyStore") == null || System.getProperty("javax.net.ssl.keyStorePassword") == null){
+                log.error("Using SSL but you didn't provide client keystore and password. \n" +
+                        "Please use -Djavax.net.ssl.keyStore <keyStorePath> -DkeyStorePassword <password> while starting java VM");
+                throw new PluginConfigurationException("Bad SSL configuration");
             }
 
+            SSLContext sslContext = SSLContexts.createSystemDefault();
 
             CloseableHttpClient httpClient = HttpClients
                     .custom()
