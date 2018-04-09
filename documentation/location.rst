@@ -30,7 +30,7 @@ Configure a Yorc Orchestrator
 ------------------------------
 
 To create an orchestrator, go to |AdminBtn| and in the |OrchBtn| sub-menu. Create an orchestrator named ``Yorc`` with the plugin
-``Yorc Orchestrator Factory : 3.0.0-SNAPSHOT``.
+``Yorc Orchestrator Factory`` : |version|-SNAPSHOT.
 
 At this moment your orchestrator is created but not enabled. Click on your orchestrator to see the information page, and then
 click on the configuration menu icon |OrchConfigBtn|.
