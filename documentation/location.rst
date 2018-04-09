@@ -14,16 +14,23 @@
    limitations under the License.
    ---
 
-Configure a Yorc Orchestrator and an OpenStack Location
-========================================================
+Configure a Yorc Orchestrator and Locations
+===========================================
 
-Now we must define a location (where we will actually deploy applications). In Alien4Cloud every location is managed by an orchestrator.
+Now we must define an orchestrator and one or more locations (where we will actually deploy applications).
+In Alien4Cloud every location is managed by an orchestrator.
+
+The Alien4Cloud Yorc Plugin installed in the previous section allows to create the Yorc orchestrator and locations.
+
+Several location types are available ; they correspond to the infrastructure types supported by Yorc (OpenStack, AWS, Kubernetes, etc.).
+In order to deploy applications and run them on a given infrastructure, Yorc must be properly configured for that
+infrastructure (see "Infrastructure configuration" chapter in Yorc documentation).
 
 Configure a Yorc Orchestrator
 ------------------------------
 
 To create an orchestrator, go to |AdminBtn| and in the |OrchBtn| sub-menu. Create an orchestrator named ``Yorc`` with the plugin
-``Yorc Orchestrator Factory : 1.0.0-SNAPSHOT``.
+``Yorc Orchestrator Factory : 3.0.0-SNAPSHOT``.
 
 At this moment your orchestrator is created but not enabled. Click on your orchestrator to see the information page, and then
 click on the configuration menu icon |OrchConfigBtn|.
@@ -38,8 +45,8 @@ If Yorc is secured (ssl enabled):
 Configure an OpenStack Location
 -------------------------------
 
-Once your orchestrator is created and enabled, go to the locations page by clicking on |OrchLocBtn|. Create a location named ``OpenStack``
-and select ``openstack`` on the infrastructure type drop-down. The details page of your location should appears. Go to |OrchLocODRBtn| and
+Once your orchestrator is created and enabled, go to the locations page by clicking on |OrchLocBtn|. Create a location named ``openstack`` (or a name of your choice)
+and select ``OpenStack`` on the infrastructure type drop-down. The details page of your location should appear. Go to |OrchLocODRBtn| and
 add the following resources:
 
   * yorc.nodes.openstack.PublicNetwork
@@ -64,6 +71,27 @@ for Ubuntu cloud images)
    :align: center
 
 
+Configure a Kubernetes Location
+-------------------------------
+In order to deploy applications on a Kubernetes location, the Yorc orchestrator must be connected to a properly configured Yorc server
+(see "Infrastructure configuration" chapter in Yorc documentation ; the Yorc server must be able to connect to the Kubernetes cluster's master).
+
+Select ``Yorc`` orchestrator and go to the locations page by clicking on |OrchLocBtn|. Create a location named ``kubernetes`` (or a name of your choice)
+and select ``Kubernetes`` on the infrastructure type drop-down. The details page of your location should appear.
+
+Go to |OrchLocODRBtn| and search in the ``Catalog`` resources with type prefix ``org.alien4cloud.kubernetes.api.types`` (we'll use ``k8s_api`` for this prefix).
+You have to add the following resources:
+
+  * ``k8s_api.Deployment``
+  * ``k8s_api.Container``
+  * ``k8s_api.Service``
+  * ``k8s_api.volume.*`` # the volume types needed by applications
+
+Go to |OrchLocTMBtn| view to setup modifiers on your location:
+
+  * add ``Kubernetes modifier`` at the phase ``post location match``
+  * add ``Yorc modifier for kubernetes`` at the phase ``post-node-match``
+
 .. |AdminBtn| image:: _static/img/administration-btn.png
               :alt: administration
 
@@ -81,3 +109,8 @@ for Ubuntu cloud images)
 
 .. |OrchLocODRBtn| image:: _static/img/on-demand-ressource-tab.png
                    :alt: on-demand resources
+
+
+.. |OrchLocTMBtn| image:: _static/img/topology-modifier-tab.png
+                   :alt: topology modifier
+
