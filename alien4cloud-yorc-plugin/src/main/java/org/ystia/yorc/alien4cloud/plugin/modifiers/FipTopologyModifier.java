@@ -17,7 +17,11 @@ package org.ystia.yorc.alien4cloud.plugin.modifiers;
 
 import alien4cloud.paas.wf.validation.WorkflowValidator;
 import alien4cloud.tosca.context.ToscaContextual;
-import lombok.extern.java.Log;
+
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+import org.alien4cloud.tosca.catalog.index.IToscaTypeSearchService;
 import org.alien4cloud.alm.deployment.configuration.flow.FlowExecutionContext;
 import org.alien4cloud.alm.deployment.configuration.flow.TopologyModifierSupport;
 import org.alien4cloud.tosca.model.Csar;
@@ -25,30 +29,36 @@ import org.alien4cloud.tosca.model.definitions.AbstractPropertyValue;
 import org.alien4cloud.tosca.model.templates.Capability;
 import org.alien4cloud.tosca.model.templates.NodeTemplate;
 import org.alien4cloud.tosca.model.templates.Topology;
+import org.alien4cloud.tosca.model.types.NodeType;
+import org.alien4cloud.tosca.normative.constants.NormativeRelationshipConstants;
 import org.alien4cloud.tosca.utils.TopologyNavigationUtil;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.inject.Inject;
 
 /**
- * Transform a matched K8S topology containing <code>Container</code>s, <code>Deployment</code>s, <code>Service</code>s
- * and replace them with <code>DeploymentResource</code>s and <code>ServiceResource</code>s.
- * <p>
- * TODO: add logs using FlowExecutionContext
+ * Modifies an OpenStack topology to add a new Floating IP Node template
+ * for each Node template requiring a connection to a Public Network.
  */
-@Log
+@Slf4j
 @Component(value = FipTopologyModifier.YORC_OPENSTACK_FIP_MODIFIER_TAG)
 public class FipTopologyModifier extends TopologyModifierSupport {
 
     public static final String YORC_OPENSTACK_FIP_MODIFIER_TAG = "yorc-openstack-fip-modifier";
 
+    @Inject
+    private IToscaTypeSearchService toscaTypeSearchService;
+
     @Override
     @ToscaContextual
     public void process(Topology topology, FlowExecutionContext context) {
-        log.info("Processing topology " + topology.getId());
+        log.debug("Processing topology " + topology.getId());
 
         try {
             WorkflowValidator.disableValidationThreadLocal.set(true);
@@ -59,39 +69,110 @@ public class FipTopologyModifier extends TopologyModifierSupport {
     }
 
     private void doProcess(Topology topology, FlowExecutionContext context) {
+
         Csar csar = new Csar(topology.getArchiveName(), topology.getArchiveVersion());
 
-        // for each Service create a node of type ServiceResource
         Set<NodeTemplate> publicNetworksNodes = TopologyNavigationUtil.getNodesOfType(topology, "yorc.nodes.openstack.PublicNetwork", false);
 
-        publicNetworksNodes.forEach(newtworkNodeTemplate -> {
-            final AbstractPropertyValue networkName = newtworkNodeTemplate.getProperties().get("floating_network_name");
+        String fipConnectivityCap = "yorc.capabilities.openstack.FIPConnectivity";
+        String fipNodeType = "yorc.nodes.openstack.FloatingIP";
+        NodeType fipType = toscaTypeSearchService.findMostRecent(NodeType.class, fipNodeType);
+        Set<NodeTemplate> nodesToRemove = new HashSet<NodeTemplate>();
+        List<NetworkRelationshipConfig> relationshipsToAdd = new ArrayList<NetworkRelationshipConfig>();
 
+        publicNetworksNodes.forEach(networkNodeTemplate -> {
+            final AbstractPropertyValue networkName = networkNodeTemplate.getProperties().get("floating_network_name");
+
+            // For each Node Template requiring a connection to this Public 
+            // Network, creating a new Floating IP Node Template
             for (NodeTemplate nodeTemplate : new ArrayList<>(topology.getNodeTemplates().values())) {
+
                 if (nodeTemplate.getRelationships() == null) continue;
+
                 nodeTemplate.getRelationships().forEach((rel, relationshipTemplate) -> {
-                    if (relationshipTemplate.getTarget().equals(newtworkNodeTemplate.getName())) {
+
+                    if (relationshipTemplate.getTarget().equals(networkNodeTemplate.getName())) {
 
                         Map<String, AbstractPropertyValue> properties = new LinkedHashMap<>();
                         properties.put("floating_network_name", networkName);
-
+                        
                         Map<String, Capability> capabilities = new LinkedHashMap<>();
                         Capability connectionCap = new Capability();
-                        connectionCap.setType("yorc.capabilities.openstack.FIPConnectivity");
+                        connectionCap.setType(fipConnectivityCap);
                         capabilities.put("connection", connectionCap);
 
+                        if (fipType == null) {
+                            context.log().error("Node type with name <{}> cannot be found in the catalog.",
+                            fipNodeType);
+                            return;
+                        }
+
+                        // Creating a new Floating IP Node Template that will be
+                        // associated to this Node Template requiring a 
+                        // connection to the Public Network
                         String fipName = "FIP" + nodeTemplate.getName();
+                        NodeTemplate fipNodeTemplate = addNodeTemplate(
+                            csar,
+                            topology,
+                            fipName,
+                            fipType.getElementId(),
+                            fipType.getArchiveVersion());
 
-                        NodeTemplate nt = addNodeTemplate(csar, topology, fipName, "yorc.nodes.openstack.FloatingIP", "1.0.0");
-                        nt.setProperties(properties);
-                        nt.setCapabilities(capabilities);
+                        fipNodeTemplate.setProperties(properties);
+                        fipNodeTemplate.setCapabilities(capabilities);
 
-                        relationshipTemplate.setTarget(fipName);
-                        relationshipTemplate.setRequirementType("yorc.capabilities.openstack.FIPConnectivity");
+                        // The public network Node Template will be removed
+                        // now that a Floating IP Node Template Node
+                        // provides the required connectivity
+                        nodesToRemove.add(networkNodeTemplate);
+
+                        // Creating a new relationship between the Node template
+                        // and the Floating IP node.
+                        // Not attempting to re-use/modify the relationship
+                        // existing between the Node Template and the Public
+                        // Network, as once the Public Network will be removed,
+                        // all related relationhips will be removed.
+                        // The new relationship will be created outside of the
+                        // foreach loops, as its creation modifies elements on
+                        // which these loops are iterating.
+                        relationshipsToAdd.add(new NetworkRelationshipConfig(
+                            nodeTemplate, // source
+                            fipNodeTemplate.getName(), // target
+                            relationshipTemplate.getRequirementName(),
+                            relationshipTemplate.getTargetedCapabilityName()));
+
+                        context.log().info(
+                            "<{}> created to provide a Floating IP address to <{}> on network <{}>",
+                            fipName,
+                            nodeTemplate.getName(),
+                            networkNodeTemplate.getName());
                     }
                 });
             }
         });
-        publicNetworksNodes.forEach(pnn -> removeNode(topology, pnn));
+
+        // Removing Public Network nodes for which a new Floating IP Node 
+        // template was created
+        nodesToRemove.forEach(pnn -> removeNode(topology, pnn));
+
+        // Creating a relationship between each new Floating IP Node Template
+        // and the Source Node Template having a connectivity requirement  
+        relationshipsToAdd.forEach( rel -> addRelationshipTemplate(
+            csar,
+            topology,
+            rel.sourceNode,
+            rel.targetNodeName,
+            NormativeRelationshipConstants.NETWORK,
+            rel.requirementName,
+            rel.targetCapabilityName));
     }
+
+    @AllArgsConstructor
+    private class NetworkRelationshipConfig {
+        private NodeTemplate sourceNode;
+        private String targetNodeName;
+        private String requirementName;
+        private String targetCapabilityName;
+    }
+
 }

@@ -1,0 +1,88 @@
+#
+# Copyright 2018 Bull S.A.S. Atos Technologies - Bull, Rue Jean Jaures, B.P.68, 78340, Les Clayes-sous-Bois, France.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+- name: Set connected user fact
+  hosts: all
+  strategy: free
+  tasks:
+    - set_fact:
+        yorc_prov_user: "{{ ansible_user_id }}"
+
+
+- name: Install Yorc
+  hosts: all
+  strategy: free
+  become: true
+  become_method: sudo
+  tasks:
+   
+    - name: create Yorc group
+      group: name=yorc
+
+    - name: Add "{{ yorc_prov_user }}" to the Yorc group
+      user:
+        name: "{{ yorc_prov_user }}"
+        append: yes
+        groups: yorc
+
+    - name: create Yorc user
+      user:
+        name: yorc
+        system: true
+        group: yorc
+        home: "{{DATA_DIR}}"
+
+    - name: Setup permissions on config dir
+      file:
+        path: "{{CONFIG_DIR}}"
+        state: directory
+        owner: yorc
+        group: yorc
+        mode: "u=rwx,g=rwx,o=rx"
+
+    - name: Setup permissions on data dir
+      file:
+        path: "{{DATA_DIR}}"
+        state: directory
+        owner: yorc
+        group: yorc
+        mode: "u=rwx,g=rwx,o=rx"
+
+    - name: Download Yorc binary
+      get_url:
+        url: "{{DOWNLOAD_URL}}"
+        dest: /tmp/yorc.tgz
+
+    - name: copy Yorc bin
+      unarchive:
+        src: /tmp/yorc.tgz
+        remote_src: yes
+        dest: "{{INSTALL_DIR}}"
+        creates: "{{INSTALL_DIR}}/yorc"
+        mode: "u=rx,g=rx,o=rx"
+
+    - name: Install Yorc systemd unit
+      template: 
+        src: yorc.service.j2
+        dest: "/etc/systemd/system/yorc.service"
+        mode: "u=rw,g=rw,o=r"
+
+    - name: Enable Yorc Systemd Service
+      systemd:
+        name: yorc
+        daemon_reload: yes
+        enabled: yes
+        state: stopped

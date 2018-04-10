@@ -21,12 +21,12 @@
   <parent>
     <groupId>alien4cloud</groupId>
     <artifactId>alien4cloud-parent</artifactId>
-    <version>2.0.0-RC1</version>
+    <version>2.0.0</version>
   </parent>
 
   <properties>
-    <alien4cloud.version>2.0.0-RC1</alien4cloud.version>
-    <alien4cloud.kubernetes.api.version>2.0.0-SNAPSHOT</alien4cloud.kubernetes.api.version>
+    <alien4cloud.version>2.0.0</alien4cloud.version>
+    <alien4cloud.kubernetes.api.version>2.0.0</alien4cloud.kubernetes.api.version>
     <tosca.normative.types.version>1.0.0-ALIEN20</tosca.normative.types.version>
     <alien4cloud.dsl.version>alien_dsl_2_0_0</alien4cloud.dsl.version>
   </properties>

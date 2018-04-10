@@ -31,7 +31,7 @@ import org.ystia.yorc.alien4cloud.plugin.YstiaOrchestratorFactory;
 
 
 /**
- * A {@code LocationCreationListener} is a ...
+ * A {@code LocationCreationListener} is used to register internal modifiers when a location is created.
  *
  * @author Loic Albertin
  */
@@ -47,6 +47,7 @@ public class LocationCreationListener implements ApplicationListener<AfterLocati
     private LocationModifierService locationModifierService;
 
     private LocationModifierReference openstackFipModifierRef;
+    private LocationModifierReference openstackBSWFModifierRef;
 
     @PostConstruct
     public synchronized void init() {
@@ -54,6 +55,10 @@ public class LocationCreationListener implements ApplicationListener<AfterLocati
         openstackFipModifierRef.setPluginId(selfContext.getPlugin().getId());
         openstackFipModifierRef.setBeanName(FipTopologyModifier.YORC_OPENSTACK_FIP_MODIFIER_TAG);
         openstackFipModifierRef.setPhase(FlowPhases.POST_NODE_MATCH);
+        openstackBSWFModifierRef = new LocationModifierReference();
+        openstackBSWFModifierRef.setPluginId(selfContext.getPlugin().getId());
+        openstackBSWFModifierRef.setBeanName(OpenStackBSComputeWFModifier.YORC_OPENSTACK_BS_WF_MODIFIER_TAG);
+        openstackBSWFModifierRef.setPhase(FlowPhases.POST_MATCHED_NODE_SETUP);
     }
 
 
@@ -62,6 +67,7 @@ public class LocationCreationListener implements ApplicationListener<AfterLocati
        log.debug("Got location creation event for infrastructure type {}", event.getLocation().getInfrastructureType());
        if (YstiaOrchestratorFactory.OPENSTACK.equals(event.getLocation().getInfrastructureType())) {
            locationModifierService.add(event.getLocation(), openstackFipModifierRef);
+           locationModifierService.add(event.getLocation(), openstackBSWFModifierRef);
        }
     }
 }
