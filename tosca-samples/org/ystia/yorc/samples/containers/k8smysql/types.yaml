@@ -6,10 +6,10 @@ metadata:
   template_author: Yorc team
 
 imports:
-  - tosca-normative-types:1.0.0-ALIEN20SM4
-  - docker-types:2.0.0-SM4
+  - tosca-normative-types:1.0.0-ALIEN20
+  - docker-types:2.0.0
 
-description: Yorc MySQL Container to be deployed on K8S
+description: MySQL Container to be deployed on K8S
 
 repositories:
   docker:
@@ -40,7 +40,7 @@ node_types:
       Standard:
         create:
           implementation:
-            file: mysql:8.0.2
+            file: mysql:8.0
             repository: docker
             type: tosca.artifacts.Deployment.Image.Container.Docker
 
