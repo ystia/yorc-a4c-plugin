@@ -125,8 +125,12 @@ public class RestClient {
         }else if (providerConfiguration.getUrlYorc().startsWith("https")){
             if(System.getProperty("javax.net.ssl.keyStore") == null || System.getProperty("javax.net.ssl.keyStorePassword") == null){
                 log.error("Using SSL but you didn't provide client keystore and password. \n" +
-                        "Please use -Djavax.net.ssl.keyStore <keyStorePath> -DkeyStorePassword <password> while starting java VM");
+                        "Please use -Djavax.net.ssl.keyStore <keyStorePath> -Djavax.net.ssl.keyStorePassword <password> while starting java VM");
                 throw new PluginConfigurationException("Bad SSL configuration");
+            }
+            if(System.getProperty("javax.net.ssl.trustStore") == null || System.getProperty("javax.net.ssl.trustStorePassword") == null){
+                log.warn("You didn't provide client trustore and password. Using defalut one \n" +
+                        "Please use -Djavax.net.ssl.trustStore <trustStorePath> -Djavax.net.ssl.trustStorePassword <password> while starting java VM");
             }
 
             SSLContext sslContext = SSLContexts.createSystemDefault();
