@@ -54,6 +54,7 @@ public class LocationCreationListener implements ApplicationListener<AfterLocati
     private LocationModifierReference openstackFipModifierRef;
     private LocationModifierReference openstackBSWFModifierRef;
     private LocationModifierReference wfOperationHostModifierRef;
+    private LocationModifierReference serviceTopologyModifierRef;
 
     @PostConstruct
     public synchronized void init() {
@@ -61,6 +62,7 @@ public class LocationCreationListener implements ApplicationListener<AfterLocati
         openstackFipModifierRef.setPluginId(selfContext.getPlugin().getId());
         openstackFipModifierRef.setBeanName(FipTopologyModifier.YORC_OPENSTACK_FIP_MODIFIER_TAG);
         openstackFipModifierRef.setPhase(FlowPhases.POST_NODE_MATCH);
+
         openstackBSWFModifierRef = new LocationModifierReference();
         openstackBSWFModifierRef.setPluginId(selfContext.getPlugin().getId());
         openstackBSWFModifierRef.setBeanName(OpenStackBSComputeWFModifier.YORC_OPENSTACK_BS_WF_MODIFIER_TAG);
@@ -69,6 +71,11 @@ public class LocationCreationListener implements ApplicationListener<AfterLocati
         wfOperationHostModifierRef.setPluginId(selfContext.getPlugin().getId());
         wfOperationHostModifierRef.setBeanName(OperationHostModifier.YORC_WF_OPERATION_HOST_MODIFIER_TAG);
         wfOperationHostModifierRef.setPhase(FlowPhases.POST_MATCHED_NODE_SETUP);
+
+        serviceTopologyModifierRef = new LocationModifierReference();
+        serviceTopologyModifierRef.setPluginId(selfContext.getPlugin().getId());
+        serviceTopologyModifierRef.setBeanName(ServiceTopologyModifier.YORC_SERVICE_TOPOLOGY_MODIFIER_TAG);
+        serviceTopologyModifierRef.setPhase(FlowPhases.POST_MATCHED_NODE_SETUP);
     }
 
 
@@ -84,6 +91,7 @@ public class LocationCreationListener implements ApplicationListener<AfterLocati
                 locationModifierService.add(event.getLocation(), openstackBSWFModifierRef);
             }
             locationModifierService.add(event.getLocation(), wfOperationHostModifierRef);
+            locationModifierService.add(event.getLocation(), serviceTopologyModifierRef);
         }
 
     }
