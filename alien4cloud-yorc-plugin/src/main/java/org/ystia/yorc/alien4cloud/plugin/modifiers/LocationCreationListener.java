@@ -93,6 +93,5 @@ public class LocationCreationListener implements ApplicationListener<AfterLocati
             locationModifierService.add(event.getLocation(), wfOperationHostModifierRef);
             locationModifierService.add(event.getLocation(), serviceTopologyModifierRef);
         }
-
     }
 }
