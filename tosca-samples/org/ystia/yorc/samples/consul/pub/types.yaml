@@ -45,7 +45,7 @@ node_types:
         description: The URL used to download the consul archive.
         type: string
         required: true
-        default: https://releases.hashicorp.com/consul/1.0.2/consul_1.0.2_linux_amd64.zip
+        default: https://releases.hashicorp.com/consul/1.0.6/consul_1.0.6_linux_amd64.zip
       install_dir:
         description: Installation directory for the Consul binary
         type: string
@@ -74,6 +74,12 @@ node_types:
         type: string
         required: true
         default: consul
+      web_ui:
+        description: >
+          Enable Consul Web UI
+        type: boolean
+        required: false
+        default: false
     capabilities:
       consul_agent:
         type: org.ystia.yorc.samples.consul.pub.capabilities.ConsulAgent

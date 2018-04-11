@@ -56,6 +56,7 @@ node_types:
           CONFIG_DIR: { get_property: [SELF, config_dir] }
           MODE: { get_property: [SELF, mode] }
           DATA_DIR: { get_property: [SELF, data_dir] }
+          WEB_UI: { get_property: [SELF, web_ui] }
         create:
           description: Consul installation step
           inputs:
@@ -67,6 +68,7 @@ node_types:
           inputs:
             DATACENTER: { get_property: [SELF, datacenter] }
             DOMAIN: { get_property: [SELF, domain] }
+            WEB_UI: { get_property: [SELF, web_ui] }
             IP_ADDRESS: { get_attribute: [HOST, private_address] }
             WAN_ADDRESS: { get_attribute: [HOST, public_address] }
           implementation: playbooks/consul_configure.yaml
@@ -111,6 +113,7 @@ node_types:
           CONFIG_DIR: { get_property: [SELF, config_dir] }
           MODE: { get_property: [SELF, mode] }
           DATA_DIR: { get_property: [SELF, data_dir] }
+          WEB_UI: { get_property: [SELF, web_ui] }
         create:
           description: Consul installation step
           inputs:
@@ -122,6 +125,7 @@ node_types:
           inputs:
             DATACENTER: { get_property: [SELF, datacenter] }
             DOMAIN: { get_property: [SELF, domain] }
+            WEB_UI: { get_property: [SELF, web_ui] }
             IP_ADDRESS: { get_attribute: [HOST, private_address] }
             WAN_ADDRESS: { get_attribute: [HOST, public_address] }
           implementation: playbooks/consul_configure.yaml
