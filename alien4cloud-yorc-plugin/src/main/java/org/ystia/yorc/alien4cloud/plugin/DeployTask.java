@@ -289,7 +289,10 @@ public class DeployTask extends AlienTask {
         this.ctx.getDeploymentTopology().getDependencies().forEach(d -> {
             if (!"tosca-normative-types".equals(d.getName())) {
                 Csar csar = csarRepoSearchService.getArchive(d.getName(), d.getVersion());
-                if (CSARSource.ORCHESTRATOR != CSARSource.valueOf(csar.getImportSource())) {
+                final String importSource = csar.getImportSource();
+                // importSource is null when this is a reference to a Service
+                // provided by another deployment
+                if (importSource == null || CSARSource.ORCHESTRATOR != CSARSource.valueOf(importSource)) {
                     try {
                         csar2zip(zout, csar, finalLocation);
                     } catch (Exception e) {
