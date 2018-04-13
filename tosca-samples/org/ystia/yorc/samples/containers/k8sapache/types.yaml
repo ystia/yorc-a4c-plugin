@@ -1,0 +1,43 @@
+tosca_definitions_version: alien_dsl_2_0_0
+
+metadata:
+  template_name: org.ystia.yorc.samples.containers.k8sapache
+  template_version: 1.0.0-SNAPSHOT
+  template_author: Yorc team
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN20
+  - docker-types:2.0.0
+
+description: Apache Container to be deployed on K8S
+
+repositories:
+  docker:
+    url: https://hub.docker.com/
+    type: http
+
+node_types:
+  org.ystia.yorc.samples.k8sapache.nodes.Apache:
+    derived_from: tosca.nodes.Container.Application.DockerContainer
+    capabilities:
+      http_endpoint:
+        type: org.ystia.yorc.samples.k8sapache.capabilities.Http
+    interfaces:
+      Standard:
+        create:
+          implementation:
+            file: httpd:latest
+            repository: docker
+            type: tosca.artifacts.Deployment.Image.Container.Docker
+
+capability_types:
+  org.ystia.yorc.samples.k8sapache.capabilities.Http:
+    derived_from: tosca.capabilities.Endpoint
+    properties:
+      docker_bridge_port_mapping:
+        type: integer
+        description: Port used to bridge to the container's endpoint.
+        default: 0
+      port:
+        type: integer
+        default: 80
