@@ -562,7 +562,14 @@ public class DeployTask extends AlienTask {
                             if (location == LOC_KUBERNETES) {
                                 matchKubernetesImplementation(root);
                             }
-                            String yaml = orchestrator.getToscaComponentExporter().getYaml(root);
+
+                            String yaml;
+                            if (root.hasToscaTopologyTemplate()) {
+                                log.debug("File has topology template : " + name);
+                                yaml = orchestrator.getToscaTopologyExporter().getYaml(csar, root.getTopology(), false);
+                            } else {
+                                yaml = orchestrator.getToscaComponentExporter().getYaml(root);
+                            }
                             zout.write(yaml.getBytes(Charset.forName("UTF-8")));
                         } else {
                             copy(file, zout);
