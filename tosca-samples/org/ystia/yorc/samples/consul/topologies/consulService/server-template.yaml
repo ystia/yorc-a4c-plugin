@@ -16,7 +16,7 @@ tosca_definitions_version: alien_dsl_2_0_0
 #
 
 metadata:
-  template_name: ConsulServiceTopology
+  template_name: ConsulServiceTemplate
   template_version: 0.1.0-SNAPSHOT
   template_author: admin
 
@@ -34,7 +34,7 @@ topology_template:
   substitution_mappings:
     node_type: org.ystia.yorc.samples.consul.pub.nodes.ConsulServer
     capabilities:
-      consul_agent: [ ConsulServerInstance, consul_agent ]
+      consul_server: [ ConsulServerInstance, consul_server ]
   node_templates:
     ComputeInstance:
       type: tosca.nodes.Compute

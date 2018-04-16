@@ -73,6 +73,7 @@ public class ToscaTopologyExporter {
             velocityCtx.put("topology_description", "");
         }
         velocityCtx.put("importsUtils", new ToscaImportsUtils());
+        velocityCtx.put("exportUtils", new ToscaExportUtils());
         ClassLoader oldctccl = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(this.getClass().getClassLoader());
         try {
