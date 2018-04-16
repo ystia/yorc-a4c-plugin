@@ -65,9 +65,11 @@ import org.alien4cloud.tosca.model.definitions.DeploymentArtifact;
 import org.alien4cloud.tosca.model.definitions.Interface;
 import org.alien4cloud.tosca.model.definitions.Operation;
 import org.alien4cloud.tosca.model.templates.NodeTemplate;
+import org.alien4cloud.tosca.model.templates.ServiceNodeTemplate;
 import org.alien4cloud.tosca.model.templates.Topology;
 import org.elasticsearch.common.collect.Maps;
 import org.ystia.yorc.alien4cloud.plugin.rest.Response.Event;
+import org.ystia.yorc.alien4cloud.plugin.tosca.model.templates.YorcServiceNodeTemplate;
 import org.ystia.yorc.alien4cloud.plugin.rest.YorcRestException;
 import org.ystia.yorc.alien4cloud.plugin.utils.MappingTosca;
 import org.ystia.yorc.alien4cloud.plugin.utils.ShowTopology;
@@ -302,6 +304,15 @@ public class DeployTask extends AlienTask {
             }
         });
 
+        for (Entry<String, NodeTemplate> nodeTemplateEntry :  this.ctx.getDeploymentTopology().getNodeTemplates().entrySet()) {
+            if (nodeTemplateEntry.getValue() instanceof ServiceNodeTemplate) {
+                // Define a service node with a directive to the orchestrator
+                // that this Node Template is substitutable
+                YorcServiceNodeTemplate yorcServiceNodeTemplate = 
+                    new YorcServiceNodeTemplate((ServiceNodeTemplate)nodeTemplateEntry.getValue());
+                nodeTemplateEntry.setValue(yorcServiceNodeTemplate);
+            }
+        }
 
         // Copy overwritten artifacts for each node
         PaaSTopology ptopo = ctx.getPaaSTopology();
