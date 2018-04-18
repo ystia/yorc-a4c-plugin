@@ -72,10 +72,6 @@ topology_template:
         consul_agent:
           properties:
             api_port: 8500
-            protocol: tcp
-            secure: false
-            network_name: PRIVATE
-            initiator: source
     # Using a service that is not defined in this Topology.
     # This is done by specifying an Abstract Node Type that will be matched 
     # at deployment time against the service implementation.
