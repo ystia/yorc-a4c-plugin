@@ -80,6 +80,11 @@ node_types:
         type: boolean
         required: false
         default: false
+    attributes:
+      web_ui_url:
+        description: >
+          Consul Web UI URL
+        type: string
     capabilities:
       consul_agent:
         type: org.ystia.yorc.samples.consul.pub.capabilities.ConsulAgent
@@ -95,6 +100,11 @@ node_types:
           - equal: "server"
         required: true
         default: "server"
+    attributes:
+      join_address:
+        description: >
+          Address Agents can use to join this Consul Server
+        type: string
     capabilities:
       consul_server:
         type: org.ystia.yorc.samples.consul.pub.capabilities.ConsulServer
@@ -126,7 +136,7 @@ node_types:
 
 capability_types:
   org.ystia.yorc.samples.consul.pub.capabilities.ConsulAgent:
-    derived_from: tosca.capabilities.Endpoint
+    derived_from: tosca.capabilities.Endpoint.Public
     description: >
       A ConsulAgent capability allows to binds to the Consul HTTP API.
       Both agents and servers expose this capability
@@ -137,9 +147,9 @@ capability_types:
         required: true
         default: 8500
   org.ystia.yorc.samples.consul.pub.capabilities.ConsulServer:
-    derived_from: tosca.capabilities.Root
+    derived_from: tosca.capabilities.Endpoint
     description: >
-      A Consul Server exposes a capability that allows Consul Agents to join it.
+      A Consul Server exposes a capability that allows Consul Agents to join this Consul Server.
   org.ystia.yorc.samples.consul.pub.capabilities.ConsulServerWAN:
     derived_from: tosca.capabilities.Root
     description: >

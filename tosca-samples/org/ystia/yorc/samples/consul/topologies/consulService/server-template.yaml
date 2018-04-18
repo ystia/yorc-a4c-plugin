@@ -72,7 +72,10 @@ topology_template:
         consul_agent:
           properties:
             api_port: 8500
-            protocol: tcp
-            secure: false
-            network_name: PRIVATE
-            initiator: source
+  outputs:
+    webUI:
+      description: Consul Server Web UI URL.
+      value: { get_attribute: [ ConsulServerInstance, web_ui_url ] }
+    consulServerAddress:
+      description: Consul Server IP address that Agents should use to join.
+      value: { get_attribute: [ ConsulServerInstance, join_address ] }

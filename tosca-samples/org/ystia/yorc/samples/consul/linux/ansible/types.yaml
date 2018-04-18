@@ -43,6 +43,9 @@ node_types:
           By default, a dnsmask is installed as a DNS proxy.
           It is sometimes needed to remove it if another DNS is already installed (bind for example)
         default: true
+    attributes:
+      web_ui_url: { concat: [ "http://", get_attribute: [ HOST, public_address ], ":", get_property: [ SELF, consul_agent, api_port ] ] }
+      join_address: { get_attribute: [ HOST, private_address ] }
     requirements:
       - wan_server:
           # Optionally a server may join another server in another data center using the WAN interface
@@ -100,6 +103,11 @@ node_types:
           By default, a dnsmask is installed as a DNS proxy.
           It is sometimes needed to remove it if another DNS is already installed (bind for example)
         default: true
+      web_ui_url:
+        description: >
+          Consul Web UI URL
+        type: string
+        required: false
     requirements:
       - consul_server:
           # An agent requires a server to operate
