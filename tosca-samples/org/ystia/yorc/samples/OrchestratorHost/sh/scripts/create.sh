@@ -19,3 +19,6 @@ echo
 echo
 
 echo "MY_INPUT: ${MY_INPUT}"
+
+
+export MY_OUTPUT="$(echo "${MY_INPUT}" | rev)"

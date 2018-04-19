@@ -16,16 +16,17 @@ tosca_definitions_version: alien_dsl_2_0_0
 #
 
 metadata:
-  template_name: org.ystia.yorc.samples.orchestratorhost.sh
+  template_name: org.ystia.yorc.samples.orchestratorhost.ansible
   template_version: 1.0.0-SNAPSHOT
   template_author: yorc
 
 imports:
   - tosca-normative-types:1.0.0-ALIEN20
+  - yorc-types:1.0.0
 
 
 node_types:
-  org.ystia.yorc.samples.orchestratorhost.sh.Component:
+  org.ystia.yorc.samples.orchestratorhost.ansible.Component:
     derived_from: tosca.nodes.Root
     properties:
       myinput:
@@ -38,5 +39,5 @@ node_types:
         create: 
           inputs:
             MY_INPUT: { get_property: [SELF, myinput] }
-          implementation: scripts/create.sh
+          implementation: playbooks/create.yml
         
