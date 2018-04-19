@@ -9,6 +9,7 @@ import org.alien4cloud.tosca.model.templates.RelationshipTemplate;
 import org.alien4cloud.tosca.model.templates.ServiceNodeTemplate;
 import org.alien4cloud.tosca.model.templates.Topology;
 import org.alien4cloud.tosca.model.types.AbstractInheritableToscaType;
+import org.alien4cloud.tosca.model.types.NodeType;
 import org.alien4cloud.tosca.model.types.RelationshipType;
 import org.alien4cloud.tosca.model.workflow.Workflow;
 import org.alien4cloud.tosca.model.workflow.activities.CallOperationWorkflowActivity;
@@ -22,7 +23,11 @@ import static alien4cloud.utils.AlienUtils.safe;
 import static org.alien4cloud.tosca.utils.ToscaTypeUtils.isOfType;
 
 /**
- * A {@code OperationHostModifier} is a ...
+ * A {@code OperationHostModifier} is a Topology modifier that explore a {@link Topology} to detect templates that have operations
+ * that should be executed on the orchestrator host. For those operations it adds an operation_host property to "ORCHESTRATOR" in the
+ * relevant workflow step.
+ *
+ * This modifier is automatically added to all locations.
  *
  * @author Loic Albertin
  */
@@ -35,22 +40,23 @@ public class OperationHostModifier extends TopologyModifierSupport {
     public void process(Topology topology, FlowExecutionContext context) {
 
 
-        safe(topology.getNodeTemplates()).forEach((name, nodeTemplate) -> handleNodeTemplate(topology, nodeTemplate));
+        safe(topology.getNodeTemplates()).forEach((name, nodeTemplate) -> handleNodeTemplate(context, topology, nodeTemplate));
     }
 
-    private void handleNodeTemplate(Topology topology, NodeTemplate nodeTemplate) {
+    private void handleNodeTemplate(FlowExecutionContext context, Topology topology, NodeTemplate nodeTemplate) {
         if (shouldBeExecutedOnOrchestrator(topology, nodeTemplate)) {
-            safe(topology.getWorkflows()).forEach((s, workflow) -> setOperationHostForNode(workflow, nodeTemplate));
+            safe(topology.getWorkflows()).forEach((s, workflow) -> setOperationHostForNode(context, workflow, nodeTemplate));
         }
 
     }
 
-    private void setOperationHostForNode(Workflow workflow, NodeTemplate nodeTemplate) {
+    private void setOperationHostForNode(FlowExecutionContext context, Workflow workflow, NodeTemplate nodeTemplate) {
         safe(workflow.getSteps()).forEach((s, workflowStep) -> {
             if (workflowStep.getTarget().equals(nodeTemplate.getName()) &&
                     safe(workflowStep.getActivities()).stream()
                             .anyMatch(abstractWorkflowActivity -> abstractWorkflowActivity instanceof CallOperationWorkflowActivity)) {
                 workflowStep.setOperationHost("ORCHESTRATOR");
+                context.log().info("Set operation host for step <{}> of node <{}> to <ORCHESTRATOR>", s, nodeTemplate.getName());
             }
         });
     }
@@ -75,7 +81,7 @@ public class OperationHostModifier extends TopologyModifierSupport {
     }
 
     private boolean isCompute(NodeTemplate node) {
-        AbstractInheritableToscaType nodeType = ToscaContext.get(AbstractInheritableToscaType.class, node.getType());
+        AbstractInheritableToscaType nodeType = ToscaContext.get(NodeType.class, node.getType());
         return ToscaTypeUtils.isOfType(nodeType, NormativeComputeConstants.COMPUTE_TYPE);
     }
 
