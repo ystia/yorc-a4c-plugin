@@ -9,13 +9,13 @@ We recommend first to understand what the Ystia Orchestrator and Alien4Cloud are
 
 ## Requirements
 
-[Alien4Cloud version 2.0.0-RC1](http://alien4cloud.github.io/#/documentation/2.0.0/index.html)
+[Alien4Cloud version 2.0.0](http://alien4cloud.github.io/#/documentation/2.0.0/index.html)
 
 ## Installation
 
 ### Alien4Cloud
 
-* Download: [alien4Cloud v2.0.0-RC1 Download button](https://alien4cloud.github.io/)
+* Download: [alien4Cloud v2.0.0 Download button](https://alien4cloud.github.io/)
 * Run : alien4cloud.sh or alien4cloud.bat
 * Visit [a4c UI: login admin/admin](http://localhost:8088)
 
@@ -30,11 +30,9 @@ Then follow our documentation to setup the Yorc plugin into Alien4Cloud
 We warmly welcome any kind of contribution from feedbacks and constructive criticism to code changes.
 Please read our [contribution guidelines](CONTRIBUTING.md) for more information.
 
-<!--
-TODO: link to readthedoc.org
-
 ## Documentation
--->
+
+The project documentation is available on [readthedocs](http://yorc-a4c-plugin.readthedocs.io/en/latest/)
 
 ## Project History
 

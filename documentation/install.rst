@@ -54,7 +54,7 @@ Alien4Cloud Yorc Plugin installation
 
 Log into the Alien4Cloud UI as described in the previous paragraph.
 
-Then go to |AdminBtn| and in the |PluginsBtn| sub-menu. Then drop the file named alien4cloud-yorc-plugin-1.0.0-SNAPSHOT.zip in the drop area.
+Then go to |AdminBtn| and in the |PluginsBtn| sub-menu. Then drop the file named alien4cloud-yorc-plugin-|version|.zip in the drop area.
 
 The next step will be to configure a new **orchestrator** and a **location** (see the next section).
 
