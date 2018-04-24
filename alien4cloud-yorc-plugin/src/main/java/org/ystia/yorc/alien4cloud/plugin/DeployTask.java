@@ -627,13 +627,13 @@ public class DeployTask extends AlienTask {
     private void buildComputeMonitoringTags(final DeploymentTopology depTopology, PaaSTopology ptopo) {
         Map<String, String> depProps = depTopology.getProviderDeploymentProperties();
 
-        // Check for Monitoring interval : it enables monitoring only if time interval is > 0
-        String monitoringIntervalStr = (String) MapUtil.get(depProps, YstiaOrchestratorFactory.MONITORING_INTERVAL);
+        // Check for Monitoring time interval : it enables monitoring only if time interval is > 0
+        String monitoringIntervalStr = (String) MapUtil.get(depProps, YstiaOrchestratorFactory.MONITORING_TIME_INTERVAL);
         int monitoringInterval = Integer.parseInt(monitoringIntervalStr);
         if (monitoringInterval > 0) {
             List<Tag> tags = new ArrayList<>();
             Tag tag = new Tag();
-            tag.setName(YstiaOrchestratorFactory.MONITORING_INTERVAL);
+            tag.setName(YstiaOrchestratorFactory.MONITORING_TIME_INTERVAL);
             tag.setValue(monitoringIntervalStr);
             tags.add(tag);
 

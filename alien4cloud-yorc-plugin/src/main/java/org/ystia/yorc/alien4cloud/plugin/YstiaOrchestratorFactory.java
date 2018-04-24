@@ -38,7 +38,7 @@ public class YstiaOrchestratorFactory implements IOrchestratorPluginFactory<Ysti
     public static final String KUBERNETES = "Kubernetes";
     public static final String AWS = "AWS";
     public static final String HOSTS_POOL = "HostsPool";
-    public static final String MONITORING_INTERVAL = "monitoring_interval";
+    public static final String MONITORING_TIME_INTERVAL = "monitoring_time_interval";
     private final Map<String, PropertyDefinition> deploymentProperties = buildDeploymentProperties();
     @Resource
     private BeanFactory beanFactory;
@@ -92,9 +92,9 @@ public class YstiaOrchestratorFactory implements IOrchestratorPluginFactory<Ysti
         PropertyDefinition monitoringInterval = new PropertyDefinition();
         monitoringInterval.setType(ToscaTypes.INTEGER.toString());
         monitoringInterval.setRequired(false);
-        monitoringInterval.setDescription("This enables a liveness computes and services monitoring and defines the interval time in seconds between the checks.");
+        monitoringInterval.setDescription("This enables a liveness computes and services monitoring and defines the time interval in seconds between the checks.");
         monitoringInterval.setDefault(new ScalarPropertyValue("0"));
-        depProps.put(MONITORING_INTERVAL, monitoringInterval);
+        depProps.put(MONITORING_TIME_INTERVAL, monitoringInterval);
 
         return depProps;
     }
