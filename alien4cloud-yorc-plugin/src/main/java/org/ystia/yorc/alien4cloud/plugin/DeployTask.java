@@ -28,18 +28,15 @@ import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
 
 import alien4cloud.component.ICSARRepositorySearchService;
 import alien4cloud.component.repository.ArtifactRepositoryConstants;
+import alien4cloud.model.common.Tag;
 import alien4cloud.model.components.CSARSource;
 import alien4cloud.model.deployment.DeploymentTopology;
 import alien4cloud.model.orchestrators.locations.Location;
@@ -56,6 +53,7 @@ import alien4cloud.tosca.parser.ParsingErrorLevel;
 import alien4cloud.tosca.parser.ParsingException;
 import alien4cloud.tosca.parser.ParsingResult;
 import alien4cloud.tosca.parser.ToscaParser;
+import alien4cloud.utils.MapUtil;
 import com.google.common.collect.Sets;
 import lombok.extern.slf4j.Slf4j;
 import org.alien4cloud.tosca.exporter.ArchiveExportService;
@@ -113,6 +111,10 @@ public class DeployTask extends AlienTask {
 
         // Init Deployment Info from topology
         DeploymentTopology dtopo = ctx.getDeploymentTopology();
+
+        // Build Monitoring tags for computes
+        buildComputeMonitoringTags(dtopo, ctx.getPaaSTopology());
+
         Map<String, Map<String, InstanceInformation>> curinfo = setupInstanceInformations(dtopo);
         YorcRuntimeDeploymentInfo jrdi = new YorcRuntimeDeploymentInfo(ctx, DeploymentStatus.INIT_DEPLOYMENT, curinfo, deploymentUrl);
         orchestrator.putDeploymentInfo(paasId, jrdi);
@@ -620,5 +622,24 @@ public class DeployTask extends AlienTask {
             }
         }
         return currentInformations;
+    }
+
+    private void buildComputeMonitoringTags(final DeploymentTopology depTopology, PaaSTopology ptopo) {
+        Map<String, String> depProps = depTopology.getProviderDeploymentProperties();
+
+        // Check for Monitoring interval : it enables monitoring only if time interval is > 0
+        String monitoringIntervalStr = (String) MapUtil.get(depProps, YstiaOrchestratorFactory.MONITORING_INTERVAL);
+        int monitoringInterval = Integer.parseInt(monitoringIntervalStr);
+        if (monitoringInterval > 0) {
+            List<Tag> tags = new ArrayList<>();
+            Tag tag = new Tag();
+            tag.setName(YstiaOrchestratorFactory.MONITORING_INTERVAL);
+            tag.setValue(monitoringIntervalStr);
+            tags.add(tag);
+
+            for (PaaSNodeTemplate compute : ptopo.getComputes()) {
+                compute.getTemplate().setTags(tags);
+            }
+        }
     }
 }
