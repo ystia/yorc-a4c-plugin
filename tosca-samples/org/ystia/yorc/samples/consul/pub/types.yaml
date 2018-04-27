@@ -100,11 +100,6 @@ node_types:
           - equal: "server"
         required: true
         default: "server"
-    attributes:
-      join_address:
-        description: >
-          Address Agents can use to join this Consul Server
-        type: string
     capabilities:
       consul_server:
         type: org.ystia.yorc.samples.consul.pub.capabilities.ConsulServer
