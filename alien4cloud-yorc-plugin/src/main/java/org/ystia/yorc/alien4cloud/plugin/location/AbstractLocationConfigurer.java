@@ -21,6 +21,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import alien4cloud.model.common.Tag;
 import alien4cloud.utils.AlienConstants;
 import alien4cloud.deployment.matching.services.nodes.MatchingConfigurations;
 import alien4cloud.deployment.matching.services.nodes.MatchingConfigurationsParser;
@@ -45,9 +46,12 @@ import org.alien4cloud.tosca.model.definitions.constraints.GreaterThanConstraint
 import org.alien4cloud.tosca.model.definitions.constraints.IMatchPropertyConstraint;
 import org.alien4cloud.tosca.model.definitions.constraints.LessOrEqualConstraint;
 import org.alien4cloud.tosca.model.definitions.constraints.LessThanConstraint;
+import org.alien4cloud.tosca.model.types.AbstractToscaType;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.ystia.yorc.alien4cloud.plugin.service.PluginArchiveService;
+
+import static alien4cloud.utils.AlienUtils.safe;
 
 /**
  * Configure resources for the location type.
@@ -56,6 +60,9 @@ import org.ystia.yorc.alien4cloud.plugin.service.PluginArchiveService;
 @Component
 @Scope("prototype")
 public abstract class AbstractLocationConfigurer implements ILocationConfiguratorPlugin {
+
+    /** This is used to tag types provided by any yorc location */
+    public static final String YORC_LOCATION_DEFINED_TYPE_TAG = "_yorc_location_defined_type_";
 
     @Inject
     protected ArchiveParser archiveParser;
@@ -104,8 +111,20 @@ public abstract class AbstractLocationConfigurer implements ILocationConfigurato
             log.debug("Parse Location Archive " + path);
             this.archives.add(archiveService.parsePluginArchives(path));
         }
-        // TODO remove this !
-        getMatchingConfigurations();
+        archives.forEach(this::decorateArchiveContents);
+    }
+
+    private void decorateArchiveContents(PluginArchive pluginArchive) {
+        safe(pluginArchive.getArchive().getArtifactTypes()).forEach(this::decorateTOSCAType);
+        safe(pluginArchive.getArchive().getCapabilityTypes()).forEach(this::decorateTOSCAType);
+        safe(pluginArchive.getArchive().getDataTypes()).forEach(this::decorateTOSCAType);
+        safe(pluginArchive.getArchive().getNodeTypes()).forEach(this::decorateTOSCAType);
+        safe(pluginArchive.getArchive().getPolicyTypes()).forEach(this::decorateTOSCAType);
+        safe(pluginArchive.getArchive().getRelationshipTypes()).forEach(this::decorateTOSCAType);
+    }
+
+    private <T extends AbstractToscaType> void decorateTOSCAType(String typeName, T type) {
+        type.getTags().add(new Tag(AbstractLocationConfigurer.YORC_LOCATION_DEFINED_TYPE_TAG, "_internal_"));
     }
 
 
