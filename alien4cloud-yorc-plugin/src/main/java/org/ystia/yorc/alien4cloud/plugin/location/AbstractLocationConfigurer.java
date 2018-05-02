@@ -16,6 +16,7 @@
 package org.ystia.yorc.alien4cloud.plugin.location;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -124,6 +125,9 @@ public abstract class AbstractLocationConfigurer implements ILocationConfigurato
     }
 
     private <T extends AbstractToscaType> void decorateTOSCAType(String typeName, T type) {
+        if (type.getTags() == null) {
+            type.setTags(new ArrayList<>());
+        }
         type.getTags().add(new Tag(AbstractLocationConfigurer.YORC_LOCATION_DEFINED_TYPE_TAG, "_internal_"));
     }
 
