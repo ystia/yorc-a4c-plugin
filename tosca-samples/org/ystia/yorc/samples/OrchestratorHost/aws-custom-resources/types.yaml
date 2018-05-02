@@ -36,6 +36,7 @@ node_types:
         type: string
     attributes:
       ip_address: { get_operation_output: [ SELF, Standard, start, IP_ADDRESS ] }
+      private_address: { get_operation_output: [ SELF, Standard, start, IP_ADDRESS ] }
       public_ip_address: { get_operation_output: [ SELF, Standard, start, PUBLIC_IP_ADDRESS ] }
       public_address: { get_operation_output: [ SELF, Standard, start, PUBLIC_IP_ADDRESS ] }
       instance_id: { get_operation_output: [ SELF, Standard, start, INSTANCE_ID ] }

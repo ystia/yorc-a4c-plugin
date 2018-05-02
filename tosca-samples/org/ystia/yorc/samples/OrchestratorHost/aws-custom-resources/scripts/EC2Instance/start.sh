@@ -22,3 +22,6 @@ export INSTANCE_ID="${instance_id}"
 
 availibility_zone=$(aws ec2 describe-instances --instance-ids ${instance_id} --query 'Reservations[0].Instances[0].Placement.AvailabilityZone' --output text)
 export AVAILIBILITY_ZONE="${availibility_zone}"
+
+echo 'Waiting for instance to reach the "running" state'
+aws ec2 wait instance-running
