@@ -23,8 +23,8 @@ topology_template:
         aws_default_region: "us-east-2"
         image_id: "ami-9e103afb"
         instance_type: "t2.micro"
-        security_group_ids: "janus-securityGroup"
-        key_name: "janus-keypair"
+        security_group_ids: "changeit"
+        key_name: "changeit"
       capabilities:
         endpoint:
           properties:
