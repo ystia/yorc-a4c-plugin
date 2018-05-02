@@ -357,12 +357,16 @@ public class DeployTask extends AlienTask {
 
     private void matchKubernetesImplementation(ArchiveRoot root) {
         root.getNodeTypes().forEach((k, t) -> {
-            Interface ifce = t.getInterfaces().get("tosca.interfaces.node.lifecycle.Standard");
-            if (ifce != null) {
-                Operation start = ifce.getOperations().get("start");
-                if (start != null &&
+            Map<String,  Interface> interfaces = t.getInterfaces();
+            if (interfaces != null) {
+                Interface ifce = interfaces.get("tosca.interfaces.node.lifecycle.Standard");
+                if (ifce != null) {
+                    Operation start = ifce.getOperations().get("start");
+                    if (start != null &&
                         start.getImplementationArtifact().getArtifactType().equals("tosca.artifacts.Deployment.Image.Container.Docker")) {
-                    start.getImplementationArtifact().setArtifactType("tosca.artifacts.Deployment.Image.Container.Docker.Kubernetes");
+
+                        start.getImplementationArtifact().setArtifactType("tosca.artifacts.Deployment.Image.Container.Docker.Kubernetes");
+                    }
                 }
             }
         });
