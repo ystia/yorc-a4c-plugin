@@ -30,6 +30,7 @@ topology_template:
           properties:
             credentials: 
               user: ubuntu
+              token_type: key
             secure: true
             protocol: tcp
             network_name: PRIVATE
