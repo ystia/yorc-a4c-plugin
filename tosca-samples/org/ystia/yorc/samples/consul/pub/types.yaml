@@ -131,7 +131,7 @@ node_types:
 
 capability_types:
   org.ystia.yorc.samples.consul.pub.capabilities.ConsulAgent:
-    derived_from: tosca.capabilities.Endpoint.Public
+    derived_from: tosca.capabilities.Endpoint
     description: >
       A ConsulAgent capability allows to binds to the Consul HTTP API.
       Both agents and servers expose this capability
