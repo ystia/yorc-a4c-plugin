@@ -1,0 +1,26 @@
+
+- name: Create
+  hosts: all
+  strategy: free
+  
+  tasks:
+    - name: Log input
+      debug: msg="MY_INPUT = {{MY_INPUT}}"
+
+    - name: get hostname
+      command: hostname -f
+      register: hn
+    
+    - name: Log hostname
+      debug: msg="hostname= {{hn.stdout}}"
+
+    - name: get ip conf
+      command: ip a
+      register: ipa
+
+    - name: Log ip conf
+      debug: msg="ip a= {{ipa.stdout}}"
+
+    - name: Set output
+      set_fact:
+        MY_OUTPUT: "{{ MY_INPUT | reverse }}"

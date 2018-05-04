@@ -1,0 +1,54 @@
+tosca_definitions_version: alien_dsl_2_0_0
+
+metadata:
+  template_name: TestEc2
+  template_version: 0.1.0-SNAPSHOT
+  template_author: admin
+
+description: ""
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN20
+  - org.ystia.yorc.samples.python:1.0.0-SNAPSHOT
+  - aws-custom-resources:1.0.0-SNAPSHOT
+  - yorc-types:1.0.0
+
+topology_template:
+  node_templates:
+    EC2Instance:
+      type: org.alien4cloud.aws.EC2Instance
+      properties:
+        aws_access_key_id: changeit
+        aws_secret_access_key: "changeit"
+        aws_default_region: "us-east-2"
+        image_id: "ami-9e103afb"
+        instance_type: "t2.micro"
+        security_group_ids: "changeit"
+        key_name: "changeit"
+      capabilities:
+        endpoint:
+          properties:
+            credentials: 
+              user: ubuntu
+              token_type: key
+            secure: true
+            protocol: tcp
+            network_name: PRIVATE
+            initiator: source
+        scalable:
+          properties:
+            min_instances: 1
+            max_instances: 1
+            default_instances: 1
+    Component:
+      type: org.ystia.yorc.samples.python.Component
+      properties:
+        hello_message: "Hello World!"
+        outputVar1: ov1
+        outputVar2: ov2
+      requirements:
+        - hostedOnEc2InstanceHost:
+            type_requirement: host
+            node: EC2Instance
+            capability: tosca.capabilities.Container
+            relationship: tosca.relationships.HostedOn

@@ -15,6 +15,10 @@
  */
 package org.ystia.yorc.alien4cloud.plugin;
 
+import java.util.Map;
+
+import javax.annotation.Resource;
+
 import alien4cloud.model.orchestrators.ArtifactSupport;
 import alien4cloud.model.orchestrators.locations.LocationSupport;
 import alien4cloud.orchestrators.plugin.IOrchestratorPluginFactory;
@@ -23,14 +27,11 @@ import org.alien4cloud.tosca.model.definitions.PropertyDefinition;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
-import java.util.Map;
-
 /**
  * Factory for Yorc implementation of orchestrator instance.
  */
 @Component("yorc-orchestrator-factory")
-public class YstiaOrchestratorFactory implements IOrchestratorPluginFactory<YstiaOrchestrator, ProviderConfig> {
+public class YstiaOrchestratorFactory implements IOrchestratorPluginFactory<YorcPaaSProvider, ProviderConfig> {
     public static final String OPENSTACK = "OpenStack";
     public static final String SLURM = "Slurm";
     public static final String KUBERNETES = "Kubernetes";
@@ -41,12 +42,12 @@ public class YstiaOrchestratorFactory implements IOrchestratorPluginFactory<Ysti
     private BeanFactory beanFactory;
 
     @Override
-    public YstiaOrchestrator newInstance() {
-        return beanFactory.getBean(YstiaOrchestrator.class);
+    public YorcPaaSProvider newInstance() {
+        return beanFactory.getBean(YorcPaaSProvider.class);
     }
 
     @Override
-    public void destroy(YstiaOrchestrator instance) {
+    public void destroy(YorcPaaSProvider instance) {
         // nothing specific, the plugin will be garbaged collected when all references are lost.
     }
 
@@ -77,7 +78,7 @@ public class YstiaOrchestratorFactory implements IOrchestratorPluginFactory<Ysti
         return this.deploymentProperties;
     }
 
-    //    @Override
+    @Override
     public String getType() {
         return "Ystia Orchestrator";
     }
