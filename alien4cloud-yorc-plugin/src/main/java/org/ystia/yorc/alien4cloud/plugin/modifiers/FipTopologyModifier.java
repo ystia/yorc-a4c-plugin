@@ -121,11 +121,6 @@ public class FipTopologyModifier extends TopologyModifierSupport {
                         fipNodeTemplate.setProperties(properties);
                         fipNodeTemplate.setCapabilities(capabilities);
 
-                        // The public network Node Template will be removed
-                        // now that a Floating IP Node Template Node
-                        // provides the required connectivity
-                        nodesToRemove.add(networkNodeTemplate);
-
                         // Creating a new relationship between the Node template
                         // and the Floating IP node.
                         // Not attempting to re-use/modify the relationship
@@ -149,6 +144,13 @@ public class FipTopologyModifier extends TopologyModifierSupport {
                     }
                 });
             }
+
+            // Now that Floating IP nodes have been created to provide the
+            // required connectivity, removing this public network node
+            nodesToRemove.add(networkNodeTemplate);
+            context.log().info(
+                "Public network <{}> removed as connectivity requirements are addressed by Floating IP Node Templates",
+                networkNodeTemplate.getName());
         });
 
         // Removing Public Network nodes for which a new Floating IP Node 
