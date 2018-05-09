@@ -103,6 +103,10 @@ ${utils.formatArtifact($artifactEntry.value, 4)}
 #if(!$utils.isNull(${nodeTemplateEntry.value.description}))
       description: ${utils.renderDescription(${nodeTemplateEntry.value.description}, "        ")}
 #end## description
+#set($directives = $exportUtils.getDirectives($nodeTemplateEntry.value))
+#if($utils.collectionIsNotEmpty($directives))
+      directives: [$utils.getCsvToString($directives)]
+#end## if directives
 #serializeMetadata($nodeTemplateEntry.value, "      ")
       type: ${nodeTemplateEntry.value.type}
 #if($utils.mapIsNotEmptyAndContainsNotnullValues($nodeTemplateEntry.value.properties))
