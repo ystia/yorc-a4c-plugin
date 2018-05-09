@@ -140,7 +140,7 @@ public class OpenStackBSComputeWFModifier extends TopologyModifierSupport {
                     }
                 }
 
-                // Start & Stop make no sense for those kind of nodes in Yorc as those operations are not implemented.
+                // Start & Stop makes no sense for those kind of nodes in Yorc as those operations are not implemented.
                 // Do not change those WFs
             }
         }));
