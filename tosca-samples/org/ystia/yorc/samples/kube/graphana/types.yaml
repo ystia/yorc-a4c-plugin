@@ -1,0 +1,46 @@
+tosca_definitions_version: alien_dsl_2_0_0
+
+metadata:
+  template_name: org.ystia.yorc.samples.kube.graphana
+  template_version: 1.0.0-SNAPSHOT
+  template_author: Yorc team
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN20
+  - docker-types:2.0.0
+
+description: Container types that can be deployed on K8S
+
+repositories:
+  docker:
+    url: https://hub.docker.com/
+    type: docker
+
+node_types:
+  org.ystia.yorc.samples.kube.containers.nodes.Graphite:
+    derived_from: tosca.nodes.Container.Application.DockerContainer
+    metadata:
+      icon: images/graphite.png
+    capabilities:
+      http_endpoint:
+        type: org.ystia.yorc.samples.kube.containers.capabilities.Graphite
+    interfaces:
+      Standard:
+        create:
+          implementation:
+            file: sitespeedio/graphite
+            repository: docker
+            type: tosca.artifacts.Deployment.Image.Container.Docker
+
+
+capability_types:
+  org.ystia.yorc.samples.kube.containers.capabilities.Graphite:
+    derived_from: tosca.capabilities.Endpoint
+    properties:
+      docker_bridge_port_mapping:
+        type: integer
+        description: Port used to bridge to the container's endpoint.
+        default: 8080
+      port:
+        type: integer
+        default: 80
