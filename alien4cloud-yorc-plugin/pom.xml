@@ -27,6 +27,7 @@
     <name>Ystia Orchestrator PaaS provider for Alien4Cloud :: Plugin</name>
 
       <properties>
+        <lombok.version>1.16.20</lombok.version>
         <httpclient.version>4.4.1</httpclient.version>
         <yorc.types.version>1.0.0-SNAPSHOT</yorc.types.version>
         <skipTests>false</skipTests>
@@ -89,6 +90,12 @@
             <artifactId>unirest-java</artifactId>
             <version>1.4.9</version>
         </dependency>
+        
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+    </dependency>
     </dependencies>
 
     <build>

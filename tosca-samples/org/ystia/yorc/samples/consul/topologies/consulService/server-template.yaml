@@ -1,0 +1,84 @@
+tosca_definitions_version: alien_dsl_2_0_0
+#
+# Copyright 2018 Bull S.A.S. Atos Technologies - Bull, Rue Jean Jaures, B.P.68, 78340, Les Clayes-sous-Bois, France.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+metadata:
+  template_name: ConsulServiceTemplate
+  template_version: 0.1.0-SNAPSHOT
+  template_author: admin
+
+description: "Consul Server exposing a service to Applications"
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN20
+  - yorc-types:1.0.0
+  - org.ystia.yorc.samples.consul.linux.ansible:1.0.0-SNAPSHOT
+  - org.ystia.yorc.samples.consul.pub:1.0.0-SNAPSHOT
+
+topology_template:
+  # Other applications can reference the following Abstract Node Type
+  # to connect to this Consul Server application
+  substitution_mappings:
+    node_type: org.ystia.yorc.samples.consul.pub.nodes.ConsulServer
+    capabilities:
+      consul_server: [ ConsulServerInstance, consul_server ]
+  node_templates:
+    ComputeInstance:
+      type: tosca.nodes.Compute
+      capabilities:
+        scalable:
+          properties:
+            min_instances: 1
+            max_instances: 1
+            default_instances: 1
+        endpoint:
+          properties:
+            secure: true
+            protocol: tcp
+            network_name: PRIVATE
+            initiator: source
+    ConsulServerInstance:
+      type: org.ystia.yorc.samples.consul.linux.ansible.nodes.ConsulServer
+      properties:
+        install_dnsmasq: true
+        mode: server
+        download_url: "https://releases.hashicorp.com/consul/1.0.6/consul_1.0.6_linux_amd64.zip"
+        install_dir: "/usr/local/bin"
+        data_dir: "/var/consul"
+        config_dir: "/etc/consul.d"
+        datacenter: dc1
+        domain: consul
+        web_ui: true
+      requirements:
+        - hostedOnComputeHost:
+            type_requirement: host
+            node: ComputeInstance
+            capability: tosca.capabilities.Container
+            relationship: tosca.relationships.HostedOn
+      capabilities:
+        consul_agent:
+          properties:
+            api_port: 8500
+            network_name: PUBLIC
+            initiator: source
+        consul_server:
+          properties:
+            network_name: PRIVATE
+            initiator: source
+  outputs:
+    webUI:
+      description: Consul Server Web UI URL.
+      value: { get_attribute: [ ConsulServerInstance, web_ui_url ] }

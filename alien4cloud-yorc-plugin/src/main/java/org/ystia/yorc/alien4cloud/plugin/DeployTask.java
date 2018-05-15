@@ -65,9 +65,11 @@ import org.alien4cloud.tosca.model.definitions.DeploymentArtifact;
 import org.alien4cloud.tosca.model.definitions.Interface;
 import org.alien4cloud.tosca.model.definitions.Operation;
 import org.alien4cloud.tosca.model.templates.NodeTemplate;
+import org.alien4cloud.tosca.model.templates.ServiceNodeTemplate;
 import org.alien4cloud.tosca.model.templates.Topology;
 import org.elasticsearch.common.collect.Maps;
 import org.ystia.yorc.alien4cloud.plugin.rest.Response.Event;
+import org.ystia.yorc.alien4cloud.plugin.tosca.model.templates.YorcServiceNodeTemplate;
 import org.ystia.yorc.alien4cloud.plugin.rest.YorcRestException;
 import org.ystia.yorc.alien4cloud.plugin.utils.MappingTosca;
 import org.ystia.yorc.alien4cloud.plugin.utils.ShowTopology;
@@ -289,7 +291,10 @@ public class DeployTask extends AlienTask {
         this.ctx.getDeploymentTopology().getDependencies().forEach(d -> {
             if (!"tosca-normative-types".equals(d.getName())) {
                 Csar csar = csarRepoSearchService.getArchive(d.getName(), d.getVersion());
-                if (CSARSource.ORCHESTRATOR != CSARSource.valueOf(csar.getImportSource())) {
+                final String importSource = csar.getImportSource();
+                // importSource is null when this is a reference to a Service
+                // provided by another deployment
+                if (importSource == null || CSARSource.ORCHESTRATOR != CSARSource.valueOf(importSource)) {
                     try {
                         csar2zip(zout, csar, finalLocation);
                     } catch (Exception e) {
@@ -299,6 +304,15 @@ public class DeployTask extends AlienTask {
             }
         });
 
+        for (Entry<String, NodeTemplate> nodeTemplateEntry :  this.ctx.getDeploymentTopology().getNodeTemplates().entrySet()) {
+            if (nodeTemplateEntry.getValue() instanceof ServiceNodeTemplate) {
+                // Define a service node with a directive to the orchestrator
+                // that this Node Template is substitutable
+                YorcServiceNodeTemplate yorcServiceNodeTemplate = 
+                    new YorcServiceNodeTemplate((ServiceNodeTemplate)nodeTemplateEntry.getValue());
+                nodeTemplateEntry.setValue(yorcServiceNodeTemplate);
+            }
+        }
 
         // Copy overwritten artifacts for each node
         PaaSTopology ptopo = ctx.getPaaSTopology();
@@ -339,6 +353,33 @@ public class DeployTask extends AlienTask {
         if (v != null) {
             ((Map<String, Object>)v).put(parts[parts.length-1], value);
         }
+    }
+
+    private void matchKubernetesImplementation(ArchiveRoot root) {
+        root.getNodeTypes().forEach((k, t) -> {
+            Map<String,  Interface> interfaces = t.getInterfaces();
+            if (interfaces != null) {
+                Interface ifce = interfaces.get("tosca.interfaces.node.lifecycle.Standard");
+                if (ifce != null) {
+                    Operation start = ifce.getOperations().get("start");
+                    if (start != null &&
+                        start.getImplementationArtifact().getArtifactType().equals("tosca.artifacts.Deployment.Image.Container.Docker")) {
+
+                        start.getImplementationArtifact().setArtifactType("tosca.artifacts.Deployment.Image.Container.Docker.Kubernetes");
+                    }
+                }
+            }
+        });
+    }
+    private void matchKubernetesImplementation(Map<String, Object> topology) {
+        Map<String, HashMap> nodeTypes = ((Map) topology.get("node_types"));
+
+        nodeTypes.forEach((k,nodeType)->{
+            String t = (String) getNestedValue(nodeType, "interfaces.Standard.start.implementation.type");
+            if (t.equals("tosca.artifacts.Deployment.Image.Container.Docker")) {
+                setNestedValue(nodeType, "interfaces.Standard.start.implementation.type", "tosca.artifacts.Deployment.Image.Container.Docker.Kubernetes");
+            }
+        });
     }
 
     /**
@@ -532,7 +573,18 @@ public class DeployTask extends AlienTask {
                                 }
                             }
                             ArchiveRoot root = parsingResult.getResult();
-                            String yaml = orchestrator.getToscaComponentExporter().getYaml(root);
+                            if (location == LOC_KUBERNETES) {
+                                matchKubernetesImplementation(root);
+                            }
+
+                            String yaml;
+                            if (root.hasToscaTopologyTemplate()) {
+                                log.debug("File has topology template : " + name);
+                                yaml = orchestrator.getToscaTopologyExporter().getYaml(csar, root.getTopology(), false);
+                            } else {
+                                yaml = orchestrator.getToscaComponentExporter().getYaml(root);
+                            }
+                            
                             zout.write(yaml.getBytes(Charset.forName("UTF-8")));
                         } else {
                             copy(file, zout);
