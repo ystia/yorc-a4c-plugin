@@ -9,7 +9,7 @@ imports:
   - tosca-normative-types:1.0.0-ALIEN20
   - docker-types:2.0.0
 
-description: Container types that can be deployed on K8S
+description: DockerContainers that can be deployed on K8S
 
 repositories:
   docker:
@@ -39,6 +39,12 @@ node_types:
     interfaces:
       Standard:
         create:
+          inputs:
+            MYSQL_DATABASE: { get_property: [SELF, db_name] }
+            MYSQL_USER: { get_property: [SELF, db_user] }
+            MYSQL_PASSWORD: { get_property: [SELF, db_password] }
+            MYSQL_ROOT_PASSWORD: "notused"
+            MYSQL_RANDOM_ROOT_PASSWORD: "yes"
           implementation:
             file: mysql:8.0
             repository: docker
@@ -84,6 +90,10 @@ capability_types:
   org.ystia.yorc.samples.kube.containers.capabilities.MysqlDB:
     derived_from: tosca.capabilities.Endpoint.Database
     properties:
+      docker_bridge_port_mapping:
+        type: integer
+        description: Port used to bridge to the container's endpoint.
+        default: 0
       port:
         type: integer
         default: 3306
