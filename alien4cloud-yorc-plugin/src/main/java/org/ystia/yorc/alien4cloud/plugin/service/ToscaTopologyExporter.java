@@ -73,6 +73,7 @@ public class ToscaTopologyExporter {
             velocityCtx.put("topology_description", "");
         }
         velocityCtx.put("importsUtils", new ToscaImportsUtils());
+        velocityCtx.put("exportUtils", new ToscaExportUtils());
         ClassLoader oldctccl = Thread.currentThread().getContextClassLoader();
         Thread.currentThread().setContextClassLoader(this.getClass().getClassLoader());
         try {
@@ -110,7 +111,10 @@ public class ToscaTopologyExporter {
                         sb.append("  - ");
                     }
                     Csar csar = csarRepoSearchService.getArchive(d.getName(), d.getVersion());
-                    if (CSARSource.valueOf(csar.getImportSource()) == CSARSource.ORCHESTRATOR) {
+                    final String importSource = csar.getImportSource();
+                    // importSource is null when this is a reference to a Service
+                    // provided by another deployment
+                    if (importSource != null && CSARSource.valueOf(importSource) == CSARSource.ORCHESTRATOR) {
                         sb.append("<").append(d.getName()).append(".yml>");
                     } else {
                         sb.append(d.getName()).append("/").append(d.getVersion()).append("/").append(csar.getYamlFilePath());

@@ -25,7 +25,7 @@ description: "This topology illustrates how to setup block storage and partition
 
 imports:
   - tosca-normative-types:1.0.0-ALIEN20
-  - alien-extended-storage-types:2.0.0-SNAPSHOT
+  - alien-extended-storage-types:2.0.0
   - yorc-types:1.0.0
   - org.ystia.yorc.samples.consul.linux.ansible:1.0.0-SNAPSHOT
   - org.ystia.yorc.samples.consul.pub:1.0.0-SNAPSHOT
@@ -93,7 +93,7 @@ topology_template:
       properties:
         install_dnsmasq: true
         mode: agent
-        download_url: "https://releases.hashicorp.com/consul/1.0.2/consul_1.0.2_linux_amd64.zip"
+        download_url: "https://releases.hashicorp.com/consul/1.0.6/consul_1.0.6_linux_amd64.zip"
         install_dir: "/usr/local/bin"
         data_dir: "/var/consul"
         config_dir: "/etc/consul.d"
@@ -123,7 +123,7 @@ topology_template:
       properties:
         install_dnsmasq: true
         mode: server
-        download_url: "https://releases.hashicorp.com/consul/1.0.2/consul_1.0.2_linux_amd64.zip"
+        download_url: "https://releases.hashicorp.com/consul/1.0.6/consul_1.0.6_linux_amd64.zip"
         install_dir: "/usr/local/bin"
         data_dir: "/consulfs/consul_data"
         config_dir: "/etc/consul.d"

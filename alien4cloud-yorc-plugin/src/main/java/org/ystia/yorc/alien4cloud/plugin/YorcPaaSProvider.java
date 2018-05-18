@@ -27,7 +27,9 @@ import javax.inject.Inject;
 
 import alien4cloud.component.ICSARRepositorySearchService;
 import alien4cloud.dao.IGenericSearchDAO;
+import alien4cloud.orchestrators.plugin.ILocationConfiguratorPlugin;
 import alien4cloud.orchestrators.plugin.IOrchestratorPlugin;
+import alien4cloud.orchestrators.plugin.model.PluginArchive;
 import alien4cloud.paas.IPaaSCallback;
 import alien4cloud.paas.exception.MaintenanceModeException;
 import alien4cloud.paas.exception.OperationExecutionException;
@@ -47,6 +49,7 @@ import alien4cloud.paas.model.PaaSWorkflowMonitorEvent;
 import alien4cloud.paas.model.PaaSWorkflowStepMonitorEvent;
 import alien4cloud.paas.plan.ToscaNodeLifecycleConstants;
 import alien4cloud.tosca.parser.ToscaParser;
+import com.google.common.collect.Lists;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.alien4cloud.tosca.catalog.index.IToscaTypeSearchService;
@@ -56,6 +59,10 @@ import org.alien4cloud.tosca.model.templates.Topology;
 import org.alien4cloud.tosca.model.types.NodeType;
 import org.alien4cloud.tosca.model.types.RelationshipType;
 import org.elasticsearch.common.collect.Maps;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
+import org.ystia.yorc.alien4cloud.plugin.location.AbstractLocationConfigurerFactory;
 import org.ystia.yorc.alien4cloud.plugin.rest.Response.AttributeResponse;
 import org.ystia.yorc.alien4cloud.plugin.rest.Response.DeployInfosResponse;
 import org.ystia.yorc.alien4cloud.plugin.rest.Response.InstanceInfosResponse;
@@ -63,6 +70,7 @@ import org.ystia.yorc.alien4cloud.plugin.rest.Response.Link;
 import org.ystia.yorc.alien4cloud.plugin.rest.Response.NodeInfosResponse;
 import org.ystia.yorc.alien4cloud.plugin.rest.RestClient;
 import org.ystia.yorc.alien4cloud.plugin.rest.YorcRestException;
+import org.ystia.yorc.alien4cloud.plugin.service.PluginArchiveService;
 import org.ystia.yorc.alien4cloud.plugin.service.ToscaComponentExporter;
 import org.ystia.yorc.alien4cloud.plugin.service.ToscaTopologyExporter;
 
@@ -71,7 +79,9 @@ import org.ystia.yorc.alien4cloud.plugin.service.ToscaTopologyExporter;
  * This class is abstract since it extends YstiaOrchestrator
  */
 @Slf4j
-public abstract class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
+@Component
+@Scope(BeanDefinition.SCOPE_PROTOTYPE)
+public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
 
     private final Map<String, YorcRuntimeDeploymentInfo> runtimeDeploymentInfos = Maps.newConcurrentMap();
     private final List<AbstractMonitorEvent> toBeDeliveredEvents = new ArrayList<>();
@@ -106,6 +116,12 @@ public abstract class YorcPaaSProvider implements IOrchestratorPlugin<ProviderCo
     @Getter
     private ToscaParser parser;
 
+
+    @Inject
+    private AbstractLocationConfigurerFactory yorcLocationConfigurerFactory;
+
+    @Inject
+    private PluginArchiveService archiveService;
 
     /**
      * Default constructor
@@ -810,6 +826,21 @@ public abstract class YorcPaaSProvider implements IOrchestratorPlugin<ProviderCo
             default:
                 return DeploymentStatus.UNKNOWN;
         }
+    }
+
+
+    @Override
+    public ILocationConfiguratorPlugin getConfigurator(String locationType) {
+        return yorcLocationConfigurerFactory.newInstance(locationType);
+    }
+
+    @Override
+    public List<PluginArchive> pluginArchives() {
+        List<PluginArchive> archives = Lists.newArrayList();
+        archives.add(archiveService.parsePluginArchives("commons/resources"));
+        archives.add(archiveService.parsePluginArchives("docker/resources"));
+
+        return archives;
     }
 
 }

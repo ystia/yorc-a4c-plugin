@@ -35,4 +35,4 @@
         dest: "{{CONFIG_DIR}}/2_connects_to_servers.json"
     
     - name: echo servers list
-      debug: msg="Consul Agent configured to connects to server on [{{ consul_servers | join(', ') }}]"
+      debug: msg="Consul Agent configured to connect to server on [{{ consul_servers | join(', ') }}]"
