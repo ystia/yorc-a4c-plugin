@@ -148,9 +148,9 @@ class AlienClient(object):
         for data in response["data"]:
             if data["template"]["type"] == "yorc.nodes.openstack.Compute":
                 resource_id = data["id"]
-                payload = {'propertyName': 'user', 'propertyValue': 'cloud-user'}
+                payload = {'propertyName': 'credentials', 'propertyValue': {'user': 'centos'}}
                 response = self.session.post(
-                    "{0}/rest/orchestrators/{1}/locations/{2}/resources/{3}/template/properties".format(self.alien_url, orchestrator_id,
+                    "{0}/rest/orchestrators/{1}/locations/{2}/resources/{3}/template/capabilities/endpoint/properties".format(self.alien_url, orchestrator_id,
                                                                                                         location_id, resource_id),
                     data=json.dumps(payload)).json()
                 if response["error"]:

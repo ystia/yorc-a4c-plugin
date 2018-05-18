@@ -172,7 +172,10 @@ public class RestClient {
             JSONObject obj = res.getBody().getObject();
             JSONArray array = obj.getJSONArray("deployments");
             for (int i = 0 ; i < array.length() ; i++) {
-                String depl = array.getJSONObject(i).getString("href");
+                JSONArray linkArray = array.getJSONObject(i).getJSONArray("links");
+                // The links array contains a single element, which is a
+                // reference to the deployment
+                String depl = linkArray.getJSONObject(0).getString("href");
                 log.debug("Found a deployment in Yorc: " + depl);
                 ret.add(depl);
             }

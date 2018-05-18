@@ -14,3 +14,7 @@ matching_configurations:
             - type: { equal: "" }
             - distribution: { equal: "" }
             - version: { less_or_equal: "" }
+
+  yorc.nodes.openstack.BlockStorage:
+    properties:
+      - size: { less_or_equal: 0 B }
