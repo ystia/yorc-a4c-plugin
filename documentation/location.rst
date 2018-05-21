@@ -152,7 +152,7 @@ Click on the compute, the following details should appear:
 Edit mandatory parameters AWS ``image_id``, ``instance_type``, ``security_groups`` and ``key_name`` to provide the name of a key pair already known from AWS.
 
 Edit ``credentials`` to provide a user name.
-This user will be used to connect to this on-demand compute resource once created, and to deploy applications on it (while the user used to create this on-demand resource is defined in the Yorc server configuration).
+This user will be used to connect to this on-demand compute resource once created, and to deploy applications on it (while user credentials used to create this on-demand resource are defined in the Yorc server configuration).
 
 .. |AdminBtn| image:: _static/img/administration-btn.png
               :alt: administration
