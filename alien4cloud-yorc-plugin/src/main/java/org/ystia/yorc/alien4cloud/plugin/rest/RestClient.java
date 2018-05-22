@@ -62,7 +62,6 @@ public class RestClient {
 
     public RestClient() {
         RestClient.initObjectMapper();
-        //Unirest.setTimeouts(CONNECTION_TIMEOUT, SOCKET_TIMEOUT);
     }
 
     private static void initObjectMapper() {
@@ -118,15 +117,13 @@ public class RestClient {
             CloseableHttpClient httpClient = HttpClients
                     .custom()
                     .setDefaultRequestConfig(clientConfig)
-                    //                    .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
                     .setSSLSocketFactory(sslsf)
                     .build();
             Unirest.setHttpClient(httpClient);
         }else if (providerConfiguration.getUrlYorc().startsWith("https")){
             if(System.getProperty("javax.net.ssl.keyStore") == null || System.getProperty("javax.net.ssl.keyStorePassword") == null){
-                log.error("Using SSL but you didn't provide client keystore and password. \n" +
+                log.warn("Using SSL but you didn't provide client keystore and password. This means that if required by Yorc client authentication will fail.\n" +
                         "Please use -Djavax.net.ssl.keyStore <keyStorePath> -Djavax.net.ssl.keyStorePassword <password> while starting java VM");
-                throw new PluginConfigurationException("Bad SSL configuration");
             }
             if(System.getProperty("javax.net.ssl.trustStore") == null || System.getProperty("javax.net.ssl.trustStorePassword") == null){
                 log.warn("You didn't provide client trustore and password. Using defalut one \n" +
@@ -147,10 +144,8 @@ public class RestClient {
             getDeployments();
         } catch (UnirestException e) {
             log.warn("Cannot access Yorc: " + e.getCause());
-            throw new PluginConfigurationException("Cannot access Yorc: " + e.getCause());
+            throw new PluginConfigurationException("Cannot access Yorc", e);
         }
-
-
     }
 
     /**
