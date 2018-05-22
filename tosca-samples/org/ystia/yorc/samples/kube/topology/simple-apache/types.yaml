@@ -5,7 +5,7 @@ metadata:
   template_version: 0.1.0-SNAPSHOT
   template_author: admin
 
-description: ""
+description: "Test Apache exposed as service on k8s"
 
 imports:
   - tosca-normative-types:1.0.0-ALIEN20
