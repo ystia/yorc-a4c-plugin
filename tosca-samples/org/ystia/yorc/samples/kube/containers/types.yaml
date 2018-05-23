@@ -40,11 +40,11 @@ node_types:
       Standard:
         create:
           inputs:
-            MYSQL_DATABASE: { get_property: [SELF, db_name] }
-            MYSQL_USER: { get_property: [SELF, db_user] }
-            MYSQL_PASSWORD: { get_property: [SELF, db_password] }
-            MYSQL_ROOT_PASSWORD: "notused"
-            MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+            ENV_MYSQL_DATABASE: { get_property: [SELF, db_name] }
+            ENV_MYSQL_USER: { get_property: [SELF, db_user] }
+            ENV_MYSQL_PASSWORD: { get_property: [SELF, db_password] }
+            ENV_MYSQL_ROOT_PASSWORD: "notused"
+            ENV_MYSQL_RANDOM_ROOT_PASSWORD: "yes"
           implementation:
             file: mysql:8.0
             repository: docker
