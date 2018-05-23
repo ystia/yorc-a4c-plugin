@@ -77,10 +77,10 @@ node_types:
       Standard:
         create:
           inputs:
-            WORDPRESS_DB_HOST: { concat:  [ get_attribute: [TARGET, mysql_db, ip_address], ":", get_property: [TARGET, mysql_db, docker_ports] ] }
-            WORDPRESS_DB_USER: "mysql"
-            WORDPRESS_DB_PASSWORD: "mysql"
-            WORDPRESS_DB_NAME: "mysql"
+            ENV_WORDPRESS_DB_HOST: { concat:  [ get_attribute: [TARGET, mysql_db, ip_address], ":", get_attribute: [TARGET, mysql_db, port] ] }
+            ENV_WORDPRESS_DB_USER: { get_property: [TARGET, mysql_db, db_user] }
+            ENV_WORDPRESS_DB_PASSWORD: { get_property: [TARGET, mysql_db, db_password] }
+            ENV_WORDPRESS_DB_NAME: { get_property: [TARGET, mysql_db, db_name] }
           implementation:
             file: wordpress:4.8.1-fpm-alpine
             repository: docker
