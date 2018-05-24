@@ -1,0 +1,78 @@
+tosca_definitions_version: alien_dsl_2_0_0
+
+metadata:
+  template_name: aws-custom-resources
+  template_version: 1.0.0-SNAPSHOT
+  template_author: alien4cloud
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN20
+  - yorc-types:1.0.0
+
+node_types:
+
+  org.alien4cloud.aws.EC2Instance:
+    derived_from: yorc.nodes.Compute
+    properties:
+      aws_access_key_id:
+        type: string
+        required: true
+      aws_secret_access_key:
+        type: string
+        required: true
+      aws_default_region:
+        type: string
+        required: true
+      image_id:
+        type: string
+        required: true
+      instance_type:
+        type: string
+        required: true
+      security_group_ids:
+        type: string
+        required: true
+      key_name:
+        type: string
+    attributes:
+      ip_address: { get_operation_output: [ SELF, Standard, start, IP_ADDRESS ] }
+      private_address: { get_operation_output: [ SELF, Standard, start, IP_ADDRESS ] }
+      public_ip_address: { get_operation_output: [ SELF, Standard, start, PUBLIC_IP_ADDRESS ] }
+      public_address: { get_operation_output: [ SELF, Standard, start, PUBLIC_IP_ADDRESS ] }
+      instance_id: { get_operation_output: [ SELF, Standard, start, INSTANCE_ID ] }
+      #aws_resource_id: { get_operation_output: [ SELF, Standard, start, INSTANCE_ID ] }
+      #placement: { get_operation_output: [ SELF, Standard, start, AVAILIBILITY_ZONE ] }
+    capabilities:
+      endpoint:
+        type: yorc.capabilities.Endpoint.ProvisioningAdmin
+        attributes:
+          ip_address: { get_operation_output: [ SELF, Standard, start, IP_ADDRESS ] }
+    interfaces:
+      Standard:
+        start:
+          inputs:
+            AWS_ACCESS_KEY_ID: { get_property: [ SELF, aws_access_key_id ] }
+            AWS_SECRET_ACCESS_KEY: { get_property: [ SELF, aws_secret_access_key ] }
+            AWS_DEFAULT_REGION: { get_property: [ SELF, aws_default_region ] }
+            IMAGE_ID: { get_property: [ SELF, image_id ] }
+            INSTANCE_TYPE: { get_property: [ SELF, instance_type ] }
+            SECURITY_GROUP_IDS: { get_property: [ SELF, security_group_ids ] }
+            KEY_NAME: { get_property: [ SELF, key_name ] }
+          operation_host: ORCHESTRATOR
+          implementation: scripts/EC2Instance/start.sh
+        stop:
+          inputs:
+            AWS_ACCESS_KEY_ID: { get_property: [ SELF, aws_access_key_id ] }
+            AWS_SECRET_ACCESS_KEY: { get_property: [ SELF, aws_secret_access_key ] }
+            AWS_DEFAULT_REGION: { get_property: [ SELF, aws_default_region ] }
+            INSTANCE_ID: { get_attribute: [ SELF, instance_id ] }
+          operation_host: ORCHESTRATOR
+          implementation: scripts/EC2Instance/stop.sh
+        delete:
+          inputs:
+            AWS_ACCESS_KEY_ID: { get_property: [ SELF, aws_access_key_id ] }
+            AWS_SECRET_ACCESS_KEY: { get_property: [ SELF, aws_secret_access_key ] }
+            AWS_DEFAULT_REGION: { get_property: [ SELF, aws_default_region ] }
+            INSTANCE_ID: { get_attribute: [ SELF, instance_id ] }
+          operation_host: ORCHESTRATOR
+          implementation: scripts/EC2Instance/delete.sh

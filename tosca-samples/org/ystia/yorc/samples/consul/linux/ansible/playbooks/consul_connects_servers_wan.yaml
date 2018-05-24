@@ -35,4 +35,4 @@
         dest: "{{CONFIG_DIR}}/4_wan_join.json"
     
     - name: echo servers list
-      debug: msg="Consul server configured to connects to others servers [{{ consul_wan_servers | join(', ') }}] through WAN"
+      debug: msg="Consul server configured to connect to others servers [{{ consul_wan_servers | join(', ') }}] through WAN"

@@ -16,9 +16,9 @@
 package org.ystia.yorc.alien4cloud.plugin.location;
 
 import alien4cloud.orchestrators.plugin.ILocationConfiguratorPlugin;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-import lombok.extern.slf4j.Slf4j;
 import org.ystia.yorc.alien4cloud.plugin.YstiaOrchestratorFactory;
 
 /**
@@ -37,7 +37,7 @@ public class YorcLocationConfigurerFactory extends AbstractLocationConfigurerFac
     @Override
     protected ILocationConfiguratorPlugin newInstanceBasedOnLocation(String locationType) {
         AbstractLocationConfigurer configurer = null;
-        switch (locationType)
+        switch (locationType != null ? locationType : "")
         {
             case YstiaOrchestratorFactory.OPENSTACK:
                 configurer = applicationContext.getBean(YorcOpenStackLocationConfigurer.class);
