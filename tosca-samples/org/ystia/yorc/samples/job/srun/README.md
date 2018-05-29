@@ -1,6 +1,6 @@
 # Job component sample
 
-This sample illustrates how to write a slurm job component.
+This sample illustrates how to write a slurm job component run interactively (srun).
 It's MPI program which just print `hello <ARG>` or `hello world` without arguments.
 It's allows running a MPI job across several processes with the job defined `task` property.
 There is a 30s delay to allow retrieving job information (job ID and job state) during the job execution.

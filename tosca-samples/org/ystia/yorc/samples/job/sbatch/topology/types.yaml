@@ -17,37 +17,17 @@ tosca_definitions_version: alien_dsl_2_0_0
 
 
 metadata:
-  template_name: org.ystia.yorc.samples.job
+  template_name: org.ystia.yorc.samples.job.sbatch.Topology
   template_version: 1.0.0-SNAPSHOT
   template_author: yorc
 
 imports:
-  - tosca-normative-types:1.0.0-ALIEN20
-  - yorc-types:1.0.0
-  - yorc-slurm-types:1.0.0
+  - org.ystia.yorc.samples.job.sbatch.Component:1.0.0-SNAPSHOT
 
 topology_template:
   node_templates:
     Job:
-      type: org.ystia.yorc.samples.job.Component
+      type: org.ystia.yorc.samples.job.sbatch.Component
       properties:
-        name: job_test
-        tasks: 4
-        extra_options: [mpi=pmi2]
-        exec_args: [Slurm]
-
-node_types:
-  org.ystia.yorc.samples.job.Component:
-    derived_from: yorc.nodes.slurm.Job
-    description: >
-      Sample component to show how to run a job
-    tags:
-      icon: /images/slurm.png
-    interfaces:
-      tosca.interfaces.node.lifecycle.Runnable:
-        run:
-          inputs:
-            args: {get_property: [SELF, exec_args]}
-          implementation:
-            file: bin/test.mpi
-            type: yorc.artifacts.Deployment.SlurmJobBin
+        name: job_batch_test
+        batch: true
