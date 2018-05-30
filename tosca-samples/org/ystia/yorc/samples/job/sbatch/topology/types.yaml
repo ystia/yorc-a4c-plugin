@@ -31,3 +31,4 @@ topology_template:
       properties:
         name: job_batch_test
         batch: true
+        exec_args: [NAME1=john, NAME2=mary, NAME3=fred]

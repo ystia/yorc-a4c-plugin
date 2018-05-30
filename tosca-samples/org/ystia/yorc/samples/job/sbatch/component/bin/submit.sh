@@ -7,8 +7,8 @@
 #SBATCH --nodes=4
 
 echo "First srun"
-srun --mpi=pmi2 test1.mpi john
+srun --mpi=pmi2 test1.mpi ${NAME1}
 echo "Second srun"
-srun --mpi=pmi2 test2.mpi mary
+srun --mpi=pmi2 test2.mpi ${NAME2}
 echo "Third srun"
-srun --mpi=pmi2 test3.mpi fred
+srun --mpi=pmi2 test3.mpi ${NAME3}
