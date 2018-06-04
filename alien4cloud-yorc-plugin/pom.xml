@@ -29,8 +29,16 @@
       <properties>
         <lombok.version>1.16.20</lombok.version>
         <httpclient.version>4.4.1</httpclient.version>
-        <yorc.types.version>1.0.0-SNAPSHOT</yorc.types.version>
         <skipTests>false</skipTests>
+
+        <!-- Embedded TOSCA types versions -->
+        <yorc.types.version>1.0.0</yorc.types.version>
+        <yorc.aws.types.version>1.0.0</yorc.aws.types.version>
+        <yorc.docker.types.version>1.0.0</yorc.docker.types.version>
+        <yorc.hp.types.version>1.0.0</yorc.hp.types.version>
+        <yorc.k8s.types.version>2.0.0-SNAPSHOT</yorc.k8s.types.version>
+        <yorc.os.types.version>1.0.0</yorc.os.types.version>
+        <yorc.slurm.types.version>1.0.0</yorc.slurm.types.version>
       </properties>
 
     <dependencies>
