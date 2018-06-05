@@ -55,6 +55,8 @@ public class LocationCreationListener implements ApplicationListener<AfterLocati
     private LocationModifierReference openstackBSWFModifierRef;
     private LocationModifierReference wfOperationHostModifierRef;
     private LocationModifierReference serviceTopologyModifierRef;
+    private LocationModifierReference kubernetesTopologyModifierRef;
+    private LocationModifierReference yorcKubernetesTopologyModifierRef;
 
     @PostConstruct
     public synchronized void init() {
@@ -76,6 +78,16 @@ public class LocationCreationListener implements ApplicationListener<AfterLocati
         serviceTopologyModifierRef.setPluginId(selfContext.getPlugin().getId());
         serviceTopologyModifierRef.setBeanName(ServiceTopologyModifier.YORC_SERVICE_TOPOLOGY_MODIFIER_TAG);
         serviceTopologyModifierRef.setPhase(FlowPhases.POST_MATCHED_NODE_SETUP);
+
+        yorcKubernetesTopologyModifierRef = new LocationModifierReference();
+        yorcKubernetesTopologyModifierRef.setPluginId(selfContext.getPlugin().getId());
+        yorcKubernetesTopologyModifierRef.setBeanName(KubernetesTopologyModifier.YORC_KUBERNETES_MODIFIER_TAG);
+        yorcKubernetesTopologyModifierRef.setPhase(FlowPhases.POST_NODE_MATCH);
+
+        kubernetesTopologyModifierRef = new LocationModifierReference();
+        kubernetesTopologyModifierRef.setPluginId("alien4cloud-kubernetes-plugin");
+        kubernetesTopologyModifierRef.setBeanName("kubernetes-modifier");
+        kubernetesTopologyModifierRef.setPhase(FlowPhases.POST_LOCATION_MATCH);
     }
 
 
@@ -89,6 +101,9 @@ public class LocationCreationListener implements ApplicationListener<AfterLocati
             if (YstiaOrchestratorFactory.OPENSTACK.equals(event.getLocation().getInfrastructureType())) {
                 locationModifierService.add(event.getLocation(), openstackFipModifierRef);
                 locationModifierService.add(event.getLocation(), openstackBSWFModifierRef);
+            } else if (YstiaOrchestratorFactory.KUBERNETES.equals(event.getLocation().getInfrastructureType())) {
+                locationModifierService.add(event.getLocation(), yorcKubernetesTopologyModifierRef);
+                locationModifierService.add(event.getLocation(), kubernetesTopologyModifierRef);
             }
             locationModifierService.add(event.getLocation(), wfOperationHostModifierRef);
             locationModifierService.add(event.getLocation(), serviceTopologyModifierRef);
