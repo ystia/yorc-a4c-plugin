@@ -1,30 +1,25 @@
 package org.ystia.yorc.alien4cloud.plugin.modifiers;
 
-import lombok.extern.java.Log;
+import java.util.Set;
 
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
-
-import alien4cloud.paas.wf.validation.WorkflowValidator;
-import alien4cloud.tosca.context.ToscaContextual;
-
-import org.alien4cloud.tosca.utils.TopologyNavigationUtil;
-
-import org.alien4cloud.tosca.model.templates.Topology;
-import org.alien4cloud.tosca.model.Csar;
-import org.alien4cloud.tosca.model.templates.NodeTemplate;
-
-
-import org.alien4cloud.alm.deployment.configuration.flow.FlowExecutionContext;
-import org.alien4cloud.alm.deployment.configuration.flow.TopologyModifierSupport;
-import org.alien4cloud.alm.deployment.configuration.flow.ITopologyModifier;
+import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
+import javax.inject.Inject;
 
 import alien4cloud.component.ICSARRepositorySearchService;
-
-
-
-import javax.annotation.Resource;
-import java.util.Set;
+import alien4cloud.orchestrators.plugin.model.PluginArchive;
+import alien4cloud.paas.wf.validation.WorkflowValidator;
+import alien4cloud.tosca.context.ToscaContextual;
+import lombok.extern.slf4j.Slf4j;
+import org.alien4cloud.alm.deployment.configuration.flow.FlowExecutionContext;
+import org.alien4cloud.alm.deployment.configuration.flow.ITopologyModifier;
+import org.alien4cloud.alm.deployment.configuration.flow.TopologyModifierSupport;
+import org.alien4cloud.tosca.model.Csar;
+import org.alien4cloud.tosca.model.templates.NodeTemplate;
+import org.alien4cloud.tosca.model.templates.Topology;
+import org.alien4cloud.tosca.utils.TopologyNavigationUtil;
+import org.springframework.stereotype.Component;
+import org.ystia.yorc.alien4cloud.plugin.location.YorcKubernetesLocationConfigurer;
 
 /**
  * Created by danesa on 02/03/18.
@@ -41,7 +36,7 @@ public class KubernetesTopologyModifier extends TopologyModifierSupport {
      * template_version: ${yorc.types.version}
      */
     protected static final String YORC_KUBERNETES_TYPES_ARCHIVE_NAME = "yorc-kubernetes-types";
-    protected static final String YORC_KUBERNETES_TYPES_ARCHIVE_VERSION = "1.0.0-SNAPSHOT";
+    private String yorcKubernetesTypesArchiveVersion = "1.0.0-SNAPSHOT";
 
     // Yorc K8S resource types
     protected static final String YORC_KUBERNETES_TYPES_DEPLOYMENT_RESOURCE = "yorc.nodes.kubernetes.api.types.DeploymentResource";
@@ -57,6 +52,18 @@ public class KubernetesTopologyModifier extends TopologyModifierSupport {
 
     @Resource
     protected ICSARRepositorySearchService csarRepoService;
+
+    @Inject
+    YorcKubernetesLocationConfigurer kubernetesLocationConfigurer;
+
+    @PostConstruct
+    public void init() {
+        for (PluginArchive pluginArchive : kubernetesLocationConfigurer.pluginArchives()) {
+            if (YORC_KUBERNETES_TYPES_ARCHIVE_NAME.equals(pluginArchive.getArchive().getArchive().getName())) {
+                yorcKubernetesTypesArchiveVersion = pluginArchive.getArchive().getArchive().getVersion();
+            }
+        }
+    }
 
     @Override
     @ToscaContextual
@@ -85,9 +92,9 @@ public class KubernetesTopologyModifier extends TopologyModifierSupport {
         // Insure that Yorc kubernetes types archive added as dependency to the topology
         //
         // Treat deployment resource types
-        transformKubernetesResourceTypes(topology,  csar, "deployment", YORC_KUBERNETES_TYPES_ARCHIVE_VERSION);
+        transformKubernetesResourceTypes(topology,  csar, "deployment", yorcKubernetesTypesArchiveVersion);
         // Treat service resource types
-        transformKubernetesResourceTypes(topology,  csar, "service", YORC_KUBERNETES_TYPES_ARCHIVE_VERSION);
+        transformKubernetesResourceTypes(topology,  csar, "service", yorcKubernetesTypesArchiveVersion);
 
     }
 
