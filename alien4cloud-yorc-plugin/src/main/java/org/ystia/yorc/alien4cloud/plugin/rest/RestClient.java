@@ -138,6 +138,12 @@ public class RestClient {
                     .setSslcontext(sslContext)
                     .build();
             Unirest.setHttpClient(httpClient);
+        } else {
+            CloseableHttpClient httpClient = HttpClients
+                    .custom()
+                    .setDefaultRequestConfig(clientConfig)
+                    .build();
+            Unirest.setHttpClient(httpClient);
         }
 
         try {
