@@ -29,13 +29,8 @@ infrastructure (see "Infrastructure configuration" chapter in Yorc documentation
 Configure a Yorc Orchestrator
 ------------------------------
 
-<<<<<<< HEAD
-To create an orchestrator, go to |AdminBtn| and in the |OrchBtn| sub-menu. Create an orchestrator named ``Yorc`` with the plugin
-``Yorc Orchestrator Factory`` : |version|-SNAPSHOT.
-=======
 To create an orchestrator, go to |AdminBtn| and in the |OrchBtn| sub-menu. Create an orchestrator named ``Yorc`` with the following named plugin:
   * Yorc Orchestrator Factory : |version|
->>>>>>> develop
 
 At this moment your orchestrator is created but not enabled. Click on your orchestrator to see the information page, and then
 click on the configuration menu icon |OrchConfigBtn|.
