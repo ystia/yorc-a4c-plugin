@@ -51,6 +51,9 @@ public class YorcLocationConfigurerFactory extends AbstractLocationConfigurerFac
             case YstiaOrchestratorFactory.AWS:
                 configurer = applicationContext.getBean(YorcAWSLocationConfigurer.class);
                 break;
+            case YstiaOrchestratorFactory.GOOGLE:
+                configurer = applicationContext.getBean(YorcGoogleLocationConfigurer.class);
+                break;
             case YstiaOrchestratorFactory.HOSTS_POOL:
                 configurer = applicationContext.getBean(YorcHostsPoolLocationConfigurer.class);
                 break;
