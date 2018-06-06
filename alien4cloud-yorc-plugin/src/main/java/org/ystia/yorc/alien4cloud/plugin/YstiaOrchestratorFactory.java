@@ -38,6 +38,7 @@ public class YstiaOrchestratorFactory implements IOrchestratorPluginFactory<Yorc
     public static final String SLURM = "Slurm";
     public static final String KUBERNETES = "Kubernetes";
     public static final String AWS = "AWS";
+    public static final String GOOGLE = "Google Cloud";
     public static final String HOSTS_POOL = "HostsPool";
     public static final String MONITORING_TIME_INTERVAL = "monitoring_time_interval";
     private final Map<String, PropertyDefinition> deploymentProperties = buildDeploymentProperties();
@@ -66,7 +67,7 @@ public class YstiaOrchestratorFactory implements IOrchestratorPluginFactory<Yorc
 
     @Override
     public LocationSupport getLocationSupport() {
-        return new LocationSupport(true, new String[]{AWS, OPENSTACK, SLURM, KUBERNETES, HOSTS_POOL});
+        return new LocationSupport(true, new String[]{GOOGLE, AWS, OPENSTACK, SLURM, KUBERNETES, HOSTS_POOL});
     }
 
     @Override
