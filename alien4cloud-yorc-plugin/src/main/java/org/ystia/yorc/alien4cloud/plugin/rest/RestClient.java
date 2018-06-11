@@ -17,35 +17,43 @@ package org.ystia.yorc.alien4cloud.plugin.rest;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.net.URI;
+import java.util.*;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.net.ssl.SSLContext;
 
 import alien4cloud.paas.exception.PluginConfigurationException;
 import alien4cloud.paas.model.NodeOperationExecRequest;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.mashape.unirest.http.HttpResponse;
-import com.mashape.unirest.http.JsonNode;
-import com.mashape.unirest.http.ObjectMapper;
-import com.mashape.unirest.http.Unirest;
-import com.mashape.unirest.http.exceptions.UnirestException;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.config.SocketConfig;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.ssl.SSLContexts;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.springframework.http.*;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.ystia.yorc.alien4cloud.plugin.ProviderConfig;
 import org.ystia.yorc.alien4cloud.plugin.rest.Response.*;
 
@@ -57,50 +65,33 @@ public class RestClient {
     // Default long pooling duration on Yorc endpoints is 15 min
     private static final long SOCKET_TIMEOUT = 900000;
     private static final long CONNECTION_TIMEOUT = 10000;
-    private static ObjectMapper objectMapper;
     private ProviderConfig providerConfiguration;
 
+    private RestTemplate restTemplate;
+    private static ObjectMapper objectMapper = new ObjectMapper();
+
     public RestClient() {
-        RestClient.initObjectMapper();
     }
 
-    private static void initObjectMapper() {
-        RestClient.objectMapper = new ObjectMapper() {
-            private com.fasterxml.jackson.databind.ObjectMapper jacksonObjectMapper
-                    = new com.fasterxml.jackson.databind.ObjectMapper();
-
-            public <T> T readValue(String value, Class<T> valueType) {
-                try {
-                    return jacksonObjectMapper.readValue(value, valueType);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-
-            public String writeValue(Object value) {
-                try {
-                    return jacksonObjectMapper.writeValueAsString(value);
-                } catch (JsonProcessingException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        };
-
-        Unirest.setObjectMapper(RestClient.objectMapper);
-    }
 
     private static boolean isStatusCodeOk(int statusCode) {
         return statusCode >= 200 && statusCode < 300;
     }
 
+
     public void setProviderConfiguration(ProviderConfig providerConfiguration) throws PluginConfigurationException {
         this.providerConfiguration = providerConfiguration;
         log.debug("setProviderConfiguration YorcURL=" + providerConfiguration.getUrlYorc());
-
         RequestConfig clientConfig = RequestConfig.custom().setConnectTimeout(((Long) CONNECTION_TIMEOUT).intValue())
                 .setSocketTimeout(((Long) SOCKET_TIMEOUT).intValue()).setConnectionRequestTimeout(((Long) SOCKET_TIMEOUT).intValue())
                 .build();
 
+        PoolingHttpClientConnectionManager poolHttpConnManager = new PoolingHttpClientConnectionManager();
+        poolHttpConnManager.setDefaultMaxPerRoute(20);
+        poolHttpConnManager.setMaxTotal(20);
+        SocketConfig sockConf = SocketConfig.custom().setSoTimeout(((Long) SOCKET_TIMEOUT).intValue()).build();
+        poolHttpConnManager.setDefaultSocketConfig(sockConf);
+        CloseableHttpClient httpClient;
         if (Boolean.TRUE.equals(providerConfiguration.getInsecureTLS())) {
             SSLContext sslContext;
             try {
@@ -114,12 +105,12 @@ public class RestClient {
             SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
                     sslContext,
                     NoopHostnameVerifier.INSTANCE);
-            CloseableHttpClient httpClient = HttpClients
+            httpClient = HttpClients
                     .custom()
+                    .setConnectionManager(poolHttpConnManager)
                     .setDefaultRequestConfig(clientConfig)
                     .setSSLSocketFactory(sslsf)
                     .build();
-            Unirest.setHttpClient(httpClient);
         }else if (providerConfiguration.getUrlYorc().startsWith("https")){
             if(System.getProperty("javax.net.ssl.keyStore") == null || System.getProperty("javax.net.ssl.keyStorePassword") == null){
                 log.warn("Using SSL but you didn't provide client keystore and password. This means that if required by Yorc client authentication will fail.\n" +
@@ -132,56 +123,76 @@ public class RestClient {
 
             SSLContext sslContext = SSLContexts.createSystemDefault();
 
-            CloseableHttpClient httpClient = HttpClients
+            httpClient = HttpClients
                     .custom()
+                    .setConnectionManager(poolHttpConnManager)
                     .setDefaultRequestConfig(clientConfig)
                     .setSslcontext(sslContext)
                     .build();
-            Unirest.setHttpClient(httpClient);
         } else {
-            CloseableHttpClient httpClient = HttpClients
+            httpClient = HttpClients
                     .custom()
+                    .setConnectionManager(poolHttpConnManager)
                     .setDefaultRequestConfig(clientConfig)
                     .build();
-            Unirest.setHttpClient(httpClient);
         }
 
+        // Instantiate restTemplate
+        HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory(httpClient);
+
+
+        //requestFactory.setHttpClient(httpClient);
+        restTemplate = new RestTemplate(requestFactory);
+
+
+        // custom json
+//        List<HttpMessageConverter<?>> messageConverters = new ArrayList<>();
+//        messageConverters.add(new MappingJackson2HttpMessageConverter(objectMapper));
+//        restTemplate.setMessageConverters(messageConverters);
+
+        logDeployments();
+    }
+
+    private <T> T callForEntity(String targetUrl, HttpMethod httpMethod, Class<T> responseType, HttpEntity httpEntity) throws Exception {
+        T responseEntity = null;
         try {
-            getDeployments();
-        } catch (UnirestException e) {
-            log.warn("Cannot access Yorc: " + e.getCause());
-            throw new PluginConfigurationException("Cannot access Yorc", e);
+            ResponseEntity<String> resp = restTemplate.exchange(targetUrl, httpMethod, httpEntity, String.class);
+            log.debug("response = " + resp.getBody());
+            log.debug("code = " + resp.getStatusCodeValue());
+            return objectMapper.readValue(resp.getBody(), responseType);
         }
+        catch (HttpStatusCodeException e) {
+            if (!isStatusCodeOk(e.getRawStatusCode())) {
+                log.debug("e.getResponseBodyAsString() = " + e.getResponseBodyAsString());
+                ErrorsResponse errors = objectMapper.readValue(e.getResponseBodyAsString(), ErrorsResponse.class);
+                YorcError error = errors.getErrors().iterator().next();
+                throw YorcRestException.fromYorcError(error);
+            }
+        }
+        catch (RestClientException e) {
+            throw new Exception("An error occurred while calling " + httpMethod + " " + targetUrl, e);
+        }
+        return responseEntity;
+    }
+
+
+    public HttpEntity buildHttpEntityWithDefaultHeader(Object body) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
+        return new HttpEntity<>(body, headers);
     }
 
     /**
-     * Get the list of deployments known by Yorc
-     * @return List of deployments
+     * Log the list of deployments known by Yorc
      */
-    public List<String> getDeployments() throws UnirestException {
-        List<String> ret = new ArrayList<>();
-        String fullUrl = providerConfiguration.getUrlYorc() + "/deployments";
-        log.debug("getDeployments " + fullUrl);
-        HttpResponse<JsonNode> res = Unirest.get(fullUrl)
-                .header("accept", "application/json")
-                .asJson();
-        if (res == null) {
-            log.debug("Cannot reach Yorc: null response");
-            return null;
+    public void logDeployments() {
+        try {
+            Arrays.stream(callForEntity(providerConfiguration.getUrlYorc() + "/deployments", HttpMethod.GET, DeployInfosResponse[].class, buildHttpEntityWithDefaultHeader(new DeployInfosResponse())))
+                    .forEach(item -> log.debug("Found a deployment in Yorc: " + item));
         }
-        if (res.getBody() != null) {
-            JSONObject obj = res.getBody().getObject();
-            JSONArray array = obj.getJSONArray("deployments");
-            for (int i = 0 ; i < array.length() ; i++) {
-                JSONArray linkArray = array.getJSONObject(i).getJSONArray("links");
-                // The links array contains a single element, which is a
-                // reference to the deployment
-                String depl = linkArray.getJSONObject(0).getString("href");
-                log.debug("Found a deployment in Yorc: " + depl);
-                ret.add(depl);
-            }
+        catch (Exception e) {
+            log.warn("Cannot access Yorc: " + e.getCause());
         }
-        return ret;
     }
 
     /**
@@ -191,25 +202,35 @@ public class RestClient {
      * @throws Exception
      */
     public String sendTopologyToYorc(String deploymentId) throws Exception {
-        final InputStream stream;
-
-        stream = new FileInputStream(new File("topology.zip"));
+        // Get file to upload
+        final InputStream stream = new FileInputStream(new File("topology.zip"));
         final byte[] bytes = new byte[stream.available()];
         stream.read(bytes);
         stream.close();
 
-        HttpResponse<JsonNode> putResponse = Unirest.put(providerConfiguration.getUrlYorc() + "/deployments/" + deploymentId)
-                .header("accept", "application/json")
-                .header("Content-Type", "application/zip")
-                .body(bytes)
-                .asJson();
+        // Get specific headers
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
+        headers.add(HttpHeaders.CONTENT_TYPE, "application/zip");
+        HttpEntity<byte[]> request = new HttpEntity<>(bytes, headers);
 
+        String targetUrl = providerConfiguration.getUrlYorc() + "/deployments";
 
-        if (!putResponse.getStatusText().equals("Created")) {
-            throw new Exception("sendTopologyToYorc: Yorc returned an error : " + putResponse.getStatus());
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(targetUrl, HttpMethod.POST, request, String.class);
+            if (response != null && response.getStatusCode() != null && !response.getStatusCode().toString().equals("Created")){
+                throw new Exception("sendTopologyToYorc: Yorc returned an error : " + response.getStatusCode());
+            }
+
+            if (response != null && response.getHeaders() != null) {
+                return response.getHeaders().getFirst("Location");
+            }
+        }
+        catch(RestClientException rce) {
+            throw new Exception("An error occurred while calling " + HttpMethod.POST + " " + targetUrl, rce);
         }
 
-        return putResponse.getHeaders().getFirst("Location");
+        return null;
     }
 
     /**
@@ -224,16 +245,7 @@ public class RestClient {
      * @throws Exception
      */
     public String postScalingToYorc(String deploymentUrl, String nodeName, int delta) throws Exception {
-        HttpResponse<JsonNode> postResponse =
-                Unirest.post(providerConfiguration.getUrlYorc() + deploymentUrl + "/scale/" + nodeName + "?delta=" + delta)
-                        .header("accept", "application/json")
-                        .asJson();
-        if (postResponse.getStatus() != 202) {
-            log.warn("Yorc returned an error : " + postResponse.getStatusText());
-            throw new Exception("postScalingToYorc: Yorc returned an error : " + postResponse.getStatus());
-        }
-
-        return postResponse.getHeaders().getFirst("Location");
+        return null;
     }
 
     /**
@@ -243,107 +255,43 @@ public class RestClient {
      * @throws Exception
      */
     public String getStatusFromYorc(String deploymentUrl) throws Exception {
-        String fullUrl = providerConfiguration.getUrlYorc() + deploymentUrl;
-        log.debug("getStatusFromYorc " + fullUrl);
-        HttpResponse<JsonNode> res = Unirest.get(fullUrl)
-                .header("accept", "application/json")
-                .asJson();
-
-        checkRestErrors(res);
-
-        JSONObject obj = res.getBody().getObject();
-        if (!obj.has("status")) {
-            throw new Exception("getStatusFromYorc returned no status");
-        }
-        return obj.getString("status");
+        return null;
     }
 
     public DeployInfosResponse getDeploymentInfosFromYorc(String deploymentUrl) throws Exception {
-        HttpResponse<DeployInfosResponse> deployRes = Unirest.get(providerConfiguration.getUrlYorc() + deploymentUrl)
-                .header("accept", "application/json")
-                .asObject(DeployInfosResponse.class);
-        return deployRes.getBody();
+        return null;
     }
 
     public NodeInfosResponse getNodesInfosFromYorc(String nodeInfoUrl) throws Exception {
-        HttpResponse<NodeInfosResponse> deployRes = Unirest.get(providerConfiguration.getUrlYorc() + nodeInfoUrl)
-                .header("accept", "application/json")
-                .asObject(NodeInfosResponse.class);
-        return deployRes.getBody();
+        return null;
     }
 
     public InstanceInfosResponse getInstanceInfosFromYorc(String nodeInfoUrl) throws Exception {
-        HttpResponse<InstanceInfosResponse> deployRes = Unirest.get(providerConfiguration.getUrlYorc() + nodeInfoUrl)
-                .header("accept", "application/json")
-                .asObject(InstanceInfosResponse.class);
-        return deployRes.getBody();
+        return null;
     }
 
     public AttributeResponse getAttributeFromYorc(String nodeInfoUrl) throws Exception {
-        HttpResponse<AttributeResponse> deployRes = Unirest.get(providerConfiguration.getUrlYorc() + nodeInfoUrl)
-                .header("accept", "application/json")
-                .asObject(AttributeResponse.class);
-        return deployRes.getBody();
+        return null;
     }
 
     public LogResponse getLogFromYorc(int index) throws Exception {
-        HttpResponse<JsonNode> logRes =
-                Unirest.get(providerConfiguration.getUrlYorc() + "/logs?index=" + index + "&filter=")
-                        .header("accept", "application/json")
-                        .asJson();
-        this.checkRestErrors(logRes);
-        return objectMapper.readValue(new String(IOUtils.toByteArray(logRes.getRawBody()), CHARSET), LogResponse.class);
+        return callForEntity(providerConfiguration.getUrlYorc() + "/logs?index=" + index, HttpMethod.GET, LogResponse.class, buildHttpEntityWithDefaultHeader(new LogResponse()));
     }
 
     public EventResponse getEventFromYorc(int index) throws Exception {
-        HttpResponse<JsonNode> eventResponse =
-                Unirest.get(providerConfiguration.getUrlYorc() + "/events?index=" + index + "&filter=")
-                        .header("accept", "application/json")
-                        .asJson();
-        this.checkRestErrors(eventResponse);
-        return objectMapper.readValue(new String(IOUtils.toByteArray(eventResponse.getRawBody()), CHARSET), EventResponse.class);
+        return callForEntity(providerConfiguration.getUrlYorc() + "/events?index=" + index, HttpMethod.GET, EventResponse.class, buildHttpEntityWithDefaultHeader(new LogEvent()));
     }
 
     public String undeploy(String deploymentUrl, boolean purge) throws Exception {
-        log.debug("undeploy " + deploymentUrl + "with purge = " + purge);
-        HttpResponse<JsonNode> res = Unirest.delete(providerConfiguration.getUrlYorc() + deploymentUrl + (purge ? "?purge" : "") )
-                .header("accept", "application/json")
-                .asJson();
-
-        log.debug(">>> Response status for undeploy is : " + res.getStatusText());
-        this.checkRestErrors(res);
-        return res.getHeaders().getFirst("Location");
+        return null;
     }
 
-    public String stopTask(String taskUrl) throws UnirestException {
-        log.debug("stop task " + taskUrl);
-        HttpResponse<JsonNode> res = Unirest.delete(providerConfiguration.getUrlYorc() + taskUrl)
-                .header("accept", "application/json")
-                .asJson();
-        return res.getHeaders().getFirst("Location");
+    public String stopTask(String taskUrl) throws Exception {
+        return null;
     }
 
     public String postCustomCommandToYorc(String deploymentUrl, NodeOperationExecRequest request) throws Exception {
-        JSONObject jobject = new JSONObject();
-        jobject.put("node", request.getNodeTemplateName());
-        jobject.put("name", request.getOperationName());
-        jobject.put("inputs", request.getParameters());
-
-        final byte[] bytes = jobject.toString().getBytes();
-
-        HttpResponse<JsonNode> postResponse = Unirest.post(providerConfiguration.getUrlYorc() + deploymentUrl + "/custom")
-                .header("accept", "application/json")
-                .header("Content-Type", "application/json")
-                .body(bytes)
-                .asJson();
-
-        log.debug(">>> Response status for custom POST is : " + postResponse.getStatusText());
-        if (!postResponse.getStatusText().equals("Accepted")) {
-            throw new Exception("postCustomCommandToYorc: Yorc returned an error :" + postResponse.getStatus());
-        }
-
-        String ret = postResponse.getHeaders().getFirst("Location");
-        return ret;
+        return null;
     }
 
     /**
@@ -355,23 +303,6 @@ public class RestClient {
      * @throws Exception
      */
     public String postWorkflowToYorc(String deploymentUr, String workflowName, Map<String, Object> inputs) throws Exception {
-        HttpResponse<JsonNode> postResponse = Unirest.post(providerConfiguration.getUrlYorc() + deploymentUr + "/workflows/" + workflowName)
-                .header("accept", "application/json")
-                .asJson();
-        if (!postResponse.getStatusText().equals("Created")) {
-            throw new Exception("postWorkflowToYorc: Yorc returned an error :" + postResponse.getStatus());
-        }
-        String ret = postResponse.getHeaders().getFirst("Location");
-        log.info("Workflow accepted: " + ret);
-        return ret;
-    }
-
-    private void checkRestErrors(HttpResponse<?> httpResponse) throws Exception {
-        if (!isStatusCodeOk(httpResponse.getStatus())) {
-            ErrorsResponse errors =
-                    this.objectMapper.readValue(new String(IOUtils.toByteArray(httpResponse.getRawBody()), CHARSET), ErrorsResponse.class);
-            YorcError error = errors.getErrors().iterator().next();
-            throw YorcRestException.fromYorcError(error);
-        }
+        return null;
     }
 }
