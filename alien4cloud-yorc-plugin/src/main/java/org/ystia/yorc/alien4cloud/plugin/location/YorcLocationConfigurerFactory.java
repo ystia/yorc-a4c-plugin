@@ -32,7 +32,7 @@ public class YorcLocationConfigurerFactory extends AbstractLocationConfigurerFac
     /**
      * Return a Location Configurer suitable for this location type
      * @param locationType OPENSTACK or SLURM
-     * @return
+     * @return ILocationConfiguratorPlugin
      */
     @Override
     protected ILocationConfiguratorPlugin newInstanceBasedOnLocation(String locationType) {
