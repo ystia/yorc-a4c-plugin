@@ -17,7 +17,6 @@ package org.ystia.yorc.alien4cloud.plugin.rest;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 import java.security.KeyManagementException;
@@ -51,9 +50,6 @@ import org.ystia.yorc.alien4cloud.plugin.rest.Response.*;
 
 @Slf4j
 public class RestClient {
-
-    private static final String CHARSET = "UTF-8";
-
     // Default long pooling duration on Yorc endpoints is 15 min
     private static final long SOCKET_TIMEOUT = 900000;
     private static final long CONNECTION_TIMEOUT = 10000;
@@ -64,7 +60,6 @@ public class RestClient {
 
     public RestClient() {
     }
-
 
     private static boolean isStatusCodeOk(int statusCode) {
         return statusCode >= 200 && statusCode < 300;
@@ -114,7 +109,6 @@ public class RestClient {
             }
 
             SSLContext sslContext = SSLContexts.createSystemDefault();
-
             httpClient = HttpClients
                     .custom()
                     .setConnectionManager(poolHttpConnManager)
@@ -187,7 +181,7 @@ public class RestClient {
 
 
     /**
-     * This allows to build an HTTPEntity object with body
+     * This allows to build an HTTPEntity object with body and default headers with JSON ACCEPT
      * @param body
      * @return HttpEntity
      */
@@ -276,7 +270,13 @@ public class RestClient {
      */
     public String getStatusFromYorc(String deploymentUrl) throws Exception {
         ResponseEntity<String> resp = sendRequest(providerConfiguration.getUrlYorc() + deploymentUrl, HttpMethod.GET, String.class, buildHttpEntityWithDefaultHeader(null));
-        String status = this.getAttributeValueFronJson(resp.getBody(), "status");
+        String status = null;
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode root = mapper.readTree(resp.getBody());
+        JsonNode node = root.path("status");
+        if (node != null) {
+            status =  node.asText();
+        }
         if (status == null) {
             throw new Exception("getStatusFromYorc returned no status");
         }
@@ -391,11 +391,10 @@ public class RestClient {
         HttpEntity<byte[]> httpEntity = new HttpEntity<>(json, headers);
 
         ResponseEntity<String> resp = sendRequest(providerConfiguration.getUrlYorc() + deploymentUrl + "/custom", HttpMethod.POST, String.class, httpEntity);
-        String status = this.getAttributeValueFronJson(resp.getBody(), "status");
-        if (status == null) {
+        if (resp.getStatusCode().getReasonPhrase() == null) {
             throw new Exception("postCustomCommandToYorc returned no status");
-        } else if (status.equals("Accepted")) {
-            throw new Exception("postCustomCommandToYorc: Yorc returned an unexpected status:" + status);
+        } else if (!resp.getStatusCode().getReasonPhrase().equals("Accepted")){
+            throw new Exception("postCustomCommandToYorc: Yorc returned an unexpected status: " + resp.getStatusCode().getReasonPhrase());
         }
         return resp.getHeaders().getFirst("Location");
     }
@@ -410,24 +409,11 @@ public class RestClient {
      */
     public String postWorkflowToYorc(String deploymentUr, String workflowName, Map<String, Object> inputs) throws Exception {
         ResponseEntity<String> resp = sendRequest(providerConfiguration.getUrlYorc() + deploymentUr + "/workflows/" + workflowName, HttpMethod.POST, String.class, buildHttpEntityWithDefaultHeader(null));
-        String status = this.getAttributeValueFronJson(resp.getBody(), "status");
-        if (status == null) {
-            throw new Exception("postWorkflowToYorc returned no status");
-        } else if (status.equals("Created")) {
-            throw new Exception("postWorkflowToYorc: Yorc returned an unexpected status:" + status);
+        if (resp.getStatusCode().getReasonPhrase() == null) {
+            throw new Exception("postCustomCommandToYorc returned no status");
+        } else if (!resp.getStatusCode().getReasonPhrase().equals("Created")){
+            throw new Exception("postWorkflowToYorc: Yorc returned an unexpected status: " + resp.getStatusCode().getReasonPhrase());
         }
-        String ret = resp.getHeaders().getFirst("Location");
-        log.info("Workflow accepted: " + ret);
-        return ret;
-    }
-
-    private String getAttributeValueFronJson(String json, String attributeName) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode root = mapper.readTree(json);
-        JsonNode node = root.path(attributeName);
-        if (node != null) {
-            return node.asText();
-        }
-        return null;
+        return resp.getHeaders().getFirst("Location");
     }
  }
