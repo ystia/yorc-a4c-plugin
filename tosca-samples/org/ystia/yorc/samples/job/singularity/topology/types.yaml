@@ -24,11 +24,14 @@ metadata:
 description: "Slurm singularity job template1"
 
 imports:
+  - tosca-normative-types:1.0.0-ALIEN20
+  - yorc-types:1.0.0
+  - yorc-slurm-types:1.0.0
   - org.ystia.yorc.samples.job.singularity.Component1:1.0.0-SNAPSHOT
 
 repositories:
   docker:
-    url: https://hpda-docker-registry:5000/
+    url: https://hub.docker.com/
     type: http
 
 topology_template:
@@ -44,6 +47,6 @@ topology_template:
             inputs:
               exec_command: {get_property: [SELF, exec_command]}
             implementation:
-              file: docker://godlovedc/lolcow:latest
+              file: godlovedc/lolcow:latest
               repository: docker
               type: yorc.artifacts.Deployment.SlurmJobImage

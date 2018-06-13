@@ -34,10 +34,6 @@ node_types:
     tags:
       icon: /images/singularity.png
     properties:
-      container_image:
-        type: string
-        description: Container image (Docker or Singularity) used to be run by Slurm job via singularity run cmd.
-        required: true
       exec_command:
         type: string
         description: If this property is filled. The command is executed with singularity exec instead of default singularity run.
