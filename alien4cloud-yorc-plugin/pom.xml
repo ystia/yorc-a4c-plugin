@@ -46,6 +46,11 @@
         <version>${alien4cloud.version}</version>
         <scope>provided</scope>
       </dependency>
+      <dependency>
+        <groupId>org.json</groupId>
+        <artifactId>json</artifactId>
+        <version>20180130</version>
+      </dependency>
 
       <!-- tests -->
       <dependency>

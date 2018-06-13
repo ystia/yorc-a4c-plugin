@@ -37,9 +37,11 @@ import org.apache.http.config.SocketConfig;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.ssl.SSLContexts;
+import org.json.JSONObject;
 import org.springframework.http.*;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.HttpStatusCodeException;
@@ -92,8 +94,7 @@ public class RestClient {
             SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
                     sslContext,
                     NoopHostnameVerifier.INSTANCE);
-            httpClient = HttpClients
-                    .custom()
+            httpClient = HttpClientBuilder.create().useSystemProperties()
                     .setConnectionManager(poolHttpConnManager)
                     .setDefaultRequestConfig(clientConfig)
                     .setSSLSocketFactory(sslsf)
@@ -109,15 +110,13 @@ public class RestClient {
             }
 
             SSLContext sslContext = SSLContexts.createSystemDefault();
-            httpClient = HttpClients
-                    .custom()
+            httpClient = HttpClientBuilder.create().useSystemProperties()
                     .setConnectionManager(poolHttpConnManager)
                     .setDefaultRequestConfig(clientConfig)
                     .setSslcontext(sslContext)
                     .build();
         } else {
-            httpClient = HttpClients
-                    .custom()
+            httpClient = HttpClientBuilder.create().useSystemProperties()
                     .setConnectionManager(poolHttpConnManager)
                     .setDefaultRequestConfig(clientConfig)
                     .build();
@@ -378,17 +377,15 @@ public class RestClient {
      */
     public String postCustomCommandToYorc(String deploymentUrl, NodeOperationExecRequest request) throws Exception {
         // Get specific headers and body
-        ObjectMapper mapper = new ObjectMapper();
-        ObjectNode node = mapper.createObjectNode();
-        node.put("node", request.getNodeTemplateName());
-        node.put("name", request.getOperationName());
-        node.put("inputs", mapper.writeValueAsString(request.getParameters()));
-        byte[] json = mapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(node);
+        JSONObject jsonObj = new JSONObject();
+        jsonObj.put("node", request.getNodeTemplateName());
+        jsonObj.put("name", request.getOperationName());
+        jsonObj.put("inputs", request.getParameters());
 
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
         headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
-        HttpEntity<byte[]> httpEntity = new HttpEntity<>(json, headers);
+        HttpEntity<byte[]> httpEntity = new HttpEntity<>(jsonObj.toString().getBytes(), headers);
 
         ResponseEntity<String> resp = sendRequest(providerConfiguration.getUrlYorc() + deploymentUrl + "/custom", HttpMethod.POST, String.class, httpEntity);
         if (resp.getStatusCode().getReasonPhrase() == null) {
