@@ -46,6 +46,11 @@
         <version>${alien4cloud.version}</version>
         <scope>provided</scope>
       </dependency>
+      <dependency>
+        <groupId>org.json</groupId>
+        <artifactId>json</artifactId>
+        <version>20180130</version>
+      </dependency>
 
       <!-- tests -->
       <dependency>
@@ -73,29 +78,6 @@
         <artifactId>assertj-core</artifactId>
         <scope>test</scope>
       </dependency>
-
-      <!-- Unirest dependency -->
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpasyncclient</artifactId>
-            <version>4.1.2</version>
-        </dependency>
-        <dependency>
-            <groupId>org.json</groupId>
-            <artifactId>json</artifactId>
-            <version>20140107</version>
-        </dependency>
-        <dependency>
-            <groupId>com.mashape.unirest</groupId>
-            <artifactId>unirest-java</artifactId>
-            <version>1.4.9</version>
-        </dependency>
-        
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>${lombok.version}</version>
-    </dependency>
     </dependencies>
 
     <build>

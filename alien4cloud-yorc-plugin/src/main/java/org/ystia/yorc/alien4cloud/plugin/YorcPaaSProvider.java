@@ -322,7 +322,6 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
      * @param date      The start date since which we should retrieve events.
      * @param maxEvents The maximum number of events to return.
      * @param callback
-     * @return An array of time ordered audit events with a maximum size of maxEvents.
      */
     @Override
     public void getEventsSince(Date date, int maxEvents, IPaaSCallback<AbstractMonitorEvent[]> callback) {
