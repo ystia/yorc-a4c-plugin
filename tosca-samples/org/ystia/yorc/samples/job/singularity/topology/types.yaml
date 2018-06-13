@@ -17,20 +17,33 @@ tosca_definitions_version: alien_dsl_2_0_0
 
 
 metadata:
-  template_name: SbatchJobTemplate
+  template_name: SlurmSingularityJobTemplate1
   template_version: 1.0.0-SNAPSHOT
   template_author: yorc
 
-description: "Slurm sbatch job template"
+description: "Slurm singularity job template1"
 
 imports:
-  - org.ystia.yorc.samples.job.sbatch.Component:1.0.0-SNAPSHOT
+  - org.ystia.yorc.samples.job.singularity.Component1:1.0.0-SNAPSHOT
+
+repositories:
+  docker:
+    url: https://hpda-docker-registry:5000/
+    type: http
 
 topology_template:
   node_templates:
     Job:
-      type: org.ystia.yorc.samples.job.sbatch.Component
+      type: org.ystia.yorc.samples.job.singularity.Component1
       properties:
-        name: job_batch_test
-        batch: true
-        exec_args: [NAME1=john, NAME2=mary, NAME3=fred]
+        name: job_singularity_test1
+        batch: false
+      interfaces:
+        tosca.interfaces.node.lifecycle.Runnable:
+          run:
+            inputs:
+              exec_command: {get_property: [SELF, exec_command]}
+            implementation:
+              file: docker://godlovedc/lolcow:latest
+              repository: docker
+              type: yorc.artifacts.Deployment.SlurmJobImage
