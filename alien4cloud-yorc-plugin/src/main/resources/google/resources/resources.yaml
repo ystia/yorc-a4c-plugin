@@ -83,7 +83,6 @@ node_types:
           A scope can be either the full URI of the scope or an alias, like default 
           or cloud-platform.
         required: false
-        default: default
       service_account:
         type: string
         description: >
