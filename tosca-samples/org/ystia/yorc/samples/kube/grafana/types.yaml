@@ -47,6 +47,11 @@ node_types:
       http_endpoint:
         type: org.ystia.yorc.samples.kube.containers.capabilities.Grafana
         description: Endpoint to visualize grafana collected data
+    requirements:
+      - graphite:
+          capability: org.ystia.yorc.samples.kube.containers.capabilities.Graphite
+          relationship: tosca.relationships.ConnectsTo
+          occurrences: [0, UNBOUNDED]
     interfaces:
       Standard:
         create:

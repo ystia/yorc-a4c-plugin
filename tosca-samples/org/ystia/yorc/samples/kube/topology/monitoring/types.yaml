@@ -52,6 +52,7 @@ topology_template:
             capability: org.alien4cloud.extended.container.capabilities.ApplicationHost
             relationship: org.alien4cloud.extended.container.relationships.HostedOnContainerRuntime
         - graphite:
+            type_requirement: graphite
             node: Graphite
             capability: org.ystia.yorc.samples.kube.containers.capabilities.Graphite
             relationship: tosca.relationships.ConnectsTo
