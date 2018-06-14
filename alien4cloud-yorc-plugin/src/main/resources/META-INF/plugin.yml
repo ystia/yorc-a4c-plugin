@@ -1,5 +1,5 @@
 id: alien4cloud-yorc-plugin
-name: Yorc PaaS provider
+name: Yorc Orchestrator Provider
 version: ${project.version}
 description: >
   Plugin that contains a single paas provider for deployments on Hpc env.
@@ -9,3 +9,9 @@ component_descriptors:
     name: Yorc Orchestrator Factory
     description: >
       Alien Plugin for Yorc
+  - bean_name: yorc-kubernetes-modifier
+    name: Yorc Modifier for Kubernetes
+    description: >
+      Yorc Modifier for Kubernetes
+dependencies:
+  - alien4cloud-kubernetes-plugin

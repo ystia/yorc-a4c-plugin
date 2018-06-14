@@ -62,6 +62,7 @@ import org.alien4cloud.tosca.model.Csar;
 import org.alien4cloud.tosca.model.definitions.DeploymentArtifact;
 import org.alien4cloud.tosca.model.definitions.Interface;
 import org.alien4cloud.tosca.model.definitions.Operation;
+import org.alien4cloud.tosca.model.definitions.ImplementationArtifact;
 import org.alien4cloud.tosca.model.templates.NodeTemplate;
 import org.alien4cloud.tosca.model.templates.ServiceNodeTemplate;
 import org.alien4cloud.tosca.model.templates.Topology;
@@ -123,8 +124,8 @@ public class DeployTask extends AlienTask {
         orchestrator.doChangeStatus(paasId, DeploymentStatus.INIT_DEPLOYMENT);
 
         // Show Topoloy for debug
-        ShowTopology.topologyInLog(ctx);
-        MappingTosca.quoteProperties(ctx);
+        //ShowTopology.topologyInLog(ctx);
+        //MappingTosca.quoteProperties(ctx);
 
         // This operation must be synchronized, because it uses the same files topology.yml and topology.zip
         String taskUrl;
@@ -364,10 +365,18 @@ public class DeployTask extends AlienTask {
                 Interface ifce = interfaces.get("tosca.interfaces.node.lifecycle.Standard");
                 if (ifce != null) {
                     Operation start = ifce.getOperations().get("start");
-                    if (start != null &&
-                        start.getImplementationArtifact().getArtifactType().equals("tosca.artifacts.Deployment.Image.Container.Docker")) {
-
-                        start.getImplementationArtifact().setArtifactType("tosca.artifacts.Deployment.Image.Container.Docker.Kubernetes");
+                    if (start != null && start.getImplementationArtifact() != null) {
+                        String implArtifactType = start.getImplementationArtifact().getArtifactType();
+                        // Check implementation artifact type Not null to avoid NPE
+                        if (implArtifactType != null) {
+                            if (implArtifactType.equals("tosca.artifacts.Deployment.Image.Container.Docker")) {
+                                start.getImplementationArtifact().setArtifactType("tosca.artifacts.Deployment.Image.Container.Docker.Kubernetes");
+                            }
+                        } //else {
+                        //System.out.println("Found start implementation artifcat with type NULL : " + start.getImplementationArtifact().toString());
+                        // The implementation artifact with type null was :
+                        // ImplementationArtifact{} AbstractArtifact{artifactType='null', artifactRef='scripts/kubectl_endpoint_start.sh', artifactRepository='null', archiveName='null', archiveVersion='null', repositoryURL='null', repositoryName='null', artifactPath=null}
+                        //}
                     }
                 }
             }
@@ -383,7 +392,6 @@ public class DeployTask extends AlienTask {
             }
         });
     }
-
 
     /**
      * Copy artifacts to archive
@@ -587,6 +595,7 @@ public class DeployTask extends AlienTask {
                             } else {
                                 yaml = orchestrator.getToscaComponentExporter().getYaml(root);
                             }
+                            
                             zout.write(yaml.getBytes(Charset.forName("UTF-8")));
                         } else {
                             copy(file, zout);
