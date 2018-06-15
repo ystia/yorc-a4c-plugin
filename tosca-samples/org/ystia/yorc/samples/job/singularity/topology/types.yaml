@@ -27,7 +27,7 @@ imports:
   - tosca-normative-types:1.0.0-ALIEN20
   - yorc-types:1.0.0
   - yorc-slurm-types:1.0.0
-  - org.ystia.yorc.samples.job.singularity.Component1:1.0.0-SNAPSHOT
+  - org.ystia.yorc.samples.job.singularity.Component:1.0.0-SNAPSHOT
 
 repositories:
   docker:
@@ -36,8 +36,8 @@ repositories:
 
 topology_template:
   node_templates:
-    Job:
-      type: org.ystia.yorc.samples.job.singularity.Component1
+    Job1:
+      type: org.ystia.yorc.samples.job.singularity.Component
       properties:
         name: job_singularity_test1
         batch: false
@@ -47,6 +47,21 @@ topology_template:
             inputs:
               exec_command: {get_property: [SELF, exec_command]}
             implementation:
-              file: godlovedc/lolcow:latest
+              file: docker://godlovedc/lolcow:latest
+              repository: docker
+              type: yorc.artifacts.Deployment.SlurmJobImage
+    Job2:
+      type: org.ystia.yorc.samples.job.singularity.Component
+      properties:
+        name: job_singularity_test2
+        exec_command: /home_nfs/benoists/hello-kitty.sh
+        batch: true
+      interfaces:
+        tosca.interfaces.node.lifecycle.Runnable:
+          run:
+            inputs:
+              exec_command: {get_property: [SELF, exec_command]}
+            implementation:
+              file: /home_nfs/benoists/hello-world.simg
               repository: docker
               type: yorc.artifacts.Deployment.SlurmJobImage
