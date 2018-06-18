@@ -1,0 +1,117 @@
+tosca_definitions_version: alien_dsl_2_0_0
+
+metadata:
+  template_name: org.ystia.yorc.samples.kube.containers
+  template_version: 1.0.0-SNAPSHOT
+  template_author: Yorc team
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN20
+  - docker-types:2.0.0
+
+description: DockerContainers that can be deployed on K8S
+
+repositories:
+  docker:
+    url: https://hub.docker.com/
+    type: http
+
+node_types:
+  org.ystia.yorc.samples.kube.containers.nodes.MySQL:
+    derived_from: tosca.nodes.Container.Application.DockerContainer
+    tags:
+      icon: images/mysql.png
+    properties:
+      db_name:
+        type: string
+        required: true
+      db_user:
+        type: string
+        required: true
+        default: "mysql"
+      db_password:
+        type: string
+        required: true
+        default: "mysql"
+    capabilities:
+      msql_db:
+        type: org.ystia.yorc.samples.kube.containers.capabilities.MysqlDB
+    interfaces:
+      Standard:
+        create:
+          inputs:
+            ENV_MYSQL_DATABASE: { get_property: [SELF, db_name] }
+            ENV_MYSQL_USER: { get_property: [SELF, db_user] }
+            ENV_MYSQL_PASSWORD: { get_property: [SELF, db_password] }
+            ENV_MYSQL_ROOT_PASSWORD: "notused"
+            ENV_MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+          implementation:
+            file: mysql:8.0
+            repository: docker
+            type: tosca.artifacts.Deployment.Image.Container.Docker
+
+  org.ystia.yorc.samples.kube.containers.nodes.Apache:
+    derived_from: tosca.nodes.Container.Application.DockerContainer
+    capabilities:
+      http_endpoint:
+        type: org.ystia.yorc.samples.kube.containers.capabilities.Http
+    interfaces:
+      Standard:
+        create:
+          implementation:
+            file: httpd:latest
+            repository: docker
+            type: tosca.artifacts.Deployment.Image.Container.Docker
+
+  org.ystia.yorc.samples.kube.containers.nodes.wordpress:
+    derived_from: tosca.nodes.Container.Application.DockerContainer
+    requirements:
+      - msql_db:
+          capability: tosca.capabilities.Endpoint.Database
+          relationship: tosca.relationships.ConnectsTo
+          occurrences: [1,1]
+    capabilities:
+      wordpress_app:
+        type: org.ystia.yorc.samples.kube.containers.capabilities.wordpress
+    interfaces:
+      Standard:
+        create:
+          inputs:
+            WORDPRESS_DB_HOST: { concat:  [ get_attribute: [TARGET, mysql_db, ip_address], ":", get_attribute: [TARGET, mysql_db, port] ] }
+            WORDPRESS_DB_USER: { get_property: [TARGET, mysql_db, db_user] }
+            WORDPRESS_DB_PASSWORD: { get_property: [TARGET, mysql_db, db_password] }
+            WORDPRESS_DB_NAME: { get_property: [TARGET, mysql_db, db_name] }
+          implementation:
+            file: wordpress:4.8.1-fpm-alpine
+            repository: docker
+            type: tosca.artifacts.Deployment.Image.Container.Docker
+
+capability_types:
+  org.ystia.yorc.samples.kube.containers.capabilities.MysqlDB:
+    derived_from: tosca.capabilities.Endpoint.Database
+    properties:
+      docker_bridge_port_mapping:
+        type: integer
+        description: Port used to bridge to the container's endpoint.
+        default: 0
+      port:
+        type: integer
+        default: 3306
+
+  org.ystia.yorc.samples.kube.containers.capabilities.Http:
+    derived_from: tosca.capabilities.Endpoint
+    properties:
+      docker_bridge_port_mapping:
+        type: integer
+        description: Port used to bridge to the container's endpoint.
+        default: 0
+      port:
+        type: integer
+        default: 80
+
+  org.ystia.yorc.samples.kube.containers.capabilities.wordpress:
+    derived_from: tosca.capabilities.Endpoint
+    properties:
+      port:
+        type: integer
+        default: 88

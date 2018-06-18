@@ -2,7 +2,7 @@ tosca_definitions_version: ${alien4cloud.dsl.version}
 
 template_name: yorc-docker-types
 template_author: Yorc
-template_version: ${yorc.types.version}
+template_version: ${yorc.docker.types.version}
 
 description: "Defines docker resources for the Yorc plugin."
 

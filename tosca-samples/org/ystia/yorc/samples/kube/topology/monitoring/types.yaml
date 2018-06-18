@@ -1,0 +1,58 @@
+tosca_definitions_version: alien_dsl_2_0_0
+
+metadata:
+  template_name: org.ystia.yorc.samples.kube.topology.monitoring
+  template_version: 0.1.0-SNAPSHOT
+  template_author: admin
+
+description: |
+  A Grafana front-end with a Graphite back-end for monitoring
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN20
+  - org.ystia.yorc.samples.kube.grafana:1.0.0-SNAPSHOT
+  - docker-types:2.0.0
+
+topology_template:
+  node_templates:
+    GraphiteDeployment:
+      type: org.alien4cloud.extended.container.types.ContainerDeploymentUnit
+    GraphiteContainer:
+      type: org.alien4cloud.extended.container.types.ContainerRuntime
+      requirements:
+        - hostedOnGraphiteDeploymentHost:
+            type_requirement: host
+            node: GraphiteDeployment
+            capability: tosca.capabilities.Container.Docker
+            relationship: tosca.relationships.HostedOn
+    Graphite:
+      type: org.ystia.yorc.samples.kube.containers.nodes.Graphite
+      requirements:
+        - hostedOnContainerRuntimeGraphiteContainerHost:
+            type_requirement: host
+            node: GraphiteContainer
+            capability: org.alien4cloud.extended.container.capabilities.ApplicationHost
+            relationship: org.alien4cloud.extended.container.relationships.HostedOnContainerRuntime
+    GrafanaDeployment:
+      type: org.alien4cloud.extended.container.types.ContainerDeploymentUnit
+    GrafanaContainer:
+      type: org.alien4cloud.extended.container.types.ContainerRuntime
+      requirements:
+        - hostedOnGrafanaDeploymentHost:
+            type_requirement: host
+            node: GrafanaDeployment
+            capability: tosca.capabilities.Container.Docker
+            relationship: tosca.relationships.HostedOn
+    Grafana:
+      type: org.ystia.yorc.samples.kube.containers.nodes.Grafana
+      requirements:
+        - hostedOnContainerRuntimeGraphanaContainerHost:
+            type_requirement: host
+            node: GrafanaContainer
+            capability: org.alien4cloud.extended.container.capabilities.ApplicationHost
+            relationship: org.alien4cloud.extended.container.relationships.HostedOnContainerRuntime
+        - graphite:
+            type_requirement: graphite
+            node: Graphite
+            capability: org.ystia.yorc.samples.kube.containers.capabilities.Graphite
+            relationship: tosca.relationships.ConnectsTo

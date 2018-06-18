@@ -17,10 +17,17 @@
 Configure a Yorc Orchestrator and a Location
 ============================================
 
-Now we must define a location (where we will actually deploy applications). In Alien4Cloud every location is managed by an orchestrator.
+Now we must define an orchestrator and one or more locations (where we will actually deploy applications).
+In Alien4Cloud every location is managed by an orchestrator.
+
+The Alien4Cloud Yorc Plugin installed in the previous section allows to create the Yorc orchestrator and locations.
+
+Several location types are available ; they correspond to the infrastructure types supported by Yorc (OpenStack, AWS, Kubernetes, etc.).
+In order to deploy applications and run them on a given infrastructure, Yorc must be properly configured for that
+infrastructure (see "Infrastructure configuration" chapter in Yorc documentation).
 
 Configure a Yorc Orchestrator
-------------------------------
+-----------------------------
 
 To create an orchestrator, go to |AdminBtn| and in the |OrchBtn| sub-menu. Create an orchestrator named ``Yorc`` with the following named plugin:
   * Yorc Orchestrator Factory : |version|
@@ -130,7 +137,7 @@ You can select the property ``shareable`` if you want to make this compute node 
 Credentials don't have to be defined here. For hosts in a Hosts Pool, credentials are defined in the Yorc server configuration.
 
 Configure an AWS Location
---------------------------
+-------------------------
 
 Go to the locations page by clicking on |OrchLocBtn|
 
@@ -154,6 +161,27 @@ Edit mandatory parameters AWS ``image_id``, ``instance_type``, ``security_groups
 Edit ``credentials`` to provide a user name.
 This user will be used to connect to this on-demand compute resource once created, and to deploy applications on it (while user credentials used to create this on-demand resource are defined in the Yorc server configuration).
 
+Configure a Kubernetes Location
+-------------------------------
+In order to deploy applications on a Kubernetes location, the Yorc orchestrator must be connected to a properly configured Yorc server
+(see "Infrastructure configuration" chapter in Yorc documentation ; the Yorc server must be able to connect to the Kubernetes cluster's master).
+
+Select ``Yorc`` orchestrator and go to the locations page by clicking on |OrchLocBtn|. Create a location named ``kubernetes`` (or a name of your choice)
+and select ``Kubernetes`` on the infrastructure type drop-down. The details page of your location should appear.
+
+Go to |OrchLocODRBtn| and search in the ``Catalog`` resources with type prefix ``org.alien4cloud.kubernetes.api.types`` (we'll use ``k8s_api`` for this prefix).
+You have to add the following resources:
+
+  * ``k8s_api.Deployment``
+  * ``k8s_api.Container``
+  * ``k8s_api.Service``
+  * ``k8s_api.volume.*`` # the volume types needed by applications
+
+Go to |OrchLocTMBtn| view to setup modifiers on your location:
+
+  * add ``Kubernetes modifier`` at the phase ``post location match``
+  * add ``Yorc modifier for kubernetes`` at the phase ``post-node-match``
+
 .. |AdminBtn| image:: _static/img/administration-btn.png
               :alt: administration
 
@@ -172,6 +200,8 @@ This user will be used to connect to this on-demand compute resource once create
 .. |OrchLocODRBtn| image:: _static/img/on-demand-ressource-tab.png
                    :alt: on-demand resources
 
+.. |OrchLocTMBtn| image:: _static/img/topology-modifier-tab.png
+                   :alt: topology modifier
 
 .. |OrchLocNewBtn| image:: _static/img/new-location.png
                    :alt: new location

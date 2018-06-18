@@ -1,0 +1,110 @@
+tosca_definitions_version: alien_dsl_2_0_0
+
+metadata:
+  template_name: org.ystia.yorc.samples.containers.topologies.wordpress
+  template_version: 0.1.0-SNAPSHOT
+  template_author: admin
+
+description: ""
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN20
+  - org.ystia.yorc.samples.kube.containers:1.0.0-SNAPSHOT
+  - docker-types:2.0.0
+
+topology_template:
+  node_templates:
+    MysqlDeployment:
+      metadata:
+        a4c_edit_x: "-14"
+        a4c_edit_y: "-18"
+      type: org.alien4cloud.extended.container.types.ContainerDeploymentUnit
+      capabilities:
+        scalable:
+          properties:
+            min_instances: 1
+            max_instances: 1
+            default_instances: 1
+    WordpressDeployment:
+      metadata:
+        a4c_edit_x: 348
+        a4c_edit_y: "-59"
+      type: org.alien4cloud.extended.container.types.ContainerDeploymentUnit
+      capabilities:
+        scalable:
+          properties:
+            min_instances: 1
+            max_instances: 1
+            default_instances: 1
+    MysqlContainer:
+      type: org.alien4cloud.extended.container.types.ContainerRuntime
+      requirements:
+        - hostedOnMysqlDeploymentHost:
+            type_requirement: host
+            node: MysqlDeployment
+            capability: tosca.capabilities.Container.Docker
+            relationship: tosca.relationships.HostedOn
+    WordpressContainer:
+      type: org.alien4cloud.extended.container.types.ContainerRuntime
+      requirements:
+        - hostedOnWordpressDeploymentHost:
+            type_requirement: host
+            node: WordpressDeployment
+            capability: tosca.capabilities.Container.Docker
+            relationship: tosca.relationships.HostedOn
+    MySQL:
+      type: org.ystia.yorc.samples.kube.containers.nodes.MySQL
+      properties:
+        db_name: mysql
+        db_user: mysql
+        db_password: mysql
+        cpu_share: 1.0
+        mem_share: "128 MB"
+      requirements:
+        - hostedOnContainerRuntimeMysqlContainerHost:
+            type_requirement: host
+            node: MysqlContainer
+            capability: org.alien4cloud.extended.container.capabilities.ApplicationHost
+            relationship: org.alien4cloud.extended.container.relationships.HostedOnContainerRuntime
+      capabilities:
+        msql_db:
+          properties:
+            port: 3306
+            protocol: tcp
+            secure: false
+            network_name: PRIVATE
+            initiator: source
+        scalable:
+          properties:
+            min_instances: 1
+            max_instances: 1
+            default_instances: 1
+    wordpress:
+      type: org.ystia.yorc.samples.kube.containers.nodes.wordpress
+      properties:
+        cpu_share: 1.0
+        mem_share: "128 MB"
+      requirements:
+        - connectsToMySqlMsql_db:
+            type_requirement: msql_db
+            node: MySQL
+            capability: org.ystia.yorc.samples.kube.containers.capabilities.MysqlDB
+            relationship: tosca.relationships.ConnectsTo
+        - hostedOnContainerRuntimeWordpressContainerHost:
+            type_requirement: host
+            node: WordpressContainer
+            capability: org.alien4cloud.extended.container.capabilities.ApplicationHost
+            relationship: org.alien4cloud.extended.container.relationships.HostedOnContainerRuntime
+      capabilities:
+        wordpress_app:
+          properties:
+            port: 80
+            protocol: tcp
+            secure: false
+            network_name: PRIVATE
+            initiator: source
+        scalable:
+          properties:
+            min_instances: 1
+            max_instances: 1
+            default_instances: 1

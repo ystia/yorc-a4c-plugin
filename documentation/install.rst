@@ -36,7 +36,7 @@ Please refer to the `online documentation of Alien4Cloud (section "Install Alien
 
 Please be sure to use `Alien4Cloud 2.0.0 <http://fastconnect.org/maven/service/local/artifact/maven/redirect?r=opensource&g=alien4cloud&a=alien4cloud-dist&v=2.0.0-SM5&p=tar.gz&c=dist>`_ !
 
-Then start Alien4Cloud as described in the `online documentation (section "Start Alien4Cloud") <http://alien4cloud.github.io/#/documentation/2.0.0/getting_started/getting_started.html>`_
+Then start Alien4Cloud as described in the `online documentation (section "Start Alien4Cloud") <http://alien4cloud.github.io/#/documentation/2.0.0/getting_started/new_getting_started.html>`_
 
 Setup Alien4Cloud security
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -56,7 +56,7 @@ Log into the Alien4Cloud UI as described in the previous paragraph.
 
 Then go to |AdminBtn| and in the |PluginsBtn| sub-menu. Then drop the file named alien4cloud-yorc-plugin-|version|.zip in the drop area.
 
-The next step will be to configure a new **orchestrator** and a **location** (see the next section).
+The next step will be to configure a new Yorc **orchestrator** and a **location** (see the next section).
 
 .. |AdminBtn| image:: _static/img/administration-btn.png
               :alt: administration
