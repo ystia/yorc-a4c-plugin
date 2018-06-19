@@ -19,5 +19,4 @@
   hosts: all
   strategy: free
   tasks:
-    - debug:
-      msg: 'Detector stopped'
+    - shell: pkill detector
