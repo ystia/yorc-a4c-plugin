@@ -22,14 +22,42 @@
     - set_fact:
         yorc_prov_user: "{{ ansible_user_id }}"
 
-- name: Install dependencies
+- name: Copy API credentials
+  hosts: all
+  strategy: free
+  tasks:
+    - name: Copy credentials
+      copy:
+        src: "{{API_KEYS_FILE}}"
+        dest: "~/creds-vision.json"
+
+- name: Copy the application
+  hosts: all
+  strategy: free
+  tasks:
+    - name: Copy application
+      copy:
+        src: "files/detect.py"
+        dest: "~/detect.py"
+
+- name: Create startup script
+  hosts: all
+  strategy: free
+  tasks:
+    - name: Create startup script from template
+      template:
+        src: "templates/detector.j2"
+        dest: "~/detector.bash"
+        mode: 0777
+
+- name: Install required client libraries in python virtual environment
   hosts: all
   become: true
   become_method: sudo
   strategy: free
   roles:
     - role: cchurch.virtualenv
-      virtualenv_path: ~/env
+      virtualenv_path: ~/envdetector
       virtualenv_pre_packages:
         - pillow
         - google-cloud-storage

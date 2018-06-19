@@ -19,5 +19,4 @@
   hosts: all
   strategy: free
   tasks:
-    - debug:
-      msg: 'Detector started'
+    - shell:  nohup ~/detector.bash &
