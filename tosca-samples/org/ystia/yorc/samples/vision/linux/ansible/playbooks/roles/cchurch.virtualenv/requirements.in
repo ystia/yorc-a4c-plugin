@@ -1,0 +1,4 @@
+ansible
+bumpversion
+docker-py
+tox
