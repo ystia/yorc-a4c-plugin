@@ -41,6 +41,10 @@ node_types:
         description: >
           Google Cloud Project hosting the Cloud Storage buckets where images
           to analyze will be uploaded 
+      api_keys_file:
+        type: string
+        description: >
+          Path to a Google Cloud API keys file providing credentials needed to use the API 
       upload_messages_subscription_id:
         type: string
         description: >
@@ -54,12 +58,13 @@ node_types:
       Standard:
         create:
           description: Detector installation step
-          implementation: playbooks/detector_install.yaml
-        configure:
           inputs:
             PROJECT_ID: { get_property: [SELF, project_id] }
+            API_KEYS_FILE: { get_property: [SELF, api_keys_file] }
             SUBSCRIPTION_ID: { get_property: [SELF, upload_messages_subscription_id] }
             OUTPUT_BUCKET_NAME: { get_property: [SELF, output_bucket_name] }
+          implementation: playbooks/detector_install.yaml
+        configure:
           implementation: playbooks/detector_configure.yaml
         start:
           implementation: playbooks/detector_start.yaml

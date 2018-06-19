@@ -17,7 +17,7 @@ tosca_definitions_version: alien_dsl_2_0_0
 
 
 metadata:
-  template_name: DetectorTopology
+  template_name: VisionTopology
   template_version: 0.1.0
   template_author: yorc
 
@@ -42,9 +42,10 @@ topology_template:
     ImageDetection:
       type: org.ystia.yorc.samples.vision.linux.ansible.nodes.Detector
       properties:
-        project_id: "myproject"
+        project_id: "my-project"
+        api_keys_file: "/var/yorc/creds.json"
         upload_messages_subscription_id: "input-sub"
-        output_bucket_name: "output"
+        output_bucket_name: "utput"
       requirements:
         - hostedOnComputeCaHost:
             type_requirement: host
