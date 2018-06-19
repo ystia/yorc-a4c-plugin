@@ -54,7 +54,7 @@ topology_template:
       type: org.ystia.yorc.samples.job.singularity.Component
       properties:
         name: job_singularity_test2
-        exec_command: /home_nfs/benoists/hello-kitty.sh
+        exec_command: /usr/bin/hello-kitty.sh
         batch: true
       interfaces:
         tosca.interfaces.node.lifecycle.Runnable:
@@ -62,6 +62,6 @@ topology_template:
             inputs:
               exec_command: {get_property: [SELF, exec_command]}
             implementation:
-              file: /home_nfs/benoists/hello-world.simg
+              file: /home_nfs/benoists/hello-world.img
               repository: docker
               type: yorc.artifacts.Deployment.SlurmJobImage
