@@ -1,0 +1,6 @@
+tmp
+test/tmp
+*.retry
+.tox
+tests/roles/chrismeyersfsu.provision_docker
+tests/roles/geerlingguy.repo-epel
