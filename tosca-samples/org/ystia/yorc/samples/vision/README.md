@@ -50,7 +50,7 @@ zip -r ../vision_topo.zip *
 ```
 Then upload these files in Alien4Cloud from `Catalog` > `Manage Archives`.
 
-Once created, define input properties to provide :
+Once done, create an application from template VisionTopoloy that was just uploaded, and define input properties to provide :
   * the Google cloud project where the input storage bucket was created
   * the ID of the subscription you created to be notified on uploads in the input bucket
   * the name of the output bucket where to store results
