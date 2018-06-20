@@ -30,6 +30,7 @@
       copy:
         src: "{{API_KEYS_FILE}}"
         dest: "~/creds-vision.json"
+        mode: 0400
 
 - name: Copy the application
   hosts: all
