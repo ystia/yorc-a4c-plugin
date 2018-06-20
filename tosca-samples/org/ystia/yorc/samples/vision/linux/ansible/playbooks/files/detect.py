@@ -363,5 +363,5 @@ if __name__ == '__main__':
     parser.add_argument('outbucket',
                         help='The name of the Cloud Storage bucket where to store results')
     args = parser.parse_args()
-# poll_notifications(args.project, args.subscription, args.outbucket)
-annotate('input', 'atos-cea.jpg', 'output')
+poll_notifications(args.project, args.subscription, args.outbucket)
+
