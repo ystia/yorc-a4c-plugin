@@ -55,7 +55,8 @@ Once created, define input properties to provide :
   * the ID of the subscription you created to be notified on uploads in the input bucket
   * the name of the output bucket where to store results
   * a path to the API keys file accessible fron the Ystia Orchestrator, that will be used by the application to authenticate against services.
-The API keys files should be created/Downloaded from the Google Cloud Console
+
+The API keys files should be created/downloaded from the Google Cloud Console
 at ![Google Cloud service account file](https://console.cloud.google.com/apis/credentials/serviceaccountkey)
 (While doing this, don't forget to provide access to services describe above, like Cloud Vision).
 
@@ -63,5 +64,5 @@ at ![Google Cloud service account file](https://console.cloud.google.com/apis/cr
 
 ## Deploy the application
 
-Once done, upload an image containing faces or text in your input storage/bucket, and 30 seconds/1 minute later, you should see in your output storage bucket a new subdirectory containing an html result page, with an associated public link on which you can click.
+Once the application is deployed, upload an image containing faces or text in your input storage/bucket, and 30 seconds/1 minute later, you should see in your output storage bucket a new subdirectory containing an html result page, with an associated public link on which you can click to see the detection results.
  
