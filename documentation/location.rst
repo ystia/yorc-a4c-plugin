@@ -187,9 +187,9 @@ You could define here as well a private key by editing the ``keys`` parameter an
    :alt: Compute Instance credentials key
    :align: center
 
-If private key is defined, the orchestrator will attempt to use a key ``~/.ssh/yorc.pem`` that should have been defined during your Yorc server setup.
+If no private key is defined, the orchestrator will attempt to use a key ``~/.ssh/yorc.pem`` that should have been defined during your Yorc server setup.
 
-The user you specify here must be defined either at your Google Project level, or at this Compute Instance level.
+The user you specify here must be defined, along with its associated public SSH key, either at your Google Project level, or at this Compute Instance level.
 See Google documentation for :
   * `Project-wide public ssh keys <https://cloud.google.com/compute/docs/instances/adding-removing-ssh-keys#project-wide/>`_
   * `Instance-level public SSH keys <https://cloud.google.com/compute/docs/instances/adding-removing-ssh-keys#instance-only/>`_
