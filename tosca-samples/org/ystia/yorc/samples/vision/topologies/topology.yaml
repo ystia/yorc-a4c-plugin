@@ -30,6 +30,23 @@ imports:
   - org.ystia.yorc.samples.vision.linux.ansible:1.0.0
 
 topology_template:
+  inputs:
+    project_id:
+      type: string
+      required: true
+      description: "Google Cloud Project hosting the Cloud Storage buckets where images to analyze will be uploaded"
+    subscription_id:
+      type: string
+      required: true
+      description: "Google Cloud Pub/Sub subscription identifier used to be notified of images uploads"
+    output_bucket_name:
+      type: string
+      required: true
+      description: "Name of the Google Cloud Storage bucket where to store detection results"
+    api_keys_file:
+      type: string
+      required: true
+      description: "Path to a Google Cloud API keys file providing credentials needed to use the API"
   node_templates:
     ComputeInstance:
       type: tosca.nodes.Compute
@@ -42,12 +59,12 @@ topology_template:
     ImageDetection:
       type: org.ystia.yorc.samples.vision.linux.ansible.nodes.Detector
       properties:
-        project_id: "my-project"
-        api_keys_file: "/var/yorc/creds.json"
-        upload_messages_subscription_id: "input-sub"
-        output_bucket_name: "utput"
+        project_id: { get_input: project_id }
+        subscription_id: { get_input: subscription_id }
+        output_bucket_name: { get_input: output_bucket_name }
+        api_keys_file: { get_input: api_keys_file }
       requirements:
-        - hostedOnComputeCaHost:
+        - hostedOnComputeInstance:
             type_requirement: host
             node: ComputeInstance
             capability: tosca.capabilities.Container
