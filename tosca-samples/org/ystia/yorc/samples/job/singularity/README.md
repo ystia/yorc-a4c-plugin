@@ -44,10 +44,10 @@ You need to modify the file implementation ans the exec command to run with your
         \   ^__^
          \  (oo)\_______
             (__)\       )\/\
-                ||----w |
-                ||     ||
+                \||      |
+                \||     ||
 
-Hello World !
+Hello World !`
 
 `
 
