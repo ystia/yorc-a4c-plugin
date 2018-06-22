@@ -28,13 +28,8 @@ imports:
 
 node_types:
   org.ystia.yorc.samples.job.singularity.Component:
-    derived_from: yorc.nodes.slurm.Job
+    derived_from: yorc.nodes.slurm.SingularityJob
     description: >
       Sample component to show how to run a job via singularity run
     tags:
       icon: /images/singularity.png
-    properties:
-      exec_command:
-        type: string
-        description: If this property is filled. The command is executed with singularity exec instead of default singularity run.
-        required: false
