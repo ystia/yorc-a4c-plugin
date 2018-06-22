@@ -136,6 +136,80 @@ You can select the property ``shareable`` if you want to make this compute node 
 
 Credentials don't have to be defined here. For hosts in a Hosts Pool, credentials are defined in the Yorc server configuration.
 
+Configure a Google Cloud Platform Location
+------------------------------------------
+
+Go to the locations page by clicking on |OrchLocBtn|
+
+Create a new location clicking on |OrchLocNewBtn| and provide a location name. Select ``Google Cloud`` in the infrastructure type drop-down.
+
+The details page of your location should appear.
+
+Go to |OrchLocODRBtn| and add the following resource:
+
+  * yorc.nodes.google.Compute
+
+Click on the compute, the following details should appear, with here several properties set as explained below:
+
+.. image:: _static/img/google-compute-on-demand.png
+   :alt: Compute configuration
+   :align: center
+
+Specify which image to use to initialize the boot disk, defining properties ``image_project``, ``image_family``, ``image``.
+
+At least one of the tuples ``image_project/image_family``, ``image_project/image``, ``family``, ``image``, should be defined:
+  * ``image_project`` is the project against which all image and image family references will be resolved.
+    If not specified, and either image or image_family is provided, the current default project is used.
+  * ``image_family`` is the family of the image that the boot disk will be initialized with.
+    When a family is specified instead of an image, the latest non-deprecated image associated with that family is used.
+  * ``image`` is the image from which to initialize the boot disk.
+    If not specified, and an image family is specified, the latest non-deprecated image associated with that family is used.
+
+See available public images described at `Compute Engine Public Images <https://cloud.google.com/compute/docs/images#os-compute-support/>`_.
+For example, to use the latest CentOS 7 version, use ``image_project`` `centos-cloud` and ``image_family`` `centos-7`.
+
+Set the ``machine_type`` value according to your needs in CPU and memory (default `n1-standard-1`).
+See `list of available machine types <https://cloud.google.com/compute/docs/machine-types/>`_.
+
+Set the mandatory parameter ``zone`` to define the zone on which the Compute Instance should be hosted.
+See `list of available regions and zones <https://cloud.google.com/compute/docs/regions-zones/>`_.
+
+Edit ``credentials`` to provide a mandatory user name.
+This user will be used to connect to this on-demand compute resource once created, and to deploy applications on it.
+
+.. image:: _static/img/google-credentials.png
+   :alt: Compute Instance credentials
+   :align: center
+
+You could define here as well a private key by editing the ``keys`` parameter and adding a new key ``0`` with a value being the path to a private key, as below :
+
+.. image:: _static/img/google-creds-key.png
+   :alt: Compute Instance credentials key
+   :align: center
+
+If no private key is defined, the orchestrator will attempt to use a key ``~/.ssh/yorc.pem`` that should have been defined during your Yorc server setup.
+
+The user you specify here must be defined, along with its associated public SSH key, either at your Google Project level, or at this Compute Instance level.
+See Google documentation for :
+  * `Project-wide public ssh keys <https://cloud.google.com/compute/docs/instances/adding-removing-ssh-keys#project-wide/>`_
+  * `Instance-level public SSH keys <https://cloud.google.com/compute/docs/instances/adding-removing-ssh-keys#instance-only/>`_
+
+For example, assuming you have a private ssh key ``./id_rsa`` and a public ssh key ``./id_rsa.pub``,
+you can first create a file containing a user name and the public key content::
+
+    echo  "user1:`cat id_rsa.pub`" > userkeys.txt
+
+Then  define this user and public key at the project level, using Google Cloud CLI::
+
+    gcloud compute project-info add-metadata --metadata-from-file ssh-keys=userkeys.txt
+
+Then, by default, all compute instances will inherit from this user/public key definition,
+the user will be created on the compute instance and you will be able to ssh on your compute instance running::
+
+    ssh -i ./id_rsa user1@<your instance external ip address>
+
+For details on other optional Compute Instance properties, see `Compute Instance creation <https://cloud.google.com/sdk/gcloud/reference/compute/instances/create>`_.
+
 Configure an AWS Location
 -------------------------
 

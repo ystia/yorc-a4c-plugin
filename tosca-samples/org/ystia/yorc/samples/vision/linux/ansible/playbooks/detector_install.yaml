@@ -1,0 +1,71 @@
+#
+# Copyright 2018 Bull S.A.S. Atos Technologies - Bull, Rue Jean Jaures, B.P.68, 78340, Les Clayes-sous-Bois, France.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+
+- name: Set connected user fact
+  hosts: all
+  strategy: free
+  tasks:
+    - set_fact:
+        yorc_prov_user: "{{ ansible_user_id }}"
+
+- name: Copy API credentials
+  hosts: all
+  strategy: free
+  tasks:
+    - name: Copy credentials
+      copy:
+        src: "{{API_KEYS_FILE}}"
+        dest: "~/creds-vision.json"
+        mode: 0400
+
+- name: Copy the application
+  hosts: all
+  strategy: free
+  tasks:
+    - name: Copy application
+      copy:
+        src: "files/detect.py"
+        dest: "~/detect.py"
+
+- name: Create startup script
+  hosts: all
+  strategy: free
+  tasks:
+    - name: Create startup script from template
+      template:
+        src: "templates/detector.j2"
+        dest: "~/detector.bash"
+        mode: 0777
+
+- name: Install required client libraries in python virtual environment
+  hosts: all
+  become: true
+  become_method: sudo
+  strategy: free
+  roles:
+    - role: cchurch.virtualenv
+      virtualenv_path: ~/envdetector
+      virtualenv_pre_packages:
+        - pillow
+        - google-cloud-storage
+        - google-cloud-pubsub
+        - google-cloud-vision
+      virtualenv_notify_on_updated: virtualenv updated
+  handlers:
+    - name: virtualenv updated
+      debug:
+        msg: 'virtualenv was updated.'
