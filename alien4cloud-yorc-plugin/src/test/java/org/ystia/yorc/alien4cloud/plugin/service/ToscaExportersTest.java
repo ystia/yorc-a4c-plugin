@@ -26,6 +26,7 @@ import org.alien4cloud.tosca.model.types.RelationshipType;
 import org.alien4cloud.tosca.normative.constants.NormativeCredentialConstant;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.ystia.yorc.alien4cloud.plugin.AbstractPluginTest;
@@ -173,6 +174,37 @@ public class ToscaExportersTest extends AbstractPluginTest {
         String result = toscaTopologyExporter.getYaml(csar, topo, false);
 
         Assert.assertEquals(expected, result);
+    }
+
+    @Test
+    public void TestTopologyExporter() throws Exception {
+        Mockito.reset(repositorySearchService);
+        Csar csar = new Csar("tosca-normative-types", "1.0.0-ALIEN20");
+        csar.setImportSource(CSARSource.ALIEN.name());
+        csar.setYamlFilePath("tosca-normative-types.yaml");
+        Mockito.when(repositorySearchService.getArchive("tosca-normative-types", "1.0.0-ALIEN20")).thenReturn(csar);
+        csar = new Csar("yorc-types", "1.0.0");
+        csar.setImportSource(CSARSource.ORCHESTRATOR.name());
+        csar.setYamlFilePath("yorc-types.yaml");
+        Mockito.when(repositorySearchService.getArchive("yorc-types", "1.0.0")).thenReturn(csar);
+        csar = new Csar("yorc-slurm-types", "1.0.0");
+        csar.setImportSource(CSARSource.ORCHESTRATOR.name());
+        csar.setYamlFilePath("yorc-slurm-types.yaml");
+        Mockito.when(repositorySearchService.getArchive("yorc-slurm-types", "1.0.0")).thenReturn(csar);
+
+        String rootDir = "src/test/resources/org/ystia/yorc/alien4cloud/plugin/tosca";
+        ParsingResult<ArchiveRoot>
+                parsingResult = parser.parseFile(Paths.get(rootDir, "tosca_topology_sample.yaml"));
+        System.out.println(parsingResult.getContext().getParsingErrors());
+        assertNoBlocker(parsingResult);
+
+        Assert.assertNotNull(parsingResult.getResult().getRepositories());
+        Assert.assertEquals(parsingResult.getResult().getRepositories().size(), 1);
+        Assert.assertEquals(parsingResult.getResult().getRepositories().containsKey("docker"), true);
+
+        Assert.assertNotNull(parsingResult.getResult().getTopology().getNodeTemplates());
+        Assert.assertEquals(parsingResult.getResult().getTopology().getNodeTemplates().size(), 1);
+        Assert.assertEquals(parsingResult.getResult().getTopology().getNodeTemplates().containsKey("Comp1"), true);
     }
 
 }

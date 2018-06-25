@@ -185,7 +185,7 @@ ${utils.formatArtifact($operationEntry.value.implementationArtifact, 10)}
 #else
           ${operationEntry.key}:
 #if($utils.mapIsNotEmptyAndContainsNotnullValues($operationEntry.value.inputParameters))
-            input:$propertyUtils.formatProperties(7, $operationEntry.value.inputParameters)
+            inputs:$propertyUtils.formatProperties(7, $operationEntry.value.inputParameters)
 #end
             implementation:
 ${utils.formatArtifact($operationEntry.value.implementationArtifact, 7)}
