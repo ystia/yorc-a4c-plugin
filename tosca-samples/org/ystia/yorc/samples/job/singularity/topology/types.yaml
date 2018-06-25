@@ -31,8 +31,11 @@ imports:
 
 repositories:
   docker:
-    url: https://hub.docker.com/
-    type: http
+    url: https://hpda-docker-registry:5000/
+    type: a4c_ignore
+  cluster_nfs:
+    url: not used
+    type: a4c_ignore
 
 topology_template:
   node_templates:
@@ -63,5 +66,5 @@ topology_template:
               exec_command: {get_property: [SELF, exec_command]}
             implementation:
               file: /home_nfs/benoists/hello-world.img
-              repository: docker
+              repository: cluster_nfs
               type: yorc.artifacts.Deployment.SlurmJobImage

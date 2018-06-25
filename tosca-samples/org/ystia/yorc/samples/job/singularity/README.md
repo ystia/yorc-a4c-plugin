@@ -28,7 +28,17 @@ Given the following TOSCA operation definition:
 
 ```
 
+## Use private http docker registry
+You can use Docker hub public registry or private one.
+If your private registry is not accessible from Alien server, you can ignore the resolve artifact step
+Given the following TOSCA operation definition:
+```yaml
+repositories:
+  docker:
+    url: https://hpda-docker-registry:5000/
+    type: a4c_ignore
 
+```
 
 ## Outputs & logging
 
