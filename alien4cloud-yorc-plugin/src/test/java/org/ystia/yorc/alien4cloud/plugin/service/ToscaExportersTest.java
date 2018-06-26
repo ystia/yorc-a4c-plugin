@@ -207,4 +207,40 @@ public class ToscaExportersTest extends AbstractPluginTest {
         Assert.assertEquals(parsingResult.getResult().getTopology().getNodeTemplates().containsKey("Comp1"), true);
     }
 
+    @Test
+    public void TestTopologyExporterWithImplementationArtifactNotationToNotShorten() throws Exception {
+        Mockito.reset(repositorySearchService);
+        Csar csar = new Csar("tosca-normative-types", "1.0.0-ALIEN20");
+        csar.setImportSource(CSARSource.ALIEN.name());
+        csar.setYamlFilePath("tosca-normative-types.yaml");
+        Mockito.when(repositorySearchService.getArchive("tosca-normative-types", "1.0.0-ALIEN20")).thenReturn(csar);
+        csar = new Csar("yorc-types", "1.0.0");
+        csar.setImportSource(CSARSource.ORCHESTRATOR.name());
+        csar.setYamlFilePath("yorc-types.yaml");
+        Mockito.when(repositorySearchService.getArchive("yorc-types", "1.0.0")).thenReturn(csar);
+        csar = new Csar("yorc-slurm-types", "1.0.0");
+        csar.setImportSource(CSARSource.ORCHESTRATOR.name());
+        csar.setYamlFilePath("yorc-slurm-types.yaml");
+        Mockito.when(repositorySearchService.getArchive("yorc-slurm-types", "1.0.0")).thenReturn(csar);
+
+        String rootDir = "src/test/resources/org/ystia/yorc/alien4cloud/plugin/tosca";
+        ParsingResult<ArchiveRoot>
+                parsingResult = parser.parseFile(Paths.get(rootDir, "tosca_topology_with_implementation_artifact.yaml"));
+        System.out.println(parsingResult.getContext().getParsingErrors());
+        assertNoBlocker(parsingResult);
+
+        Assert.assertNotNull(parsingResult.getResult().getTopology().getNodeTemplates());
+        Assert.assertEquals(parsingResult.getResult().getTopology().getNodeTemplates().size(), 1);
+        Assert.assertEquals(parsingResult.getResult().getTopology().getNodeTemplates().containsKey("Comp1"), true);
+
+        Assert.assertNotNull(parsingResult.getResult().getTopology().getNodeTemplates().get("Comp1").getInterfaces());
+        Assert.assertEquals(parsingResult.getResult().getTopology().getNodeTemplates().get("Comp1").getInterfaces().size(), 1);
+        Assert.assertEquals(parsingResult.getResult().getTopology().getNodeTemplates().get("Comp1").getInterfaces().containsKey("tosca.interfaces.node.lifecycle.Runnable"), true);
+        Assert.assertEquals(parsingResult.getResult().getTopology().getNodeTemplates().get("Comp1").getInterfaces().get("tosca.interfaces.node.lifecycle.Runnable").getOperations().size(), 1);
+        Assert.assertEquals(parsingResult.getResult().getTopology().getNodeTemplates().get("Comp1").getInterfaces().get("tosca.interfaces.node.lifecycle.Runnable").getOperations().containsKey("run"), true);
+
+        Assert.assertEquals(parsingResult.getResult().getTopology().getNodeTemplates().get("Comp1").getInterfaces().get("tosca.interfaces.node.lifecycle.Runnable").getOperations().get("run").getImplementationArtifact().getArtifactType(), "yorc.artifacts.Deployment.SlurmJobBin");
+        Assert.assertEquals(parsingResult.getResult().getTopology().getNodeTemplates().get("Comp1").getInterfaces().get("tosca.interfaces.node.lifecycle.Runnable").getOperations().get("run").getImplementationArtifact().getArtifactRef(), "bin/submit.sh");
+    }
+
 }

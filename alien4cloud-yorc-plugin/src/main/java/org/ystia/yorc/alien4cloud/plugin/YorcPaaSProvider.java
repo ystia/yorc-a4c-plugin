@@ -787,14 +787,13 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
      * @param paasId
      */
     protected void postEvent(AbstractMonitorEvent event, String paasId) {
+        if (a4cDeploymentIds.get(paasId) == null) {
+            log.warn("The orchestrator deploymentID:{} doesn't match with any associated Alien4cloud deploymentID.", paasId);
+            return;
+        }
         event.setDate((new Date()).getTime());
         event.setDeploymentId(a4cDeploymentIds.get(paasId));
         event.setOrchestratorId(paasId);
-        if (event.getDeploymentId() == null) {
-            log.error("Must provide an Id for this Event: " + event.toString());
-            Thread.dumpStack();
-            return;
-        }
         synchronized (toBeDeliveredEvents) {
             toBeDeliveredEvents.add(event);
         }
