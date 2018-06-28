@@ -1,0 +1,30 @@
+tosca_definitions_version: alien_dsl_2_0_0
+
+metadata:
+  template_name: org.ystia.yorc.samples.kube.pi
+  template_version: 1.0.0-SNAPSHOT
+  template_author: Yorc team
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN20
+  - docker-types:2.1.0-SNAPSHOT
+
+description: Compute Pi to 2000 places Docker image that can be deployed on K8S
+
+repositories:
+  docker:
+    url: https://hub.docker.com/
+    type: http
+
+node_types:
+  org.ystia.yorc.samples.kube.containers.nodes.pi:
+    derived_from: tosca.nodes.Container.Application.DockerContainer
+    properties:
+
+    interfaces:
+      Standard:
+        create:
+          implementation:
+            file: perl:latest
+            repository: docker
+            type: tosca.artifacts.Deployment.Image.Container.Docker
