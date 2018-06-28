@@ -123,6 +123,8 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
     @Inject
     private PluginArchiveService archiveService;
 
+    private LogListenerTask logListenerTask;
+
     /**
      * Default constructor
      */
@@ -130,6 +132,7 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
         // Start the TaskManager
         // TODO make sizes configurable
         taskManager = new TaskManager(3, 120, 3600);
+        logListenerTask = new LogListenerTask(this);
     }
 
     public RestClient getRestClient() {
@@ -202,7 +205,7 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
         // Listen Events and logs from yorc about the deployment
         log.info("Starting Yorc events & logs listeners");
         addTask(new EventListenerTask(this));
-        addTask(new LogListenerTask(this));
+        addTask(logListenerTask);
     }
 
     /**
@@ -242,6 +245,7 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
      */
     @Override
     public void deploy(PaaSTopologyDeploymentContext ctx, IPaaSCallback<?> callback) {
+        logListenerTask.registerDeployment(ctx);
         addTask(new DeployTask(ctx, this, callback, csarRepoSearchService));
     }
 
@@ -252,6 +256,7 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
      */
     @Override
     public void undeploy(PaaSDeploymentContext ctx, IPaaSCallback<?> callback) {
+        logListenerTask.unregisterDeployment(ctx);
         addTask(new UndeployTask(ctx, this, callback));
     }
 
@@ -791,8 +796,7 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
         event.setDeploymentId(a4cDeploymentIds.get(paasId));
         event.setOrchestratorId(paasId);
         if (event.getDeploymentId() == null) {
-            log.error("Must provide an Id for this Event: " + event.toString());
-            Thread.dumpStack();
+            log.warn("Must provide an Id for this Event: " + event.toString());
             return;
         }
         synchronized (toBeDeliveredEvents) {
