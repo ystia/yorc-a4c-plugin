@@ -42,7 +42,7 @@ public class LogListenerTask extends AlienTask {
         super(prov);
     }
 
-    private static final String EVENT_HANDLER_REGEXP = "(.*Workflow.+ended without error.*|.*Start processing workflow.*|.*Start the ansible execution of.*|.*, stdout:.*)";
+    private static final String EVENT_HANDLER_REGEXP = "(.*Workflow.+ended without error.*|.*Start processing workflow.*|.*Start the ansible execution of.*|.*, stdout:.*|.*Ansible execution for operation .* failed.*|.*Error .* happened in workflow .*)";
     private static final ThreadLocal<Pattern> EVENT_HANDLER_PATTERN = ThreadLocal.withInitial(() -> Pattern.compile(EVENT_HANDLER_REGEXP));
     // a deploymentId -> { TaskKey -> taskId } map
     private Map<String, Map<TaskKey, String>> taskIdCache = Maps.newHashMap();
@@ -136,6 +136,7 @@ public class LogListenerTask extends AlienTask {
      */
     private void handleEvent(final LogEvent pLogEvent, PaaSDeploymentLog pLog) {
         String content = pLogEvent.getContent();
+        log.trace("Handling an event with content : {}", pLogEvent.getContent());
         Map<TaskKey, String> taskIds = taskIdCache.get(pLogEvent.getDeploymentId());
         if (taskIds == null) {
             taskIds = Maps.newHashMap();
@@ -201,6 +202,20 @@ public class LogListenerTask extends AlienTask {
                     workflowStepCompletedEvent.setStepId(stepId);
                     postWorkflowStepEvent(workflowStepCompletedEvent, pLogEvent);
                 }
+            } else if (content.matches(".*Ansible execution for operation .* failed.*")) {
+                // -> TaskSucceedeEvent
+                TaskFailedEvent taskFailedEvent = new TaskFailedEvent();
+                taskFailedEvent.setTaskId(taskId);
+                postTaskEvent(taskFailedEvent, pLogEvent);
+                String stepId = getStepId(pLogEvent);
+                if (stepId != null) {
+                    WorkflowStepCompletedEvent workflowStepCompletedEvent = new WorkflowStepCompletedEvent();
+                    workflowStepCompletedEvent.setStepId(stepId);
+                    postWorkflowStepEvent(workflowStepCompletedEvent, pLogEvent);
+                }
+            } else if (content.matches(".*Error .* happened in workflow .*")) {
+                PaaSWorkflowFailedEvent wse = new PaaSWorkflowFailedEvent();
+                postWorkflowMonitorEvent(wse, pLogEvent);
             }
         }
         // eventually enrich the pLog with taskId
