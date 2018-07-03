@@ -56,14 +56,24 @@ public class EventListenerTask extends AlienTask {
                     if (eventResponse.getEvents() != null) {
                         for (Event event : eventResponse.getEvents()) {
                             String paasId = event.getDeployment_id();
+                            log.debug("Received event from Yorc: " + event.toString());
+                            log.debug("Received event has deploymentId : " + paasId);
+                            String deploymentId = orchestrator.getDeploymentId(paasId);
+                            if (deploymentId == null) {
+                                if (!orchestrator.isUnknownDeploymentId(paasId)) {
+                                    log.warn("The orchestrator deploymentID:{} doesn't match with any associated Alien4Cloud deploymentID.", paasId);
+                                    orchestrator.setUnknownDeploymentId(paasId);
+                                }
+                                continue;
+                            }
                             YorcRuntimeDeploymentInfo jrdi = orchestrator.getDeploymentInfo(paasId);
+                            Map<String, Map<String, InstanceInformation>> instanceInfo = jrdi.getInstanceInformations();
+
                             if (jrdi == null) {
                                 log.error("listenYorcEvents: no YorcRuntimeDeploymentInfo for " + paasId);
                                 continue;
                             }
-                            Map<String, Map<String, InstanceInformation>> instanceInfo = jrdi.getInstanceInformations();
 
-                            paasId = event.getDeployment_id();
                             // Check type of Event sent by Yorc and process it
                             String eState = event.getStatus();
                             String eMessage = paasId + " - Yorc Event: ";
@@ -121,7 +131,7 @@ public class EventListenerTask extends AlienTask {
                                             }
                                             break;
                                         case "error":
-                                            log.warn("Error instance status");
+                                            log.warn("Error instance status in deploymentID:{} and nodeID:{}", paasId, eNode);
                                             break;
                                         default:
                                             log.warn("Unknown instance status: " + eState);

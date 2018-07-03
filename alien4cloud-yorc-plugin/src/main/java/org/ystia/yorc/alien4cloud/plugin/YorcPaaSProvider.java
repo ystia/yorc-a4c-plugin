@@ -51,6 +51,7 @@ import alien4cloud.paas.plan.ToscaNodeLifecycleConstants;
 import alien4cloud.tosca.parser.ToscaParser;
 import com.google.common.collect.Lists;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.alien4cloud.tosca.catalog.index.IToscaTypeSearchService;
 import org.alien4cloud.tosca.catalog.repository.CsarFileRepository;
@@ -87,6 +88,23 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
     private final List<AbstractMonitorEvent> toBeDeliveredEvents = new ArrayList<>();
     private ProviderConfig providerConfiguration;
     private Map<String, String> a4cDeploymentIds = Maps.newHashMap();
+
+    /**
+     * Keep in mind the pass (yorc) deploymentIds that have no
+     * correspondent deploymentId in Alien. This can arrive for multiple reasons:
+     * - deployment was created with yorc's CLI
+     * - deployment was created with another Alien instance
+     * - Alien was restared after runtime removed
+     */
+    private List<String> unknownDeploymentIds = new ArrayList<>();
+
+    protected boolean isUnknownDeploymentId(String paasId) {
+        return unknownDeploymentIds.contains(paasId);
+    }
+
+    protected void setUnknownDeploymentId(String paasId) {
+        unknownDeploymentIds.add(paasId);
+    }
 
     @Inject
     private IToscaTypeSearchService toscaTypeSearchService;
