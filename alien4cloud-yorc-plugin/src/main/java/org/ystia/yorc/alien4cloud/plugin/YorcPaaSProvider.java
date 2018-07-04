@@ -16,10 +16,7 @@
 package org.ystia.yorc.alien4cloud.plugin;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 
 import javax.annotation.Resource;
@@ -51,7 +48,6 @@ import alien4cloud.paas.plan.ToscaNodeLifecycleConstants;
 import alien4cloud.tosca.parser.ToscaParser;
 import com.google.common.collect.Lists;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.alien4cloud.tosca.catalog.index.IToscaTypeSearchService;
 import org.alien4cloud.tosca.catalog.repository.CsarFileRepository;
@@ -90,7 +86,7 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
     private Map<String, String> a4cDeploymentIds = Maps.newHashMap();
 
     /**
-     * Keep in mind the pass (yorc) deploymentIds that have no
+     * Keep in mind the paas (yorc) deploymentIds that have no
      * correspondent deploymentId in Alien. This can arrive for multiple reasons:
      * - deployment was created with yorc's CLI
      * - deployment was created with another Alien instance
@@ -98,11 +94,11 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
      */
     private List<String> unknownDeploymentIds = new ArrayList<>();
 
-    protected boolean isUnknownDeploymentId(String paasId) {
+    private boolean isUnknownDeploymentId(String paasId) {
         return unknownDeploymentIds.contains(paasId);
     }
 
-    protected void setUnknownDeploymentId(String paasId) {
+    private void addUnknownDeploymentId(String paasId) {
         unknownDeploymentIds.add(paasId);
     }
 
@@ -166,8 +162,22 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
         a4cDeploymentIds.put(paasId, alienId);
     }
 
+    /**
+     * Return the alien generated id for this deployment
+     * @param paasId the orchestrator's id
+     * @return the alien's id
+     */
     public String getDeploymentId(String paasId) {
-        return a4cDeploymentIds.get(paasId);
+        String  deploymentId = a4cDeploymentIds.get(paasId);
+        if (deploymentId == null) {
+            // if we don't know yet that this deployment is unknown by Alien
+            if (!isUnknownDeploymentId(paasId)) {
+                log.warn("The orchestrator deploymentID: {} doesn't match with any associated Alien4Cloud deploymentID.", paasId);
+                // cache this information
+                addUnknownDeploymentId(paasId);
+            }
+        }
+        return deploymentId;
     }
 
     public void putDeploymentInfo(String paasId, YorcRuntimeDeploymentInfo jrdi) {

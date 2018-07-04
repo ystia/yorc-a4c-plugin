@@ -45,14 +45,10 @@ public class LogListenerTask extends AlienTask {
                     if (logResponse.getLogs() != null) {
                         for (LogEvent logEvent : logResponse.getLogs()) {
                             String paasId = logEvent.getDeploymentId();
+                            String deploymentId = orchestrator.getDeploymentId(paasId);
                             log.debug("Received log from Yorc: " + logEvent.toString());
                             log.debug("Received log has deploymentId : " + paasId);
-                            String deploymentId = orchestrator.getDeploymentId(paasId);
                             if (deploymentId == null) {
-                                if (!orchestrator.isUnknownDeploymentId(paasId)) {
-                                    log.warn("The orchestrator deploymentID:{} doesn't match with any associated Alien4Cloud deploymentID.", paasId);
-                                    orchestrator.setUnknownDeploymentId(paasId);
-                                }
                                 continue;
                             }
                             // Post a PaaSDeploymentLog to a4c premium log

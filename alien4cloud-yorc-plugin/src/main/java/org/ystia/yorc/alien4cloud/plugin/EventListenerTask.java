@@ -60,10 +60,6 @@ public class EventListenerTask extends AlienTask {
                             log.debug("Received event has deploymentId : " + paasId);
                             String deploymentId = orchestrator.getDeploymentId(paasId);
                             if (deploymentId == null) {
-                                if (!orchestrator.isUnknownDeploymentId(paasId)) {
-                                    log.warn("The orchestrator deploymentID:{} doesn't match with any associated Alien4Cloud deploymentID.", paasId);
-                                    orchestrator.setUnknownDeploymentId(paasId);
-                                }
                                 continue;
                             }
                             YorcRuntimeDeploymentInfo jrdi = orchestrator.getDeploymentInfo(paasId);
@@ -131,7 +127,7 @@ public class EventListenerTask extends AlienTask {
                                             }
                                             break;
                                         case "error":
-                                            log.warn("Error instance status in deploymentID:{} and nodeID:{}", paasId, eNode);
+                                            log.warn("Error instance status in deploymentID: {} and nodeID: {}", paasId, eNode);
                                             break;
                                         default:
                                             log.warn("Unknown instance status: " + eState);
