@@ -28,18 +28,15 @@ import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
 
 import alien4cloud.component.ICSARRepositorySearchService;
 import alien4cloud.component.repository.ArtifactRepositoryConstants;
+import alien4cloud.model.common.Tag;
 import alien4cloud.model.components.CSARSource;
 import alien4cloud.model.deployment.DeploymentTopology;
 import alien4cloud.model.orchestrators.locations.Location;
@@ -56,6 +53,7 @@ import alien4cloud.tosca.parser.ParsingErrorLevel;
 import alien4cloud.tosca.parser.ParsingException;
 import alien4cloud.tosca.parser.ParsingResult;
 import alien4cloud.tosca.parser.ToscaParser;
+import alien4cloud.utils.MapUtil;
 import com.google.common.collect.Sets;
 import lombok.extern.slf4j.Slf4j;
 import org.alien4cloud.tosca.exporter.ArchiveExportService;
@@ -64,10 +62,13 @@ import org.alien4cloud.tosca.model.Csar;
 import org.alien4cloud.tosca.model.definitions.DeploymentArtifact;
 import org.alien4cloud.tosca.model.definitions.Interface;
 import org.alien4cloud.tosca.model.definitions.Operation;
+import org.alien4cloud.tosca.model.definitions.ImplementationArtifact;
 import org.alien4cloud.tosca.model.templates.NodeTemplate;
+import org.alien4cloud.tosca.model.templates.ServiceNodeTemplate;
 import org.alien4cloud.tosca.model.templates.Topology;
 import org.elasticsearch.common.collect.Maps;
 import org.ystia.yorc.alien4cloud.plugin.rest.Response.Event;
+import org.ystia.yorc.alien4cloud.plugin.tosca.model.templates.YorcServiceNodeTemplate;
 import org.ystia.yorc.alien4cloud.plugin.rest.YorcRestException;
 import org.ystia.yorc.alien4cloud.plugin.utils.MappingTosca;
 import org.ystia.yorc.alien4cloud.plugin.utils.ShowTopology;
@@ -113,14 +114,18 @@ public class DeployTask extends AlienTask {
 
         // Init Deployment Info from topology
         DeploymentTopology dtopo = ctx.getDeploymentTopology();
+
+        // Build Monitoring tags for computes
+        buildComputeMonitoringTags(dtopo, ctx.getPaaSTopology());
+
         Map<String, Map<String, InstanceInformation>> curinfo = setupInstanceInformations(dtopo);
         YorcRuntimeDeploymentInfo jrdi = new YorcRuntimeDeploymentInfo(ctx, DeploymentStatus.INIT_DEPLOYMENT, curinfo, deploymentUrl);
         orchestrator.putDeploymentInfo(paasId, jrdi);
         orchestrator.doChangeStatus(paasId, DeploymentStatus.INIT_DEPLOYMENT);
 
         // Show Topoloy for debug
-        ShowTopology.topologyInLog(ctx);
-        MappingTosca.quoteProperties(ctx);
+        //ShowTopology.topologyInLog(ctx);
+        //MappingTosca.quoteProperties(ctx);
 
         // This operation must be synchronized, because it uses the same files topology.yml and topology.zip
         String taskUrl;
@@ -289,7 +294,10 @@ public class DeployTask extends AlienTask {
         this.ctx.getDeploymentTopology().getDependencies().forEach(d -> {
             if (!"tosca-normative-types".equals(d.getName())) {
                 Csar csar = csarRepoSearchService.getArchive(d.getName(), d.getVersion());
-                if (CSARSource.ORCHESTRATOR != CSARSource.valueOf(csar.getImportSource())) {
+                final String importSource = csar.getImportSource();
+                // importSource is null when this is a reference to a Service
+                // provided by another deployment
+                if (importSource == null || CSARSource.ORCHESTRATOR != CSARSource.valueOf(importSource)) {
                     try {
                         csar2zip(zout, csar, finalLocation);
                     } catch (Exception e) {
@@ -299,6 +307,15 @@ public class DeployTask extends AlienTask {
             }
         });
 
+        for (Entry<String, NodeTemplate> nodeTemplateEntry :  this.ctx.getDeploymentTopology().getNodeTemplates().entrySet()) {
+            if (nodeTemplateEntry.getValue() instanceof ServiceNodeTemplate) {
+                // Define a service node with a directive to the orchestrator
+                // that this Node Template is substitutable
+                YorcServiceNodeTemplate yorcServiceNodeTemplate = 
+                    new YorcServiceNodeTemplate((ServiceNodeTemplate)nodeTemplateEntry.getValue());
+                nodeTemplateEntry.setValue(yorcServiceNodeTemplate);
+            }
+        }
 
         // Copy overwritten artifacts for each node
         PaaSTopology ptopo = ctx.getPaaSTopology();
@@ -343,12 +360,24 @@ public class DeployTask extends AlienTask {
 
     private void matchKubernetesImplementation(ArchiveRoot root) {
         root.getNodeTypes().forEach((k, t) -> {
-            Interface ifce = t.getInterfaces().get("tosca.interfaces.node.lifecycle.Standard");
-            if (ifce != null) {
-                Operation start = ifce.getOperations().get("start");
-                if (start != null &&
-                        start.getImplementationArtifact().getArtifactType().equals("tosca.artifacts.Deployment.Image.Container.Docker")) {
-                    start.getImplementationArtifact().setArtifactType("tosca.artifacts.Deployment.Image.Container.Docker.Kubernetes");
+            Map<String,  Interface> interfaces = t.getInterfaces();
+            if (interfaces != null) {
+                Interface ifce = interfaces.get("tosca.interfaces.node.lifecycle.Standard");
+                if (ifce != null) {
+                    Operation start = ifce.getOperations().get("start");
+                    if (start != null && start.getImplementationArtifact() != null) {
+                        String implArtifactType = start.getImplementationArtifact().getArtifactType();
+                        // Check implementation artifact type Not null to avoid NPE
+                        if (implArtifactType != null) {
+                            if (implArtifactType.equals("tosca.artifacts.Deployment.Image.Container.Docker")) {
+                                start.getImplementationArtifact().setArtifactType("tosca.artifacts.Deployment.Image.Container.Docker.Kubernetes");
+                            }
+                        } //else {
+                        //System.out.println("Found start implementation artifcat with type NULL : " + start.getImplementationArtifact().toString());
+                        // The implementation artifact with type null was :
+                        // ImplementationArtifact{} AbstractArtifact{artifactType='null', artifactRef='scripts/kubectl_endpoint_start.sh', artifactRepository='null', archiveName='null', archiveVersion='null', repositoryURL='null', repositoryName='null', artifactPath=null}
+                        //}
+                    }
                 }
             }
         });
@@ -363,7 +392,6 @@ public class DeployTask extends AlienTask {
             }
         });
     }
-
 
     /**
      * Copy artifacts to archive
@@ -559,7 +587,15 @@ public class DeployTask extends AlienTask {
                             if (location == LOC_KUBERNETES) {
                                 matchKubernetesImplementation(root);
                             }
-                            String yaml = orchestrator.getToscaComponentExporter().getYaml(root);
+
+                            String yaml;
+                            if (root.hasToscaTopologyTemplate()) {
+                                log.debug("File has topology template : " + name);
+                                yaml = orchestrator.getToscaTopologyExporter().getYaml(csar, root.getTopology(), false);
+                            } else {
+                                yaml = orchestrator.getToscaComponentExporter().getYaml(root);
+                            }
+                            
                             zout.write(yaml.getBytes(Charset.forName("UTF-8")));
                         } else {
                             copy(file, zout);
@@ -620,5 +656,34 @@ public class DeployTask extends AlienTask {
             }
         }
         return currentInformations;
+    }
+
+    private void buildComputeMonitoringTags(final DeploymentTopology depTopology, PaaSTopology ptopo) {
+        Map<String, String> depProps = depTopology.getProviderDeploymentProperties();
+        if (depProps != null && !depProps.isEmpty()) {
+            // Check for Monitoring time interval : it enables monitoring only if time interval is > 0
+            String monitoringIntervalStr = (String) MapUtil.get(depProps, YstiaOrchestratorFactory.MONITORING_TIME_INTERVAL);
+            log.debug("monitoringIntervalStr='" + monitoringIntervalStr + "'");
+            if (monitoringIntervalStr != "") {
+                int monitoringInterval = 0;
+                // No blocking error for deployment
+                try {
+                    monitoringInterval = Integer.parseInt(monitoringIntervalStr);
+                } catch(NumberFormatException nfe) {
+                    log.error(String.format("Failed to parse number from value=\"%s\". No monitoring will be planned but deployment goes on.", monitoringIntervalStr));
+                    return;
+                }
+                if (monitoringInterval > 0) {
+                    List<Tag> tags = new ArrayList<>();
+                    Tag tag = new Tag();
+                    tag.setName(YstiaOrchestratorFactory.MONITORING_TIME_INTERVAL);
+                    tag.setValue(monitoringIntervalStr);
+                    tags.add(tag);
+                    for (PaaSNodeTemplate compute : ptopo.getComputes()) {
+                        compute.getTemplate().setTags(tags);
+                    }
+                }
+            }
+        }
     }
 }

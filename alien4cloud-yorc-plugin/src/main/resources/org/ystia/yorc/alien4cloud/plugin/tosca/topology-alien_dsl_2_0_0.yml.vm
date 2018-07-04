@@ -103,6 +103,10 @@ ${utils.formatArtifact($artifactEntry.value, 4)}
 #if(!$utils.isNull(${nodeTemplateEntry.value.description}))
       description: ${utils.renderDescription(${nodeTemplateEntry.value.description}, "        ")}
 #end## description
+#set($directives = $exportUtils.getDirectives($nodeTemplateEntry.value))
+#if($utils.collectionIsNotEmpty($directives))
+      directives: [$utils.getCsvToString($directives)]
+#end## if directives
 #serializeMetadata($nodeTemplateEntry.value, "      ")
       type: ${nodeTemplateEntry.value.type}
 #if($utils.mapIsNotEmptyAndContainsNotnullValues($nodeTemplateEntry.value.properties))
@@ -181,7 +185,7 @@ ${utils.formatArtifact($operationEntry.value.implementationArtifact, 10)}
 #else
           ${operationEntry.key}:
 #if($utils.mapIsNotEmptyAndContainsNotnullValues($operationEntry.value.inputParameters))
-            input:$propertyUtils.formatProperties(7, $operationEntry.value.inputParameters)
+            inputs:$propertyUtils.formatProperties(7, $operationEntry.value.inputParameters)
 #end
             implementation:
 ${utils.formatArtifact($operationEntry.value.implementationArtifact, 7)}

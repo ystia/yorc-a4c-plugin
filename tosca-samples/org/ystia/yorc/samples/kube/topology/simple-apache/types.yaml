@@ -1,0 +1,26 @@
+tosca_definitions_version: alien_dsl_2_0_0
+
+metadata:
+  template_name: org.ystia.yorc.samples.kube.topology.simple-apache
+  template_version: 0.1.0-SNAPSHOT
+  template_author: admin
+
+description: "Test Apache exposed as service on k8s"
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN20
+  - org.ystia.yorc.samples.kube.apache:1.0.0-SNAPSHOT
+  - docker-types:2.0.0
+
+topology_template:
+  node_templates:
+    Container:
+      type: org.alien4cloud.extended.container.types.ContainerRuntime
+    Apache:
+      type: org.ystia.yorc.samples.kube.containers.nodes.Apache
+      requirements:
+        - hostedOnContainerRuntimeContainer:
+            type_requirement: host
+            node: Container
+            capability: org.alien4cloud.extended.container.capabilities.ApplicationHost
+            relationship: org.alien4cloud.extended.container.relationships.HostedOnContainerRuntime

@@ -67,14 +67,13 @@ public class LogListenerTask extends AlienTask {
      * @param paasId
      */
     private void postLog(PaaSDeploymentLog pdlog, String paasId) {
+        if (orchestrator.getDeploymentId(paasId) == null) {
+            log.warn("The orchestrator deploymentID:{} doesn't match with any associated Alien4cloud deploymentID.", paasId);
+            return;
+        }
         // The DeploymentId is overridden by A4C plugin here with UUID
         pdlog.setDeploymentId(orchestrator.getDeploymentId(paasId));
         pdlog.setDeploymentPaaSId(paasId);
-        if (pdlog.getDeploymentId() == null) {
-            log.error("Must provide an Id for this log: " + pdlog.toString());
-            Thread.dumpStack();
-            return;
-        }
         orchestrator.saveLog(pdlog);
     }
 

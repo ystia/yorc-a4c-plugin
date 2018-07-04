@@ -1,0 +1,62 @@
+tosca_definitions_version: alien_dsl_2_0_0
+
+metadata:
+  template_name: org.ystia.yorc.samples.containers.mysql
+  template_version: 1.0.0-SNAPSHOT
+  template_author: Yorc team
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN20
+  - yorc-docker-types:1.0.0
+
+description: Yorc MySQL Container
+
+repositories:
+  docker:
+    url: https://hub.docker.com/
+    type: docker
+
+
+node_types:
+  yorc.nodes.Docker.MySQL:
+    derived_from: yorc.nodes.DockerContainer
+    tags:
+      icon: images/mysql.png
+    properties:
+      docker_ports:
+        type: string
+        required: false
+        default: "3306"
+      db_name:
+        type: string
+        required: true
+      db_user:
+        type: string
+        required: true
+        default: "mysql"
+      db_password:
+        type: string
+        required: true
+        default: "mysql"
+    capabilities:
+      msql_db:
+        type: alien.capabilities.endpoint.docker.mysqlDB
+    interfaces:
+      Standard:
+        start:
+          inputs:
+            MYSQL_DATABASE: { get_property: [SELF, db_name] }
+            MYSQL_USER: { get_property: [SELF, db_user] }
+            MYSQL_PASSWORD: { get_property: [SELF, db_password] }
+            MYSQL_ROOT_PASSWORD: "notused"
+            MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+          implementation:
+            file: "mysql:8.0.2"
+            repository: docker
+            type: tosca.artifacts.Deployment.Image.Container.Docker
+
+
+capability_types:
+  alien.capabilities.endpoint.docker.mysqlDB:
+    derived_from: tosca.capabilities.Endpoint.Database
+

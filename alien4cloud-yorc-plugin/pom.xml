@@ -27,9 +27,19 @@
     <name>Ystia Orchestrator PaaS provider for Alien4Cloud :: Plugin</name>
 
       <properties>
+        <lombok.version>1.16.20</lombok.version>
         <httpclient.version>4.4.1</httpclient.version>
-        <yorc.types.version>1.0.0</yorc.types.version>
         <skipTests>false</skipTests>
+
+        <!-- Embedded TOSCA types versions -->
+        <yorc.types.version>1.0.0</yorc.types.version>
+        <yorc.aws.types.version>1.0.0</yorc.aws.types.version>
+        <yorc.docker.types.version>1.0.0</yorc.docker.types.version>
+        <yorc.google.types.version>1.0.0</yorc.google.types.version>
+        <yorc.hp.types.version>1.0.0</yorc.hp.types.version>
+        <yorc.k8s.types.version>2.0.0-SNAPSHOT</yorc.k8s.types.version>
+        <yorc.os.types.version>1.0.0</yorc.os.types.version>
+        <yorc.slurm.types.version>1.0.0</yorc.slurm.types.version>
       </properties>
 
     <dependencies>
@@ -44,6 +54,11 @@
         <artifactId>alien4cloud-rest-api</artifactId>
         <version>${alien4cloud.version}</version>
         <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.json</groupId>
+        <artifactId>json</artifactId>
+        <version>20180130</version>
       </dependency>
 
       <!-- tests -->
@@ -72,23 +87,6 @@
         <artifactId>assertj-core</artifactId>
         <scope>test</scope>
       </dependency>
-
-      <!-- Unirest dependency -->
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpasyncclient</artifactId>
-            <version>4.1.2</version>
-        </dependency>
-        <dependency>
-            <groupId>org.json</groupId>
-            <artifactId>json</artifactId>
-            <version>20140107</version>
-        </dependency>
-        <dependency>
-            <groupId>com.mashape.unirest</groupId>
-            <artifactId>unirest-java</artifactId>
-            <version>1.4.9</version>
-        </dependency>
     </dependencies>
 
     <build>
