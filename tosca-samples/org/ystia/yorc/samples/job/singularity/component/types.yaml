@@ -17,20 +17,19 @@ tosca_definitions_version: alien_dsl_2_0_0
 
 
 metadata:
-  template_name: SbatchJobTemplate
+  template_name: org.ystia.yorc.samples.job.singularity.Component
   template_version: 1.0.0-SNAPSHOT
   template_author: yorc
 
-description: "Slurm sbatch job template"
-
 imports:
-  - org.ystia.yorc.samples.job.sbatch.Component:1.0.0-SNAPSHOT
+  - tosca-normative-types:1.0.0-ALIEN20
+  - yorc-types:1.0.0
+  - yorc-slurm-types:1.0.0
 
-topology_template:
-  node_templates:
-    Job:
-      type: org.ystia.yorc.samples.job.sbatch.Component
-      properties:
-        name: job_batch_test
-        batch: true
-        exec_args: [NAME1=john, NAME2=mary, NAME3=fred]
+node_types:
+  org.ystia.yorc.samples.job.singularity.Component:
+    derived_from: yorc.nodes.slurm.SingularityJob
+    description: >
+      Sample component to show how to run a job via singularity run
+    tags:
+      icon: /images/singularity.png

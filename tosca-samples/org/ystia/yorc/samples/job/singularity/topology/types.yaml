@@ -1,0 +1,70 @@
+tosca_definitions_version: alien_dsl_2_0_0
+#
+# Copyright 2018 Bull S.A.S. Atos Technologies - Bull, Rue Jean Jaures, B.P.68, 78340, Les Clayes-sous-Bois, France.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+
+metadata:
+  template_name: SlurmSingularityJobTemplate1
+  template_version: 1.0.0-SNAPSHOT
+  template_author: yorc
+
+description: "Slurm singularity job template1"
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN20
+  - yorc-types:1.0.0
+  - yorc-slurm-types:1.0.0
+  - org.ystia.yorc.samples.job.singularity.Component:1.0.0-SNAPSHOT
+
+repositories:
+  docker:
+    url: https://hpda-docker-registry:5000/
+    type: a4c_ignore
+  cluster_nfs:
+    url: not used
+    type: a4c_ignore
+
+topology_template:
+  node_templates:
+    Job1:
+      type: org.ystia.yorc.samples.job.singularity.Component
+      properties:
+        name: job_singularity_test1
+        batch: false
+      interfaces:
+        tosca.interfaces.node.lifecycle.Runnable:
+          run:
+            inputs:
+              exec_command: {get_property: [SELF, exec_command]}
+            implementation:
+              file: docker://godlovedc/lolcow:latest
+              repository: docker
+              type: yorc.artifacts.Deployment.SlurmJobImage
+    Job2:
+      type: org.ystia.yorc.samples.job.singularity.Component
+      properties:
+        name: job_singularity_test2
+        exec_command: /usr/bin/hello-kitty.sh
+        batch: true
+      interfaces:
+        tosca.interfaces.node.lifecycle.Runnable:
+          run:
+            inputs:
+              exec_command: {get_property: [SELF, exec_command]}
+            implementation:
+              file: /home_nfs/benoists/hello-world.img
+              repository: cluster_nfs
+              type: yorc.artifacts.Deployment.SlurmJobImage

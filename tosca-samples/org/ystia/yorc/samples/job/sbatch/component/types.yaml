@@ -40,7 +40,6 @@ node_types:
     interfaces:
       tosca.interfaces.node.lifecycle.Runnable:
         run:
-          ### inputs are not used but it's a workaround to keep in place the implementation long syntax with type
           inputs:
             args: {get_property: [SELF, exec_args]}
           implementation:

@@ -44,9 +44,18 @@ public class LogListenerTask extends AlienTask {
                     prevIndex = logResponse.getLast_index();
                     if (logResponse.getLogs() != null) {
                         for (LogEvent logEvent : logResponse.getLogs()) {
+                            String paasId = logEvent.getDeploymentId();
+                            String deploymentId = orchestrator.getDeploymentId(paasId);
                             log.debug("Received log from Yorc: " + logEvent.toString());
-                            // add Premium Log
-                            postLog(toPaasDeploymentLog(logEvent), logEvent.getDeploymentId());
+                            log.debug("Received log has deploymentId : " + paasId);
+                            if (deploymentId == null) {
+                                continue;
+                            }
+                            // Post a PaaSDeploymentLog to a4c premium log
+                            PaaSDeploymentLog paasDeploymentLog = toPaasDeploymentLog(logEvent);
+                            paasDeploymentLog.setDeploymentId(deploymentId);
+                            paasDeploymentLog.setDeploymentPaaSId(paasId);
+                            orchestrator.saveLog(paasDeploymentLog);
                         }
                     }
                 }
@@ -61,23 +70,6 @@ public class LogListenerTask extends AlienTask {
             }
         }
     }
-    /**
-     * Post a PaaSDeploymentLog to a4c premium log
-     * @param pdlog
-     * @param paasId
-     */
-    private void postLog(PaaSDeploymentLog pdlog, String paasId) {
-        // The DeploymentId is overridden by A4C plugin here with UUID
-        pdlog.setDeploymentId(orchestrator.getDeploymentId(paasId));
-        pdlog.setDeploymentPaaSId(paasId);
-        if (pdlog.getDeploymentId() == null) {
-            log.error("Must provide an Id for this log: " + pdlog.toString());
-            Thread.dumpStack();
-            return;
-        }
-        orchestrator.saveLog(pdlog);
-    }
-
 
     private PaaSDeploymentLog toPaasDeploymentLog(final LogEvent pLogEvent) {
         PaaSDeploymentLog deploymentLog = new PaaSDeploymentLog();

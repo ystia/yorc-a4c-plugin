@@ -35,6 +35,7 @@
         <yorc.types.version>1.0.0</yorc.types.version>
         <yorc.aws.types.version>1.0.0</yorc.aws.types.version>
         <yorc.docker.types.version>1.0.0</yorc.docker.types.version>
+        <yorc.google.types.version>1.0.0</yorc.google.types.version>
         <yorc.hp.types.version>1.0.0</yorc.hp.types.version>
         <yorc.k8s.types.version>2.0.0-SNAPSHOT</yorc.k8s.types.version>
         <yorc.os.types.version>1.0.0</yorc.os.types.version>

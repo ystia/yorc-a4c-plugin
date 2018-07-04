@@ -1,0 +1,3 @@
+#!/bin/bash
+export GOOGLE_APPLICATION_CREDENTIALS=~/creds-vision.json
+~/envdetector/bin/python  ~/detect.py {{ PROJECT_ID }}  {{ SUBSCRIPTION_ID }} {{ OUTPUT_BUCKET_NAME }}
