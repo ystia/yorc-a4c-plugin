@@ -30,7 +30,6 @@ import alien4cloud.paas.model.NodeOperationExecRequest;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.config.SocketConfig;
@@ -38,7 +37,6 @@ import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.ssl.SSLContexts;
 import org.json.JSONObject;
@@ -220,24 +218,26 @@ public class RestClient {
      * @throws Exception
      */
     public String sendTopologyToYorc(String deploymentId) throws Exception {
-        // Get file to upload
-        final InputStream stream = new FileInputStream(new File("topology.zip"));
-        final byte[] bytes = new byte[stream.available()];
-        stream.read(bytes);
-        stream.close();
+        try (InputStream stream = new FileInputStream(new File("topology.zip")))
+        {
+            // Get file to upload
+            final byte[] bytes = new byte[stream.available()];
+            stream.read(bytes);
+            stream.close();
 
-        // Get specific headers and body
-        HttpHeaders headers = new HttpHeaders();
-        headers.add(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
-        headers.add(HttpHeaders.CONTENT_TYPE, "application/zip");
-        HttpEntity<byte[]> request = new HttpEntity<>(bytes, headers);
+            // Get specific headers and body
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
+            headers.add(HttpHeaders.CONTENT_TYPE, "application/zip");
+            HttpEntity<byte[]> request = new HttpEntity<>(bytes, headers);
 
-        String targetUrl = providerConfiguration.getUrlYorc() + "/deployments/" + deploymentId;
-        ResponseEntity<String> resp = sendRequest(targetUrl, HttpMethod.PUT, String.class, request);
-        if (!resp.getStatusCode().getReasonPhrase().equals("Created")){
-            throw new Exception("sendTopologyToYorc: Yorc returned an unexpected status: " + resp.getStatusCode().getReasonPhrase());
+            String targetUrl = providerConfiguration.getUrlYorc() + "/deployments/" + deploymentId;
+            ResponseEntity<String> resp = sendRequest(targetUrl, HttpMethod.PUT, String.class, request);
+            if (!resp.getStatusCode().getReasonPhrase().equals("Created")){
+                throw new Exception("sendTopologyToYorc: Yorc returned an unexpected status: " + resp.getStatusCode().getReasonPhrase());
+            }
+            return resp.getHeaders().getFirst("Location");
         }
-        return resp.getHeaders().getFirst("Location");
     }
 
     /**

@@ -17,13 +17,11 @@ package org.ystia.yorc.alien4cloud.plugin;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.Closeable;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
@@ -56,13 +54,11 @@ import alien4cloud.tosca.parser.ToscaParser;
 import alien4cloud.utils.MapUtil;
 import com.google.common.collect.Sets;
 import lombok.extern.slf4j.Slf4j;
-import org.alien4cloud.tosca.exporter.ArchiveExportService;
 import org.alien4cloud.tosca.model.CSARDependency;
 import org.alien4cloud.tosca.model.Csar;
 import org.alien4cloud.tosca.model.definitions.DeploymentArtifact;
 import org.alien4cloud.tosca.model.definitions.Interface;
 import org.alien4cloud.tosca.model.definitions.Operation;
-import org.alien4cloud.tosca.model.definitions.ImplementationArtifact;
 import org.alien4cloud.tosca.model.templates.NodeTemplate;
 import org.alien4cloud.tosca.model.templates.ServiceNodeTemplate;
 import org.alien4cloud.tosca.model.templates.Topology;
@@ -70,7 +66,6 @@ import org.elasticsearch.common.collect.Maps;
 import org.ystia.yorc.alien4cloud.plugin.rest.Response.Event;
 import org.ystia.yorc.alien4cloud.plugin.tosca.model.templates.YorcServiceNodeTemplate;
 import org.ystia.yorc.alien4cloud.plugin.rest.YorcRestException;
-import org.ystia.yorc.alien4cloud.plugin.utils.MappingTosca;
 import org.ystia.yorc.alien4cloud.plugin.utils.ShowTopology;
 
 import static com.google.common.io.Files.copy;
@@ -85,9 +80,6 @@ public class DeployTask extends AlienTask {
     PaaSTopologyDeploymentContext ctx;
     IPaaSCallback<?> callback;
     private ICSARRepositorySearchService csarRepoSearchService;
-
-    private ArchiveExportService archiveExportService = new ArchiveExportService();
-
 
     private final int YORC_DEPLOY_TIMEOUT = 1000 * 3600 * 24;  // 24 hours
 
