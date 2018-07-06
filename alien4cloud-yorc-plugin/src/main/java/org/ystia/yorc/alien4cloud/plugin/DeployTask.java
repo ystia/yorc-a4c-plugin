@@ -284,57 +284,52 @@ public class DeployTask extends AlienTask {
         }
 
         // Final zip file will be named topology.zip
-        final File zip = new File("topology.zip");
-        final OutputStream out = new FileOutputStream(zip);
-        final ZipOutputStream zout = new ZipOutputStream(out);
-        final Closeable res = zout;
-
         final int finalLocation = location;
-
-        this.ctx.getDeploymentTopology().getDependencies().forEach(d -> {
-            if (!"tosca-normative-types".equals(d.getName())) {
-                Csar csar = csarRepoSearchService.getArchive(d.getName(), d.getVersion());
-                final String importSource = csar.getImportSource();
-                // importSource is null when this is a reference to a Service
-                // provided by another deployment
-                if (importSource == null || CSARSource.ORCHESTRATOR != CSARSource.valueOf(importSource)) {
-                    try {
-                        csar2zip(zout, csar, finalLocation);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
+        try (ZipOutputStream zout = new ZipOutputStream(new FileOutputStream("topology.zip")))
+        {
+            this.ctx.getDeploymentTopology().getDependencies().forEach(d -> {
+                if (!"tosca-normative-types".equals(d.getName())) {
+                    Csar csar = csarRepoSearchService.getArchive(d.getName(), d.getVersion());
+                    final String importSource = csar.getImportSource();
+                    // importSource is null when this is a reference to a Service
+                    // provided by another deployment
+                    if (importSource == null || CSARSource.ORCHESTRATOR != CSARSource.valueOf(importSource)) {
+                        try {
+                            csar2zip(zout, csar, finalLocation);
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                 }
+            });
+
+            for (Entry<String, NodeTemplate> nodeTemplateEntry :  this.ctx.getDeploymentTopology().getNodeTemplates().entrySet()) {
+                if (nodeTemplateEntry.getValue() instanceof ServiceNodeTemplate) {
+                    // Define a service node with a directive to the orchestrator
+                    // that this Node Template is substitutable
+                    YorcServiceNodeTemplate yorcServiceNodeTemplate =
+                            new YorcServiceNodeTemplate((ServiceNodeTemplate)nodeTemplateEntry.getValue());
+                    nodeTemplateEntry.setValue(yorcServiceNodeTemplate);
+                }
             }
-        });
 
-        for (Entry<String, NodeTemplate> nodeTemplateEntry :  this.ctx.getDeploymentTopology().getNodeTemplates().entrySet()) {
-            if (nodeTemplateEntry.getValue() instanceof ServiceNodeTemplate) {
-                // Define a service node with a directive to the orchestrator
-                // that this Node Template is substitutable
-                YorcServiceNodeTemplate yorcServiceNodeTemplate = 
-                    new YorcServiceNodeTemplate((ServiceNodeTemplate)nodeTemplateEntry.getValue());
-                nodeTemplateEntry.setValue(yorcServiceNodeTemplate);
+            // Copy overwritten artifacts for each node
+            PaaSTopology ptopo = ctx.getPaaSTopology();
+            for (PaaSNodeTemplate node : ptopo.getAllNodes().values()) {
+                copyArtifacts(node, zout);
             }
+
+            String topoFileName = "topology.yml";
+            // Copy modified topology
+            createZipEntries(topoFileName, zout);
+            // Get the yaml of the application as built by from a4c
+            DeploymentTopology dtopo = ctx.getDeploymentTopology();
+            Csar myCsar = new Csar(ctx.getDeploymentPaaSId(), dtopo.getArchiveVersion());
+            myCsar.setToscaDefinitionsVersion(ToscaParser.LATEST_DSL);
+            String yaml = orchestrator.getToscaTopologyExporter().getYaml(myCsar, dtopo, true);
+            zout.write(yaml.getBytes(Charset.forName("UTF-8")));
+            zout.closeEntry();
         }
-
-        // Copy overwritten artifacts for each node
-        PaaSTopology ptopo = ctx.getPaaSTopology();
-        for (PaaSNodeTemplate node : ptopo.getAllNodes().values()) {
-            copyArtifacts(node, zout);
-        }
-
-        String topoFileName = "topology.yml";
-        // Copy modified topology
-        createZipEntries(topoFileName, zout);
-        // Get the yaml of the application as built by from a4c
-        DeploymentTopology dtopo = ctx.getDeploymentTopology();
-        Csar myCsar = new Csar(ctx.getDeploymentPaaSId(), dtopo.getArchiveVersion());
-        myCsar.setToscaDefinitionsVersion(ToscaParser.LATEST_DSL);
-        String yaml = orchestrator.getToscaTopologyExporter().getYaml(myCsar, dtopo, true);
-        zout.write(yaml.getBytes(Charset.forName("UTF-8")));
-        zout.closeEntry();
-
-        res.close();
     }
 
     private Object getNestedValue(Map<String, Object> map, String path) {
