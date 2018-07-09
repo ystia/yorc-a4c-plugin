@@ -22,6 +22,7 @@ import org.alien4cloud.tosca.model.templates.Topology;
 import org.alien4cloud.tosca.model.workflow.Workflow;
 import org.alien4cloud.tosca.model.workflow.WorkflowStep;
 import org.alien4cloud.tosca.model.workflow.activities.CallOperationWorkflowActivity;
+import org.alien4cloud.tosca.model.workflow.activities.DelegateWorkflowActivity;
 import org.apache.commons.lang.StringUtils;
 import org.ystia.yorc.alien4cloud.plugin.rest.Response.LogEvent;
 import org.ystia.yorc.alien4cloud.plugin.rest.Response.LogResponse;
@@ -42,7 +43,7 @@ public class LogListenerTask extends AlienTask {
         super(prov);
     }
 
-    private static final String EVENT_HANDLER_REGEXP = "(.*Workflow.+ended without error.*|.*Start processing workflow.*|.*executing operation.*|.*operation succeeded.*|.*operation failed.*|.*Error .* happened in workflow .*)";
+    private static final String EVENT_HANDLER_REGEXP = "(.*Workflow.+ended without error.*|.*Start processing workflow.*|.*executing operation.*|.*executing delegate operation.*|.*operation succeeded.*|.*delegate operation succeeded.*|.*operation failed.*|.*delegate operation failed.*|.*Error .* happened in workflow .*)";
     private static final ThreadLocal<Pattern> EVENT_HANDLER_PATTERN = ThreadLocal.withInitial(() -> Pattern.compile(EVENT_HANDLER_REGEXP));
     // a deploymentId -> { TaskKey -> taskId } map
     private Map<String, Map<TaskKey, String>> taskIdCache = Maps.newHashMap();
@@ -151,7 +152,7 @@ public class LogListenerTask extends AlienTask {
         }
 
         if (content != null && EVENT_HANDLER_PATTERN.get().matcher(content.replaceAll("\\n", "")).matches()) {
-            if (content.contains("executing operation")) {
+            if (content.equals("executing operation") || content.equals("executing delegate operation")) {
                 // generate task and wfStepInstance
                 if (taskId == null) {
                     taskId = UUID.randomUUID().toString();
@@ -191,7 +192,7 @@ public class LogListenerTask extends AlienTask {
                         registeredDeployments.remove(pLogEvent.getDeploymentId());
                     }
                 }
-            } else if (content.contains("operation succeeded")) {
+            } else if (content.equals("operation succeeded") || content.equals("delegate operation succeeded") ) {
                 // -> TaskSucceedeEvent
                 TaskSucceededEvent taskSucceededEvent = new TaskSucceededEvent();
                 taskSucceededEvent.setTaskId(taskId);
@@ -202,7 +203,7 @@ public class LogListenerTask extends AlienTask {
                     workflowStepCompletedEvent.setStepId(stepId);
                     postWorkflowStepEvent(workflowStepCompletedEvent, pLogEvent);
                 }
-            } else if (content.contains("operation failed")) {
+            } else if (content.equals("operation failed") || content.equals("delegate operation failed")) {
                 // -> TaskSucceedeEvent
                 TaskFailedEvent taskFailedEvent = new TaskFailedEvent();
                 taskFailedEvent.setTaskId(taskId);
@@ -246,6 +247,11 @@ public class LogListenerTask extends AlienTask {
                     CallOperationWorkflowActivity activity = (CallOperationWorkflowActivity) workflowStep.getActivity();
                     // FIXME : don't try to match onto interfaceName since it's not the same (configure vs Configure)
                     if (/*activity.getInterfaceName().equals(pLogEvent.getInterfaceName()) &&*/ activity.getOperationName().equals(pLogEvent.getOperationName())) {
+                        return true;
+                    }
+                } else if (pLogEvent.getInterfaceName().equals("delegate") && workflowStep.getActivity() instanceof DelegateWorkflowActivity) {
+                    DelegateWorkflowActivity activity = (DelegateWorkflowActivity)workflowStep.getActivity();
+                    if (pLogEvent.getOperationName().equals(activity.getDelegate())) {
                         return true;
                     }
                 }
