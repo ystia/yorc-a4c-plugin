@@ -40,15 +40,12 @@ node_types:
     derived_from: tosca.nodes.Container.Application.DockerContainer
     metadata:
       icon: images/grafana.png
-    properties:
-      graphite_url:
-        type: string
     capabilities:
       http_endpoint:
         type: org.ystia.yorc.samples.kube.containers.capabilities.Grafana
         description: Endpoint to visualize grafana collected data
     requirements:
-      - graphite:
+      - http_endpoint:
           capability: org.ystia.yorc.samples.kube.containers.capabilities.Graphite
           relationship: tosca.relationships.ConnectsTo
           occurrences: [0, UNBOUNDED]
@@ -56,7 +53,7 @@ node_types:
       Standard:
         create:
           inputs:
-            ENV_GRAPHITE_URL: { get_property: [SELF, graphite_url] }
+            ENV_GRAPHITE_URL: { concat: ["http://", get_attribute: [TARGET, http_endpoint, ip_address]] }
             ENV_GF_AUTH_ANONYMOUS_ENABLED: true
           implementation:
             file: laurentg/grafana
