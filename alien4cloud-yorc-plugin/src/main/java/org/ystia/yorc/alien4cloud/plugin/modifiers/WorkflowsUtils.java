@@ -86,7 +86,12 @@ public class WorkflowsUtils {
             );
 
         }
-        step.getPrecedingSteps().forEach(s -> workflow.getSteps().get(s).getOnSuccess().remove(stepName));
+        step.getPrecedingSteps().forEach(s -> {
+            WorkflowStep wfs = workflow.getSteps().get(s);
+            if (wfs != null) {
+                wfs.getOnSuccess().remove(stepName);
+            }
+        });
         workflow.getSteps().remove(stepName);
     }
 
@@ -136,7 +141,9 @@ public class WorkflowsUtils {
     private static void linkToStep(Workflow workflow, Set<String> fromSteps, String toStep) {
         fromSteps.forEach(s -> {
             WorkflowStep wf = workflow.getSteps().get(s);
-            wf.addFollowing(toStep);
+            if (wf != null) {
+                wf.addFollowing(toStep);
+            }
         });
     }
 
