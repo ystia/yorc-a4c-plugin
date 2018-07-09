@@ -42,7 +42,7 @@ public class LogListenerTask extends AlienTask {
         super(prov);
     }
 
-    private static final String EVENT_HANDLER_REGEXP = "(.*Workflow.+ended without error.*|.*Start processing workflow.*|.*Start the ansible execution of.*|.*, stdout:.*|.*Ansible execution for operation .* failed.*|.*Error .* happened in workflow .*)";
+    private static final String EVENT_HANDLER_REGEXP = "(.*Workflow.+ended without error.*|.*Start processing workflow.*|.*executing operation.*|.*operation succeeded.*|.*operation failed.*|.*Error .* happened in workflow .*)";
     private static final ThreadLocal<Pattern> EVENT_HANDLER_PATTERN = ThreadLocal.withInitial(() -> Pattern.compile(EVENT_HANDLER_REGEXP));
     // a deploymentId -> { TaskKey -> taskId } map
     private Map<String, Map<TaskKey, String>> taskIdCache = Maps.newHashMap();
@@ -151,7 +151,7 @@ public class LogListenerTask extends AlienTask {
         }
 
         if (content != null && EVENT_HANDLER_PATTERN.get().matcher(content.replaceAll("\\n", "")).matches()) {
-            if (content.startsWith("Start the ansible execution of")) {
+            if (content.contains("executing operation")) {
                 // generate task and wfStepInstance
                 if (taskId == null) {
                     taskId = UUID.randomUUID().toString();
@@ -191,7 +191,7 @@ public class LogListenerTask extends AlienTask {
                         registeredDeployments.remove(pLogEvent.getDeploymentId());
                     }
                 }
-            } else if (content.contains(", stdout:")) {
+            } else if (content.contains("operation succeeded")) {
                 // -> TaskSucceedeEvent
                 TaskSucceededEvent taskSucceededEvent = new TaskSucceededEvent();
                 taskSucceededEvent.setTaskId(taskId);
@@ -202,7 +202,7 @@ public class LogListenerTask extends AlienTask {
                     workflowStepCompletedEvent.setStepId(stepId);
                     postWorkflowStepEvent(workflowStepCompletedEvent, pLogEvent);
                 }
-            } else if (content.matches(".*Ansible execution for operation .* failed.*")) {
+            } else if (content.contains("operation failed")) {
                 // -> TaskSucceedeEvent
                 TaskFailedEvent taskFailedEvent = new TaskFailedEvent();
                 taskFailedEvent.setTaskId(taskId);
