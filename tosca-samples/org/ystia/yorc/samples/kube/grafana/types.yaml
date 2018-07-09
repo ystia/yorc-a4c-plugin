@@ -53,7 +53,7 @@ node_types:
       Standard:
         create:
           inputs:
-            ENV_GRAPHITE_URL: { concat: ["http://", get_attribute: [TARGET, http_endpoint, ip_address]] }
+            ENV_GRAPHITE_URL: { concat: ["http://", get_attribute: [TARGET, http_endpoint, ip_address], ":", get_attribute: [TARGET, http_endpoint, port]] }
             ENV_GF_AUTH_ANONYMOUS_ENABLED: true
           implementation:
             file: laurentg/grafana
