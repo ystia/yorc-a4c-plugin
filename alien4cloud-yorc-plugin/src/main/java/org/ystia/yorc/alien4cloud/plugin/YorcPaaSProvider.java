@@ -16,10 +16,7 @@
 package org.ystia.yorc.alien4cloud.plugin;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 
 import javax.annotation.Resource;
@@ -88,6 +85,23 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
     private ProviderConfig providerConfiguration;
     private Map<String, String> a4cDeploymentIds = Maps.newHashMap();
 
+    /**
+     * Keep in mind the paas (yorc) deploymentIds that have no
+     * correspondent deploymentId in Alien. This can arrive for multiple reasons:
+     * - deployment was created with yorc's CLI
+     * - deployment was created with another Alien instance
+     * - Alien was restared after runtime removed
+     */
+    private List<String> unknownDeploymentIds = new ArrayList<>();
+
+    private boolean isUnknownDeploymentId(String paasId) {
+        return unknownDeploymentIds.contains(paasId);
+    }
+
+    private void addUnknownDeploymentId(String paasId) {
+        unknownDeploymentIds.add(paasId);
+    }
+
     @Inject
     private IToscaTypeSearchService toscaTypeSearchService;
 
@@ -148,8 +162,22 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
         a4cDeploymentIds.put(paasId, alienId);
     }
 
+    /**
+     * Return the alien generated id for this deployment
+     * @param paasId the orchestrator's id
+     * @return the alien's id
+     */
     public String getDeploymentId(String paasId) {
-        return a4cDeploymentIds.get(paasId);
+        String  deploymentId = a4cDeploymentIds.get(paasId);
+        if (deploymentId == null) {
+            // if we don't know yet that this deployment is unknown by Alien
+            if (!isUnknownDeploymentId(paasId)) {
+                log.warn("The orchestrator deploymentID: {} doesn't match with any associated Alien4Cloud deploymentID.", paasId);
+                // cache this information
+                addUnknownDeploymentId(paasId);
+            }
+        }
+        return deploymentId;
     }
 
     public void putDeploymentInfo(String paasId, YorcRuntimeDeploymentInfo jrdi) {
