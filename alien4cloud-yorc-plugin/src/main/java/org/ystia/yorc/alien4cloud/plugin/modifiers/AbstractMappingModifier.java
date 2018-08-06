@@ -1,6 +1,7 @@
 package org.ystia.yorc.alien4cloud.plugin.modifiers;
 
 import alien4cloud.tosca.context.ToscaContext;
+import alien4cloud.tosca.normative.NormativeNetworkConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.alien4cloud.alm.deployment.configuration.flow.FlowExecutionContext;
 import org.alien4cloud.alm.deployment.configuration.flow.TopologyModifierSupport;
@@ -39,7 +40,7 @@ public class AbstractMappingModifier extends TopologyModifierSupport {
     }
 
     private void handleNodeTemplate(FlowExecutionContext context, Topology topology, NodeTemplate originalNodeTemplate) {
-        if(!isCompute(originalNodeTemplate) && ToscaContext.getOrFail(NodeType.class, originalNodeTemplate.getType()).isAbstract()) {
+        if(!isCompute(originalNodeTemplate) && !isNetwork(originalNodeTemplate) && ToscaContext.getOrFail(NodeType.class, originalNodeTemplate.getType()).isAbstract()) {
             NodeTemplate nodeTemplate = topology.getNodeTemplates().get(originalNodeTemplate.getName());
             WorkflowsUtils
                     .replaceDelegateByCallOperations(topology.getWorkflows().get(NormativeWorkflowNameConstants.INSTALL), nodeTemplate);
@@ -51,5 +52,10 @@ public class AbstractMappingModifier extends TopologyModifierSupport {
     private boolean isCompute(NodeTemplate node) {
         AbstractInheritableToscaType nodeType = ToscaContext.get(NodeType.class, node.getType());
         return ToscaTypeUtils.isOfType(nodeType, NormativeComputeConstants.COMPUTE_TYPE);
+    }
+
+    private boolean isNetwork(NodeTemplate node) {
+        AbstractInheritableToscaType nodeType = ToscaContext.get(NodeType.class, node.getType());
+        return ToscaTypeUtils.isOfType(nodeType, NormativeNetworkConstants.NETWORK_TYPE);
     }
 }

@@ -95,6 +95,7 @@ public class WorkflowsUtils {
         sswa.setStateName(state);
         WorkflowStep ws = new NodeWorkflowStep(nodeTemplate.getName(), hostId, sswa);
         String stepName = nodeTemplate.getName() + "-" + state + "-yorc-generated";
+        ws.setName(stepName);
         workflow.getSteps().put(stepName, ws);
         return stepName;
     }
@@ -107,6 +108,7 @@ public class WorkflowsUtils {
             cowa.setOperationName(operationName);
             WorkflowStep ws = new NodeWorkflowStep(nodeTemplate.getName(), hostId, cowa);
             stepName = nodeTemplate.getName() + "-" + ToscaNodeLifecycleConstants.STANDARD_SHORT + "." + operationName + "-yorc-generated";
+            ws.setName(stepName);
             workflow.getSteps().put(stepName, ws);
         }
         return stepName;
@@ -120,9 +122,11 @@ public class WorkflowsUtils {
                 if (initialStep == null) {
                     initialStep = s;
                     linkToStep(workflow, preceding, initialStep);
+                    workflow.getSteps().get(initialStep).setPrecedingSteps(preceding);
                 }
                 if (latestStep != null) {
                     linkFromStep(workflow, latestStep, Collections.singleton(s));
+                    workflow.getSteps().get(s).setPrecedingSteps(Collections.singleton(latestStep));
                 }
                 workflow.getSteps().get(s).setOnFailure(onFailure);
                 latestStep = s;
