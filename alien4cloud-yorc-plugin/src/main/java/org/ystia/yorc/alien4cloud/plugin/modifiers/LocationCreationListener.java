@@ -54,6 +54,7 @@ public class LocationCreationListener implements ApplicationListener<AfterLocati
     private LocationModifierReference openstackFipModifierRef;
     private LocationModifierReference openstackBSWFModifierRef;
     private LocationModifierReference wfOperationHostModifierRef;
+    private LocationModifierReference wfAbstractMappingModifierRef;
     private LocationModifierReference serviceTopologyModifierRef;
     private LocationModifierReference kubernetesTopologyModifierRef;
     private LocationModifierReference yorcKubernetesTopologyModifierRef;
@@ -73,6 +74,10 @@ public class LocationCreationListener implements ApplicationListener<AfterLocati
         wfOperationHostModifierRef.setPluginId(selfContext.getPlugin().getId());
         wfOperationHostModifierRef.setBeanName(OperationHostModifier.YORC_WF_OPERATION_HOST_MODIFIER_TAG);
         wfOperationHostModifierRef.setPhase(FlowPhases.POST_MATCHED_NODE_SETUP);
+        wfAbstractMappingModifierRef = new LocationModifierReference();
+        wfAbstractMappingModifierRef.setPluginId(selfContext.getPlugin().getId());
+        wfAbstractMappingModifierRef.setBeanName(AbstractMappingModifier.YORC_WF_ABSTRACT_MAPPING_MODIFIER_TAG);
+        wfAbstractMappingModifierRef.setPhase(FlowPhases.POST_MATCHED_NODE_SETUP);
 
         serviceTopologyModifierRef = new LocationModifierReference();
         serviceTopologyModifierRef.setPluginId(selfContext.getPlugin().getId());
