@@ -47,11 +47,14 @@ public class YstiaOrchestratorFactory implements IOrchestratorPluginFactory<Yorc
 
     @Override
     public YorcPaaSProvider newInstance() {
-        return beanFactory.getBean(YorcPaaSProvider.class);
+        YorcPaaSProvider instance = beanFactory.getBean(YorcPaaSProvider.class);
+        instance.startLogsAndEvents();
+        return instance;
     }
 
     @Override
     public void destroy(YorcPaaSProvider instance) {
+        instance.stopLogsAndEvents();
         // nothing specific, the plugin will be garbaged collected when all references are lost.
     }
 

@@ -27,6 +27,10 @@ import org.ystia.yorc.alien4cloud.plugin.rest.Response.LogResponse;
 @Slf4j
 public class LogListenerTask extends AlienTask {
 
+    // Set this to false to stop pollong events
+    protected boolean valid = true;
+
+
     public LogListenerTask(YorcPaaSProvider prov) {
         super(prov);
     }
@@ -36,7 +40,7 @@ public class LogListenerTask extends AlienTask {
      */
     public void run() {
         int prevIndex = 1;
-        while (true) {
+        while (valid) {
             try {
                 log.debug("Get logs from Yorc from index " + prevIndex);
                 LogResponse logResponse = restClient.getLogFromYorc(prevIndex);
@@ -60,12 +64,14 @@ public class LogListenerTask extends AlienTask {
                     }
                 }
             } catch (Exception e) {
-                log.warn("listen Yorc Logs Failed", e);
-                try {
-                    // We will sleep for 2sec in order to limit logs flood if the Yorc server went down
-                    Thread.sleep(2000L);
-                } catch (InterruptedException ex) {
-                    log.error("listenDeploymentEvent wait interrupted", ex);
+                if (valid) {
+                    log.warn("listen Yorc Logs Failed", e);
+                    try {
+                        // We will sleep for 2sec in order to limit logs flood if the Yorc server went down
+                        Thread.sleep(2000L);
+                    } catch (InterruptedException ex) {
+                        log.error("listenDeploymentEvent wait interrupted", ex);
+                    }
                 }
             }
         }
