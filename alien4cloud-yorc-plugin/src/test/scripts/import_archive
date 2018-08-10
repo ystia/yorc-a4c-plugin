@@ -1,0 +1,132 @@
+#!/bin/bash
+
+#
+# import_archive - Imports an Archive from a Git repository
+#
+#
+
+a4cURL="http://localhost:8088"
+userName="admin"
+password="admin"
+repositoryUrl="https://github.com/ystia/yorc-a4c-plugin.git"
+branch="develop"
+subPath=""
+
+usage() {
+    echo ""
+    echo "Usage:"
+    echo "import_archive [--a4c-url <Alien4Cloud URL>]"
+    echo "               [--user <Alien4Cloud administrator user name>]"
+    echo "               [--password <Alien4Cloud administrator password>]"
+    echo "               [--repository <URL>]"
+    echo "               [--branch <branch>]"
+    echo "               --path <sub-path, like tosca-samples/org/ystia/yorc/samples/vision>"
+    echo "   - default A4C URL    : $a4cURL"
+    echo "   - default user       : $userName"
+    echo "   - default password   : $password"
+    echo "   - default repository : $repositoryUrl"
+    echo "   - default branch     : $branch"
+}
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+    -a|--a4c-url)
+    a4cURL="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -u|--user)
+    userName="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -p|--password)
+    password="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -r|--repository)
+    repositoryUrl="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -b|--branch)
+    branch="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -t|--path)
+    subPath="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -h|--help)
+    usage
+    exit 0
+    ;;
+    *)    # unknown option
+    POSITIONAL+=("$1") # save it in an array for later
+    shift # past argument
+    ;;
+esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+if [ -z "$subPath" ]
+then
+    echo "Error: missing mandatory parameter path"
+    usage
+    exit 1
+fi
+
+# Load utilities
+declare -r DIR=$(cd "$(dirname "$0")" && pwd)
+source $DIR/utils.bash
+
+# First, login and store the cookies
+a4c_login "$a4cURL" "$userName" "$password" "cookies.a4c"
+
+# Import Git repository
+response=`curl --request POST \
+               --url $a4cURL/rest/latest/csarsgit \
+               --header 'Content-Type: application/json' \
+               --cookie cookies.a4c \
+               --silent \
+               --data "{\"importLocations\": [{\"branchId\": \"$branch\", \"subPath\": \"$subPath\"}], \"repositoryUrl\": \"$repositoryUrl\"}"`
+
+res=$?
+if [ $res -ne 0 ]
+then
+    echo "Exiting on error defining git location at $repositoryUrl, branch $branch, path $subPath : $response"
+    exit 1
+fi
+
+csarID=`getJsonval data $response`
+if [ -z "$csarID" ]
+then
+    echo "Exiting on error getting the ID for the imported archive"
+    exit 1
+fi
+
+echo "Archive created, proceeding to the import..."
+
+# Proceed to the import
+response=`curl --request POST \
+               --url $a4cURL/rest/latest/csarsgit/$csarID \
+               --header 'Content-Type: application/json' \
+               --cookie cookies.a4c \
+               --silent \
+               --data "{}"`
+
+res=$?
+if [ $res -ne 0 ]
+then
+    echo "Exiting on error proceeding to the import of the archive : $response"
+    exit 1
+fi
+
+echo "Archive imported"

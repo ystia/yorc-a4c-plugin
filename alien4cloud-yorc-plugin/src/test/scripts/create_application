@@ -1,0 +1,118 @@
+#!/bin/bash
+
+#
+# create_application - creates an application from a topology template
+#
+
+a4cURL="http://localhost:8088"
+userName="admin"
+password="admin"
+applicationName=""
+topologyTemplateName=""
+topologyTemplateVersion=""
+usage() {
+    echo ""
+    echo "Usage:"
+    echo "create_application [--a4c-url <Alien4Cloud URL>] "
+    echo "                   [--user <Alien4Cloud administrator user name>]"
+    echo "                   [--password <Alien4Cloud administrator password>]"
+    echo "                   --name <Application Name>"
+    echo "                   --template <Topology Template Name>"
+    echo "                   --version <Topology Template Version>"
+    echo "   - default A4C URL: $a4cURL"
+    echo ""
+    echo "Example:"
+    echo "create_application --name ImageDetection --template VisionTopology --version 0.1.0"
+}
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+    -a|--a4c-url)
+    a4cURL="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -u|--user)
+    userName="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -p|--password)
+    password="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -n|--name)
+    applicationName="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -t|--template)
+    topologyTemplateName="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -v|--version)
+    topologyTemplateVersion="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -h|--help)
+    usage
+    exit 0
+    ;;
+    *)    # unknown option
+    POSITIONAL+=("$1") # save it in an array for later
+    shift # past argument
+    ;;
+esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+if [ -z "$applicationName" ]
+then
+    echo "Error: missing mandatory parameter name"
+    usage
+    exit 1
+fi
+
+if [ -z "$topologyTemplateName" ]
+then
+    echo "Error: missing mandatory parameter template"
+    usage
+    exit 1
+fi
+if [ -z "$topologyTemplateVersion" ]
+then
+    echo "Error: missing mandatory parameter version"
+    usage
+    exit 1
+fi
+
+# Load utilities
+declare -r DIR=$(cd "$(dirname "$0")" && pwd)
+source $DIR/utils.bash
+
+# First, login and store the cookies
+a4c_login "$a4cURL" "$userName" "$password" "cookies.a4c"
+
+# Create the applications
+response=`curl --request POST \
+               --url $a4cURL/rest/latest/applications \
+               --header 'Content-Type: application/json' \
+               --cookie cookies.a4c \
+               --silent \
+               --data "{\"name\": \"$applicationName\", \"archiveName\": \"$applicationName\", \"topologyTemplateVersionId\": \"$topologyTemplateName:$topologyTemplateVersion\"}"`
+
+res=$?
+if [ $res -ne 0 ]
+then
+    echo "Exiting on error creating application $applicationName : $response"
+    exit 1
+fi
+
+echo "Application $applicationName created"

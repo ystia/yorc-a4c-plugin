@@ -1,0 +1,141 @@
+#!/bin/bash
+
+#
+# select_application_location - Selects the location where to deploy an application
+#
+
+a4cURL="http://localhost:8088"
+userName="admin"
+password="admin"
+locationName="Google"
+applicationName=""
+usage() {
+    echo ""
+    echo "Usage:"
+    echo "select_application_location --application <Application Name>"
+    echo "                            [--a4c-url <Alien4Cloud URL>]"
+    echo "                            [--user <Alien4Cloud administrator user name>]"
+    echo "                            [--password <Alien4Cloud administrator password>]"
+    echo "                            [--location <Location Name>]"
+    echo "   - default A4C URL  : $a4cURL"
+    echo "   - default user     : $userName"
+    echo "   - default password : $password"
+    echo "   - default Location : $locationName"
+}
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+    -n|--application)
+    applicationName="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -a|--a4c-url)
+    a4cURL="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -u|--user)
+    userName="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -p|--password)
+    password="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -l|--location)
+    locationName="$2"
+    shift # past argument
+    shift # past value
+    ;;
+   -h|--help)
+    usage
+    exit 0
+    ;;
+    *)    # unknown option
+    POSITIONAL+=("$1") # save it in an array for later
+    shift # past argument
+    ;;
+esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+if [ -z "$applicationName" ]
+then
+    echo "Error: missing mandatory parameter application name"
+    usage
+    exit 1
+fi
+
+# Load utilities
+declare -r DIR=$(cd "$(dirname "$0")" && pwd)
+source $DIR/utils.bash
+
+# First, login and store the cookies
+a4c_login "$a4cURL" "$userName" "$password" "cookies.a4c"
+
+# Get Orchestratror ID
+res=`curl --request GET \
+          --url $a4cURL/rest/latest/orchestrators?query=Yorc \
+          --header 'Accept: application/json' \
+          --silent \
+          --cookie cookies.a4c`
+yorcID=`getJsonval id $res`
+
+if [ -z "$yorcID" ]
+then
+    echo "Exiting on error getting the Orchestrator ID"
+    exit 1
+fi
+
+# Get the location ID
+res=`curl --request GET \
+          --url $a4cURL/rest/latest/orchestrators/$yorcID/locations?query=Yorc \
+          --header 'Accept: application/json' \
+          --silent \
+          --cookie cookies.a4c`
+locationID=`getJsonval id $res`
+
+if [ -z "$locationID" ]
+then
+    echo "Exiting on error getting the ID for location $locationName"
+    exit 1
+fi
+
+# Get the Application environment ID
+res=`curl --request POST \
+          --url $a4cURL/rest/latest/applications/environments \
+          --header 'Content-Type: application/json' \
+          --cookie cookies.a4c \
+          --silent \
+          --data "[\"$applicationName\"]"`
+envID=`getJsonval id $res`
+
+if [ -z "$envID" ]
+then
+    echo "Exiting on error getting the environment ID for Application $applicationName"
+    exit 1
+fi
+
+# Select the application deployment location
+response=`curl --request POST \
+               --url $a4cURL/rest/latest/applications/$applicationName/environments/$envID/deployment-topology/location-policies \
+               --header 'Content-Type: application/json' \
+               --cookie cookies.a4c \
+               --silent \
+               --data "{\"groupsToLocations\": {\"_A4C_ALL\": \"$locationID\"}, \"orchestratorId\": \"$yorcID\"}"`
+
+res=$?
+if [ $res -ne 0 ]
+then
+    echo "Exiting on error selecting location $locationName for application $applicationName : $response"
+    exit 1
+fi
+
+echo "Selected location $locationName for application $applicationName"
