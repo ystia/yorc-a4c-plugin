@@ -11,8 +11,10 @@ password="admin"
 locationName="Google"
 imageProject="centos-cloud"
 imageFamily="centos-7"
-computeZone="europe-west1-b"
+computeZone=""
 sshUserName="yorcuser"
+publicKey=""
+privateKeyFile=""
 usage() {
     echo ""
     echo "Usage:"
@@ -22,15 +24,16 @@ usage() {
     echo "                                [--name <Location Name>]"
     echo "                                [--image-project <Image Project>]"
     echo "                                [--image-family <Image Family>]"
-    echo "                                [--zone <Compute Zone>]"
     echo "                                [--ssh-user <User name used to ssh on compute node>]"
+    echo "                                --zone <Compute Zone>"
+    echo "                                --public-key <SSH Public key content>"
+    echo "                                --private-key-file <Path to private key file accessible to Yorc>"
     echo "   - default A4C URL       : $a4cURL"
     echo "   - default user          : $userName"
     echo "   - default password      : $password"
     echo "   - default Location Name : $locationName"
     echo "   - default Image Project : $imageProject"
     echo "   - default Image Family  : $imageFamily"
-    echo "   - default Compute Zone  : $computeZone"
     echo "   - default SSH User Name : $sshUserName"
 }
 
@@ -70,13 +73,23 @@ case $key in
     shift # past argument
     shift # past value
     ;;
+    -s|--ssh-user)
+    sshUserName="$2"
+    shift # past argument
+    shift # past value
+    ;;
     -z|--zone)
     computeZone="$2"
     shift # past argument
     shift # past value
     ;;
-    -s|--ssh-user)
-    sshUserName="$2"
+    -k|--public-key)
+    publicKey="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -r|--private-key-file)
+    privateKeyFile="$2"
     shift # past argument
     shift # past value
     ;;
@@ -91,6 +104,28 @@ case $key in
 esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
+
+if [ -z "$computeZone" ]
+then
+    echo "Error: missing mandatory parameter zone"
+    usage
+    exit 1
+fi
+
+if [ -z "$publicKey" ]
+then
+    echo "Error: missing mandatory parameter public-key"
+    usage
+    exit 1
+fi
+
+if [ -z "$privateKeyFile" ]
+then
+    echo "Error: missing mandatory parameter private-key-file"
+    usage
+    exit 1
+fi
+
 
 # Load utilities
 declare -r DIR=$(cd "$(dirname "$0")" && pwd)
@@ -194,13 +229,28 @@ then
     exit 1
 fi
 
+# Add a key/value pair ssh-keys / user:ssh public key in the instance metadata
+response=`curl --request POST \
+               --url $a4cURL/rest/latest/orchestrators/$yorcID/locations/$locationID/resources/$resourceID/template/properties \
+               --header 'Content-Type: application/json' \
+               --cookie cookies.a4c \
+               --silent \
+               --data "{\"propertyName\": \"metadata\", \"propertyValue\": \"ssh-keys=$sshUserName:$publicKey\"}"`
+
+res=$?
+if [ $res -ne 0 ]
+then
+    echo "Exiting on error setting metadata to ssh-keys=$sshUserName:$publicKey on location $locationName: $response"
+    exit 1
+fi
+
 # Update username in credentials
 response=`curl --request POST \
                --url $a4cURL/rest/latest/orchestrators/$yorcID/locations/$locationID/resources/$resourceID/template/capabilities/endpoint/properties \
                --header 'Content-Type: application/json' \
                --cookie cookies.a4c \
                --silent \
-               --data "{\"propertyName\": \"credentials\", \"propertyValue\": {\"user\": \"$sshUserName\"}}"`
+               --data "{\"propertyName\": \"credentials\", \"propertyValue\": {\"user\": \"$sshUserName\", \"keys\": {\"0\": \"$privateKeyFile\"}}}"`
 
 res=$?
 if [ $res -ne 0 ]
