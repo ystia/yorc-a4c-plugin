@@ -27,7 +27,7 @@ import java.util.List;
 public class TaskManager {
 
     protected List<AlienTask> workList = new LinkedList<>();
-    protected boolean valid = true; // set to false when WorkManager is removed.
+    private boolean valid = true; // set to false when WorkManager is removed.
 
     protected static int threadnumber = 0;  // number of created threads
     protected int maxpoolsz;
@@ -108,6 +108,10 @@ public class TaskManager {
                 workList.notify();
             }
         }
+    }
+
+    public void stop() {
+        valid = false;
     }
 
     /**

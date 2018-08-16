@@ -41,11 +41,15 @@ public class EventListenerTask extends AlienTask {
     public static final String EVT_WORKFLOW   = "workflow";
 
     // Set this to false to stop pollong events
-    protected boolean valid = true;
+    private boolean valid = true;
 
 
     public EventListenerTask(YorcPaaSProvider prov) {
         super(prov);
+    }
+
+    public void stop() {
+        valid = false;
     }
 
     public void run() {

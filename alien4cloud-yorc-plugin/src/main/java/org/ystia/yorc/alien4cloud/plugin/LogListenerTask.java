@@ -28,11 +28,15 @@ import org.ystia.yorc.alien4cloud.plugin.rest.Response.LogResponse;
 public class LogListenerTask extends AlienTask {
 
     // Set this to false to stop pollong events
-    protected boolean valid = true;
+    private boolean valid = true;
 
 
     public LogListenerTask(YorcPaaSProvider prov) {
         super(prov);
+    }
+
+    public void stop() {
+        valid = false;
     }
 
     /**
