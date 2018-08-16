@@ -149,9 +149,9 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
     }
 
     public void stopLogsAndEvents() {
-        eventListenerTask.valid = false;
-        logListenerTask.valid = false;
-        taskManager.valid = false;
+        eventListenerTask.stop();
+        logListenerTask.stop();
+        taskManager.stop();
     }
 
     public void startLogsAndEvents() {
