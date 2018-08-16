@@ -1,0 +1,184 @@
+#!/bin/bash
+
+#
+# deploy_application - Deploys an application
+# Prerequisites : the application has been created, input parameters provided
+#                 and a location where to deploy the application was selected
+#
+
+a4cURL="http://localhost:8088"
+userName="admin"
+password="admin"
+applicationName=""
+synchronous=true
+timeoutSeconds=600
+usage() {
+    echo ""
+    echo "Usage:"
+    echo "deploy_application --application <Application Name>"
+    echo "                   [--a4c-url <Alien4Cloud URL>] "
+    echo "                   [--user <Alien4Cloud administrator user name>]"
+    echo "                   [--password <Alien4Cloud administrator password>]"
+    echo "                   [ [--asynchronous] | [--timeout <Wait time in seconds>] ]"
+    echo "   - default A4C URL  : $a4cURL"
+    echo "   - default user     : $userName"
+    echo "   - default password : $password"
+    echo "   - default timeout  : $timeoutSeconds seconds"
+}
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+    -n|--application)
+    applicationName="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -a|--a4c-url)
+    a4cURL="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -u|--user)
+    userName="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -p|--password)
+    password="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -s|--asynchronous)
+    synchronous=false
+    shift # past argument
+    ;;
+    -t|--timeout)
+    timeoutSeconds=$2
+    shift # past argument
+    ;;
+    -h|--help)
+    usage
+    exit 0
+    ;;
+    *)    # unknown option
+    POSITIONAL+=("$1") # save it in an array for later
+    shift # past argument
+    ;;
+esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+if [ -z "$applicationName" ]
+then
+    echo "Error: missing mandatory parameter application name"
+    usage
+    exit 1
+fi
+
+# Load utilities
+declare -r DIR=$(cd "$(dirname "$0")" && pwd)
+source $DIR/utils.bash
+
+# First, login and store the cookies
+a4c_login "$a4cURL" "$userName" "$password" "cookies.a4c"
+
+# Get the Application environment ID
+res=`curl --request POST \
+          --url $a4cURL/rest/latest/applications/environments \
+          --header 'Content-Type: application/json' \
+          --cookie cookies.a4c \
+          --silent \
+          --data "[\"$applicationName\"]"`
+envID=`getJsonval id $res`
+
+if [ -z "$envID" ]
+then
+    echo "Exiting on error getting the environment ID for Application $applicationName"
+    exit 1
+fi
+
+# Deploy the application
+response=`curl --request POST \
+               --url $a4cURL/rest/latest/applications/deployment \
+               --header 'Content-Type: application/json' \
+               --cookie cookies.a4c \
+               --silent \
+               --data "{\"applicationEnvironmentId\": \"$envID\", \"applicationId\": \"$applicationName\"}"`
+
+res=$?
+if [ $res -ne 0 ]
+then
+    echo "Exiting on error deploying application $applicationName : $response"
+    exit 1
+fi
+
+printf "Application $applicationName deployment in progress"
+
+if [ "$synchronous" = false ]
+then
+    echo ""
+    exit 0
+fi
+
+# Wait for the end of deployment
+start_time="$(date -u +%s)"
+finished=false
+exitStatus=0
+while [ "$finished" = false ]
+do
+    printf "."
+    # Get the deployment status
+    response=`curl --request POST \
+                   --url $a4cURL/rest/latest/applications/statuses \
+                   --header 'Content-Type: application/json' \
+                   --cookie cookies.a4c \
+                   --silent \
+                   --data "[\"$applicationName\"]"`
+
+    res=$?
+    if [ $res -ne 0 ]
+    then
+        echo -e "\nExiting on error getting the deployment status of application $applicationName : $response"
+        exit 1
+    fi
+
+    deploymentStatus=`getJsonval environmentStatus $response`
+    if [ -z "$deploymentStatus" ]
+    then
+        echo -e "\nExiting on error getting the deployment status for Application $applicationName"
+        exitStatus=1
+        finished=true
+    elif [ "$deploymentStatus" = "FAILURE" ]
+    then
+        echo -e "\nExiting on deployment failure for Application $applicationName"
+        exitStatus=1
+        finished=true
+    elif [ "$deploymentStatus" = "UNDEPLOYED" ]
+    then
+        echo -e "\nExiting on unexpected undeployment of Application $applicationName"
+        exitStatus=1
+        finished=true
+    elif [ "$deploymentStatus" = "DEPLOYED" ]
+    then
+        echo -e "\nApplication $applicationName deployed"
+        exitStatus=0
+        finished=true
+    else
+        end_time="$(date -u +%s)"
+        elapsedTime="$(($end_time-$start_time))"
+        if [ $elapsedTime -ge $timeoutSeconds ]
+        then
+            echo -e "\nExiting on timeout waiting for the end of deployment of Application $applicationName"
+            exitStatus=1
+            finished=true
+        else
+            sleep 10
+        fi
+    fi
+done
+
+exit $exitStatus
