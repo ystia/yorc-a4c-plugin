@@ -46,13 +46,12 @@ ${utils.formatArtifact($operationEntry.value.implementationArtifact, $indentImpl
 #if($utils.mapIsNotEmptyAndContainsNotnullValues($type.artifacts))
 ${propertyUtils.indent($indent)}artifacts:
 #foreach($artifactEntry in $type.artifacts.entrySet())
+#if($stringsUtils.isNotBlank($artifactEntry.value.artifactRef))
 ${propertyUtils.indent($indent)}  $artifactEntry.key:
 #if($stringsUtils.isNotBlank($artifactEntry.value.description))
 ${propertyUtils.indent($indent)}    description: ${utils.renderDescription(${artifactEntry.value.description}, "${propertyUtils.indent($indent)}      ")}
 #end## if description
-#if($stringsUtils.isNotBlank($artifactEntry.value.artifactRef))
 ${propertyUtils.indent($indent)}    file: ${propertyUtils.renderScalar($artifactEntry.value.artifactRef)}
-#end## if artifactRef
 #if($stringsUtils.isNotBlank($artifactEntry.value.artifactType))
 ${propertyUtils.indent($indent)}    type: $artifactEntry.value.artifactType
 #end## if artifactType
@@ -62,5 +61,6 @@ ${propertyUtils.indent($indent)}    repository: ${propertyUtils.renderScalar($ar
 #if($stringsUtils.isNotBlank($artifactEntry.value.deployPath))
 ${propertyUtils.indent($indent)}    deploy_path: ${propertyUtils.renderScalar($artifactEntry.value.deployPath)}
 #end## if deployPath
+#end## if artifactRef
 #end## foreach artifact
 #end## if artifacts
