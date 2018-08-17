@@ -84,6 +84,8 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
     private final List<AbstractMonitorEvent> toBeDeliveredEvents = new ArrayList<>();
     private ProviderConfig providerConfiguration;
     private Map<String, String> a4cDeploymentIds = Maps.newHashMap();
+    private EventListenerTask eventListenerTask;
+    private LogListenerTask logListenerTask;
 
     /**
      * Keep in mind the paas (yorc) deploymentIds that have no
@@ -144,6 +146,21 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
         // Start the TaskManager
         // TODO make sizes configurable
         taskManager = new TaskManager(3, 120, 3600);
+    }
+
+    public void stopLogsAndEvents() {
+        eventListenerTask.stop();
+        logListenerTask.stop();
+        taskManager.stop();
+    }
+
+    public void startLogsAndEvents() {
+        // Listen Events and logs from yorc about the deployment
+        log.info("Starting Yorc events & logs listeners");
+        eventListenerTask = new EventListenerTask(this);
+        logListenerTask = new LogListenerTask(this);
+        addTask(eventListenerTask);
+        addTask(logListenerTask);
     }
 
     public RestClient getRestClient() {
@@ -226,11 +243,6 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
         }
         // prov
         log.info(fileRepository.getRootPath().toString());
-
-        // Listen Events and logs from yorc about the deployment
-        log.info("Starting Yorc events & logs listeners");
-        addTask(new EventListenerTask(this));
-        addTask(new LogListenerTask(this));
     }
 
     /**
