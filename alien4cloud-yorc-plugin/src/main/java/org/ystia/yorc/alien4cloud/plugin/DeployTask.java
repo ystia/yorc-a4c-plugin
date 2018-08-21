@@ -299,7 +299,7 @@ public class DeployTask extends AlienTask {
                 // provided by another deployment
                 if (importSource == null || CSARSource.ORCHESTRATOR != CSARSource.valueOf(importSource)) {
                     try {
-                        csar2zip(zout, csar, finalLocation);
+                        csar2zip(zout, csar, finalLocation, true, false);
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
@@ -424,8 +424,7 @@ public class DeployTask extends AlienTask {
                 Path artifactPath = Paths.get(from);
                 try {
                     String filename = artifact.getArtifactRef();
-                    createZipEntries(filename, zout);
-                    copy(artifactPath.toFile(), zout);
+                    recursivelyCopyArtifact(artifactPath, filename, zout);
                 } catch (Exception e) {
                     log.error("Could not copy local artifact " + aname, e);
                 }
@@ -436,8 +435,7 @@ public class DeployTask extends AlienTask {
                 Path artifactPath = Paths.get(from);
                 try {
                     String filename = artifact.getArtifactRef();
-                    createZipEntries(filename, zout);
-                    copy(artifactPath.toFile(), zout);
+                    recursivelyCopyArtifact(artifactPath, filename, zout);
                 } catch (Exception e) {
                     log.error("Could not copy remote artifact " + aname, e);
                 }
@@ -445,6 +443,20 @@ public class DeployTask extends AlienTask {
                 // TODO Remove this when a4c bug SUPALIEN-926 is fixed.
                 addRemoteArtifactInTopology(name, da.getKey(), artifact);
             }
+        }
+    }
+
+    private void recursivelyCopyArtifact(Path path, String baseTargetName, ZipOutputStream zout) throws IOException {
+        if (path.toFile().isDirectory()) {
+            String folderName = baseTargetName + "/";
+            createZipEntries(folderName, zout);
+            for (String file : path.toFile().list()) {
+                Path filePath = path.resolve(file);
+                recursivelyCopyArtifact(filePath, folderName + file, zout);
+            }
+        } else {
+            createZipEntries(baseTargetName, zout);
+            copy(path.toFile(), zout);
         }
     }
 
@@ -537,14 +549,14 @@ public class DeployTask extends AlienTask {
      * Get csar and add entries in zip file for it
      * @return relative path to the yml, ex: welcome-types/3.0-SNAPSHOT/welcome-types.yaml
      */
-    private String csar2zip(ZipOutputStream zout, Csar csar, int location) throws IOException, ParsingException {
+    private String csar2zip(ZipOutputStream zout, Csar csar, int location, boolean useCsarNameVersionAsBaseDirectory, boolean exceptTopology) throws IOException, ParsingException {
         // Get path directory to the needed info:
         // should be something like: ...../runtime/csar/<module>/<version>/expanded
         // We should have a yml or a yaml here
         Path csarPath = orchestrator.getCSAR(csar.getName(), csar.getVersion());
         String dirname = csarPath.toString();
         File directory = new File(dirname);
-        String relative = csar.getName() + "/" + csar.getVersion() + "/";
+        String relative = (useCsarNameVersionAsBaseDirectory) ? csar.getName() + "/" + csar.getVersion() + "/" : "/";
         String ret = relative + csar.getYamlFilePath();
             // All files under this directory must be put in the zip
             URI base = directory.toURI();
@@ -554,6 +566,9 @@ public class DeployTask extends AlienTask {
                 directory = queue.pop();
                 for (File kid : directory.listFiles()) {
                     String name = base.relativize(kid.toURI()).getPath();
+                    if (exceptTopology && name.equals("topology.yml")) {
+                        continue;
+                    }
                     if (kid.isDirectory()) {
                         queue.push(kid);
                     } else {
