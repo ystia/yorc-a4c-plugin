@@ -99,6 +99,13 @@ if [[ "develop" == "${branch}" ]] && [[ -z "${prerelease}" ]]; then
     git checkout -b "${releaseBranch}"
 fi
 
+# Now checks are passed then tag, build, release and cleanup :)
+# Update changelog Release date
+if [[ -e CHANGELOG.md ]]; then
+    sed -i -e "s/^## UNRELEASED.*$/## ${version} ($(LC_ALL=C date +'%B %d, %Y'))/g" CHANGELOG.md
+    git commit -m "Update changelog for release ${version}" CHANGELOG.md
+fi
+
 if [[ -n "${prerelease}" ]]; then 
     # in prerelease revert to version minus prerelease plus -SNAPSHOT
     nextDevelopmentVersion="${major}.${minor}.${patch}-SNAPSHOT"
@@ -129,10 +136,21 @@ echo "Tag done. Publishing release..."
 # mvn release:perform --batch-mode ${mvnOpts}
 set -x
 
+# Update changelog for future versions
+if [[ -e CHANGELOG.md ]]; then
+    sed -i -e "2a## UNRELEASED\n" CHANGELOG.md
+    git commit -m "Update changelog for future release" CHANGELOG.md
+fi
+
 if [[ "develop" == "${branch}" ]] && [[ -z "${prerelease}" ]]; then
     # merge back to develop and update version
     git checkout develop
     git merge --no-ff "v${version}" -m "merging latest tag v${version} into develop"
+    # Update changelog for future versions
+    if [[ -e CHANGELOG.md ]]; then
+        sed -i -e "2a## UNRELEASED\n" CHANGELOG.md
+        git commit -m "Update changelog for future release" CHANGELOG.md
+    fi
     nextDevelopmentVersion=$(python -c "import semantic_version; v=semantic_version.Version('${version}'); print v.next_minor()" )
     nextDevelopmentVersion="${nextDevelopmentVersion}-SNAPSHOT"
     mvn --batch-mode release:update-versions -DdevelopmentVersion=${nextDevelopmentVersion}
