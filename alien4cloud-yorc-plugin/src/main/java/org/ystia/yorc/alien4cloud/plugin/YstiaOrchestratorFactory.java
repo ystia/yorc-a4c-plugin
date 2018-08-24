@@ -52,7 +52,7 @@ public class YstiaOrchestratorFactory implements IOrchestratorPluginFactory<Yorc
 
     @Override
     public void destroy(YorcPaaSProvider instance) {
-        // nothing specific, the plugin will be garbaged collected when all references are lost.
+        instance.stopLogsAndEvents();
     }
 
     @Override
