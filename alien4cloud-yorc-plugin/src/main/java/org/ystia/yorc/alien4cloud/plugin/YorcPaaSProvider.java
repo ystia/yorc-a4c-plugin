@@ -243,6 +243,7 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
         }
         // prov
         log.info(fileRepository.getRootPath().toString());
+        startLogsAndEvents();
     }
 
     /**

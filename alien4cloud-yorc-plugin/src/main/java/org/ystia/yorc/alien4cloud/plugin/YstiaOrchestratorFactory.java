@@ -47,9 +47,7 @@ public class YstiaOrchestratorFactory implements IOrchestratorPluginFactory<Yorc
 
     @Override
     public YorcPaaSProvider newInstance() {
-        YorcPaaSProvider instance = beanFactory.getBean(YorcPaaSProvider.class);
-        instance.startLogsAndEvents();
-        return instance;
+        return beanFactory.getBean(YorcPaaSProvider.class);
     }
 
     @Override
