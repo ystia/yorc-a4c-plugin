@@ -47,6 +47,7 @@ The first running job executes a "singularity run docker://godlovedc/lolcow:late
 The second executes a "singularity exec /home_nfs/benoists/hello-world.img /usr/bin/hello-kitty.sh" command and returns a simply "hello world" in batch mode (slurm sbatch)
 You need to modify the file implementation ans the exec command to run with your specific images and script paths.
 
+```
  _________________________________________
 / You will gain money by a speculation or \
 \ lottery.                                /
@@ -58,7 +59,6 @@ You need to modify the file implementation ans the exec command to run with your
                 \||     ||
 
 Hello World !`
-
-`
+```
 
 The output files are saved in a root home user directory with name "job_<JOB_ID>_outputs"
