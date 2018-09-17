@@ -33,7 +33,7 @@
 
   <artifactId>alien4cloud-yorc-plugin-parent</artifactId>
   <name>Ystia Orchestrator PaaS provider for Alien4Cloud</name>
-  <version>3.0.0-SNAPSHOT</version>
+  <version>3.0.0-2.1.0-SM6</version>
   <inceptionYear>2018</inceptionYear>
   <packaging>pom</packaging>
 
