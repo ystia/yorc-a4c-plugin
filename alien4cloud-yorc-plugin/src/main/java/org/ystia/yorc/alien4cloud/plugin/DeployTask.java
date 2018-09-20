@@ -316,7 +316,7 @@ public class DeployTask extends AlienTask {
             createZipEntries(topoFileName, zout);
             // Get the yaml of the application as built by from a4c
             DeploymentTopology dtopo = ctx.getDeploymentTopology();
-            Csar myCsar = new Csar(ctx.getDeploymentPaaSId(), dtopo.getArchiveVersion());
+            Csar myCsar = new Csar(dtopo.getArchiveName(), dtopo.getArchiveVersion());
             myCsar.setToscaDefinitionsVersion(ToscaParser.LATEST_DSL);
             String yaml = orchestrator.getToscaTopologyExporter().getYaml(myCsar, dtopo, true);
             zout.write(yaml.getBytes(Charset.forName("UTF-8")));
@@ -411,8 +411,7 @@ public class DeployTask extends AlienTask {
                 Path artifactPath = Paths.get(from);
                 try {
                     String filename = artifact.getArtifactRef();
-                    createZipEntries(filename, zout);
-                    copy(artifactPath.toFile(), zout);
+                    recursivelyCopyArtifact(artifactPath, filename, zout);
                 } catch (Exception e) {
                     log.error("Could not copy local artifact " + aname, e);
                 }
@@ -423,8 +422,7 @@ public class DeployTask extends AlienTask {
                 Path artifactPath = Paths.get(from);
                 try {
                     String filename = artifact.getArtifactRef();
-                    createZipEntries(filename, zout);
-                    copy(artifactPath.toFile(), zout);
+                    recursivelyCopyArtifact(artifactPath, filename, zout);
                 } catch (Exception e) {
                     log.error("Could not copy remote artifact " + aname, e);
                 }
@@ -432,6 +430,20 @@ public class DeployTask extends AlienTask {
                 // TODO Remove this when a4c bug SUPALIEN-926 is fixed.
                 addRemoteArtifactInTopology(name, da.getKey(), artifact);
             }
+        }
+    }
+
+    private void recursivelyCopyArtifact(Path path, String baseTargetName, ZipOutputStream zout) throws IOException {
+        if (path.toFile().isDirectory()) {
+            String folderName = baseTargetName + "/";
+            createZipEntries(folderName, zout);
+            for (String file : path.toFile().list()) {
+                Path filePath = path.resolve(file);
+                recursivelyCopyArtifact(filePath, folderName + file, zout);
+            }
+        } else {
+            createZipEntries(baseTargetName, zout);
+            copy(path.toFile(), zout);
         }
     }
 
@@ -582,7 +594,7 @@ public class DeployTask extends AlienTask {
                             } else {
                                 yaml = orchestrator.getToscaComponentExporter().getYaml(root);
                             }
-                            
+
                             zout.write(yaml.getBytes(Charset.forName("UTF-8")));
                         } else {
                             copy(file, zout);

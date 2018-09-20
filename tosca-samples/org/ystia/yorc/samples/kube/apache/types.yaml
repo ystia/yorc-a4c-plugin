@@ -14,7 +14,7 @@ description: Apacahe Docker that can be deployed on K8S
 repositories:
   docker:
     url: https://hub.docker.com/
-    type: http
+    type: docker
 
 node_types:
   org.ystia.yorc.samples.kube.containers.nodes.Apache:
