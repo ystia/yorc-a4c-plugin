@@ -52,7 +52,7 @@ public class YstiaOrchestratorFactory implements IOrchestratorPluginFactory<Yorc
 
     @Override
     public void destroy(YorcPaaSProvider instance) {
-        // nothing specific, the plugin will be garbaged collected when all references are lost.
+        instance.stopLogsAndEvents();
     }
 
     @Override
@@ -74,7 +74,7 @@ public class YstiaOrchestratorFactory implements IOrchestratorPluginFactory<Yorc
     public ArtifactSupport getArtifactSupport() {
         // support all type of implementations artifacts
         return new ArtifactSupport(new String[]{"tosca.artifacts.Implementation.Python",
-                "tosca.artifacts.Implementation.Bash", "tosca.artifacts.Implementation.Ansible", "tosca.artifacts.Deployment.Image.Container.Docker", "tosca.artifacts.Deployment.Image.Container.Docker.Kubernetes", "yorc.artifacts.Deployment.SlurmJob"});
+                "tosca.artifacts.Implementation.Bash", "tosca.artifacts.Implementation.Ansible", "org.alien4cloud.artifacts.AnsiblePlaybook", "tosca.artifacts.Deployment.Image.Container.Docker", "tosca.artifacts.Deployment.Image.Container.Docker.Kubernetes", "yorc.artifacts.Deployment.SlurmJob"});
     }
 
     @Override
