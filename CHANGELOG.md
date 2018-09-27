@@ -2,6 +2,14 @@
 
 ## UNRELEASED
 
+### DEPENDENCIES
+
+* Upgrade to Alien4Cloud 2.1 ([GH-50](https://github.com/ystia/yorc-a4c-plugin/issues/50))
+
+### IMPROVEMENTS
+
+* Make the run step of a Job execution asynchronous not to block a worker during the duration of the job. ([GH-85](https://github.com/ystia/yorc/issues/85))
+
 ## 3.1.0-M3 (September 14, 2018)
 
 ## 3.1.0-M2 (August 24, 2018)

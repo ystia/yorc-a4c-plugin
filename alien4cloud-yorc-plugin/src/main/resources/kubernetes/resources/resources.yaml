@@ -5,7 +5,7 @@ template_author: Yorc
 template_version: ${yorc.k8s.types.version}
 
 imports:
-  - org.alien4cloud.kubernetes.api:${alien4cloud.kubernetes.api.version}
+  - org.alien4cloud.kubernetes.api:${alien4cloud.version}
 
 artifact_types:
   tosca.artifacts.Deployment.Image.Container.Docker.Kubernetes:
