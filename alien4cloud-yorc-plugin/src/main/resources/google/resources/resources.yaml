@@ -8,10 +8,6 @@ imports:
   - tosca-normative-types:${tosca.normative.types.version}
   - yorc-types:${yorc.types.version}
 
-capability_types:
-  yorc.capabilities.google.Assignable:
-    derived_from: tosca.capabilities.Root
-
 node_types:
   yorc.nodes.google.Compute:
     derived_from: yorc.nodes.Compute
@@ -103,11 +99,18 @@ node_types:
           Comma-separated list of tags to apply to the instances for identifying
           the instances to which network firewall rules will apply.
         required: false
+    requirements:
+      - assignment:
+          capability: yorc.capabilities.Assignable
+          node: yorc.nodes.google.StaticIP
+          relationship: yorc.relationships.AssignsTo
+          occurrences: [0, UNBOUNDED]
+
   yorc.nodes.google.Network:
     derived_from: tosca.nodes.Network
 
   yorc.nodes.google.StaticIP:
-    derived_from: tosca.nodes.Root
+    derived_from: tosca.nodes.Network
     properties:
     # See https://www.terraform.io/docs/providers/google/r/compute_address.html
       name:
@@ -117,7 +120,7 @@ node_types:
           Specifically, the name must be 1-63 characters long and match the regular expression [a-z]([-a-z0-9]*[a-z0-9])?
           which means the first character must be a lowercase letter, and all following characters must be a dash, lowercase letter, or digit, except the last character, which cannot be a dash.
         required: true
-      address:
+      addresses:
         type: string
         description: >
           Comma-separated list of static external addresses. Only IPv4 is supported.
@@ -130,14 +133,14 @@ node_types:
         required: false
     capabilities:
       assignment:
-        type: yorc.capabilities.google.Assignable
+        type: yorc.capabilities.Assignable
 
   yorc.nodes.google.PublicNetwork:
     derived_from: tosca.nodes.Network
     properties:
-      ip:
+      addresses:
         type: string
-        description: A specific Static IP to use. If not specified, a new one will be assigned.
+        description: A comma-separated static IPs to use.
         required: false
 
   ##############################################

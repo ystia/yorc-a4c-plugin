@@ -45,7 +45,7 @@ public class GoogleStaticIPTopologyModifier extends TopologyModifierSupport {
         Csar csar = new Csar(topology.getArchiveName(), topology.getArchiveVersion());
 
         Set<NodeTemplate> publicNetworksNodes = TopologyNavigationUtil.getNodesOfType(topology, "yorc.nodes.google.PublicNetwork", false);
-        String assignableCap = "yorc.capabilities.google.Assignable";
+        String assignableCap = "yorc.capabilities.Assignable";
 
         String staticIPTypeName = "yorc.nodes.google.StaticIP";
         NodeType staticIPNodeType = toscaTypeSearchService.findMostRecent(NodeType.class, staticIPTypeName);
@@ -56,14 +56,14 @@ public class GoogleStaticIPTopologyModifier extends TopologyModifierSupport {
             // For each Node Template requiring a connection to this Public
             // Network, creating a new static IP Node Template
             for (NodeTemplate nodeTemplate : new ArrayList<>(topology.getNodeTemplates().values())) {
-                final AbstractPropertyValue ip = networkNodeTemplate.getProperties().get("ip");
+                final AbstractPropertyValue addresses = networkNodeTemplate.getProperties().get("addresses");
 
                 if (nodeTemplate.getRelationships() == null) continue;
 
                 nodeTemplate.getRelationships().forEach((rel, relationshipTemplate) -> {
                     if (relationshipTemplate.getTarget().equals(networkNodeTemplate.getName())) {
                         Map<String, AbstractPropertyValue> properties = new LinkedHashMap<>();
-                        properties.put("ip", ip);
+                        properties.put("addresses", addresses);
 
 
 
@@ -96,7 +96,7 @@ public class GoogleStaticIPTopologyModifier extends TopologyModifierSupport {
                         relationshipsToAdd.add(new AssignmentRelationship(
                                 nodeTemplate, // source
                                 staticIPNodeTemplate.getName(), // target
-                                relationshipTemplate.getRequirementName(), // A compute requirement for assignation is expected
+                                "assignment",
                                 "assignment"));
 
                         context.log().info(
@@ -113,6 +113,9 @@ public class GoogleStaticIPTopologyModifier extends TopologyModifierSupport {
             context.log().info(
                     "Public network <{}> removed as connectivity requirements are addressed by static IP Node Templates",
                     networkNodeTemplate.getName());
+            // Removing Public Network nodes for which a new Static IP Node
+            // template was created
+            nodesToRemove.forEach(pnn -> removeNode(topology, pnn));
 
             // Creating a relationship between each new staticIP Node Template
             // and the Source Node Template having an assignment requirement
@@ -121,7 +124,7 @@ public class GoogleStaticIPTopologyModifier extends TopologyModifierSupport {
                     topology,
                     rel.sourceNode,
                     rel.targetNodeName,
-                    NormativeRelationshipConstants.ROOT,
+                    "yorc.relationships.AssignsTo",
                     rel.requirementName,
                     rel.targetCapabilityName));
         });
