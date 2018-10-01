@@ -38,7 +38,7 @@
 
   <modules>
     <module>alien4cloud-yorc-plugin</module>
-    <module>documentation</module>
+    <!-- <module>documentation</module> -->
     <module>distribution</module>
   </modules>
 
@@ -74,7 +74,7 @@
     </repository>
   </repositories>
 
-  
+
   <build>
     <pluginManagement>
       <plugins>
