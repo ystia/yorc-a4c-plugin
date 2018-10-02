@@ -13,7 +13,6 @@ import org.alien4cloud.tosca.model.templates.Capability;
 import org.alien4cloud.tosca.model.templates.NodeTemplate;
 import org.alien4cloud.tosca.model.templates.Topology;
 import org.alien4cloud.tosca.model.types.NodeType;
-import org.alien4cloud.tosca.normative.constants.NormativeRelationshipConstants;
 import org.alien4cloud.tosca.utils.TopologyNavigationUtil;
 import org.springframework.stereotype.Component;
 
@@ -21,9 +20,9 @@ import javax.inject.Inject;
 import java.util.*;
 
 @Slf4j
-@Component(value = GoogleStaticIPTopologyModifier.YORC_GOOGLE_STATIC_IP_MODIFIER_TAG)
-public class GoogleStaticIPTopologyModifier extends TopologyModifierSupport {
-    public static final String YORC_GOOGLE_STATIC_IP_MODIFIER_TAG = "yorc-google-static-ip-modifier";
+@Component(value = GoogleAddressTopologyModifier.YORC_GOOGLE_ADDRESS_MODIFIER_TAG)
+public class GoogleAddressTopologyModifier extends TopologyModifierSupport {
+    public static final String YORC_GOOGLE_ADDRESS_MODIFIER_TAG = "yorc-google-address-modifier";
 
     @Inject
     private IToscaTypeSearchService toscaTypeSearchService;
@@ -47,16 +46,17 @@ public class GoogleStaticIPTopologyModifier extends TopologyModifierSupport {
         Set<NodeTemplate> publicNetworksNodes = TopologyNavigationUtil.getNodesOfType(topology, "yorc.nodes.google.PublicNetwork", false);
         String assignableCap = "yorc.capabilities.Assignable";
 
-        String staticIPTypeName = "yorc.nodes.google.StaticIP";
-        NodeType staticIPNodeType = toscaTypeSearchService.findMostRecent(NodeType.class, staticIPTypeName);
+        String addressTypeName = "yorc.nodes.google.Address";
+        NodeType addressNodeType = toscaTypeSearchService.findMostRecent(NodeType.class, addressTypeName);
         Set<NodeTemplate> nodesToRemove = new HashSet<NodeTemplate>();
         List<AssignmentRelationship> relationshipsToAdd = new ArrayList<>();
 
         publicNetworksNodes.forEach(networkNodeTemplate -> {
             // For each Node Template requiring a connection to this Public
-            // Network, creating a new static IP Node Template
+            // Network, creating a new Address Node Template
             for (NodeTemplate nodeTemplate : new ArrayList<>(topology.getNodeTemplates().values())) {
                 final AbstractPropertyValue addresses = networkNodeTemplate.getProperties().get("addresses");
+                final AbstractPropertyValue region = networkNodeTemplate.getProperties().get("region");
 
                 if (nodeTemplate.getRelationships() == null) continue;
 
@@ -64,6 +64,7 @@ public class GoogleStaticIPTopologyModifier extends TopologyModifierSupport {
                     if (relationshipTemplate.getTarget().equals(networkNodeTemplate.getName())) {
                         Map<String, AbstractPropertyValue> properties = new LinkedHashMap<>();
                         properties.put("addresses", addresses);
+                        properties.put("region", region);
 
 
 
@@ -72,35 +73,35 @@ public class GoogleStaticIPTopologyModifier extends TopologyModifierSupport {
                         assignmentCap.setType(assignableCap);
                         capabilities.put("assignment", assignmentCap);
 
-                        if (staticIPNodeType == null) {
+                        if (addressNodeType == null) {
                             context.log().error("Node type with name <{}> cannot be found in the catalog.",
-                                    staticIPTypeName);
+                                    addressTypeName);
                             return;
                         }
 
-                        // Creating a new static IP Node Template that will be
+                        // Creating a new Address Node Template that will be
                         // associated to this Node Template requiring an assignment
-                        String name = "StaticIP" + nodeTemplate.getName();
-                        NodeTemplate staticIPNodeTemplate = addNodeTemplate(
+                        String name = "address_" + nodeTemplate.getName();
+                        NodeTemplate addressNodeTemplate = addNodeTemplate(
                                 csar,
                                 topology,
                                 name,
-                                staticIPNodeType.getElementId(),
-                                staticIPNodeType.getArchiveVersion());
+                                addressNodeType.getElementId(),
+                                addressNodeType.getArchiveVersion());
 
-                        staticIPNodeTemplate.setProperties(properties);
-                        staticIPNodeTemplate.setCapabilities(capabilities);
+                        addressNodeTemplate.setProperties(properties);
+                        addressNodeTemplate.setCapabilities(capabilities);
 
                         // Creating a new relationship between the Node template
-                        // and the static IP node.
+                        // and the Google address node.
                         relationshipsToAdd.add(new AssignmentRelationship(
                                 nodeTemplate, // source
-                                staticIPNodeTemplate.getName(), // target
+                                addressNodeTemplate.getName(), // target
                                 "assignment",
                                 "assignment"));
 
                         context.log().info(
-                                "<{}> created to provide a static IP address to <{}> on network <{}>",
+                                "<{}> created to provide a Google external address to <{}> on network <{}>",
                                 name,
                                 nodeTemplate.getName(),
                                 networkNodeTemplate.getName());
@@ -108,16 +109,16 @@ public class GoogleStaticIPTopologyModifier extends TopologyModifierSupport {
                 });
             }
 
-            // Remove the public network node as replaced by StaticIP node
+            // Remove the public network node as replaced by Address node
             nodesToRemove.add(networkNodeTemplate);
             context.log().info(
-                    "Public network <{}> removed as connectivity requirements are addressed by static IP Node Templates",
+                    "Public network <{}> removed as connectivity requirements are addressed by google address Node Templates",
                     networkNodeTemplate.getName());
-            // Removing Public Network nodes for which a new Static IP Node
+            // Removing Public Network nodes for which a new Address Node
             // template was created
             nodesToRemove.forEach(pnn -> removeNode(topology, pnn));
 
-            // Creating a relationship between each new staticIP Node Template
+            // Creating a relationship between each new Google Address Node Template
             // and the Source Node Template having an assignment requirement
             relationshipsToAdd.forEach( rel -> addRelationshipTemplate(
                     csar,
