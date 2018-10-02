@@ -9,6 +9,7 @@
 ### IMPROVEMENTS
 
 * Make the run step of a Job execution asynchronous not to block a worker during the duration of the job. ([GH-85](https://github.com/ystia/yorc/issues/85))
+* Take advantage of Alien4Cloud meta-properties to specify a namespace in which to deploy Kubernetes resources
 
 ## 3.1.0-M3 (September 14, 2018)
 
