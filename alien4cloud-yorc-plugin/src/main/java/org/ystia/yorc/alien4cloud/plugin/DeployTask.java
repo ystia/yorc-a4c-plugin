@@ -145,7 +145,7 @@ public class DeployTask extends AlienTask {
         }
         String taskId = taskUrl.substring(taskUrl.lastIndexOf("/") + 1);
         jrdi.setDeployTaskId(taskId);
-        orchestrator.sendMessage(paasId, "Deployment sent to Yorc. TaskId=" + taskId);
+        orchestrator.sendMessage(paasId, "Deployment sent to Yorc. TaskKey=" + taskId);
 
         // wait for Yorc deployment completion
         boolean done = false;

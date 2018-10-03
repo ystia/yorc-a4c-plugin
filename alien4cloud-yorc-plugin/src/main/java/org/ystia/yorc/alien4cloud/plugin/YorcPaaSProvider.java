@@ -146,6 +146,7 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
         // Start the TaskManager
         // TODO make sizes configurable
         taskManager = new TaskManager(3, 120, 3600);
+        logListenerTask = new LogListenerTask(this);
     }
 
     public void stopLogsAndEvents() {
@@ -283,6 +284,7 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
      */
     @Override
     public void deploy(PaaSTopologyDeploymentContext ctx, IPaaSCallback<?> callback) {
+        logListenerTask.registerDeployment(ctx);
         addTask(new DeployTask(ctx, this, callback, csarRepoSearchService));
     }
 
@@ -293,6 +295,7 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
      */
     @Override
     public void undeploy(PaaSDeploymentContext ctx, IPaaSCallback<?> callback) {
+        logListenerTask.unregisterDeployment(ctx);
         addTask(new UndeployTask(ctx, this, callback));
     }
 
@@ -835,6 +838,10 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
         event.setDate((new Date()).getTime());
         event.setDeploymentId(a4cDeploymentIds.get(paasId));
         event.setOrchestratorId(paasId);
+        if (event.getDeploymentId() == null) {
+            log.warn("Must provide an Id for this Event: " + event.toString());
+            return;
+        }
         synchronized (toBeDeliveredEvents) {
             toBeDeliveredEvents.add(event);
         }
