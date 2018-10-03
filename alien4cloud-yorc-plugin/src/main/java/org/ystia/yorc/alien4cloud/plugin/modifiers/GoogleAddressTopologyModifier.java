@@ -81,7 +81,7 @@ public class GoogleAddressTopologyModifier extends TopologyModifierSupport {
 
                         // Creating a new Address Node Template that will be
                         // associated to this Node Template requiring an assignment
-                        String name = "address_" + nodeTemplate.getName();
+                        String name = nodeTemplate.getName() + "_address";
                         NodeTemplate addressNodeTemplate = addNodeTemplate(
                                 csar,
                                 topology,
