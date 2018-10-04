@@ -77,7 +77,7 @@ public class YstiaOrchestratorFactory implements IOrchestratorPluginFactory<Yorc
                 "tosca.artifacts.Implementation.Bash", "tosca.artifacts.Implementation.Ansible", "org.alien4cloud.artifacts.AnsiblePlaybook",
                 "tosca.artifacts.Deployment.Image.Container.Docker", "tosca.artifacts.Deployment.Image.Container.Docker.Kubernetes",
                 "yorc.artifacts.Deployment.SlurmJob",
-                "yorc.artifacts.google.Deployment.Address"});
+                "yorc.artifacts.google.Deployment"});
     }
 
     @Override
