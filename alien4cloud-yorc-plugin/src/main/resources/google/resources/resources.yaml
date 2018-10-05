@@ -190,8 +190,14 @@ node_types:
       region:
         type: string
         description: >
-          The public network Google Compute Platform region
-        required: true
+          The public network Google Compute Platform region. If it is not provided, the infrastructure location region is used.
+        required: false
+      subnetwork:
+        type: string
+        description: >
+          The URL of the subnetwork in which to reserve the address. If an IP address is specified, it must be within the subnetwork's IP range.
+          This field can only be used with INTERNAL type with GCE_ENDPOINT/DNS_RESOLVER purposes.
+        required: false
 
   ##############################################
   # Abstract resources used for auto-config

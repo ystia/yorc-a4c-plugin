@@ -9,6 +9,7 @@ import org.alien4cloud.alm.deployment.configuration.flow.TopologyModifierSupport
 import org.alien4cloud.tosca.catalog.index.IToscaTypeSearchService;
 import org.alien4cloud.tosca.model.Csar;
 import org.alien4cloud.tosca.model.definitions.AbstractPropertyValue;
+import org.alien4cloud.tosca.model.definitions.ScalarPropertyValue;
 import org.alien4cloud.tosca.model.templates.Capability;
 import org.alien4cloud.tosca.model.templates.NodeTemplate;
 import org.alien4cloud.tosca.model.templates.Topology;
@@ -57,6 +58,8 @@ public class GoogleAddressTopologyModifier extends TopologyModifierSupport {
             for (NodeTemplate nodeTemplate : new ArrayList<>(topology.getNodeTemplates().values())) {
                 final AbstractPropertyValue addresses = networkNodeTemplate.getProperties().get("addresses");
                 final AbstractPropertyValue region = networkNodeTemplate.getProperties().get("region");
+                final AbstractPropertyValue networkName = networkNodeTemplate.getProperties().get("network_name");
+                final AbstractPropertyValue subNetwork = networkNodeTemplate.getProperties().get("subnetwork");
 
                 if (nodeTemplate.getRelationships() == null) continue;
 
@@ -64,9 +67,21 @@ public class GoogleAddressTopologyModifier extends TopologyModifierSupport {
                     if (relationshipTemplate.getTarget().equals(networkNodeTemplate.getName())) {
                         Map<String, AbstractPropertyValue> properties = new LinkedHashMap<>();
                         properties.put("addresses", addresses);
-                        properties.put("region", region);
-
-
+                        properties.put("network_tier", networkName);
+                        properties.put("subnetwork", subNetwork);
+                        // Retrieve region from compute zone if not set in public network
+                        if (region != null) {
+                            properties.put("region", region);
+                        } else {
+                            AbstractPropertyValue zonePropVal = nodeTemplate.getProperties().get("zone");
+                            if (zonePropVal != null && zonePropVal instanceof ScalarPropertyValue) {
+                                ScalarPropertyValue val = (ScalarPropertyValue) zonePropVal;
+                                String regionStr = extractRegionFromZone(val.getValue());
+                                ScalarPropertyValue newRegion = new ScalarPropertyValue();
+                                newRegion.setValue(regionStr);
+                                properties.put("region", newRegion);
+                            }
+                        }
 
                         Map<String, Capability> capabilities = new LinkedHashMap<>();
                         Capability assignmentCap = new Capability();
@@ -129,7 +144,18 @@ public class GoogleAddressTopologyModifier extends TopologyModifierSupport {
                     rel.requirementName,
                     rel.targetCapabilityName));
         });
+    }
 
+    private static String extractRegionFromZone(final String zone) {
+        String ret = "";
+        // for a zone defined as europe-west1-b, region is europe-west1
+        if ( zone != "") {
+            String[] tab = zone.split("-");
+            if (tab.length == 3) {
+                ret = String.format("%s-%s", tab[0], tab[1]);
+            }
+        }
+        return ret;
     }
 
     @AllArgsConstructor
