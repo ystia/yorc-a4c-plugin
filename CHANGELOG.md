@@ -6,6 +6,10 @@
 
 * Upgrade to Alien4Cloud 2.1 ([GH-50](https://github.com/ystia/yorc-a4c-plugin/issues/50))
 
+### FEATURES
+
+* Support GCE Public IPs. ([GH-82](https://github.com/ystia/yorc/issues/82))
+
 ### IMPROVEMENTS
 
 * Make the run step of a Job execution asynchronous not to block a worker during the duration of the job. ([GH-85](https://github.com/ystia/yorc/issues/85))
