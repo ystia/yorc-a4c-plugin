@@ -107,6 +107,10 @@ public class EventListenerTask extends AlienTask {
                                         ninfo.put(eInstance, iinfo);
                                     }
                                     orchestrator.updateInstanceState(paasId, eNode, eInstance, iinfo, eState);
+
+                                    // Retrieve instance attribute for all states
+                                    orchestrator.updateInstanceAttributes(paasId, iinfo, eNode, eInstance);
+
                                     switch (eState) {
                                         case "initial":
                                         case "creating":
@@ -121,10 +125,8 @@ public class EventListenerTask extends AlienTask {
                                             ninfo.remove(eInstance);
                                             break;
                                         case "stopped":
-                                            orchestrator.updateInstanceAttributes(paasId, iinfo, eNode, eInstance);
                                             break;
                                         case "started":
-                                            orchestrator.updateInstanceAttributes(paasId, iinfo, eNode, eInstance);
                                             // persist BS Id
                                             String source = jrdi.getDeploymentContext().getDeployment().getSourceName();
                                             if (source.equals("BLOCKSTORAGE_APPLICATION")) {
