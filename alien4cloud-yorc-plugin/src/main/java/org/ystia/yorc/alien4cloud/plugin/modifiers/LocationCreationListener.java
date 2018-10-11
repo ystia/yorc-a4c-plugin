@@ -57,6 +57,7 @@ public class LocationCreationListener implements ApplicationListener<AfterLocati
     private LocationModifierReference serviceTopologyModifierRef;
     private LocationModifierReference kubernetesTopologyModifierRef;
     private LocationModifierReference yorcKubernetesTopologyModifierRef;
+    private LocationModifierReference googleAddressModifierRef;
 
     @PostConstruct
     public synchronized void init() {
@@ -88,6 +89,11 @@ public class LocationCreationListener implements ApplicationListener<AfterLocati
         kubernetesTopologyModifierRef.setPluginId("alien4cloud-kubernetes-plugin");
         kubernetesTopologyModifierRef.setBeanName("kubernetes-modifier");
         kubernetesTopologyModifierRef.setPhase(FlowPhases.POST_LOCATION_MATCH);
+
+        googleAddressModifierRef = new LocationModifierReference();
+        googleAddressModifierRef.setPluginId(selfContext.getPlugin().getId());
+        googleAddressModifierRef.setBeanName(GoogleAddressTopologyModifier.YORC_GOOGLE_ADDRESS_MODIFIER_TAG);
+        googleAddressModifierRef.setPhase(FlowPhases.POST_NODE_MATCH);
     }
 
 
@@ -104,6 +110,8 @@ public class LocationCreationListener implements ApplicationListener<AfterLocati
             } else if (YstiaOrchestratorFactory.KUBERNETES.equals(event.getLocation().getInfrastructureType())) {
                 locationModifierService.add(event.getLocation(), yorcKubernetesTopologyModifierRef);
                 locationModifierService.add(event.getLocation(), kubernetesTopologyModifierRef);
+            } else if (YstiaOrchestratorFactory.GOOGLE.equals(event.getLocation().getInfrastructureType())) {
+                locationModifierService.add(event.getLocation(), googleAddressModifierRef);
             }
             locationModifierService.add(event.getLocation(), wfOperationHostModifierRef);
             locationModifierService.add(event.getLocation(), serviceTopologyModifierRef);

@@ -11,7 +11,7 @@ description: |
 imports:
   - tosca-normative-types:1.0.0-ALIEN20
   - org.ystia.yorc.samples.kube.grafana:1.0.0-SNAPSHOT
-  - docker-types:2.0.0
+  - docker-types:2.1.0-SM6
 
 topology_template:
   node_templates:
@@ -51,8 +51,8 @@ topology_template:
             node: GrafanaContainer
             capability: org.alien4cloud.extended.container.capabilities.ApplicationHost
             relationship: org.alien4cloud.extended.container.relationships.HostedOnContainerRuntime
-        - graphite:
-            type_requirement: graphite
+        - http_endpoint:
+            type_requirement: http_endpoint
             node: Graphite
             capability: org.ystia.yorc.samples.kube.containers.capabilities.Graphite
             relationship: tosca.relationships.ConnectsTo

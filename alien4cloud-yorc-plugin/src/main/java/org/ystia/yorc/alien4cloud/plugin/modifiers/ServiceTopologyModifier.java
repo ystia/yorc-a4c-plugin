@@ -20,6 +20,7 @@ import alien4cloud.paas.wf.util.WorkflowUtils;
 import alien4cloud.paas.wf.validation.WorkflowValidator;
 import alien4cloud.tosca.context.ToscaContextual;
 
+import alien4cloud.utils.AlienUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import org.alien4cloud.alm.deployment.configuration.flow.FlowExecutionContext;
@@ -106,7 +107,7 @@ public class ServiceTopologyModifier extends TopologyModifierSupport {
             Set<String> stepsToRemove = new HashSet<String>();
 
             for (Entry<String, WorkflowStep> stepEntry : workflow.getSteps().entrySet()) {
-
+                String currentStepId = stepEntry.getKey();
                 WorkflowStep step = stepEntry.getValue();
                 if (WorkflowUtils.isNodeStep(step, nodeId)) {
                     AbstractWorkflowActivity activity = step.getActivity();
@@ -124,7 +125,12 @@ public class ServiceTopologyModifier extends TopologyModifierSupport {
                             preceder.removeFollowing(stepEntry.getKey());
                             preceder.addAllFollowings(step.getOnSuccess());
                         }
-                        
+
+                        for (String follower : step.getOnSuccess()) {
+                            WorkflowStep followerStep = workflow.getSteps().get(follower);
+                            followerStep.getPrecedingSteps().remove(currentStepId);
+                        }
+
                         // Old step will be removed outside the loop to avoid
                         // concurrent modifications
                         stepsToRemove.add(stepEntry.getKey());

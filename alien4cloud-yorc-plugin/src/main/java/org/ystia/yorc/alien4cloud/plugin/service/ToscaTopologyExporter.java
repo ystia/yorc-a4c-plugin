@@ -119,6 +119,13 @@ public class ToscaTopologyExporter {
                     } else {
                         sb.append(d.getName()).append("/").append(d.getVersion()).append("/").append(csar.getYamlFilePath());
                     }
+                } else {
+                    if (sb.length() != 0) {
+                        sb.append("\n  - ");
+                    } else {
+                        sb.append("  - ");
+                    }
+                    sb.append("<normative-types.yml>");
                 }
             });
             return sb.toString();

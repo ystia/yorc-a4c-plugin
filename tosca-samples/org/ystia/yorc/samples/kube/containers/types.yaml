@@ -7,7 +7,7 @@ metadata:
 
 imports:
   - tosca-normative-types:1.0.0-ALIEN20
-  - docker-types:2.0.0
+  - docker-types:2.1.0-SM6
 
 description: DockerContainers that can be deployed on K8S
 
@@ -21,28 +21,16 @@ node_types:
     derived_from: tosca.nodes.Container.Application.DockerContainer
     tags:
       icon: images/mysql.png
-    properties:
-      db_name:
-        type: string
-        required: true
-      db_user:
-        type: string
-        required: true
-        default: "mysql"
-      db_password:
-        type: string
-        required: true
-        default: "mysql"
     capabilities:
-      msql_db:
+      mysql_db:
         type: org.ystia.yorc.samples.kube.containers.capabilities.MysqlDB
     interfaces:
       Standard:
         create:
           inputs:
-            ENV_MYSQL_DATABASE: { get_property: [SELF, db_name] }
-            ENV_MYSQL_USER: { get_property: [SELF, db_user] }
-            ENV_MYSQL_PASSWORD: { get_property: [SELF, db_password] }
+            ENV_MYSQL_DATABASE: { get_property: [SELF, mysql_db, db_name] }
+            ENV_MYSQL_USER: { get_property: [SELF, mysql_db, db_user] }
+            ENV_MYSQL_PASSWORD: { get_property: [SELF, mysql_db, db_password] }
             ENV_MYSQL_ROOT_PASSWORD: "notused"
             ENV_MYSQL_RANDOM_ROOT_PASSWORD: "yes"
           implementation:
@@ -66,7 +54,7 @@ node_types:
   org.ystia.yorc.samples.kube.containers.nodes.wordpress:
     derived_from: tosca.nodes.Container.Application.DockerContainer
     requirements:
-      - msql_db:
+      - mysql_db:
           capability: tosca.capabilities.Endpoint.Database
           relationship: tosca.relationships.ConnectsTo
           occurrences: [1,1]
@@ -77,10 +65,10 @@ node_types:
       Standard:
         create:
           inputs:
-            WORDPRESS_DB_HOST: { concat:  [ get_attribute: [TARGET, mysql_db, ip_address], ":", get_attribute: [TARGET, mysql_db, port] ] }
-            WORDPRESS_DB_USER: { get_property: [TARGET, mysql_db, db_user] }
-            WORDPRESS_DB_PASSWORD: { get_property: [TARGET, mysql_db, db_password] }
-            WORDPRESS_DB_NAME: { get_property: [TARGET, mysql_db, db_name] }
+            ENV_WORDPRESS_DB_HOST: { concat:  [ get_attribute: [TARGET, mysql_db, ip_address], ":", get_attribute: [TARGET, mysql_db, port] ] }
+            ENV_WORDPRESS_DB_USER: { get_attribute: [TARGET, mysql_db, db_user] }
+            ENV_WORDPRESS_DB_PASSWORD: { get_attribute: [TARGET, mysql_db, db_password] }
+            ENV_WORDPRESS_DB_NAME: { get_attribute: [TARGET, mysql_db, db_name] }
           implementation:
             file: wordpress:4.8.1-fpm-alpine
             repository: docker
@@ -97,6 +85,17 @@ capability_types:
       port:
         type: integer
         default: 3306
+      db_name:
+        type: string
+        required: true
+      db_user:
+        type: string
+        required: true
+        default: "mysql"
+      db_password:
+        type: string
+        required: true
+        default: "mysql"
 
   org.ystia.yorc.samples.kube.containers.capabilities.Http:
     derived_from: tosca.capabilities.Endpoint

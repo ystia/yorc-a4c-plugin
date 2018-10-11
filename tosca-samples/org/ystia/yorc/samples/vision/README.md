@@ -23,6 +23,10 @@ The following picture describes the flow :
 
 ![App flow](images/visionappflow.png)
 
+For a detailed description on how to start and configure Alien4Cloud/Ystia orchestrator,
+and then deploy this application, see this blog post: 
+[Deploying the image detection application on GoogleCloud](https://ystia.github.io/2018/08/14/gcp-sample-app.html).
+
 ## Prerequisites
 
 An input and output storage buckets must be created, for example running:

@@ -86,8 +86,12 @@ public class WorkflowsUtils {
             );
 
         }
-        //step.getPrecedingSteps().forEach(s -> workflow.getSteps().get(s).getOnSuccess().remove(stepName));
-        step.getPrecedingSteps().forEach(s -> removeStep(workflow, s, stepName));
+        step.getPrecedingSteps().forEach(s -> {
+            WorkflowStep wfs = workflow.getSteps().get(s);
+            if (wfs != null) {
+                wfs.getOnSuccess().remove(stepName);
+            }
+        });
         workflow.getSteps().remove(stepName);
     }
 
@@ -152,9 +156,6 @@ public class WorkflowsUtils {
             WorkflowStep wf = workflow.getSteps().get(s);
             if (wf != null) {
                 wf.addFollowing(toStep);
-            } else {
-                // TODO - WARNING
-                System.out.println("*** WorkflowsUtils.linkToStep");
             }
         });
     }

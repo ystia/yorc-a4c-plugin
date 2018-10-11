@@ -17,13 +17,11 @@ package org.ystia.yorc.alien4cloud.plugin;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.Closeable;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
@@ -56,13 +54,11 @@ import alien4cloud.tosca.parser.ToscaParser;
 import alien4cloud.utils.MapUtil;
 import com.google.common.collect.Sets;
 import lombok.extern.slf4j.Slf4j;
-import org.alien4cloud.tosca.exporter.ArchiveExportService;
 import org.alien4cloud.tosca.model.CSARDependency;
 import org.alien4cloud.tosca.model.Csar;
 import org.alien4cloud.tosca.model.definitions.DeploymentArtifact;
 import org.alien4cloud.tosca.model.definitions.Interface;
 import org.alien4cloud.tosca.model.definitions.Operation;
-import org.alien4cloud.tosca.model.definitions.ImplementationArtifact;
 import org.alien4cloud.tosca.model.templates.NodeTemplate;
 import org.alien4cloud.tosca.model.templates.ServiceNodeTemplate;
 import org.alien4cloud.tosca.model.templates.Topology;
@@ -70,7 +66,6 @@ import org.elasticsearch.common.collect.Maps;
 import org.ystia.yorc.alien4cloud.plugin.rest.Response.Event;
 import org.ystia.yorc.alien4cloud.plugin.tosca.model.templates.YorcServiceNodeTemplate;
 import org.ystia.yorc.alien4cloud.plugin.rest.YorcRestException;
-import org.ystia.yorc.alien4cloud.plugin.utils.MappingTosca;
 import org.ystia.yorc.alien4cloud.plugin.utils.ShowTopology;
 
 import static com.google.common.io.Files.copy;
@@ -85,9 +80,6 @@ public class DeployTask extends AlienTask {
     PaaSTopologyDeploymentContext ctx;
     IPaaSCallback<?> callback;
     private ICSARRepositorySearchService csarRepoSearchService;
-
-    private ArchiveExportService archiveExportService = new ArchiveExportService();
-
 
     private final int YORC_DEPLOY_TIMEOUT = 1000 * 3600 * 24;  // 24 hours
 
@@ -153,7 +145,7 @@ public class DeployTask extends AlienTask {
         }
         String taskId = taskUrl.substring(taskUrl.lastIndexOf("/") + 1);
         jrdi.setDeployTaskId(taskId);
-        orchestrator.sendMessage(paasId, "Deployment sent to Yorc. TaskId=" + taskId);
+        orchestrator.sendMessage(paasId, "Deployment sent to Yorc. TaskKey=" + taskId);
 
         // wait for Yorc deployment completion
         boolean done = false;
@@ -284,57 +276,52 @@ public class DeployTask extends AlienTask {
         }
 
         // Final zip file will be named topology.zip
-        final File zip = new File("topology.zip");
-        final OutputStream out = new FileOutputStream(zip);
-        final ZipOutputStream zout = new ZipOutputStream(out);
-        final Closeable res = zout;
-
         final int finalLocation = location;
-
-        this.ctx.getDeploymentTopology().getDependencies().forEach(d -> {
-            if (!"tosca-normative-types".equals(d.getName())) {
-                Csar csar = csarRepoSearchService.getArchive(d.getName(), d.getVersion());
-                final String importSource = csar.getImportSource();
-                // importSource is null when this is a reference to a Service
-                // provided by another deployment
-                if (importSource == null || CSARSource.ORCHESTRATOR != CSARSource.valueOf(importSource)) {
-                    try {
-                        csar2zip(zout, csar, finalLocation);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
+        try (ZipOutputStream zout = new ZipOutputStream(new FileOutputStream("topology.zip")))
+        {
+            this.ctx.getDeploymentTopology().getDependencies().forEach(d -> {
+                if (!"tosca-normative-types".equals(d.getName())) {
+                    Csar csar = csarRepoSearchService.getArchive(d.getName(), d.getVersion());
+                    final String importSource = csar.getImportSource();
+                    // importSource is null when this is a reference to a Service
+                    // provided by another deployment
+                    if (importSource == null || CSARSource.ORCHESTRATOR != CSARSource.valueOf(importSource)) {
+                        try {
+                            csar2zip(zout, csar, finalLocation);
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                 }
+            });
+
+            for (Entry<String, NodeTemplate> nodeTemplateEntry :  this.ctx.getDeploymentTopology().getNodeTemplates().entrySet()) {
+                if (nodeTemplateEntry.getValue() instanceof ServiceNodeTemplate) {
+                    // Define a service node with a directive to the orchestrator
+                    // that this Node Template is substitutable
+                    YorcServiceNodeTemplate yorcServiceNodeTemplate =
+                            new YorcServiceNodeTemplate((ServiceNodeTemplate)nodeTemplateEntry.getValue());
+                    nodeTemplateEntry.setValue(yorcServiceNodeTemplate);
+                }
             }
-        });
 
-        for (Entry<String, NodeTemplate> nodeTemplateEntry :  this.ctx.getDeploymentTopology().getNodeTemplates().entrySet()) {
-            if (nodeTemplateEntry.getValue() instanceof ServiceNodeTemplate) {
-                // Define a service node with a directive to the orchestrator
-                // that this Node Template is substitutable
-                YorcServiceNodeTemplate yorcServiceNodeTemplate = 
-                    new YorcServiceNodeTemplate((ServiceNodeTemplate)nodeTemplateEntry.getValue());
-                nodeTemplateEntry.setValue(yorcServiceNodeTemplate);
+            // Copy overwritten artifacts for each node
+            PaaSTopology ptopo = ctx.getPaaSTopology();
+            for (PaaSNodeTemplate node : ptopo.getAllNodes().values()) {
+                copyArtifacts(node, zout);
             }
+
+            String topoFileName = "topology.yml";
+            // Copy modified topology
+            createZipEntries(topoFileName, zout);
+            // Get the yaml of the application as built by from a4c
+            DeploymentTopology dtopo = ctx.getDeploymentTopology();
+            Csar myCsar = new Csar(dtopo.getArchiveName(), dtopo.getArchiveVersion());
+            myCsar.setToscaDefinitionsVersion(ToscaParser.LATEST_DSL);
+            String yaml = orchestrator.getToscaTopologyExporter().getYaml(myCsar, dtopo, true);
+            zout.write(yaml.getBytes(Charset.forName("UTF-8")));
+            zout.closeEntry();
         }
-
-        // Copy overwritten artifacts for each node
-        PaaSTopology ptopo = ctx.getPaaSTopology();
-        for (PaaSNodeTemplate node : ptopo.getAllNodes().values()) {
-            copyArtifacts(node, zout);
-        }
-
-        String topoFileName = "topology.yml";
-        // Copy modified topology
-        createZipEntries(topoFileName, zout);
-        // Get the yaml of the application as built by from a4c
-        DeploymentTopology dtopo = ctx.getDeploymentTopology();
-        Csar myCsar = new Csar(ctx.getDeploymentPaaSId(), dtopo.getArchiveVersion());
-        myCsar.setToscaDefinitionsVersion(ToscaParser.LATEST_DSL);
-        String yaml = orchestrator.getToscaTopologyExporter().getYaml(myCsar, dtopo, true);
-        zout.write(yaml.getBytes(Charset.forName("UTF-8")));
-        zout.closeEntry();
-
-        res.close();
     }
 
     private Object getNestedValue(Map<String, Object> map, String path) {
@@ -424,8 +411,7 @@ public class DeployTask extends AlienTask {
                 Path artifactPath = Paths.get(from);
                 try {
                     String filename = artifact.getArtifactRef();
-                    createZipEntries(filename, zout);
-                    copy(artifactPath.toFile(), zout);
+                    recursivelyCopyArtifact(artifactPath, filename, zout);
                 } catch (Exception e) {
                     log.error("Could not copy local artifact " + aname, e);
                 }
@@ -436,8 +422,7 @@ public class DeployTask extends AlienTask {
                 Path artifactPath = Paths.get(from);
                 try {
                     String filename = artifact.getArtifactRef();
-                    createZipEntries(filename, zout);
-                    copy(artifactPath.toFile(), zout);
+                    recursivelyCopyArtifact(artifactPath, filename, zout);
                 } catch (Exception e) {
                     log.error("Could not copy remote artifact " + aname, e);
                 }
@@ -445,6 +430,20 @@ public class DeployTask extends AlienTask {
                 // TODO Remove this when a4c bug SUPALIEN-926 is fixed.
                 addRemoteArtifactInTopology(name, da.getKey(), artifact);
             }
+        }
+    }
+
+    private void recursivelyCopyArtifact(Path path, String baseTargetName, ZipOutputStream zout) throws IOException {
+        if (path.toFile().isDirectory()) {
+            String folderName = baseTargetName + "/";
+            createZipEntries(folderName, zout);
+            for (String file : path.toFile().list()) {
+                Path filePath = path.resolve(file);
+                recursivelyCopyArtifact(filePath, folderName + file, zout);
+            }
+        } else {
+            createZipEntries(baseTargetName, zout);
+            copy(path.toFile(), zout);
         }
     }
 
@@ -595,7 +594,7 @@ public class DeployTask extends AlienTask {
                             } else {
                                 yaml = orchestrator.getToscaComponentExporter().getYaml(root);
                             }
-                            
+
                             zout.write(yaml.getBytes(Charset.forName("UTF-8")));
                         } else {
                             copy(file, zout);

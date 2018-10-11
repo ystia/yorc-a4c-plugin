@@ -40,14 +40,21 @@ public class EventListenerTask extends AlienTask {
     public static final String EVT_SCALING    = "scaling";
     public static final String EVT_WORKFLOW   = "workflow";
 
+    // Set this to false to stop pollong events
+    private boolean valid = true;
+
 
     public EventListenerTask(YorcPaaSProvider prov) {
         super(prov);
     }
 
+    public void stop() {
+        valid = false;
+    }
+
     public void run() {
         int prevIndex = 1;
-        while (true) {
+        while (valid) {
             try {
                 log.debug("Get events from Yorc from index " + prevIndex);
                 EventResponse eventResponse = restClient.getEventFromYorc(prevIndex);
@@ -156,12 +163,14 @@ public class EventListenerTask extends AlienTask {
                     }
                 }
             } catch (Exception e) {
-                log.error("listenDeploymentEvent Failed", e);
-                try {
-                    // We will sleep for 2sec in order to limit logs flood if the yorc server went down
-                    Thread.sleep(2000L);
-                } catch (InterruptedException ex) {
-                    log.error("listenDeploymentEvent wait interrupted", ex);
+                if (valid) {
+                    log.error("listenDeploymentEvent Failed", e);
+                    try {
+                        // We will sleep for 2sec in order to limit logs flood if the yorc server went down
+                        Thread.sleep(2000L);
+                    } catch (InterruptedException ex) {
+                        log.error("listenDeploymentEvent wait interrupted", ex);
+                    }
                 }
             }
         }

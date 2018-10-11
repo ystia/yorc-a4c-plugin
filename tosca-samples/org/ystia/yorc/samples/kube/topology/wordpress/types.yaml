@@ -10,7 +10,7 @@ description: ""
 imports:
   - tosca-normative-types:1.0.0-ALIEN20
   - org.ystia.yorc.samples.kube.containers:1.0.0-SNAPSHOT
-  - docker-types:2.0.0
+  - docker-types:2.1.0-SM6
 
 topology_template:
   node_templates:
@@ -55,9 +55,6 @@ topology_template:
     MySQL:
       type: org.ystia.yorc.samples.kube.containers.nodes.MySQL
       properties:
-        db_name: mysql
-        db_user: mysql
-        db_password: mysql
         cpu_share: 1.0
         mem_share: "128 MB"
       requirements:
@@ -67,8 +64,11 @@ topology_template:
             capability: org.alien4cloud.extended.container.capabilities.ApplicationHost
             relationship: org.alien4cloud.extended.container.relationships.HostedOnContainerRuntime
       capabilities:
-        msql_db:
+        mysql_db:
           properties:
+            db_name: mysql
+            db_user: mysql
+            db_password: mysql
             port: 3306
             protocol: tcp
             secure: false
@@ -85,8 +85,8 @@ topology_template:
         cpu_share: 1.0
         mem_share: "128 MB"
       requirements:
-        - connectsToMySqlMsql_db:
-            type_requirement: msql_db
+        - connectsToMySqlMysql_db:
+            type_requirement: mysql_db
             node: MySQL
             capability: org.ystia.yorc.samples.kube.containers.capabilities.MysqlDB
             relationship: tosca.relationships.ConnectsTo

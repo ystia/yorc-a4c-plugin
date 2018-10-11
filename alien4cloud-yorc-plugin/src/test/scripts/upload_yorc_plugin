@@ -1,0 +1,114 @@
+#!/bin/bash
+
+#
+# upload_yorc_plugin - uploads Yorc plugin in Alien4Cloud
+#
+
+a4cURL="http://localhost:8088"
+yorcPluginURL="https://github.com/ystia/yorc-a4c-plugin/releases/download/v3.0.0/alien4cloud-yorc-plugin-3.0.0.zip"
+userName="admin"
+password="admin"
+usage() {
+    echo ""
+    echo "Usage:"
+    echo "upload_yorc_plugin [--a4c-url <Alien4Cloud URL>] "
+    echo "                   [--yorc-plugin-url <Yorc URL>]"
+    echo "                   [--user <Alien4Cloud administrator user name>]"
+    echo "                   [--password <Alien4Cloud administrator password>]"
+    echo "   - default A4C URL        : $a4cURL"
+    echo "   - default Yorc plugin URL: $yorcPluginURL"
+    echo "   - default user           : $userName"
+    echo "   - default password       : $password"
+}
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+    -a|--a4c-url)
+    a4cURL="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -y|--yorc-plugin-url)
+    yorcPluginURL="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -u|--user)
+    userName="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -p|--password)
+    password="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -h|--help)
+    usage
+    exit 0
+    ;;
+    *)    # unknown option
+    POSITIONAL+=("$1") # save it in an array for later
+    shift # past argument
+    ;;
+esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+# Load utilities
+declare -r DIR=$(cd "$(dirname "$0")" && pwd)
+source $DIR/utils.bash
+
+# First, login and store the cookies
+a4c_login "$a4cURL" "$userName" "$password" "cookies.a4c"
+
+# Check the plugin is not yet registered
+curl --request GET \
+     --url $a4cURL/rest/latest/plugins?query=alien4cloud-yorc-plugin \
+     --header 'Accept: application/json' \
+     --silent \
+     --cookie cookies.a4c \
+| grep --quiet alien4cloud-yorc-plugin
+
+res=$?
+if [ $res -eq 0 ]
+    then
+        echo "Plugin already registered"
+        exit 0
+fi
+
+# Download Yorc plugin
+echo "Downloading the plugin..."
+response=`curl --request GET \
+               --url $yorcPluginURL \
+               --location \
+               --output yorcPlugin.zip`
+
+res=$?
+if [ $res -ne 0 ]
+then
+    echo "Exiting on error downloading the plugin at $yorcPluginURL: $response"
+    exit 1
+fi
+
+# Upload plugin in Alien4Cloud
+response=`curl --request POST \
+               --url $a4cURL/rest/latest/plugins \
+               --header 'Content-Type: multipart/form-data' \
+               --cookie cookies.a4c \
+               --silent \
+               --form 'file=@yorcPlugin.zip'`
+
+res=$?
+rm -f yorcPlugin.zip
+if [ $res -ne 0 ]
+then
+    echo "Exiting on error uploading the plugin in Alien4Cloud: $response"
+    exit 1
+else
+    echo "Plugin uploaded in Alien4Cloud"
+fi
