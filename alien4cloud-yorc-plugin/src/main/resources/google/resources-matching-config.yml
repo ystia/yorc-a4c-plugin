@@ -14,3 +14,6 @@ matching_configurations:
             - type: { equal: "" }
             - distribution: { equal: "" }
             - version: { less_or_equal: "" }
+  yorc.nodes.google.PersistentDisk:
+    properties:
+      - size: { less_or_equal: 0 B }
