@@ -15,6 +15,7 @@
  */
 package org.ystia.yorc.alien4cloud.plugin.modifiers;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -87,8 +88,15 @@ public class BlockStorageComputeWFModifier extends TopologyModifierSupport {
                                 bs.getName(), rt.getTarget());
                 String computeNodeName = rt.getTarget();
                 // Now lets locate corresponding wf steps in install wf
+                // Copy steps on success from BS to Compute
+                Set<String> stepsOnSuccess = new HashSet<>();
+                Set<String> stepsOnFailure = new HashSet<>();
                 for (Map.Entry<String, WorkflowStep> workflowStepEntry : installWF.getSteps().entrySet()) {
                     if (workflowStepEntry.getValue().getTarget().equals(bs.getName())) {
+                        stepsOnSuccess.addAll(workflowStepEntry.getValue().getOnSuccess());
+                        stepsOnFailure.addAll(workflowStepEntry.getValue().getOnFailure());
+                        workflowStepEntry.getValue().getOnSuccess().removeAll(stepsOnSuccess);
+                        workflowStepEntry.getValue().getOnFailure().removeAll(stepsOnFailure);
                         for (String precedingStepName : workflowStepEntry.getValue().getPrecedingSteps()) {
                             WorkflowStep precedingStep = installWF.getSteps().get(precedingStepName);
                             if (precedingStep.getTarget().equals(computeNodeName)) {
@@ -113,7 +121,16 @@ public class BlockStorageComputeWFModifier extends TopologyModifierSupport {
                     }
                 }
 
+                for (Map.Entry<String, WorkflowStep> workflowStepEntry : installWF.getSteps().entrySet()) {
+                    if (workflowStepEntry.getValue().getTarget().equals(computeNodeName)) {
+                        workflowStepEntry.getValue().getOnSuccess().addAll(stepsOnSuccess);
+                        workflowStepEntry.getValue().getOnFailure().addAll(stepsOnFailure);
+                        break;
+                    }
+                }
+
                 // Now lets locate corresponding wf steps in uninstall wf
+                //FIXME we need to swap the steps with onSuccess on BS to Compute.
                 for (Map.Entry<String, WorkflowStep> workflowStepEntry : uninstallWF.getSteps().entrySet()) {
                     if (workflowStepEntry.getValue().getTarget().equals(bs.getName())) {
                         for (String onSuccessStepName : workflowStepEntry.getValue().getOnSuccess()) {
