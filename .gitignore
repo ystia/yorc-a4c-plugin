@@ -9,3 +9,4 @@
 .settings
 .vscode
 /tosca-samples/**/types.zip
+.factorypath
