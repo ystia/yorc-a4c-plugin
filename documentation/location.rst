@@ -211,7 +211,7 @@ the user will be created on the compute instance and you will be able to ssh on 
 
 For details on other optional Compute Instance properties, see `Compute Instance creation <https://cloud.google.com/sdk/gcloud/reference/compute/instances/create>`_.
 
-Click on the PersistentDisk, the following details should appear, with here several properties set as explained below:
+Click on the ``PersistentDisk``, the following details should appear, with here several properties set as explained below:
 
 .. image:: _static/img/google-disk-on-demand.png
    :alt: PersistentDisk configuration
@@ -223,7 +223,10 @@ See `list of available regions and zones <https://cloud.google.com/compute/docs/
 
 Set the mandatory parameter ``size`` to define the required size for persistent disks.
 
-If you want to refer to an existing disk, set the mandatory parameter ``volume_id`` with ts Google Reference Name. This parameter allows comma-separated values of disk names.
+If you want the disk to be deleted when the application referencing this disk is undeployed,
+check the parameter ``deletable``. By default, the disk is not deleted.
+
+If you want to refer to an existing disk, set the mandatory parameter ``volume_id`` with its Google Reference Name. This parameter allows comma-separated values of disk names.
 
 If you want to attach the disk to a compute with a ``READ_ONLY`` mode, you need to set this property to the ``yorc.relationships.google.AttachesTo`` relationship between the disk and the compute.
 
