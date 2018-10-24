@@ -1,0 +1,64 @@
+tosca_definitions_version: alien_dsl_2_0_0
+#
+# Copyright 2018 Bull S.A.S. Atos Technologies - Bull, Rue Jean Jaures, B.P.68, 78340, Les Clayes-sous-Bois, France.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+metadata:
+  template_name: org.ystia.yorc.samples.mocks
+  template_version: 1.0.0-SNAPSHOT
+  template_author: yorc
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN20
+
+node_types:
+  org.ystia.yorc.samples.mocks.nodes.Mock:
+    derived_from: tosca.nodes.Root
+    properties:
+      initial_script_delay_sec: 
+        description: >
+          delay at the begining of any script
+        type: integer
+        default: 0
+    attributes:
+      date_create: {get_operation_output: [SELF, Standard, create, DATE]}
+      date_op1: {get_operation_output: [SELF, custom, my_op1, DATE]}
+    capabilities:
+      scalable: tosca.capabilities.Scalable
+    requirements:
+      - host:
+          capability: tosca.capabilities.Container
+          node: tosca.nodes.Compute
+          relationship: tosca.relationships.HostedOn
+          occurrences: [0, UNBOUNDED]
+    interfaces:
+      Standard:
+        create: 
+          inputs:
+            DELAY: {get_property: [SELF, initial_script_delay_sec]}
+          implementation: scripts/simple_delay.sh
+        start: 
+          inputs:
+            DELAY: {get_property: [SELF, initial_script_delay_sec]}
+          implementation: scripts/simple_delay.sh
+      custom:
+        my_op1:
+          inputs:
+            DELAY: {get_property: [SELF, initial_script_delay_sec]}
+          implementation: scripts/simple_delay.sh
+        my_op2:
+          inputs:
+            DELAY: {get_property: [SELF, initial_script_delay_sec]}
+          implementation: scripts/simple_delay.sh

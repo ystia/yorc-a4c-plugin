@@ -2,6 +2,10 @@
 
 ## UNRELEASED
 
+### BUG FIXES
+
+* Node Instance attributes are only resolved when Node state is "started" ([GH-59](https://github.com/ystia/yorc-a4c-plugin/issues/59))
+
 ## 3.0.1 (August 24, 2018)
 
 ### BUG FIXES
