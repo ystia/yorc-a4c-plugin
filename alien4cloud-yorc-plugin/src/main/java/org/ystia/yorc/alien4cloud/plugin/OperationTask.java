@@ -25,6 +25,8 @@ import org.ystia.yorc.alien4cloud.plugin.rest.Response.Event;
 import java.util.Hashtable;
 import java.util.Map;
 
+import static alien4cloud.utils.AlienUtils.safe;
+
 /**
  * Operation Task
  */
@@ -153,9 +155,10 @@ public class OperationTask extends AlienTask {
 
         // Update attributes 
         Map<String,InstanceInformation> iinfos = jrdi.getInstanceInformations().get(this.request.getNodeTemplateName());
-        iinfos.forEach((instanceId,iInfo)-> {
+        safe(iinfos).forEach((instanceId,iInfo)-> {
             if(this.request.getInstanceId()==null ||this.request.getInstanceId().equals(instanceId) ) {
                 orchestrator.updateInstanceAttributes(paasId, iInfo, this.request.getNodeTemplateName(), instanceId);
+                orchestrator.updateInstanceState(paasId, this.request.getNodeTemplateName(), instanceId, iInfo, iInfo.getState());
             }
         });
     }
