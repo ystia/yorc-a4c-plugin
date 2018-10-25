@@ -16,6 +16,7 @@
 package org.ystia.yorc.alien4cloud.plugin;
 
 import alien4cloud.paas.IPaaSCallback;
+import alien4cloud.paas.model.InstanceInformation;
 import alien4cloud.paas.model.NodeOperationExecRequest;
 import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
 import lombok.extern.slf4j.Slf4j;
@@ -149,5 +150,13 @@ public class OperationTask extends AlienTask {
         } else {
             callback.onFailure(error);
         }
+
+        // Update attributes 
+        Map<String,InstanceInformation> iinfos = jrdi.getInstanceInformations().get(this.request.getNodeTemplateName());
+        iinfos.forEach((instanceId,iInfo)-> {
+            if(this.request.getInstanceId()==null ||this.request.getInstanceId().equals(instanceId) ) {
+                orchestrator.updateInstanceAttributes(paasId, iInfo, this.request.getNodeTemplateName(), instanceId);
+            }
+        });
     }
 }
