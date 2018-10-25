@@ -379,6 +379,7 @@ public class RestClient {
         // Get specific headers and body
         JSONObject jsonObj = new JSONObject();
         jsonObj.put("node", request.getNodeTemplateName());
+        jsonObj.put("interface", request.getInterfaceName());
         jsonObj.put("name", request.getOperationName());
         jsonObj.put("inputs", request.getParameters());
 
