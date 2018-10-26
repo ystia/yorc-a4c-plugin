@@ -33,7 +33,7 @@
 
   <artifactId>alien4cloud-yorc-plugin-parent</artifactId>
   <name>Ystia Orchestrator PaaS provider for Alien4Cloud</name>
-  <version>3.0.1</version>
+  <version>3.0.2</version>
   <inceptionYear>2018</inceptionYear>
   <packaging>pom</packaging>
 
@@ -61,7 +61,7 @@
     <connection>scm:git:https://github.com/ystia/yorc-a4c-plugin.git</connection>
     <developerConnection>scm:git:git@github.com:ystia/yorc-a4c-plugin.git</developerConnection>
     <url>https://github.com/ystia/yorc-a4c-plugin/</url>
-    <tag>v3.0.1</tag>
+    <tag>v3.0.2</tag>
   </scm>
 
   <repositories>

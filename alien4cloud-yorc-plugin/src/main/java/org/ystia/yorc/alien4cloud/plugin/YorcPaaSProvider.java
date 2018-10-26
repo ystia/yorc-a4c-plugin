@@ -762,8 +762,15 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
                     AttributeResponse attrRes = restClient.getAttributeFromYorc(link.getHref());
                     iinfo.getAttributes().put(attrRes.getName(), attrRes.getValue());
                     log.debug("Attribute: " + attrRes.getName() + "=" + attrRes.getValue());
-                } catch (Exception e) {
-                    log.error("Error getting instance attribute " + link.getHref());
+                } catch (YorcRestException jre){
+                    // attribute can potentially be not found according to the node state
+                    if (jre.getHttpStatusCode() != 404){
+                       log.error("Error getting instance attribute " + link.getHref(), jre);
+                       sendMessage(paasId, "Error getting instance attribute " + link.getHref());
+                    }
+                }
+                catch (Exception e) {
+                    log.error("Error getting instance attribute " + link.getHref(), e);
                     sendMessage(paasId, "Error getting instance attribute " + link.getHref());
                 }
             }
