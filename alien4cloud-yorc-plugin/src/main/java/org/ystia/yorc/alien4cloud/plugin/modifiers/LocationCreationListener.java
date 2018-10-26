@@ -52,11 +52,12 @@ public class LocationCreationListener implements ApplicationListener<AfterLocati
     private OrchestratorService orchestratorService;
 
     private LocationModifierReference openstackFipModifierRef;
-    private LocationModifierReference openstackBSWFModifierRef;
+    private LocationModifierReference blockStorageWFModifierRef;
     private LocationModifierReference wfOperationHostModifierRef;
     private LocationModifierReference serviceTopologyModifierRef;
     private LocationModifierReference kubernetesTopologyModifierRef;
     private LocationModifierReference yorcKubernetesTopologyModifierRef;
+    private LocationModifierReference googleAddressModifierRef;
 
     @PostConstruct
     public synchronized void init() {
@@ -65,10 +66,11 @@ public class LocationCreationListener implements ApplicationListener<AfterLocati
         openstackFipModifierRef.setBeanName(FipTopologyModifier.YORC_OPENSTACK_FIP_MODIFIER_TAG);
         openstackFipModifierRef.setPhase(FlowPhases.POST_NODE_MATCH);
 
-        openstackBSWFModifierRef = new LocationModifierReference();
-        openstackBSWFModifierRef.setPluginId(selfContext.getPlugin().getId());
-        openstackBSWFModifierRef.setBeanName(OpenStackBSComputeWFModifier.YORC_OPENSTACK_BS_WF_MODIFIER_TAG);
-        openstackBSWFModifierRef.setPhase(FlowPhases.POST_MATCHED_NODE_SETUP);
+        blockStorageWFModifierRef = new LocationModifierReference();
+        blockStorageWFModifierRef.setPluginId(selfContext.getPlugin().getId());
+        blockStorageWFModifierRef.setBeanName(BlockStorageComputeWFModifier.YORC_BLOCK_STORAGE_WF_MODIFIER_TAG);
+        blockStorageWFModifierRef.setPhase(FlowPhases.POST_MATCHED_NODE_SETUP);
+
         wfOperationHostModifierRef = new LocationModifierReference();
         wfOperationHostModifierRef.setPluginId(selfContext.getPlugin().getId());
         wfOperationHostModifierRef.setBeanName(OperationHostModifier.YORC_WF_OPERATION_HOST_MODIFIER_TAG);
@@ -88,6 +90,11 @@ public class LocationCreationListener implements ApplicationListener<AfterLocati
         kubernetesTopologyModifierRef.setPluginId("alien4cloud-kubernetes-plugin");
         kubernetesTopologyModifierRef.setBeanName("kubernetes-modifier");
         kubernetesTopologyModifierRef.setPhase(FlowPhases.POST_LOCATION_MATCH);
+
+        googleAddressModifierRef = new LocationModifierReference();
+        googleAddressModifierRef.setPluginId(selfContext.getPlugin().getId());
+        googleAddressModifierRef.setBeanName(GoogleAddressTopologyModifier.YORC_GOOGLE_ADDRESS_MODIFIER_TAG);
+        googleAddressModifierRef.setPhase(FlowPhases.POST_NODE_MATCH);
     }
 
 
@@ -100,13 +107,15 @@ public class LocationCreationListener implements ApplicationListener<AfterLocati
         if (orchestrator.getPluginId().equals(selfContext.getPlugin().getId())) {
             if (YstiaOrchestratorFactory.OPENSTACK.equals(event.getLocation().getInfrastructureType())) {
                 locationModifierService.add(event.getLocation(), openstackFipModifierRef);
-                locationModifierService.add(event.getLocation(), openstackBSWFModifierRef);
             } else if (YstiaOrchestratorFactory.KUBERNETES.equals(event.getLocation().getInfrastructureType())) {
                 locationModifierService.add(event.getLocation(), yorcKubernetesTopologyModifierRef);
                 locationModifierService.add(event.getLocation(), kubernetesTopologyModifierRef);
+            } else if (YstiaOrchestratorFactory.GOOGLE.equals(event.getLocation().getInfrastructureType())) {
+                locationModifierService.add(event.getLocation(), googleAddressModifierRef);
             }
             locationModifierService.add(event.getLocation(), wfOperationHostModifierRef);
             locationModifierService.add(event.getLocation(), serviceTopologyModifierRef);
+            locationModifierService.add(event.getLocation(), blockStorageWFModifierRef);
         }
     }
 }

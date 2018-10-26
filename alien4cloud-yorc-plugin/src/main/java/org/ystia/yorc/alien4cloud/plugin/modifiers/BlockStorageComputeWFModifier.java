@@ -15,6 +15,7 @@
  */
 package org.ystia.yorc.alien4cloud.plugin.modifiers;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -40,18 +41,18 @@ import org.springframework.stereotype.Component;
 import static alien4cloud.utils.AlienUtils.safe;
 
 /**
- * A {@code OpenStackBSComputeWFModifier} is a Topology modifier that explore a {@link Topology} to swap Compute and BlockStorage
+ * A {@code BlockStorageComputeWFModifier} is a Topology modifier that explore a {@link Topology} to swap Compute and BlockStorage
  * workflow steps. This is due to the fact that in Alien the relationship between them is from BlockStorage to Compute while in
  * Yorc (and recent versions of TOSCA) the relationship is from Compute to BlockStorage.
  *
  * @author Loic Albertin
  */
 @Slf4j
-@Component(value = org.ystia.yorc.alien4cloud.plugin.modifiers.OpenStackBSComputeWFModifier.YORC_OPENSTACK_BS_WF_MODIFIER_TAG)
-public class OpenStackBSComputeWFModifier extends TopologyModifierSupport {
+@Component(value = BlockStorageComputeWFModifier.YORC_BLOCK_STORAGE_WF_MODIFIER_TAG)
+public class BlockStorageComputeWFModifier extends TopologyModifierSupport {
 
-    public static final String YORC_OPENSTACK_BS_WF_MODIFIER_TAG = "yorc-openstack-blockstorage-workflow-modifier";
-    private static final String YORC_OPENSTACK_BS_TYPE = "tosca.nodes.BlockStorage";
+    public static final String YORC_BLOCK_STORAGE_WF_MODIFIER_TAG = "yorc-block-storage-workflow-modifier";
+    private static final String TOSCA_NODES_BLOCK_STORAGE = "tosca.nodes.BlockStorage";
     @Resource
     private RemoveEdgeProcessor removeEdgeProcessor;
     @Resource
@@ -75,7 +76,7 @@ public class OpenStackBSComputeWFModifier extends TopologyModifierSupport {
         Workflow installWF = topology.getWorkflows().get("install");
         Workflow uninstallWF = topology.getWorkflows().get("uninstall");
 
-        Set<NodeTemplate> bsSet = TopologyNavigationUtil.getNodesOfType(topology, YORC_OPENSTACK_BS_TYPE, true);
+        Set<NodeTemplate> bsSet = TopologyNavigationUtil.getNodesOfType(topology, TOSCA_NODES_BLOCK_STORAGE, true);
 
         // Let's process all BS
         bsSet.forEach(bs -> safe(bs.getRelationships()).forEach((rn, rt) -> {
@@ -87,8 +88,12 @@ public class OpenStackBSComputeWFModifier extends TopologyModifierSupport {
                                 bs.getName(), rt.getTarget());
                 String computeNodeName = rt.getTarget();
                 // Now lets locate corresponding wf steps in install wf
+                // Move steps on success from BS to Compute
+                Set<String> stepsOnSuccess = new HashSet<>();
                 for (Map.Entry<String, WorkflowStep> workflowStepEntry : installWF.getSteps().entrySet()) {
                     if (workflowStepEntry.getValue().getTarget().equals(bs.getName())) {
+                        stepsOnSuccess.addAll(workflowStepEntry.getValue().getOnSuccess());
+                        workflowStepEntry.getValue().getOnSuccess().removeAll(stepsOnSuccess);
                         for (String precedingStepName : workflowStepEntry.getValue().getPrecedingSteps()) {
                             WorkflowStep precedingStep = installWF.getSteps().get(precedingStepName);
                             if (precedingStep.getTarget().equals(computeNodeName)) {
@@ -109,6 +114,13 @@ public class OpenStackBSComputeWFModifier extends TopologyModifierSupport {
                                 break;
                             }
                         }
+                        break;
+                    }
+                }
+
+                for (Map.Entry<String, WorkflowStep> workflowStepEntry : installWF.getSteps().entrySet()) {
+                    if (workflowStepEntry.getValue().getTarget().equals(computeNodeName)) {
+                        workflowStepEntry.getValue().getOnSuccess().addAll(stepsOnSuccess);
                         break;
                     }
                 }

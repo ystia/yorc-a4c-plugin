@@ -31,5 +31,6 @@ Contents:
    install
    location
    quickstart
+   upgrade
 
 
