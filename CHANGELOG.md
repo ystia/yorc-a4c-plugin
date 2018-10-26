@@ -2,6 +2,10 @@
 
 ## UNRELEASED
 
+### ENHANCEMENTS
+
+* Enable scaling of Kubernetes deployments ([GH-77](https://github.com/ystia/yorc/issues/77))
+
 ### BUG FIXES
 
 * Node Instance attributes are only resolved when Node state is "started" ([GH-59](https://github.com/ystia/yorc-a4c-plugin/issues/59))
