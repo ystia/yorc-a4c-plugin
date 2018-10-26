@@ -1,5 +1,7 @@
 # Yorc Alien4Cloud Plugin Changelog
 
+## UNRELEASED
+
 ## 3.0.2 (October 26, 2018)
 
 ### BUG FIXES
