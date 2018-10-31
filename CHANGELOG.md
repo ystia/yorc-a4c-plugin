@@ -2,6 +2,20 @@
 
 ## UNRELEASED
 
+## 3.1.0-M5 (October 26, 2018)
+
+### ENHANCEMENTS
+
+* Enable scaling of Kubernetes deployments ([GH-77](https://github.com/ystia/yorc/issues/77))
+
+### BUG FIXES
+
+* Node Instance attributes are only resolved when Node state is "started" ([GH-59](https://github.com/ystia/yorc-a4c-plugin/issues/59))
+
+### FEATURES
+
+* Support GCE Block storages. ([GH-82](https://github.com/ystia/yorc/issues/81))
+
 ## 3.1.0-M4 (October 08, 2018)
 
 ### DEPENDENCIES
