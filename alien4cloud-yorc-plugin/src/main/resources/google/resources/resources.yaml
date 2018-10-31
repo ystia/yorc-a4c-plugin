@@ -84,7 +84,7 @@ data_types:
         type: boolean
         description: Whether the VMs in this subnet can access Google services without assigned external IP addresses.
         required: false
-      secondary_ip_range:
+      secondary_ip_ranges:
         type: list
         description: >
           A list of configurations for secondary IP ranges for VM instances contained in this sub-network.
@@ -113,6 +113,16 @@ relationship_types:
         description: >
           The logical name of the device as exposed to the instance.
           Note: A runtime property that gets set when the model gets instantiated by the orchestrator.
+  yorc.relationships.google.Network:
+    derived_from: tosca.relationships.Network
+    valid_target_types: [ tosca.capabilities.Connectivity ]
+    properties:
+      subnetworks:
+        type: string
+        description: >
+          Comma-separated list of sub-networks names which needs to be used for connectivity.
+          If none is defined, all subnetq with the same Google region than the target will be associated to it.
+        required: false
 
 node_types:
   yorc.nodes.google.Compute:
