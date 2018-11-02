@@ -117,11 +117,11 @@ relationship_types:
     derived_from: tosca.relationships.Network
     valid_target_types: [ tosca.capabilities.Connectivity ]
     properties:
-      subnetworks:
+      subnet:
         type: string
         description: >
-          Comma-separated list of sub-networks names which needs to be used for connectivity.
-          If none is defined, all subnetq with the same Google region than the target will be associated to it.
+          Specify the sub-network to use for this relationship if network contains multiple sub-networks.
+          If none is defined, the first matching subnet with the target Google region will be associated to it.
         required: false
 
 node_types:
