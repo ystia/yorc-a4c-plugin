@@ -146,7 +146,7 @@ public class GoogleAddressTopologyModifier extends TopologyModifierSupport {
         });
     }
 
-    private static String extractRegionFromZone(final String zone) {
+    public static String extractRegionFromZone(final String zone) {
         String ret = "";
         // for a zone defined as europe-west1-b, region is europe-west1
         if ( zone != "") {

@@ -269,9 +269,6 @@ node_types:
           type: yorc.datatypes.google.Subnetwork
         required: false
     attributes:
-      gateway_ip:
-        type: string
-        description: The IPv4 address of the gateway.
       network_name:
         type: string
         description: The unique name of the network.
@@ -325,6 +322,13 @@ node_types:
         entry_schema:
           type: yorc.datatypes.google.IPRange
         required: false
+    attributes:
+      gateway_ip:
+        type: string
+        description: The IPv4 address of the gateway.
+      network_name:
+        type: string
+        description: The related name of the network of this subnet.
 
   yorc.nodes.google.Address:
     derived_from: tosca.nodes.Root
