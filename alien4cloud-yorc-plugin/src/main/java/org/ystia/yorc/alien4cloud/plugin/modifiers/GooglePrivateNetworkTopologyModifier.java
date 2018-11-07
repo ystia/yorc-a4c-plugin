@@ -66,6 +66,8 @@ public class GooglePrivateNetworkTopologyModifier extends TopologyModifierSuppor
                 nodeTemplate.getRelationships().forEach((rel, relationshipTemplate) -> {
                     if (relationshipTemplate.getTarget().equals(privNetNodeTemplate.getName())) {
                         String subnet = "";
+                        String zone;
+                        String region = "";
                         // check if subnet property is defined
                         if (relationshipTemplate.getType().equals("yorc.relationships.google.Network")
                                 && relationshipTemplate.getProperties().containsKey("subnet")) {
@@ -76,15 +78,27 @@ public class GooglePrivateNetworkTopologyModifier extends TopologyModifierSuppor
                         }
 
                         if (subnet.isEmpty()) {
-                            String zone = ((ScalarPropertyValue) nodeTemplate.getProperties().get("zone")).getValue();
-                            String region = GoogleAddressTopologyModifier.extractRegionFromZone(zone);
+                            zone = ((ScalarPropertyValue) nodeTemplate.getProperties().get("zone")).getValue();
+                            region = GoogleAddressTopologyModifier.extractRegionFromZone(zone);
                             subnet = retrieveFirstRegionalMatchingSubnet(privNetNodeTemplate, region);
                         }
 
                         if (subnet.isEmpty()) {
-                            context.log().error("No matching subnet found for network <{}> with node <{}>.",
-                                    privNetNodeTemplate.getName(), nodeTemplate.getName());
-                            return;
+                            String autoCreateModeStr = ((ScalarPropertyValue) privNetNodeTemplate.getProperties().get("auto_create_subnetworks")).getValue();
+                            String cidr = ((ScalarPropertyValue) privNetNodeTemplate.getProperties().get("cidr")).getValue();
+                            boolean autoCreateMode = Boolean.parseBoolean(autoCreateModeStr);
+                            if (!autoCreateMode && cidr.isEmpty()) {
+                                context.log().error("No matching subnet found for network <{}> with node <{}>.",
+                                        privNetNodeTemplate.getName(), nodeTemplate.getName());
+                                return;
+                            } else if (!cidr.isEmpty()) {
+                                // Retrieve the cidr to create default subnet in the node region (only one subnet can be created with unique ip/range)
+                                if (!canUseDefaultSubnet(csar, topology, nodeTemplate, subnetNode, cidr, region, privNetNodeTemplate.getName(), relationshipsToAdd)) {
+                                    context.log().error("No matching subnet found for network <{}> with node <{}>.",
+                                            privNetNodeTemplate.getName(), nodeTemplate.getName());
+                                    return;
+                                }
+                            }
                         }
 
                         addSubnetNodes(privNetNodeTemplate, nodeTemplate, subnet, csar, topology, subnetNode, relationshipsToAdd);
@@ -167,42 +181,111 @@ public class GooglePrivateNetworkTopologyModifier extends TopologyModifierSuppor
             for (Object subnet : subnetsList) {
                 Map<String, Object> props = (LinkedHashMap<String, Object>) subnet;
                 String name = (String) props.get("name");
-                // Copy props
-                Map<String, AbstractPropertyValue> newProps = new LinkedHashMap<>();
-                props.forEach((k, v) -> {
-                    if (v instanceof String) {
-                        newProps.put(k, new ScalarPropertyValue((String) v));
-                    } else if (v instanceof ArrayList) {
-                        newProps.put(k, new ListPropertyValue((ArrayList) v));
-                    }
-                });
-                String subnetNodename = name.replace("-", "_");
-                NodeTemplate subnetNodeTemplate = addNodeTemplate(
-                        csar,
-                        topology,
-                        subnetNodename,
-                        subnetNode.getElementId(),
-                        subnetNode.getArchiveVersion());
+                String subA4CName = buildSubnetNodeName(networkNode.getName(), name);
+                Optional<NodeTemplate> optional = checkSubnetExists(topology, subA4CName);
+                if (!optional.isPresent()) {
+                    NodeTemplate subnetNodeTemplate = addNodeTemplate(
+                            csar,
+                            topology,
+                            subA4CName,
+                            subnetNode.getElementId(),
+                            subnetNode.getArchiveVersion());
 
-                subnetNodeTemplate.setProperties(newProps);
-                // Creating a new dependency relationship between the Network and its sub-network
-                relationshipsToAdd.add(new RelationshipCreation(
-                        "tosca.relationships.DependsOn",
-                        subnetNodeTemplate, // source
-                        networkNode.getName(), // target
-                        "dependency", "feature"));
+                    // Copy props
+                    Map<String, AbstractPropertyValue> newProps = new LinkedHashMap<>();
+                    props.forEach((k, v) -> {
+                        if (v instanceof String) {
+                            newProps.put(k, new ScalarPropertyValue((String) v));
+                        } else if (v instanceof ArrayList) {
+                            newProps.put(k, new ListPropertyValue((ArrayList) v));
+                        }
+                    });
+                    subnetNodeTemplate.setProperties(newProps);
+                    // Creating a new dependency relationship between the Network and its sub-network
+                    relationshipsToAdd.add(new RelationshipCreation(
+                            "tosca.relationships.DependsOn",
+                            subnetNodeTemplate, // source
+                            networkNode.getName(), // target
+                            "dependency", "feature"));
+                }
 
                 // Create network relationship for specific required sub-network
-                if (subnetName.equals(name)) {
+                if (!subnetName.isEmpty() && subnetName.equals(name)) {
                     // Creating a new network relationship between the sub-network and the node
                     relationshipsToAdd.add(new RelationshipCreation(
                             "yorc.relationships.google.Network",
                             node, // source
-                            subnetNodename, // target
+                            subA4CName, // target
                             "network", "connection"));
                 }
             }
         }
+    }
+
+    /**
+     * Create if not exist a default subnet from cidr tosca.nodes.Network property
+     * Create new relationship btw this network and the default subnet
+     * Create new relationship btw node and subnet
+     * Returns false if default subnet already exists and has different region than node
+     * @param csar
+     * @param topology
+     * @param node
+     * @param subnetNode
+     * @param cidr
+     * @param region
+     * @param networkNodeName
+     * @param relationshipsToAdd
+     * @return
+     */
+    private boolean canUseDefaultSubnet(final Csar csar, final Topology topology, final NodeTemplate node, final NodeType subnetNode, final String cidr, final String region, final String networkNodeName, final List<RelationshipCreation> relationshipsToAdd) {
+        String subA4CName = buildSubnetNodeName(networkNodeName, "default");
+        Optional<NodeTemplate> optional = checkSubnetExists(topology, subA4CName);
+        if (!optional.isPresent()) {
+            NodeTemplate subnetNodeTemplate = addNodeTemplate(
+                    csar,
+                    topology,
+                    subA4CName,
+                    subnetNode.getElementId(),
+                    subnetNode.getArchiveVersion());
+
+            Map<String, AbstractPropertyValue> newProps = new LinkedHashMap<>();
+            newProps.put("name", new ScalarPropertyValue(subA4CName));
+            newProps.put("region", new ScalarPropertyValue(region));
+            newProps.put("ip_cidr_range", new ScalarPropertyValue(cidr));
+
+
+            subnetNodeTemplate.setProperties(newProps);
+            // Creating a new dependency relationship between the Network and its sub-network
+            relationshipsToAdd.add(new RelationshipCreation(
+                    "tosca.relationships.DependsOn",
+                    subnetNodeTemplate, // source
+                    networkNodeName, // target
+                    "dependency", "feature"));
+        } else {
+            // Only one default subnetwork can be created for a specific cidr in a defined region
+            String defaultRegion = ((ScalarPropertyValue) optional.get().getProperties().get("region")).getValue();
+            if (region != defaultRegion) {
+                return false;
+            }
+        }
+
+        // Creating a new network relationship between the sub-network and the node
+        relationshipsToAdd.add(new RelationshipCreation(
+                "yorc.relationships.google.Network",
+                node, // source
+                subA4CName, // target
+                "network", "connection"));
+
+        return true;
+    }
+
+    private Optional<NodeTemplate> checkSubnetExists(final Topology topology, final String subnetNodeName) {
+        Set<NodeTemplate> subnets = TopologyNavigationUtil.getNodesOfType(topology, "yorc.nodes.google.Subnetwork", false);
+        return subnets.stream().filter(subnet -> subnet.getName().equals(subnetNodeName)).findAny();
+    }
+
+    private String buildSubnetNodeName(final String networkName, final String subnetName) {
+        return networkName + "_" + subnetName.replace("-", "_");
     }
 
 }

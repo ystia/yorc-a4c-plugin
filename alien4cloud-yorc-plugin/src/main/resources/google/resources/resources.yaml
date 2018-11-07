@@ -75,7 +75,7 @@ data_types:
         type: string
         description: >
           The Region in which this subnet should reside.
-        required: false
+        required: true
       enable_flow_logs:
         type: boolean
         description: Whether to enable flow logging for this subnetwork.
@@ -241,7 +241,7 @@ node_types:
           If set to true, this network will be created in auto subnet mode, and Google will create a subnet for each region automatically.
           If set to false, a custom subnetted network must be created. Defaults to true.
         required: false
-        default: true
+        default: false
       routing_mode:
         type: string
         description: >
@@ -304,7 +304,7 @@ node_types:
         type: string
         description: >
           The Region in which this subnet should reside.
-        required: false
+        required: true
       enable_flow_logs:
         type: boolean
         description: Whether to enable flow logging for this subnetwork.
