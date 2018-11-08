@@ -58,6 +58,9 @@ public class GooglePrivateNetworkTopologyModifier extends TopologyModifierSuppor
         List<RelationshipRemoval> relationshipsToRemove = new ArrayList<>();
 
         privateNetworksNodes.forEach(privNetNodeTemplate -> {
+            // Create related subnets for each private network and dependency relationship btw subnet and its network
+            createSubnets(privNetNodeTemplate, csar, topology, subnetNode, relationshipsToAdd, context);
+
             // For each Node Template requiring a connection to this private network
             // A new connection is created to the required subnet instead
             for (NodeTemplate nodeTemplate : new ArrayList<>(topology.getNodeTemplates().values())) {
@@ -65,51 +68,72 @@ public class GooglePrivateNetworkTopologyModifier extends TopologyModifierSuppor
 
                 nodeTemplate.getRelationships().forEach((rel, relationshipTemplate) -> {
                     if (relationshipTemplate.getTarget().equals(privNetNodeTemplate.getName())) {
-                        String subnet = "";
-                        String zone;
-                        String region = "";
-                        // check if subnet property is defined
+                        // The aim is to retrieve appropriate subnet for this relationship and replace the network by its subnet in this relationship
+                        // Ignore auto create mode as subnets are automatically handled by Google
+                        String autoCreateModeStr = ((ScalarPropertyValue) privNetNodeTemplate.getProperties().get("auto_create_subnetworks")).getValue();
+                        boolean autoCreateMode = Boolean.parseBoolean(autoCreateModeStr);
+                        if (autoCreateMode) {
+                            return;
+                        }
+
+                        String existingNetwork = "";
+                        if (privNetNodeTemplate.getProperties().get("network_name") != null) {
+                            existingNetwork = ((ScalarPropertyValue) privNetNodeTemplate.getProperties().get("network_name")).getValue();
+                        }
+
+                        // check first if subnet property is defined in the Google network relationship
                         if (relationshipTemplate.getType().equals("yorc.relationships.google.Network")
-                                && relationshipTemplate.getProperties().containsKey("subnet")) {
+                                && relationshipTemplate.getProperties().get("subnet") != null) {
                             final AbstractPropertyValue subnetVal = relationshipTemplate.getProperties().get("subnet");
-                            if (subnetVal != null && subnetVal instanceof ScalarPropertyValue) {
-                                subnet = ((ScalarPropertyValue) subnetVal).getValue();
-                            }
-                        }
+                            if (subnetVal instanceof ScalarPropertyValue) {
+                                String subnet = ((ScalarPropertyValue) subnetVal).getValue();
 
-                        if (subnet.isEmpty()) {
-                            zone = ((ScalarPropertyValue) nodeTemplate.getProperties().get("zone")).getValue();
-                            region = GoogleAddressTopologyModifier.extractRegionFromZone(zone);
-                            subnet = retrieveFirstRegionalMatchingSubnet(privNetNodeTemplate, region);
-                        }
-
-                        if (subnet.isEmpty()) {
-                            String autoCreateModeStr = ((ScalarPropertyValue) privNetNodeTemplate.getProperties().get("auto_create_subnetworks")).getValue();
-                            String cidr = "";
-                            final AbstractPropertyValue cidrVal = privNetNodeTemplate.getProperties().get("cidr");
-                            if (cidrVal != null) {
-                                cidr = ((ScalarPropertyValue) privNetNodeTemplate.getProperties().get("cidr")).getValue();
-                            }
-
-                            boolean autoCreateMode = Boolean.parseBoolean(autoCreateModeStr);
-                            if (!autoCreateMode && cidr.isEmpty()) {
-                                context.log().error("No matching subnet found for network <{}> with node <{}>.",
-                                        privNetNodeTemplate.getName(), nodeTemplate.getName());
-                                return;
-                            } else if (!cidr.isEmpty()) {
-                                // Retrieve the cidr to create default subnet in the node region (only one subnet can be created with unique ip/range)
-                                if (!canUseDefaultSubnet(csar, topology, nodeTemplate, subnetNode, cidr, region, privNetNodeTemplate.getName(), relationshipsToAdd)) {
-                                    context.log().error("No matching subnet found for network <{}> with node <{}>.",
-                                            privNetNodeTemplate.getName(), nodeTemplate.getName());
+                                // Check is existing network is used
+                                if (!existingNetwork.isEmpty()) {
                                     return;
+                                }
+
+                                // Otherwise check is this subnet has a node type
+                                String subnetNodeName = buildSubnetNodeName(privNetNodeTemplate.getName(), subnet);
+                                Optional<NodeTemplate> opt = findSubnetNodeByName(topology, subnetNodeName);
+                                if (opt.isPresent()) {
+                                    replaceNetworkRelationship(nodeTemplate, subnetNodeName, privNetNodeTemplate.getName(), relationshipTemplate.getName(), relationshipsToAdd, relationshipsToRemove, context);
+                                    return;
+                                } else {
+                                    context.log().error("No existing \"network_name\" property or subnet found for network <{}> with node <{}> for \"subnet\" property <{}> defined in network relationship",
+                                            privNetNodeTemplate.getName(), nodeTemplate.getName(), subnet);
                                 }
                             }
                         }
 
-                        addSubnetNodes(privNetNodeTemplate, nodeTemplate, subnet, csar, topology, subnetNode, relationshipsToAdd);
+                        // Extract node Google region from Zone
+                        String zone = ((ScalarPropertyValue) nodeTemplate.getProperties().get("zone")).getValue();
+                        String region = GoogleAddressTopologyModifier.extractRegionFromZone(zone);
 
-                        // Remove this relationship
-                        relationshipsToRemove.add(new RelationshipRemoval(relationshipTemplate.getName(), nodeTemplate.getName()));
+                        // check secondly the optional default subnet which can be provided by cidr/cidr_region
+                        String defaultSubnetNodeName = buildSubnetNodeName(privNetNodeTemplate.getName(), "default");
+                        Optional<NodeTemplate> opt = findSubnetNodeByName(topology, defaultSubnetNodeName);
+                        if (opt.isPresent()) {
+                            // Check if the region is matching
+                            String defaultRegion = ((ScalarPropertyValue) opt.get().getProperties().get("region")).getValue();
+                            if (defaultRegion.equals(region)) {
+                                replaceNetworkRelationship(nodeTemplate, defaultSubnetNodeName, privNetNodeTemplate.getName(), relationshipTemplate.getName(), relationshipsToAdd, relationshipsToRemove, context);
+                                return;
+                            }
+                        }
+
+                        // check finally among all existing subnets and retrieve the first regional matching with the node zone
+                        opt = findFirstSubnetNodeByRegion(topology, region);
+                        if (opt.isPresent()) {
+                            replaceNetworkRelationship(nodeTemplate, opt.get().getName(), privNetNodeTemplate.getName(), relationshipTemplate.getName(), relationshipsToAdd, relationshipsToRemove, context);
+                            return;
+                        }
+
+                        // No subnet has been found and no existing network
+                        if (existingNetwork.isEmpty()) {
+                            context.log().error("No matching subnet found for network <{}> with node <{}>. Check the corresponding regions of each one.",
+                                    privNetNodeTemplate.getName(), nodeTemplate.getName());
+                        }
                     }
                 });
             }
@@ -142,110 +166,90 @@ public class GooglePrivateNetworkTopologyModifier extends TopologyModifierSuppor
         private String sourceNodeName;
     }
 
-    /**
-     * Retrieves the first regional matching subnet for defined network
-     * @param networkNode
-     * @param requiredRegion
-     * @return String the subnet name
-     */
-    private String retrieveFirstRegionalMatchingSubnet(final NodeTemplate networkNode, final String requiredRegion) {
-        String ret = "";
-        final AbstractPropertyValue subnetPropVal = networkNode.getProperties().get("custom_subnetworks");
-        if (subnetPropVal != null && subnetPropVal instanceof ListPropertyValue) {
-            ListPropertyValue subnets = (ListPropertyValue) subnetPropVal;
-            List<Object> subnetsList = subnets.getValue();
-            for (Object subnet : subnetsList) {
-                Map<String, Object> props = (LinkedHashMap<String, Object>) subnet;
-                String region = (String) props.get("region");
-                if (region.equals(requiredRegion)) {
-                    ret = (String) props.get("name");
-                    break;
-                }
-            }
-        }
-        return ret;
+    private void replaceNetworkRelationship(final NodeTemplate node, final String subnetNodeName, final String networkName, final String relationshipName, final List<RelationshipCreation> relationshipsToAdd, final List<RelationshipRemoval> relationshipsToRemove, final FlowExecutionContext context) {
+        // Creating a new network relationship between the sub-network and the node
+        relationshipsToAdd.add(new RelationshipCreation(
+                "yorc.relationships.google.Network",
+                node, // source
+                subnetNodeName, // target
+                "network", "connection"));
+
+        // Remove this relationship
+        relationshipsToRemove.add(new RelationshipRemoval(relationshipName, node.getName()));
+
+        context.log().info(
+                "Replace network relationship of node <{}> with network <{}> by subnet <{}>",
+                node.getName(),
+                networkName,
+                subnetNodeName);
     }
 
-    /***
-     * This allows to create subnet node template for each subnet
-     * It adds dependency relationship btw network and subnet
-     * It adds network relationship for the rquired subnet with node
-     * @param networkNode
-     * @param node
-     * @param subnetName
-     * @param csar
-     * @param topology
-     * @param subnetNode
-     * @param relationshipsToAdd
-     */
-    private void addSubnetNodes(final NodeTemplate networkNode, final NodeTemplate node, final String subnetName, final Csar csar, final Topology topology, final NodeType subnetNode, final List<RelationshipCreation> relationshipsToAdd) {
+    private void createSubnets(final NodeTemplate networkNode, final Csar csar, final Topology topology, final NodeType subnetNode, final List<RelationshipCreation> relationshipsToAdd, final FlowExecutionContext context)
+    {
         final AbstractPropertyValue subnetPropVal = networkNode.getProperties().get("custom_subnetworks");
-        if (subnetPropVal != null && subnetPropVal instanceof ListPropertyValue) {
+        if (subnetPropVal instanceof ListPropertyValue) {
             ListPropertyValue subnets = (ListPropertyValue) subnetPropVal;
             List<Object> subnetsList = subnets.getValue();
             for (Object subnet : subnetsList) {
                 Map<String, Object> props = (LinkedHashMap<String, Object>) subnet;
                 String name = (String) props.get("name");
                 String subA4CName = buildSubnetNodeName(networkNode.getName(), name);
-                Optional<NodeTemplate> optional = checkSubnetExists(topology, subA4CName);
-                if (!optional.isPresent()) {
-                    NodeTemplate subnetNodeTemplate = addNodeTemplate(
-                            csar,
-                            topology,
-                            subA4CName,
-                            subnetNode.getElementId(),
-                            subnetNode.getArchiveVersion());
 
-                    // Copy props
-                    Map<String, AbstractPropertyValue> newProps = new LinkedHashMap<>();
-                    props.forEach((k, v) -> {
-                        if (v instanceof String) {
-                            newProps.put(k, new ScalarPropertyValue((String) v));
-                        } else if (v instanceof ArrayList) {
-                            newProps.put(k, new ListPropertyValue((ArrayList) v));
-                        }
-                    });
-                    subnetNodeTemplate.setProperties(newProps);
-                    // Creating a new dependency relationship between the Network and its sub-network
-                    relationshipsToAdd.add(new RelationshipCreation(
-                            "tosca.relationships.DependsOn",
-                            subnetNodeTemplate, // source
-                            networkNode.getName(), // target
-                            "dependency", "feature"));
-                }
+                // Add subnet node template
+                NodeTemplate subnetNodeTemplate = addNodeTemplate(
+                        csar,
+                        topology,
+                        subA4CName,
+                        subnetNode.getElementId(),
+                        subnetNode.getArchiveVersion());
 
-                // Create network relationship for specific required sub-network
-                if (!subnetName.isEmpty() && subnetName.equals(name)) {
-                    // Creating a new network relationship between the sub-network and the node
-                    relationshipsToAdd.add(new RelationshipCreation(
-                            "yorc.relationships.google.Network",
-                            node, // source
-                            subA4CName, // target
-                            "network", "connection"));
-                }
+                // Copy props
+                Map<String, AbstractPropertyValue> newProps = new LinkedHashMap<>();
+                props.forEach((k, v) -> {
+                    if (v instanceof String) {
+                        newProps.put(k, new ScalarPropertyValue((String) v));
+                    } else if (v instanceof ArrayList) {
+                        newProps.put(k, new ListPropertyValue((ArrayList) v));
+                    }
+                });
+
+                context.log().info(
+                        "Created a new subnet node name <{}> depending on network <{}>",
+                        subA4CName,
+                        networkNode.getName());
+
+                subnetNodeTemplate.setProperties(newProps);
+                // Creating a new dependency relationship between the Network and its sub-network
+                relationshipsToAdd.add(new RelationshipCreation(
+                        "tosca.relationships.DependsOn",
+                        subnetNodeTemplate, // source
+                        networkNode.getName(), // target
+                        "dependency", "feature"));
             }
         }
-    }
 
-    /**
-     * Create if not exist a default subnet from cidr tosca.nodes.Network property
-     * Create new relationship btw this network and the default subnet
-     * Create new relationship btw node and subnet
-     * Returns false if default subnet already exists and has different region than node
-     * @param csar
-     * @param topology
-     * @param node
-     * @param subnetNode
-     * @param cidr
-     * @param region
-     * @param networkNodeName
-     * @param relationshipsToAdd
-     * @return
-     */
-    private boolean canUseDefaultSubnet(final Csar csar, final Topology topology, final NodeTemplate node, final NodeType subnetNode, final String cidr, final String region, final String networkNodeName, final List<RelationshipCreation> relationshipsToAdd) {
-        String subA4CName = buildSubnetNodeName(networkNodeName, "default");
-        Optional<NodeTemplate> optional = checkSubnetExists(topology, subA4CName);
-        if (!optional.isPresent()) {
+        // Create default subnet with cidr/cidr_region properties
+        String cidr;
+        String cidrRegion;
+        final AbstractPropertyValue cidrVal = networkNode.getProperties().get("cidr");
+        if (cidrVal == null) {
+            return;
+        }
+
+        cidr = ((ScalarPropertyValue) networkNode.getProperties().get("cidr")).getValue();
+        if (!cidr.isEmpty()) {
+            final AbstractPropertyValue cidrRegionVal = networkNode.getProperties().get("cidr_region");
+            if (cidrRegionVal == null) {
+                context.log().error("\"cidr_region property\" is mandatory if \"cidr\" property is filled for node: <{}>.", networkNode.getName());
+                return;
+            }
+            cidrRegion = ((ScalarPropertyValue) networkNode.getProperties().get("cidr_region")).getValue();
+            if (cidrRegion.isEmpty()) {
+                context.log().error("\"cidr_region property\" is mandatory if \"cidr\" property is filled for node: <{}>.", networkNode.getName());
+                return;
+            }
+
+            String subA4CName = buildSubnetNodeName(networkNode.getName(), "default");
             NodeTemplate subnetNodeTemplate = addNodeTemplate(
                     csar,
                     topology,
@@ -255,7 +259,7 @@ public class GooglePrivateNetworkTopologyModifier extends TopologyModifierSuppor
 
             Map<String, AbstractPropertyValue> newProps = new LinkedHashMap<>();
             newProps.put("name", new ScalarPropertyValue(subA4CName));
-            newProps.put("region", new ScalarPropertyValue(region));
+            newProps.put("region", new ScalarPropertyValue(cidrRegion));
             newProps.put("ip_cidr_range", new ScalarPropertyValue(cidr));
 
 
@@ -264,29 +268,24 @@ public class GooglePrivateNetworkTopologyModifier extends TopologyModifierSuppor
             relationshipsToAdd.add(new RelationshipCreation(
                     "tosca.relationships.DependsOn",
                     subnetNodeTemplate, // source
-                    networkNodeName, // target
+                    networkNode.getName(), // target
                     "dependency", "feature"));
-        } else {
-            // Only one default subnetwork can be created for a specific cidr in a defined region
-            String defaultRegion = ((ScalarPropertyValue) optional.get().getProperties().get("region")).getValue();
-            if (!region.equals(defaultRegion)) {
-                return false;
-            }
+
+            context.log().info(
+                    "Created a new subnet node name <{}> depending on network <{}>",
+                    subA4CName,
+                    networkNode.getName());
         }
-
-        // Creating a new network relationship between the sub-network and the node
-        relationshipsToAdd.add(new RelationshipCreation(
-                "yorc.relationships.google.Network",
-                node, // source
-                subA4CName, // target
-                "network", "connection"));
-
-        return true;
     }
 
-    private Optional<NodeTemplate> checkSubnetExists(final Topology topology, final String subnetNodeName) {
+    private Optional<NodeTemplate> findSubnetNodeByName(final Topology topology, final String subnetNodeName) {
         Set<NodeTemplate> subnets = TopologyNavigationUtil.getNodesOfType(topology, "yorc.nodes.google.Subnetwork", false);
         return subnets.stream().filter(subnet -> subnet.getName().equals(subnetNodeName)).findAny();
+    }
+
+    private Optional<NodeTemplate> findFirstSubnetNodeByRegion(final Topology topology, final String region) {
+        Set<NodeTemplate> subnets = TopologyNavigationUtil.getNodesOfType(topology, "yorc.nodes.google.Subnetwork", false);
+        return subnets.stream().filter(subnet -> ((ScalarPropertyValue) subnet.getProperties().get("region")).getValue().equals(region)).findFirst();
     }
 
     private String buildSubnetNodeName(final String networkName, final String subnetName) {
