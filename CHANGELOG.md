@@ -2,6 +2,10 @@
 
 ## UNRELEASED
 
+### FEATURES
+
+* Support Kubernetes Jobs. ([GH-67](https://github.com/ystia/yorc-a4c-plugin/issues/67))
+
 ## 3.1.0-M5 (October 26, 2018)
 
 ### ENHANCEMENTS
