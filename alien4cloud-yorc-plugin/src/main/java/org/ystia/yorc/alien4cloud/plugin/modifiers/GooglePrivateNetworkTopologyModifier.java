@@ -107,26 +107,28 @@ public class GooglePrivateNetworkTopologyModifier extends TopologyModifierSuppor
                         }
 
                         // Extract node Google region from Zone
-                        String zone = ((ScalarPropertyValue) nodeTemplate.getProperties().get("zone")).getValue();
-                        String region = GoogleAddressTopologyModifier.extractRegionFromZone(zone);
+                        if (nodeTemplate.getProperties().get("zone") != null) {
+                            String zone = ((ScalarPropertyValue) nodeTemplate.getProperties().get("zone")).getValue();
+                            String region = GoogleAddressTopologyModifier.extractRegionFromZone(zone);
 
-                        // check secondly the optional default subnet which can be provided by cidr/cidr_region
-                        String defaultSubnetNodeName = buildSubnetNodeName(privNetNodeTemplate.getName(), "default");
-                        Optional<NodeTemplate> opt = findSubnetNodeByName(topology, defaultSubnetNodeName);
-                        if (opt.isPresent()) {
-                            // Check if the region is matching
-                            String defaultRegion = ((ScalarPropertyValue) opt.get().getProperties().get("region")).getValue();
-                            if (defaultRegion.equals(region)) {
-                                replaceNetworkRelationship(nodeTemplate, defaultSubnetNodeName, privNetNodeTemplate.getName(), relationshipTemplate.getName(), relationshipsToAdd, relationshipsToRemove, context);
+                            // check secondly the optional default subnet which can be provided by cidr/cidr_region
+                            String defaultSubnetNodeName = buildSubnetNodeName(privNetNodeTemplate.getName(), "default");
+                            Optional<NodeTemplate> opt = findSubnetNodeByName(topology, defaultSubnetNodeName);
+                            if (opt.isPresent()) {
+                                // Check if the region is matching
+                                String defaultRegion = ((ScalarPropertyValue) opt.get().getProperties().get("region")).getValue();
+                                if (defaultRegion.equals(region)) {
+                                    replaceNetworkRelationship(nodeTemplate, defaultSubnetNodeName, privNetNodeTemplate.getName(), relationshipTemplate.getName(), relationshipsToAdd, relationshipsToRemove, context);
+                                    return;
+                                }
+                            }
+
+                            // check finally among all existing subnets and retrieve the first regional matching with the node zone
+                            opt = findFirstSubnetNodeByRegion(topology, region);
+                            if (opt.isPresent()) {
+                                replaceNetworkRelationship(nodeTemplate, opt.get().getName(), privNetNodeTemplate.getName(), relationshipTemplate.getName(), relationshipsToAdd, relationshipsToRemove, context);
                                 return;
                             }
-                        }
-
-                        // check finally among all existing subnets and retrieve the first regional matching with the node zone
-                        opt = findFirstSubnetNodeByRegion(topology, region);
-                        if (opt.isPresent()) {
-                            replaceNetworkRelationship(nodeTemplate, opt.get().getName(), privNetNodeTemplate.getName(), relationshipTemplate.getName(), relationshipsToAdd, relationshipsToRemove, context);
-                            return;
                         }
 
                         // No subnet has been found and no existing network
