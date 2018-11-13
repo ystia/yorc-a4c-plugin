@@ -260,7 +260,7 @@ public class GooglePrivateNetworkTopologyModifier extends TopologyModifierSuppor
                     subnetNode.getArchiveVersion());
 
             Map<String, AbstractPropertyValue> newProps = new LinkedHashMap<>();
-            newProps.put("name", new ScalarPropertyValue(subA4CName));
+            newProps.put("name", new ScalarPropertyValue("default"));
             newProps.put("region", new ScalarPropertyValue(cidrRegion));
             newProps.put("ip_cidr_range", new ScalarPropertyValue(cidr));
 
