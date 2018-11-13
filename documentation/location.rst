@@ -149,6 +149,7 @@ Go to |OrchLocODRBtn| and add the following resource:
 
   * yorc.nodes.google.Compute
   * yorc.nodes.google.PersistentDisk
+  * yorc.nodes.google.PrivateNetwork
 
 Click on the compute, the following details should appear, with here several properties set as explained below:
 
@@ -231,6 +232,53 @@ If you want to refer to an existing disk, set the mandatory parameter ``volume_i
 If you want to attach the disk to a compute with a ``READ_ONLY`` mode, you need to set this property to the ``yorc.relationships.google.AttachesTo`` relationship between the disk and the compute.
 
 For details on other optional PersistentDisk properties, see `Persistent Disk Creation <https://cloud.google.com/sdk/gcloud/reference/compute/disks/create>`_.
+
+Click on the ``PrivateNetwork``, the following details should appear, with here several properties set as explained below:
+
+.. image:: _static/img/google-vpc-on-demand.png
+   :alt: PrivateNetwork configuration
+   :align: center
+
+If you want to use an existing network, set the parameter ``network_name``. Otherwise, let it blank.
+
+You can create custom or default subnet for existing network too as long as there is no CIDR range overlaps.
+
+For private network creation, You can specify subnets in three different ways;
+  * by checking the checkbox ``auto_create_subnetworks`` : Google will create a subnet for each region automatically with predefined IP ranges.
+  * by setting ``cidr`` and ``cidr_region`` : a default subnet will be created with the specified IP CIDR range in the Google specified region.
+  * by adding custom subnets : you can add several subnets with more accurate properties as described below.
+
+You can as well use the auto-create mode and adding default and/or custom subnets as long as there is no CIDR range overlaps.
+
+Click on the ``custom_subnetworks`` edit icon to create several custom subnets:
+
+.. image:: _static/img/google-vpc-subnet.png
+   :alt: CustomSubnet configuration
+   :align: center
+
+Set the mandatory parameters ``name``, ``ip_cidr_range`` and ``region`` respectively to define the name of your custom subnet, its IP CIDR range
+and the Google region it owns. Note that subnet names must be unique in the Google project they owns.
+
+You can configure secondary IP ranges for VM instances contained in this sub-network with ``secondary_ip_ranges`` list.
+
+You can enable flow logging for this subnetwork by checking the checkbox ``enable_flow_logs``.
+
+You can allow the VMs in this subnet to access Google services without assigned external IP addresses by checking the checkbox ``private_ip_google_access``.
+
+For details on other optional PersistentDisk properties, see `VPC Creation <https://cloud.google.com/sdk/gcloud/reference/compute/networks/create>`_.
+
+- How-to connect a VM to a private subnet after creating the relationship between the VM and a PrivateNetwork ?
+
+  * Explicitly by setting the subnet property of the Google network relationship ``yorc.relationships.google.Network`` with the required subnet name.
+  * Implicitly with the default subnet if exists and in the same region than the VM or otherwise with the first matching subnet in the same region than the VM.
+
+- Are any firewall rules created for my private network ?
+
+  Yes, the following default firewall rules are automatically created for each subnet:
+
+  * Ingress rules from any incoming source for ICMP protocol and RDP and SSH ports (TCP 3389 and TCP 22)
+  * Ingress rules from any incoming subnet source for ICMP, TCP and UDP protocol on all port ranges (0-65535).
+
 
 Configure an AWS Location
 -------------------------
