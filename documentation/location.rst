@@ -269,14 +269,15 @@ Go to |OrchLocODRBtn| and search in the ``Catalog`` resources with type prefix `
 You have to add the following resources:
 
   * ``k8s_api.Deployment``
+  * ``k8s_api.Job``
   * ``k8s_api.Container``
   * ``k8s_api.Service``
   * ``k8s_api.volume.*`` # the volume types needed by applications
 
-Go to |OrchLocTMBtn| view to setup modifiers on your location:
+Go to |OrchLocTMBtn| view to check modifiers are uploaded to your location:
 
-  * add ``Kubernetes modifier`` at the phase ``post location match``
-  * add ``Yorc modifier for kubernetes`` at the phase ``post-node-match``
+  * ``Kubernetes modifier`` wi having ``post location match`` deployment phase
+  * ``Yorc modifier for kubernetes`` having ``post-node-match`` deployment phase
 
 .. |AdminBtn| image:: _static/img/administration-btn.png
               :alt: administration
