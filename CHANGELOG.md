@@ -2,6 +2,10 @@
 
 ## UNRELEASED
 
+### ENHANCEMENTS
+
+* Allow to deploy a Kubernetes application into a specific k8s namespace ([GH-76](https://github.com/ystia/yorc/issues/76))
+
 ## 3.1.0-M5 (October 26, 2018)
 
 ### ENHANCEMENTS
