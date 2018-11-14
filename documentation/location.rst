@@ -26,6 +26,24 @@ Several location types are available ; they correspond to the infrastructure typ
 In order to deploy applications and run them on a given infrastructure, Yorc must be properly configured for that
 infrastructure (see "Infrastructure configuration" chapter in Yorc documentation).
 
+Before creating the Yorc orchestrator, let's see how to define meta-properties that can be used to define some properties that are common to all the applications deployed in a location.
+
+Define Meta-properties
+----------------------
+
+To define meta-properties, go to |AdminBtn| and in the |MetaBtn| sub-menu.
+
+Then you can create a new meta-property by providing a name, a description and other information that characterize it.
+
+In the image below, there are 2 meta-properties defined. They both have the K8S_NAMESPACE ``name`` and string ``type``. But they have different targets.
+The ``location`` target specifies that the meta-property can be used to define a location property.
+The ``application`` target specifies that the meta-property can be used to define an application property.
+A default value can be defined but its not mandatory.
+
+.. image:: _static/img/meta-properties.png
+   :alt: Meta-properties definition
+   :align: center
+
 Configure a Yorc Orchestrator
 -----------------------------
 
@@ -278,6 +296,31 @@ Go to |OrchLocTMBtn| view to setup modifiers on your location:
   * add ``Kubernetes modifier`` at the phase ``post location match``
   * add ``Yorc modifier for kubernetes`` at the phase ``post-node-match``
 
+If you defined a K8S_NAMESPACE meta-property with ``location`` target, you can use its value
+to specify the namespace in which the Kubernetes resources will be created when deploying applications to this location.
+
+In the image below, the user specifies that Kubernetes objects will belong to the namespace ``my_location_namespace``.
+
+.. image:: _static/img/location-meta-properties.png
+   :alt: Namespace specification in the location
+   :align: center
+
+Note that the user can choose to use a particular namespace for each application. In this case, the K8S_NAMESPACE meta-property with ``application`` target must be used
+like in the image below:
+
+.. image:: _static/img/application-meta-properties.png
+   :alt: Namespace specification in the application
+   :align: center
+
+If both  K8S_NAMESPACE meta-property with ``location`` target and K8S_NAMESPACE meta-property with ``application`` target have values set, then the one with ``location`` target
+has more priority, so its value will be used to specify the Kubernets namespaces.
+
+In any case, the specified namespace must exist in the Kubernetes infrastructure.
+
+To simplify the deployment of application in test and development phase, we allow users not to define a specific namespace for its applications.
+In this case there is no need to define a K8S_NAMESPACE meta-property, and the Kuberneters objects will be created in a namespace specially created for each application.
+The namespace is deleted after the application is undeployed. The name of the created namespaces is constructed using the application name + the application's environment name.
+
 .. |AdminBtn| image:: _static/img/administration-btn.png
               :alt: administration
 
@@ -285,6 +328,9 @@ Go to |OrchLocTMBtn| view to setup modifiers on your location:
 .. |OrchBtn| image:: _static/img/orchestrator-menu-btn.png
              :alt: orchestrator
 
+
+.. |MetaBtn| image:: _static/img/meta-menu-btn.png
+             :alt: orchestrator
 
 .. |OrchConfigBtn| image:: _static/img/orchestrator-config-btn.png
                    :alt: orchestrator configuration
