@@ -212,6 +212,20 @@ the user will be created on the compute instance and you will be able to ssh on 
 
 For details on other optional Compute Instance properties, see `Compute Instance creation <https://cloud.google.com/sdk/gcloud/reference/compute/instances/create>`_.
 
+Click on the ``PublicNetwork``, the following details should appear, with here several properties set as explained below:
+
+.. image:: _static/img/google-public-network.png
+   :alt: PublicNetwork configuration
+   :align: center
+
+This node type inherits from ``tosca.nodes.Network`` and allows to substitute generic Network type. At post-matching step, this node will be replaced by ``yorc.nodes.google.Address``.
+You can directly use this node type if you need to define specific Google Address properties.
+
+If you want to use any existing Google Static IP Addresses, you need to set the ``addresses`` parameter. It accepts a comma-separated list of addresses IPs.
+
+For details on other optional Address properties, see `Address Creation <https://cloud.google.com/sdk/gcloud/reference/compute/addresses/create>`_.
+
+
 Click on the ``PersistentDisk``, the following details should appear, with here several properties set as explained below:
 
 .. image:: _static/img/google-disk-on-demand.png
@@ -241,9 +255,9 @@ Click on the ``PrivateNetwork``, the following details should appear, with here 
 
 If you want to use an existing network, set the parameter ``network_name``. Otherwise, let it blank.
 
-You can create custom or default subnet for existing network too as long as there is no CIDR range overlaps.
+You can create custom or default subnet for new or existing network too as long as there is no CIDR range overlaps.
 
-For private network creation, You can specify subnets in three different ways;
+For private network creation, You can specify subnets in three different ways:
   * by checking the checkbox ``auto_create_subnetworks`` : Google will create a subnet for each region automatically with predefined IP ranges.
   * by setting ``cidr`` and ``cidr_region`` : a default subnet will be created with the specified IP CIDR range in the Google specified region.
   * by adding custom subnets : you can add several subnets with more accurate properties as described below.
@@ -265,7 +279,7 @@ You can enable flow logging for this subnetwork by checking the checkbox ``enabl
 
 You can allow the VMs in this subnet to access Google services without assigned external IP addresses by checking the checkbox ``private_ip_google_access``.
 
-For details on other optional PersistentDisk properties, see `VPC Creation <https://cloud.google.com/sdk/gcloud/reference/compute/networks/create>`_.
+For details on other optional Private Network properties, see `VPC Creation <https://cloud.google.com/sdk/gcloud/reference/compute/networks/create>`_.
 
 - How-to connect a VM to a private subnet after creating the relationship between the VM and a PrivateNetwork ?
 
