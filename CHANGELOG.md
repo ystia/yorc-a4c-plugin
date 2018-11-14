@@ -4,7 +4,7 @@
 
 ### ENHANCEMENTS
 
-* Allow to deploy a Kubernetes application into a specific k8s namespace ([GH-76](https://github.com/ystia/yorc/issues/76))
+* Take advantage of Alien4Cloud meta-properties to specify a namespace in which to deploy Kubernetes resources ([GH-76](https://github.com/ystia/yorc/issues/76))
 
 ## 3.1.0-M5 (October 26, 2018)
 
@@ -33,7 +33,6 @@
 ### IMPROVEMENTS
 
 * Make the run step of a Job execution asynchronous not to block a worker during the duration of the job. ([GH-85](https://github.com/ystia/yorc/issues/85))
-* Take advantage of Alien4Cloud meta-properties to specify a namespace in which to deploy Kubernetes resources
 
 ## 3.1.0-M3 (September 14, 2018)
 
