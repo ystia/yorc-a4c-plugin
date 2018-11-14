@@ -8,6 +8,7 @@ description: "Defines resources for the Yorc plugin, slurm configuration."
 
 imports:
   - tosca-normative-types:${tosca.normative.types.version}
+  - alien-base-types:${alien4cloud.version}
   - yorc-types:${yorc.types.version}
 
 
@@ -117,9 +118,21 @@ node_types:
         description: The ID of the job.
     interfaces:
       tosca.interfaces.node.lifecycle.Runnable:
-        run:
+        submit:
           implementation:
             file:
+            type: yorc.artifacts.Deployment.SlurmJob
+        run:
+          implementation:
+            # This is a hack to force Alien to generate this step in workflows it will be overrided in Yorc
+            # TODO(loicalbertin) think about use a topology modifier for this to add this step only if a submit operation exists
+            file: "resources.yaml"
+            type: yorc.artifacts.Deployment.SlurmJob
+        cancel:
+          implementation:
+            # This is a hack to force Alien to generate this step in workflows it will be overrided in Yorc
+            # TODO(loicalbertin) think about use a topology modifier for this to add this step only if a submit operation exists
+            file: "resources.yaml"
             type: yorc.artifacts.Deployment.SlurmJob
 
   yorc.nodes.slurm.SingularityJob:
