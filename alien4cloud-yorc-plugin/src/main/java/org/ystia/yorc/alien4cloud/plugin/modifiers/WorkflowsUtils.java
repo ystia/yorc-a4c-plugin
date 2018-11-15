@@ -95,6 +95,19 @@ public class WorkflowsUtils {
         workflow.getSteps().remove(stepName);
     }
 
+    /**
+     *
+     * @param workflow
+     * @param step Workflow Step to look for
+     * @param stepName name of the step to remove
+     */
+    private static void removeStep(Workflow workflow, String step, String stepName) {
+        WorkflowStep ws = workflow.getSteps().get(step);
+        if (ws != null) {
+            ws.getOnSuccess().remove(stepName);
+        }
+    }
+
     private static String addSetStateStep(Workflow workflow, String hostId, NodeTemplate nodeTemplate, String state) {
         SetStateWorkflowActivity sswa = new SetStateWorkflowActivity();
         sswa.setStateName(state);
