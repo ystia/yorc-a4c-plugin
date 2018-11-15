@@ -210,6 +210,7 @@ If no private key is defined, the orchestrator will attempt to use a key ``~/.ss
 
 The user you specify here must be defined, along with its associated public SSH key, either at your Google Project level, or at this Compute Instance level.
 See Google documentation for :
+
   * `Project-wide public ssh keys <https://cloud.google.com/compute/docs/instances/adding-removing-ssh-keys#project-wide/>`_
   * `Instance-level public SSH keys <https://cloud.google.com/compute/docs/instances/adding-removing-ssh-keys#instance-only/>`_
 
@@ -343,7 +344,7 @@ The namespace is deleted after the application is undeployed. The name of the cr
                    :alt: on-demand resources
 
 .. |OrchLocTMBtn| image:: _static/img/topology-modifier-tab.png
-                   :alt: topology modifier
+                  :alt: topology modifier
 
 .. |OrchLocNewBtn| image:: _static/img/new-location.png
                    :alt: new location
