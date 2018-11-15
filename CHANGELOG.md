@@ -2,6 +2,10 @@
 
 ## UNRELEASED
 
+### ENHANCEMENTS
+
+* Take advantage of Alien4Cloud meta-properties to specify a namespace in which to deploy Kubernetes resources ([GH-76](https://github.com/ystia/yorc/issues/76))
+
 ## 3.1.0-M5 (October 26, 2018)
 
 ### ENHANCEMENTS
