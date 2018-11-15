@@ -40,10 +40,12 @@ public class KubernetesTopologyModifier extends TopologyModifierSupport {
 
     // Yorc K8S resource types
     protected static final String YORC_KUBERNETES_TYPES_DEPLOYMENT_RESOURCE = "yorc.nodes.kubernetes.api.types.DeploymentResource";
+    protected static final String YORC_KUBERNETES_TYPES_JOB_RESOURCE = "yorc.nodes.kubernetes.api.types.JobResource";
     protected static final String YORC_KUBERNETES_TYPES_SERVICE_RESOURCE = "yorc.nodes.kubernetes.api.types.ServiceResource";
 
     // A4C K8S resource types defined in org.alien4cloud.plugin.kubernetes.modifier
     public static final String K8S_TYPES_DEPLOYMENT_RESOURCE = "org.alien4cloud.kubernetes.api.types.DeploymentResource";
+    public static final String K8S_TYPES_JOB_RESOURCE = "org.alien4cloud.kubernetes.api.types.JobResource";
     public static final String K8S_TYPES_SERVICE_RESOURCE = "org.alien4cloud.kubernetes.api.types.ServiceResource";
 
 
@@ -93,6 +95,8 @@ public class KubernetesTopologyModifier extends TopologyModifierSupport {
         //
         // Treat deployment resource types
         transformKubernetesResourceTypes(topology,  csar, "deployment", yorcKubernetesTypesArchiveVersion);
+        // Treat job resource types
+        transformKubernetesResourceTypes(topology,  csar, "job", yorcKubernetesTypesArchiveVersion);
         // Treat service resource types
         transformKubernetesResourceTypes(topology,  csar, "service", yorcKubernetesTypesArchiveVersion);
 
@@ -116,12 +120,17 @@ public class KubernetesTopologyModifier extends TopologyModifierSupport {
                 sourceResourceType = K8S_TYPES_SERVICE_RESOURCE;
                 targetResourceType = YORC_KUBERNETES_TYPES_SERVICE_RESOURCE;
                 break;
+            case "job" :
+                sourceResourceType = K8S_TYPES_JOB_RESOURCE;
+                targetResourceType = YORC_KUBERNETES_TYPES_JOB_RESOURCE;
+                break;
             case "deployment" :
                 sourceResourceType = K8S_TYPES_DEPLOYMENT_RESOURCE;
                 targetResourceType = YORC_KUBERNETES_TYPES_DEPLOYMENT_RESOURCE;
                 break;
             default:
-                log.info("Yorc K8S Plugin : currently supported K8S resources are " + "service" + " and " + "deployment");
+                log.info("Yorc K8S Plugin : currently supported K8S resources are " + "service" + ", job" + " and " + "deployment");
+                //log.info("Yorc K8S Plugin : currently supported K8S resources are " + "service" + " and " + "deployment");
                 break;
         }
 

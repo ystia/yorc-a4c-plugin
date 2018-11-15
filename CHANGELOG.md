@@ -5,6 +5,7 @@
 ### FEATURES
 
 * Support GCE virtual private networks (VPC) ([GH-80](https://github.com/ystia/yorc/issues/80))
+* Support Kubernetes Jobs. ([GH-67](https://github.com/ystia/yorc-a4c-plugin/issues/67))
 
 ### ENHANCEMENTS
 
