@@ -38,19 +38,6 @@ node_types:
             repository: docker
             type: tosca.artifacts.Deployment.Image.Container.Docker
 
-  org.ystia.yorc.samples.kube.containers.nodes.Apache:
-    derived_from: tosca.nodes.Container.Application.DockerContainer
-    capabilities:
-      http_endpoint:
-        type: org.ystia.yorc.samples.kube.containers.capabilities.Http
-    interfaces:
-      Standard:
-        create:
-          implementation:
-            file: httpd:latest
-            repository: docker
-            type: tosca.artifacts.Deployment.Image.Container.Docker
-
   org.ystia.yorc.samples.kube.containers.nodes.wordpress:
     derived_from: tosca.nodes.Container.Application.DockerContainer
     requirements:
