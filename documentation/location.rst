@@ -299,7 +299,7 @@ Go to |OrchLocTMBtn| view to setup modifiers on your location:
   * add ``Kubernetes modifier`` at the phase ``post location match``
   * add ``Yorc modifier for kubernetes`` at the phase ``post-node-match``
 
-If you defined a K8S_NAMESPACE meta-property (:ref:`see here how to do so <location_config_meta_props_section>` with ``location`` target, you can use its value
+If you defined a K8S_NAMESPACE meta-property (:ref:`see here how to do so <location_config_meta_props_section>`) with ``location`` target, you can use its value
 to specify the namespace in which the Kubernetes resources will be created when deploying applications to this location.
 
 In the image below, the user specifies that Kubernetes objects will belong to the namespace ``my_location_namespace``.
