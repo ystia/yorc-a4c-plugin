@@ -10,7 +10,7 @@ description: "Test emptyDir volumes on k8s"
 imports:
   - tosca-normative-types:1.0.0-ALIEN20
   - org.ystia.yorc.samples.kube.apache:1.0.0-SNAPSHOT
-  - docker-types:2.1.0-SM6
+  - docker-types:2.1.0-SM7
 
 topology_template:
   node_templates:
