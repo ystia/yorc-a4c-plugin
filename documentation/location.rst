@@ -35,7 +35,7 @@ To define meta-properties, go to |AdminBtn| and in the |MetaBtn| sub-menu.
 
 Then you can create a new meta-property by clicking on |MetPropNewBtn| and providing a name, a description and other information that characterize it.
 
-In the image below, there are 2 meta-properties defined. They both have the K8S_NAMESPACE ``name`` and string ``type``. But they have different targets.
+In the image below, there are 2 meta-properties defined. They both have the K8S_NAMESPACE ``Name`` and string ``Type``. But they have different ``Target``s.
 The ``location`` target specifies that the meta-property can be used to define a property for a location. In this particular case, it can be used to define a namespace for a Kubernetes location.
 The ``application`` target specifies that the meta-property can be used to  specify a property having a value that applies to a particular application.
 A default value can be defined for meta-properties, but its not mandatory.
