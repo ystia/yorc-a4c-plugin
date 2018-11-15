@@ -33,12 +33,12 @@ Define Meta-properties
 
 To define meta-properties, go to |AdminBtn| and in the |MetaBtn| sub-menu.
 
-Then you can create a new meta-property by providing a name, a description and other information that characterize it.
+Then you can create a new meta-property by clicking on |MetPropNewBtn| and providing a name, a description and other information that characterize it.
 
 In the image below, there are 2 meta-properties defined. They both have the K8S_NAMESPACE ``name`` and string ``type``. But they have different targets.
-The ``location`` target specifies that the meta-property can be used to define a location property.
-The ``application`` target specifies that the meta-property can be used to define an application property.
-A default value can be defined but its not mandatory.
+The ``location`` target specifies that the meta-property can be used to define a property for a location. In this particular case, it can be used to define a namespace for a Kubernetes location.
+The ``application`` target specifies that the meta-property can be used to  specify a property having a value that applies to a particular application.
+A default value can be defined for meta-properties, but its not mandatory.
 
 .. image:: _static/img/meta-properties.png
    :alt: Meta-properties definition
@@ -277,7 +277,7 @@ This user will be used to connect to this on-demand compute resource once create
 
 Configure a Kubernetes Location
 -------------------------------
-In order to deploy applications on a Kubernetes location, the Yorc orchestrator must be connected to a properly configured Yorc server
+In order to deploy applications to a Kubernetes location, the Yorc orchestrator must be connected to a properly configured Yorc server
 (see "Infrastructure configuration" chapter in Yorc documentation ; the Yorc server must be able to connect to the Kubernetes cluster's master).
 
 Select ``Yorc`` orchestrator and go to the locations page by clicking on |OrchLocBtn|. Create a location named ``kubernetes`` (or a name of your choice)
@@ -313,7 +313,7 @@ like in the image below:
    :align: center
 
 If both  K8S_NAMESPACE meta-property with ``location`` target and K8S_NAMESPACE meta-property with ``application`` target have values set, then the one with ``location`` target
-has more priority, so its value will be used to specify the Kubernets namespaces.
+has higher priority, so its value will be used to specify the Kubernets namespaces.
 
 In any case, the specified namespace must exist in the Kubernetes infrastructure.
 
@@ -347,4 +347,7 @@ The namespace is deleted after the application is undeployed. The name of the cr
 
 .. |OrchLocNewBtn| image:: _static/img/new-location.png
                    :alt: new location
+
+.. |MetPropNewBtn| image:: _static/img/new-meta-prop.png
+                   :alt: new meta-property
 
