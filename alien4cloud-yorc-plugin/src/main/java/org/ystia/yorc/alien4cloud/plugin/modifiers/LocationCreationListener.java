@@ -58,6 +58,7 @@ public class LocationCreationListener implements ApplicationListener<AfterLocati
     private LocationModifierReference kubernetesTopologyModifierRef;
     private LocationModifierReference yorcKubernetesTopologyModifierRef;
     private LocationModifierReference googleAddressModifierRef;
+    private LocationModifierReference googlePrivateNetworkModifierRef;
 
     @PostConstruct
     public synchronized void init() {
@@ -95,6 +96,11 @@ public class LocationCreationListener implements ApplicationListener<AfterLocati
         googleAddressModifierRef.setPluginId(selfContext.getPlugin().getId());
         googleAddressModifierRef.setBeanName(GoogleAddressTopologyModifier.YORC_GOOGLE_ADDRESS_MODIFIER_TAG);
         googleAddressModifierRef.setPhase(FlowPhases.POST_NODE_MATCH);
+
+        googlePrivateNetworkModifierRef = new LocationModifierReference();
+        googlePrivateNetworkModifierRef.setPluginId(selfContext.getPlugin().getId());
+        googlePrivateNetworkModifierRef.setBeanName(GooglePrivateNetworkTopologyModifier.YORC_GOOGLE_PRIVATE_NETWORK_MODIFIER_TAG);
+        googlePrivateNetworkModifierRef.setPhase(FlowPhases.POST_NODE_MATCH);
     }
 
 
@@ -112,6 +118,7 @@ public class LocationCreationListener implements ApplicationListener<AfterLocati
                 locationModifierService.add(event.getLocation(), kubernetesTopologyModifierRef);
             } else if (YstiaOrchestratorFactory.GOOGLE.equals(event.getLocation().getInfrastructureType())) {
                 locationModifierService.add(event.getLocation(), googleAddressModifierRef);
+                locationModifierService.add(event.getLocation(), googlePrivateNetworkModifierRef);
             }
             locationModifierService.add(event.getLocation(), wfOperationHostModifierRef);
             locationModifierService.add(event.getLocation(), serviceTopologyModifierRef);
