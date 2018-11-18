@@ -2,6 +2,17 @@
 
 ## UNRELEASED
 
+## 3.1.0-M6 (November 16, 2018)
+
+### FEATURES
+
+* Support GCE virtual private networks (VPC) ([GH-80](https://github.com/ystia/yorc/issues/80))
+* Support Kubernetes Jobs. ([GH-67](https://github.com/ystia/yorc-a4c-plugin/issues/67))
+
+### ENHANCEMENTS
+
+* Take advantage of Alien4Cloud meta-properties to specify a namespace in which to deploy Kubernetes resources ([GH-76](https://github.com/ystia/yorc/issues/76))
+
 ## 3.1.0-M5 (October 26, 2018)
 
 ### ENHANCEMENTS

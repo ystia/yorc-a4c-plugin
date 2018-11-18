@@ -26,6 +26,26 @@ Several location types are available ; they correspond to the infrastructure typ
 In order to deploy applications and run them on a given infrastructure, Yorc must be properly configured for that
 infrastructure (see "Infrastructure configuration" chapter in Yorc documentation).
 
+Before creating the Yorc orchestrator, let's see how to define meta-properties that can be used to define some properties that are common to all the applications deployed in a location.
+
+.. _location_config_meta_props_section:
+
+Define Meta-properties
+----------------------
+
+To define meta-properties, go to |AdminBtn| and in the |MetaBtn| sub-menu.
+
+Then you can create a new meta-property by clicking on |MetPropNewBtn| and providing a name, a description and other information that characterize it.
+
+In the image below, there are 2 meta-properties defined. They both have the K8S_NAMESPACE ``Name`` and string ``Type``. But they have different ``Targets``.
+The ``location`` target specifies that the meta-property can be used to define a property for a location. In this particular case, it can be used to define a namespace for a Kubernetes location.
+The ``application`` target specifies that the meta-property can be used to  specify a property having a value that applies to a particular application.
+A default value can be defined for meta-properties, but its not mandatory.
+
+.. image:: _static/img/meta-properties.png
+   :alt: Meta-properties definition
+   :align: center
+
 Configure a Yorc Orchestrator
 -----------------------------
 
@@ -149,6 +169,7 @@ Go to |OrchLocODRBtn| and add the following resource:
 
   * yorc.nodes.google.Compute
   * yorc.nodes.google.PersistentDisk
+  * yorc.nodes.google.PrivateNetwork
 
 Click on the compute, the following details should appear, with here several properties set as explained below:
 
@@ -192,6 +213,7 @@ If no private key is defined, the orchestrator will attempt to use a key ``~/.ss
 
 The user you specify here must be defined, along with its associated public SSH key, either at your Google Project level, or at this Compute Instance level.
 See Google documentation for :
+
   * `Project-wide public ssh keys <https://cloud.google.com/compute/docs/instances/adding-removing-ssh-keys#project-wide/>`_
   * `Instance-level public SSH keys <https://cloud.google.com/compute/docs/instances/adding-removing-ssh-keys#instance-only/>`_
 
@@ -210,6 +232,20 @@ the user will be created on the compute instance and you will be able to ssh on 
     ssh -i ./id_rsa user1@<your instance external ip address>
 
 For details on other optional Compute Instance properties, see `Compute Instance creation <https://cloud.google.com/sdk/gcloud/reference/compute/instances/create>`_.
+
+Click on the ``PublicNetwork``, the following details should appear, with here several properties set as explained below:
+
+.. image:: _static/img/google-public-network.png
+   :alt: PublicNetwork configuration
+   :align: center
+
+This node type inherits from ``tosca.nodes.Network`` and allows to substitute generic Network type. At post-matching step, this node will be replaced by ``yorc.nodes.google.Address``.
+You can directly use this node type if you need to define specific Google Address properties.
+
+If you want to use any existing Google Static IP Addresses, you need to set the ``addresses`` parameter. It accepts a comma-separated list of addresses IPs.
+
+For details on other optional Address properties, see `Address Creation <https://cloud.google.com/sdk/gcloud/reference/compute/addresses/create>`_.
+
 
 Click on the ``PersistentDisk``, the following details should appear, with here several properties set as explained below:
 
@@ -231,6 +267,53 @@ If you want to refer to an existing disk, set the mandatory parameter ``volume_i
 If you want to attach the disk to a compute with a ``READ_ONLY`` mode, you need to set this property to the ``yorc.relationships.google.AttachesTo`` relationship between the disk and the compute.
 
 For details on other optional PersistentDisk properties, see `Persistent Disk Creation <https://cloud.google.com/sdk/gcloud/reference/compute/disks/create>`_.
+
+Click on the ``PrivateNetwork``, the following details should appear, with here several properties set as explained below:
+
+.. image:: _static/img/google-vpc-on-demand.png
+   :alt: PrivateNetwork configuration
+   :align: center
+
+If you want to use an existing network, set the parameter ``network_name``. Otherwise, let it blank.
+
+You can create custom or default subnet for new or existing network too as long as there is no CIDR range overlaps.
+
+For private network creation, You can specify subnets in three different ways:
+  * by checking the checkbox ``auto_create_subnetworks`` : Google will create a subnet for each region automatically with predefined IP ranges.
+  * by setting ``cidr`` and ``cidr_region`` : a default subnet will be created with the specified IP CIDR range in the Google specified region.
+  * by adding custom subnets : you can add several subnets with more accurate properties as described below.
+
+You can as well use the auto-create mode and adding default and/or custom subnets as long as there is no CIDR range overlaps.
+
+Click on the ``custom_subnetworks`` edit icon to create several custom subnets:
+
+.. image:: _static/img/google-vpc-subnet.png
+   :alt: CustomSubnet configuration
+   :align: center
+
+Set the mandatory parameters ``name``, ``ip_cidr_range`` and ``region`` respectively to define the name of your custom subnet, its IP CIDR range
+and the Google region it owns. Note that subnet names must be unique in the Google project they owns.
+
+You can configure secondary IP ranges for VM instances contained in this sub-network with ``secondary_ip_ranges`` list.
+
+You can enable flow logging for this subnetwork by checking the checkbox ``enable_flow_logs``.
+
+You can allow the VMs in this subnet to access Google services without assigned external IP addresses by checking the checkbox ``private_ip_google_access``.
+
+For details on other optional Private Network properties, see `VPC Creation <https://cloud.google.com/sdk/gcloud/reference/compute/networks/create>`_.
+
+- How-to connect a VM to a private subnet after creating the relationship between the VM and a PrivateNetwork ?
+
+  * Explicitly by setting the subnet property of the Google network relationship ``yorc.relationships.google.Network`` with the required subnet name.
+  * Implicitly with the default subnet if exists and in the same region than the VM or otherwise with the first matching subnet in the same region than the VM.
+
+- Are any firewall rules created for my private network ?
+
+  Yes, the following default firewall rules are automatically created for each subnet:
+
+  * Ingress rules from any incoming source for ICMP protocol and RDP and SSH ports (TCP 3389 and TCP 22)
+  * Ingress rules from any incoming subnet source for ICMP, TCP and UDP protocol on all port ranges (0-65535).
+
 
 Configure an AWS Location
 -------------------------
@@ -259,7 +342,7 @@ This user will be used to connect to this on-demand compute resource once create
 
 Configure a Kubernetes Location
 -------------------------------
-In order to deploy applications on a Kubernetes location, the Yorc orchestrator must be connected to a properly configured Yorc server
+In order to deploy applications to a Kubernetes location, the Yorc orchestrator must be connected to a properly configured Yorc server
 (see "Infrastructure configuration" chapter in Yorc documentation ; the Yorc server must be able to connect to the Kubernetes cluster's master).
 
 Select ``Yorc`` orchestrator and go to the locations page by clicking on |OrchLocBtn|. Create a location named ``kubernetes`` (or a name of your choice)
@@ -269,14 +352,40 @@ Go to |OrchLocODRBtn| and search in the ``Catalog`` resources with type prefix `
 You have to add the following resources:
 
   * ``k8s_api.Deployment``
+  * ``k8s_api.Job``
   * ``k8s_api.Container``
   * ``k8s_api.Service``
   * ``k8s_api.volume.*`` # the volume types needed by applications
 
-Go to |OrchLocTMBtn| view to setup modifiers on your location:
+Go to |OrchLocTMBtn| view to check modifiers are uploaded to your location:
 
-  * add ``Kubernetes modifier`` at the phase ``post location match``
-  * add ``Yorc modifier for kubernetes`` at the phase ``post-node-match``
+  * ``Kubernetes modifier`` wi having ``post location match`` deployment phase
+  * ``Yorc modifier for kubernetes`` having ``post-node-match`` deployment phase
+
+If you defined a K8S_NAMESPACE meta-property (:ref:`see here how to do so <location_config_meta_props_section>`) with ``location`` target, you can use its value
+to specify the namespace in which the Kubernetes resources will be created when deploying applications to this location.
+
+In the image below, the user specifies that Kubernetes objects will belong to the namespace ``my_location_namespace``.
+
+.. image:: _static/img/location-meta-properties.png
+   :alt: Namespace specification in the location
+   :align: center
+
+Note that the user can choose to use a particular namespace for each application. In this case, the K8S_NAMESPACE meta-property with ``application`` target must be used
+like in the image below:
+
+.. image:: _static/img/application-meta-properties.png
+   :alt: Namespace specification in the application
+   :align: center
+
+If both  K8S_NAMESPACE meta-property with ``location`` target and K8S_NAMESPACE meta-property with ``application`` target have values set, then the one with ``location`` target
+has higher priority, so its value will be used to specify the Kubernets namespaces.
+
+In any case, the specified namespace must exist in the Kubernetes infrastructure.
+
+To simplify the deployment of application in test and development phase, we allow users not to define a specific namespace for its applications.
+In this case there is no need to define a K8S_NAMESPACE meta-property, and the Kuberneters objects will be created in a namespace specially created for each application.
+The namespace is deleted after the application is undeployed. The name of the created namespaces is constructed using the application name + the application's environment name.
 
 .. |AdminBtn| image:: _static/img/administration-btn.png
               :alt: administration
@@ -285,6 +394,9 @@ Go to |OrchLocTMBtn| view to setup modifiers on your location:
 .. |OrchBtn| image:: _static/img/orchestrator-menu-btn.png
              :alt: orchestrator
 
+
+.. |MetaBtn| image:: _static/img/meta-menu-btn.png
+             :alt: orchestrator
 
 .. |OrchConfigBtn| image:: _static/img/orchestrator-config-btn.png
                    :alt: orchestrator configuration
@@ -297,8 +409,11 @@ Go to |OrchLocTMBtn| view to setup modifiers on your location:
                    :alt: on-demand resources
 
 .. |OrchLocTMBtn| image:: _static/img/topology-modifier-tab.png
-                   :alt: topology modifier
+                  :alt: topology modifier
 
 .. |OrchLocNewBtn| image:: _static/img/new-location.png
                    :alt: new location
+
+.. |MetPropNewBtn| image:: _static/img/new-meta-prop.png
+                   :alt: new meta-property
 

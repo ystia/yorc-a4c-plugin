@@ -53,14 +53,14 @@ public class GoogleAddressTopologyModifier extends TopologyModifierSupport {
         List<AssignmentRelationship> relationshipsToAdd = new ArrayList<>();
 
         publicNetworksNodes.forEach(networkNodeTemplate -> {
+            final AbstractPropertyValue addresses = networkNodeTemplate.getProperties().get("addresses");
+            final AbstractPropertyValue region = networkNodeTemplate.getProperties().get("region");
+            final AbstractPropertyValue networkName = networkNodeTemplate.getProperties().get("network_name");
+            final AbstractPropertyValue subNetwork = networkNodeTemplate.getProperties().get("subnetwork");
+
             // For each Node Template requiring a connection to this Public
             // Network, creating a new Address Node Template
             for (NodeTemplate nodeTemplate : new ArrayList<>(topology.getNodeTemplates().values())) {
-                final AbstractPropertyValue addresses = networkNodeTemplate.getProperties().get("addresses");
-                final AbstractPropertyValue region = networkNodeTemplate.getProperties().get("region");
-                final AbstractPropertyValue networkName = networkNodeTemplate.getProperties().get("network_name");
-                final AbstractPropertyValue subNetwork = networkNodeTemplate.getProperties().get("subnetwork");
-
                 if (nodeTemplate.getRelationships() == null) continue;
 
                 nodeTemplate.getRelationships().forEach((rel, relationshipTemplate) -> {
@@ -129,24 +129,25 @@ public class GoogleAddressTopologyModifier extends TopologyModifierSupport {
             context.log().info(
                     "Public network <{}> removed as connectivity requirements are addressed by google address Node Templates",
                     networkNodeTemplate.getName());
-            // Removing Public Network nodes for which a new Address Node
-            // template was created
-            nodesToRemove.forEach(pnn -> removeNode(topology, pnn));
-
-            // Creating a relationship between each new Google Address Node Template
-            // and the Source Node Template having an assignment requirement
-            relationshipsToAdd.forEach( rel -> addRelationshipTemplate(
-                    csar,
-                    topology,
-                    rel.sourceNode,
-                    rel.targetNodeName,
-                    "yorc.relationships.AssignsTo",
-                    rel.requirementName,
-                    rel.targetCapabilityName));
         });
+
+        // Removing Public Network nodes for which a new Address Node
+        // template was created
+        nodesToRemove.forEach(pnn -> removeNode(topology, pnn));
+
+        // Creating a relationship between each new Google Address Node Template
+        // and the Source Node Template having an assignment requirement
+        relationshipsToAdd.forEach( rel -> addRelationshipTemplate(
+                csar,
+                topology,
+                rel.sourceNode,
+                rel.targetNodeName,
+                "yorc.relationships.AssignsTo",
+                rel.requirementName,
+                rel.targetCapabilityName));
     }
 
-    private static String extractRegionFromZone(final String zone) {
+    public static String extractRegionFromZone(final String zone) {
         String ret = "";
         // for a zone defined as europe-west1-b, region is europe-west1
         if ( zone != "") {

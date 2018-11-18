@@ -7,7 +7,7 @@ metadata:
 
 imports:
   - tosca-normative-types:1.0.0-ALIEN20
-  - docker-types:2.1.0-SNAPSHOT
+  - docker-types:2.1.0-SM7
 
 description: DockerContainers that can be deployed on K8S
 
@@ -35,19 +35,6 @@ node_types:
             ENV_MYSQL_RANDOM_ROOT_PASSWORD: "yes"
           implementation:
             file: mysql:8.0
-            repository: docker
-            type: tosca.artifacts.Deployment.Image.Container.Docker
-
-  org.ystia.yorc.samples.kube.containers.nodes.Apache:
-    derived_from: tosca.nodes.Container.Application.DockerContainer
-    capabilities:
-      http_endpoint:
-        type: org.ystia.yorc.samples.kube.containers.capabilities.Http
-    interfaces:
-      Standard:
-        create:
-          implementation:
-            file: httpd:latest
             repository: docker
             type: tosca.artifacts.Deployment.Image.Container.Docker
 
