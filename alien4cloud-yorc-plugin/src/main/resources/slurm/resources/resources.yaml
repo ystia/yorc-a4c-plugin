@@ -8,6 +8,7 @@ description: "Defines resources for the Yorc plugin, slurm configuration."
 
 imports:
   - tosca-normative-types:${tosca.normative.types.version}
+  - alien-base-types:${alien4cloud.version}
   - yorc-types:${yorc.types.version}
 
 
