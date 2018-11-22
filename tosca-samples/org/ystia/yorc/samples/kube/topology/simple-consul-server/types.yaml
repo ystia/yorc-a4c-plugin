@@ -34,6 +34,7 @@ topology_template:
           - "-server"
           - "-ui"
           - "-disable-host-node-id"
+          - "-bootstrap-expect=1"
       capabilities:
         ui_endpoint:
           properties:
