@@ -26,7 +26,7 @@ description: "Slurm singularity job template1"
 imports:
   - tosca-normative-types:1.0.0-ALIEN20
   - yorc-types:1.0.0
-  - yorc-slurm-types:1.0.0
+  - yorc-slurm-types:1.1.0-SNAPSHOT
   - org.ystia.yorc.samples.job.singularity.Component:1.0.0-SNAPSHOT
 
 repositories:
@@ -46,7 +46,7 @@ topology_template:
         batch: false
       interfaces:
         tosca.interfaces.node.lifecycle.Runnable:
-          run:
+          submit:
             inputs:
               exec_command: {get_property: [SELF, exec_command]}
             implementation:
@@ -61,7 +61,7 @@ topology_template:
         batch: true
       interfaces:
         tosca.interfaces.node.lifecycle.Runnable:
-          run:
+          submit:
             inputs:
               exec_command: {get_property: [SELF, exec_command]}
             implementation:

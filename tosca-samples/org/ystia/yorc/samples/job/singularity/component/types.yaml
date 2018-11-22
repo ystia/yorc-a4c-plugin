@@ -24,7 +24,7 @@ metadata:
 imports:
   - tosca-normative-types:1.0.0-ALIEN20
   - yorc-types:1.0.0
-  - yorc-slurm-types:1.0.0
+  - yorc-slurm-types:1.1.0-SNAPSHOT
 
 node_types:
   org.ystia.yorc.samples.job.singularity.Component:
