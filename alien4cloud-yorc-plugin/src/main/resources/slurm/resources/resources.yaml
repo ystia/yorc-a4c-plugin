@@ -120,7 +120,9 @@ node_types:
       tosca.interfaces.node.lifecycle.Runnable:
         submit:
           implementation:
-            file:
+            # This is a hack to force Alien to generate this step in workflows it will be overrided in Yorc
+            # TODO(loicalbertin) think about use a topology modifier for this to add this step only if a submit operation exists
+            file: "resources.yaml"
             type: yorc.artifacts.Deployment.SlurmJob
         run:
           implementation:
