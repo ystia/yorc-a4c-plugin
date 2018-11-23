@@ -1,0 +1,55 @@
+tosca_definitions_version: alien_dsl_2_0_0
+
+metadata:
+  template_name: org.ystia.yorc.samples.kube.yorc
+  template_version: 1.0.0-SNAPSHOT
+  template_author: Yorc team
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN20
+  - docker-types:2.1.0-SM7
+
+description: Yorc Docker that can be deployed on K8S
+
+repositories:
+  docker:
+    url: https://hub.docker.com/
+    type: docker
+
+node_types:
+  org.ystia.yorc.samples.kube.containers.nodes.Yorc:
+    derived_from: tosca.nodes.Container.Application.DockerContainer
+    capabilities:
+      consul_ui:
+        type: org.ystia.yorc.samples.kube.containers.capabilities.consul_UI
+      yorc_server:
+        type: org.ystia.yorc.samples.kube.containers.capabilities.yorc_server
+    interfaces:
+      Standard:
+        create:
+          implementation:
+            file: ystia/yorc:3.0.2
+            repository: docker
+            type: tosca.artifacts.Deployment.Image.Container.Docker
+
+capability_types:
+  org.ystia.yorc.samples.kube.containers.capabilities.consul_UI:
+    derived_from: tosca.capabilities.Endpoint
+    properties:
+      docker_bridge_port_mapping:
+        type: integer
+        description: Port used to bridge to the container's endpoint.
+        default: 0
+      port:
+        type: integer
+        default: 8500
+  org.ystia.yorc.samples.kube.containers.capabilities.yorc_server:
+    derived_from: tosca.capabilities.Endpoint
+    properties:
+      docker_bridge_port_mapping:
+        type: integer
+        description: Port used to bridge to the container's endpoint.
+        default: 0
+      port:
+        type: integer
+        default: 8800
