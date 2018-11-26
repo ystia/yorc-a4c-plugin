@@ -11,7 +11,7 @@ description: |
 imports:
   - tosca-normative-types:1.0.0-ALIEN20
   - org.ystia.yorc.samples.kube.grafana:1.0.0-SNAPSHOT
-  - docker-types:2.1.0-SM7
+  - docker-types:2.1.0-SNAPSHOT
 
 topology_template:
   node_templates:
