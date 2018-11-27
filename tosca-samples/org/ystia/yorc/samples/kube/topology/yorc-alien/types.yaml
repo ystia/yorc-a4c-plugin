@@ -1,0 +1,100 @@
+tosca_definitions_version: alien_dsl_2_0_0
+
+metadata:
+  template_name: org.ystia.yorc.samples.kube.topology.yorc-alien
+  template_version: 0.1.0-SNAPSHOT
+  template_author: yorc-team
+
+description: "A simple yorc server and alien "
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN20
+  - org.ystia.yorc.samples.kube.yorc:1.0.0-SNAPSHOT
+  - org.ystia.yorc.samples.kube.alien:1.0.0-SNAPSHOT
+  - docker-types:2.1.0-SM7
+
+topology_template:
+  node_templates:
+    AlienDeployment:
+      type: org.alien4cloud.extended.container.types.ContainerDeploymentUnit
+    AlienContainer:
+      type: org.alien4cloud.extended.container.types.ContainerRuntime
+      requirements:
+        - hostedOnDeploymentHost:
+            type_requirement: host
+            node: AlienDeployment
+            capability: tosca.capabilities.Container.Docker
+            relationship: tosca.relationships.HostedOn
+    Alien:
+      type: org.ystia.yorc.samples.kube.containers.nodes.Alien
+      properties:
+        cpu_share: 0.3
+      capabilities:
+        alien_ui:
+          properties:
+            port: 8088
+            protocol: tcp
+            secure: false
+            network_name: PRIVATE
+            initiator: source
+      requirements:
+        - hostedOnContainerRuntimeContainer:
+            type_requirement: host
+            node: AlienContainer
+            capability: org.alien4cloud.extended.container.capabilities.ApplicationHost
+            relationship: org.alien4cloud.extended.container.relationships.HostedOnContainerRuntime
+
+    YorcDeployment:
+      type: org.alien4cloud.extended.container.types.ContainerDeploymentUnit
+    YorcContainer:
+      type: org.alien4cloud.extended.container.types.ContainerRuntime
+      requirements:
+        - hostedOnDeploymentHost:
+            type_requirement: host
+            node: YorcDeployment
+            capability: tosca.capabilities.Container.Docker
+            relationship: tosca.relationships.HostedOn
+    Yorc:
+      type: org.ystia.yorc.samples.kube.containers.nodes.Yorc
+      properties:
+        cpu_share: 0.3
+        docker_env_vars:
+          YORC_LOG: "DEBUG"
+          CONSUL_ENV_ui: true
+      capabilities:
+        consul_ui:
+          properties:
+            port: 8500
+            protocol: tcp
+            secure: false
+            network_name: PRIVATE
+            initiator: source
+        yorc_server:
+          properties:
+            port: 8800
+            protocol: tcp
+            secure: false
+            network_name: PRIVATE
+            initiator: source
+      requirements:
+        - hostedOnContainerRuntimeContainer:
+            type_requirement: host
+            node: YorcContainer
+            capability: org.alien4cloud.extended.container.capabilities.ApplicationHost
+            relationship: org.alien4cloud.extended.container.relationships.HostedOnContainerRuntime
+
+    Volume:
+      type: org.alien4cloud.nodes.DockerExtVolume
+      requirements:
+        - mountDockerVolumeYorcAttach:
+            type_requirement: attachment
+            node: Yorc
+            capability: org.alien4cloud.capabilities.DockerVolumeAttachment
+            relationship: org.alien4cloud.relationships.MountDockerVolume
+            properties:
+              container_path: "/Yorc/data"
+        - hostedOnContainerDeploymentHost:
+            type_requirement: host
+            node: YorcDeployment
+            capability: tosca.capabilities.Container.Docker
+            relationship: tosca.relationships.HostedOn
