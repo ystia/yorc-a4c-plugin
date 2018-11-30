@@ -76,12 +76,12 @@ public class LogListenerTask extends AlienTask {
                             PaaSDeploymentLog pLog = toPaasDeploymentLog(logEvent);
                             // here handle the event to generate a4c AbstractMonitorEvent
                             // and enrich the log with taskId
-                            try {
-                                // just to be sure we don't break anything
-                                handleEvent(logEvent, pLog);
-                            } catch (Exception e) {
-                                log.warn("Not able to handle events", e.getMessage());
-                            }
+//                            try {
+//                                // just to be sure we don't break anything
+//                                handleEvent(logEvent, pLog);
+//                            } catch (Exception e) {
+//                                log.warn("Not able to handle events", e.getMessage());
+//                            }
                             postLog(pLog, logEvent.getDeploymentId());
                         }
                     }

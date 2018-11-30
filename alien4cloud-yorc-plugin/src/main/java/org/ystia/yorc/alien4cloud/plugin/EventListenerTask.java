@@ -36,9 +36,11 @@ public class EventListenerTask extends AlienTask {
     // Check with Yorc code for these values.
     public static final String EVT_INSTANCE   = "instance";
     public static final String EVT_DEPLOYMENT = "deployment";
-    public static final String EVT_OPERATION  = "custom-command";
+    public static final String EVT_CUSTOM_COMMAND = "customCommand";
     public static final String EVT_SCALING    = "scaling";
     public static final String EVT_WORKFLOW   = "workflow";
+    public static final String EVT_WORKFLOW_STEP   = "workflowStep";
+    public static final String EVT_ALIEN_TASK   = "alienTask";
 
     // Set this to false to stop pollong events
     private boolean valid = true;
@@ -62,7 +64,7 @@ public class EventListenerTask extends AlienTask {
                     prevIndex = eventResponse.getLast_index();
                     if (eventResponse.getEvents() != null) {
                         for (Event event : eventResponse.getEvents()) {
-                            String paasId = event.getDeployment_id();
+                            String paasId = event.getDeploymentId();
                             log.debug("Received event from Yorc: " + event.toString());
                             log.debug("Received event has deploymentId : " + paasId);
                             String deploymentId = orchestrator.getDeploymentId(paasId);
@@ -88,8 +90,8 @@ public class EventListenerTask extends AlienTask {
 
                             switch (event.getType()) {
                                 case EVT_INSTANCE:
-                                    String eNode = event.getNode();
-                                    String eInstance = event.getInstance();
+                                    String eNode = event.getNodeId();
+                                    String eInstance = event.getInstanceId();
                                     eMessage += "instance " + eNode + ":" + eInstance + ":" + eState;
                                     log.debug("Received Event from Yorc <<< " + eMessage);
                                     Map<String, InstanceInformation> ninfo = instanceInfo.get(eNode);
@@ -144,9 +146,11 @@ public class EventListenerTask extends AlienTask {
                                     }
                                     break;
                                 case EVT_DEPLOYMENT:
-                                case EVT_OPERATION:
+                                case EVT_CUSTOM_COMMAND:
                                 case EVT_SCALING:
                                 case EVT_WORKFLOW:
+                                case EVT_WORKFLOW_STEP:
+                                case EVT_ALIEN_TASK:
                                     eMessage += event.getType() + ":" + eState;
                                     log.debug("Received Event from Yorc <<< " + eMessage);
                                     synchronized (jrdi) {
