@@ -19,6 +19,10 @@ repositories:
 node_types:
   org.ystia.yorc.samples.kube.containers.nodes.Alien:
     derived_from: tosca.nodes.Container.Application.DockerContainer
+    properties:
+      docker_env_vars:
+        YORC_HOST: { get_attribute: [TARGET, http_endpoint, ip_address] }
+        YORC_PORT: { get_attribute: [TARGET, http_endpoint, port] }
     capabilities:
       alien_ui:
         type: org.ystia.yorc.samples.kube.containers.capabilities.alien_UI
