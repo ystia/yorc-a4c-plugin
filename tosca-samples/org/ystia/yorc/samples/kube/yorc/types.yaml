@@ -22,8 +22,10 @@ node_types:
     capabilities:
       consul_ui:
         type: org.ystia.yorc.samples.kube.containers.capabilities.consul_UI
+        description: Endpoint to acess consul UI
       yorc_server:
         type: org.ystia.yorc.samples.kube.containers.capabilities.yorc_server
+        description: Endpoint to communicate with yorc API
     interfaces:
       Standard:
         create:
@@ -39,7 +41,7 @@ capability_types:
       docker_bridge_port_mapping:
         type: integer
         description: Port used to bridge to the container's endpoint.
-        default: 0
+        default: 8500
       port:
         type: integer
         default: 8500
@@ -49,7 +51,7 @@ capability_types:
       docker_bridge_port_mapping:
         type: integer
         description: Port used to bridge to the container's endpoint.
-        default: 0
+        default: 8800
       port:
         type: integer
         default: 8800

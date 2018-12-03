@@ -7,6 +7,7 @@ metadata:
 
 imports:
   - tosca-normative-types:1.0.0-ALIEN20
+  - org.ystia.yorc.samples.kube.yorc:1.0.0-SNAPSHOT
   - docker-types:2.1.0-SM7
 
 description: Alien Docker that can be deployed on K8S
@@ -19,16 +20,22 @@ repositories:
 node_types:
   org.ystia.yorc.samples.kube.containers.nodes.Alien:
     derived_from: tosca.nodes.Container.Application.DockerContainer
-    properties:
-      docker_env_vars:
-        YORC_HOST: { get_attribute: [TARGET, http_endpoint, ip_address] }
-        YORC_PORT: { get_attribute: [TARGET, http_endpoint, port] }
     capabilities:
       alien_ui:
         type: org.ystia.yorc.samples.kube.containers.capabilities.alien_UI
+        description: Endpoint for alien4cloud UI
+    requirements:
+      - yorc_server:
+          capability: org.ystia.yorc.samples.kube.containers.capabilities.yorc_server
+          relationship: tosca.relationships.ConnectsTo
+          occurrences: [0, UNBOUNDED]
     interfaces:
       Standard:
         create:
+          inputs: 
+            ENV_YORC_HOST: { get_attribute: [TARGET, yorc_server, ip_address] }
+            ENV_YORC_PORT: { get_attribute: [TARGET, yorc_server, port] }
+            ENV_NB_RETRY: 25
           implementation:
             file: loicrosso/alien4cloud:2.1.0-SM7
             repository: docker
@@ -41,7 +48,7 @@ capability_types:
       docker_bridge_port_mapping:
         type: integer
         description: Port used to bridge to the container's endpoint.
-        default: 0
+        default: 8088
       port:
         type: integer
         default: 8088
