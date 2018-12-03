@@ -34,13 +34,13 @@ import java.util.UUID;
 public class EventListenerTask extends AlienTask {
     // Possible values for Yorc event types
     // Check with Yorc code for these values.
-    public static final String EVT_INSTANCE   = "instance";
-    public static final String EVT_DEPLOYMENT = "deployment";
-    public static final String EVT_CUSTOM_COMMAND = "customCommand";
-    public static final String EVT_SCALING    = "scaling";
-    public static final String EVT_WORKFLOW   = "workflow";
-    public static final String EVT_WORKFLOW_STEP   = "workflowStep";
-    public static final String EVT_ALIEN_TASK   = "alienTask";
+    public static final String EVT_INSTANCE   = "Instance";
+    public static final String EVT_DEPLOYMENT = "Deployment";
+    public static final String EVT_CUSTOM_COMMAND = "CustomCommand";
+    public static final String EVT_SCALING    = "Scaling";
+    public static final String EVT_WORKFLOW   = "Workflow";
+    public static final String EVT_WORKFLOW_STEP   = "WorkflowStep";
+    public static final String EVT_ALIEN_TASK   = "AlienTask";
 
     // Set this to false to stop pollong events
     private boolean valid = true;
