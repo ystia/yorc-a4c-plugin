@@ -557,6 +557,8 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
     }
 
     protected void postWorkflowStepEvent(AbstractWorkflowStepEvent event, Event yorcEvent) {
+        event.setDeploymentId(a4cDeploymentIds.get(yorcEvent.getDeploymentId()));
+        event.setOrchestratorId(yorcEvent.getDeploymentId());
         event.setInstanceId(yorcEvent.getInstanceId());
         event.setNodeId(yorcEvent.getNodeId());
         event.setOperationName(yorcEvent.getOperationName());
@@ -564,13 +566,14 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
         event.setTargetInstanceId(yorcEvent.getTargetInstanceId());
         event.setTargetNodeId(yorcEvent.getTargetNodeId());
         event.setDate(event.getDate());
-        event.setDeploymentId(yorcEvent.getDeploymentId());
         event.setExecutionId(yorcEvent.getAlienExecutionId());
         event.setWorkflowId(yorcEvent.getWorkflowId());
         postWorkflowMonitorEvent(event, yorcEvent);
     }
 
     protected void postTaskEvent(AbstractTaskEvent event, Event yorcEvent) {
+        event.setDeploymentId(a4cDeploymentIds.get(yorcEvent.getDeploymentId()));
+        event.setOrchestratorId(yorcEvent.getDeploymentId());
         event.setTaskId(yorcEvent.getAlienTaskId());
         event.setInstanceId(yorcEvent.getInstanceId());
         event.setNodeId(yorcEvent.getNodeId());
@@ -579,14 +582,14 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
         event.setTargetInstanceId(yorcEvent.getTargetInstanceId());
         event.setTargetNodeId(yorcEvent.getTargetNodeId());
         event.setDate(event.getDate());
-        event.setDeploymentId(yorcEvent.getDeploymentId());
         event.setExecutionId(yorcEvent.getAlienExecutionId());
         event.setWorkflowId(yorcEvent.getWorkflowId());
         postWorkflowMonitorEvent(event, yorcEvent);
     }
 
     protected void postWorkflowMonitorEvent(AbstractPaaSWorkflowMonitorEvent a4cEvent, Event yorcEvent) {
-        a4cEvent.setDeploymentId(yorcEvent.getDeploymentId());
+        a4cEvent.setDeploymentId(a4cDeploymentIds.get(yorcEvent.getDeploymentId()));
+        a4cEvent.setOrchestratorId(yorcEvent.getDeploymentId());
         a4cEvent.setDate(yorcEvent.getDate().getTime());
         a4cEvent.setExecutionId(yorcEvent.getAlienExecutionId());
         a4cEvent.setWorkflowId(yorcEvent.getWorkflowId());

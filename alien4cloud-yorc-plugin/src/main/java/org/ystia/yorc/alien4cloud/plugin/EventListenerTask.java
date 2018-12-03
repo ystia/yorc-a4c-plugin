@@ -15,8 +15,7 @@
  */
 package org.ystia.yorc.alien4cloud.plugin;
 
-import alien4cloud.paas.model.InstanceInformation;
-import alien4cloud.paas.model.PaaSInstancePersistentResourceMonitorEvent;
+import alien4cloud.paas.model.*;
 import alien4cloud.tosca.normative.NormativeBlockStorageConstants;
 import alien4cloud.utils.MapUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -148,9 +147,6 @@ public class EventListenerTask extends AlienTask {
                                 case EVT_DEPLOYMENT:
                                 case EVT_CUSTOM_COMMAND:
                                 case EVT_SCALING:
-                                case EVT_WORKFLOW:
-                                case EVT_WORKFLOW_STEP:
-                                case EVT_ALIEN_TASK:
                                     eMessage += event.getType() + ":" + eState;
                                     log.debug("Received Event from Yorc <<< " + eMessage);
                                     synchronized (jrdi) {
@@ -159,6 +155,86 @@ public class EventListenerTask extends AlienTask {
                                         }
                                         jrdi.setLastEvent(event);
                                         jrdi.notifyAll();
+                                    }
+                                    break;
+                                case EVT_WORKFLOW:
+                                    eMessage += event.getType() + ":" + eState;
+                                    log.debug("Received Event from Yorc <<< " + eMessage);
+                                    //FIXME not sure to know what is done here
+                                    synchronized (jrdi) {
+                                        if (jrdi.getLastEvent() != null) {
+                                            log.debug("Event not taken, forgot it: " + jrdi.getLastEvent());
+                                        }
+                                        jrdi.setLastEvent(event);
+                                        jrdi.notifyAll();
+                                    }
+                                    switch (event.getStatus()) {
+                                        case "failed":
+                                            log.debug("Post WorkflowMonitor failed event");
+                                            orchestrator.postWorkflowMonitorEvent(new PaaSWorkflowFailedEvent(), event);
+                                            break;
+                                        case "canceled":
+                                            log.debug("Post WorkflowMonitor cancelled event");
+                                            orchestrator.postWorkflowMonitorEvent(new PaaSWorkflowCancelledEvent(), event);
+                                            break;
+                                        case "done":
+                                            log.debug("Post WorkflowMonitor succeeded event");
+                                            orchestrator.postWorkflowMonitorEvent(new PaaSWorkflowSucceededEvent(), event);
+                                            break;
+                                        case "initial":
+                                            log.debug("Post WorkflowMonitor started event");
+                                            orchestrator.postWorkflowMonitorEvent(new PaaSWorkflowStartedEvent(), event);
+                                            break;
+                                        default:
+                                            log.warn("An event has been ignored. Unexpected status=" + event.getStatus());
+                                            break;
+                                    }
+                                    break;
+                                case EVT_WORKFLOW_STEP:
+                                    eMessage += event.getType() + ":" + eState;
+                                    log.debug("Received Event from Yorc <<< " + eMessage);
+                                    switch (event.getStatus()) {
+                                        case "initial":
+                                            log.debug("Post WorkflowStep started event");
+                                            orchestrator.postWorkflowStepEvent(new WorkflowStepStartedEvent(), event);
+                                            break;
+                                        case "done":
+                                        case "error":
+                                            log.debug("Post WorkflowStep completed event");
+                                            orchestrator.postWorkflowStepEvent(new WorkflowStepCompletedEvent(), event);
+                                            break;
+                                        default:
+                                            log.warn("An event has been ignored. Unexpected status=" + event.getStatus());
+                                            break;
+                                    }
+                                    break;
+                                case EVT_ALIEN_TASK:
+                                    eMessage += event.getType() + ":" + eState;
+                                    log.debug("Received Event from Yorc <<< " + eMessage);
+                                    switch (event.getStatus()) {
+                                        case "initial":
+                                            log.debug("Post Task sent event");
+                                            orchestrator.postTaskEvent(new TaskSentEvent(), event);
+                                            break;
+                                        case "running":
+                                            log.debug("Post Task running event");
+                                            orchestrator.postTaskEvent(new TaskStartedEvent(), event);
+                                            break;
+                                        case "done":
+                                            log.debug("Post Task succeeded event");
+                                            orchestrator.postTaskEvent(new TaskSucceededEvent(), event);
+                                            break;
+                                        case "error":
+                                            log.debug("Post Task failed event");
+                                            orchestrator.postTaskEvent(new TaskFailedEvent(), event);
+                                            break;
+                                        case "canceled":
+                                            log.debug("Post Task cancelled event");
+                                            orchestrator.postTaskEvent(new TaskCancelledEvent(), event);
+                                            break;
+                                        default:
+                                            log.warn("An event has been ignored. Unexpected status=" + event.getStatus());
+                                            break;
                                     }
                                     break;
                                 default:
