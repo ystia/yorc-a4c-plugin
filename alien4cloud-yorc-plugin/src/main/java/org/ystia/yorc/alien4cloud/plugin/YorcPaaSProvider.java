@@ -557,8 +557,6 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
     }
 
     protected void postWorkflowStepEvent(AbstractWorkflowStepEvent event, Event yorcEvent) {
-        event.setDeploymentId(a4cDeploymentIds.get(yorcEvent.getDeploymentId()));
-        event.setOrchestratorId(yorcEvent.getDeploymentId());
         event.setInstanceId(yorcEvent.getInstanceId());
         event.setNodeId(yorcEvent.getNodeId());
         event.setOperationName(yorcEvent.getOperationName());
@@ -572,8 +570,6 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
     }
 
     protected void postTaskEvent(AbstractTaskEvent event, Event yorcEvent) {
-        event.setDeploymentId(a4cDeploymentIds.get(yorcEvent.getDeploymentId()));
-        event.setOrchestratorId(yorcEvent.getDeploymentId());
         event.setTaskId(yorcEvent.getAlienTaskId());
         event.setInstanceId(yorcEvent.getInstanceId());
         event.setNodeId(yorcEvent.getNodeId());
@@ -593,6 +589,13 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
         a4cEvent.setDate(yorcEvent.getDate().getTime());
         a4cEvent.setExecutionId(yorcEvent.getAlienExecutionId());
         a4cEvent.setWorkflowId(yorcEvent.getWorkflowId());
+        if (a4cEvent instanceof PaaSWorkflowStartedEvent) {
+            PaaSWorkflowStartedEvent wse = (PaaSWorkflowStartedEvent) a4cEvent;
+            wse.setWorkflowName(yorcEvent.getWorkflowId());
+            postEvent(wse, yorcEvent.getDeploymentId());
+            return;
+        }
+
         postEvent(a4cEvent, yorcEvent.getDeploymentId());
     }
 
