@@ -165,6 +165,7 @@ public class EventListenerTask extends AlienTask {
                                         if (jrdi.getLastEvent() != null) {
                                             log.debug("Event not taken, forgot it: " + jrdi.getLastEvent());
                                         }
+
                                         jrdi.setLastEvent(event);
                                         jrdi.notifyAll();
                                     }
@@ -176,6 +177,9 @@ public class EventListenerTask extends AlienTask {
                                         case "canceled":
                                             log.debug("Post WorkflowMonitor cancelled event");
                                             orchestrator.postWorkflowMonitorEvent(new PaaSWorkflowCancelledEvent(), event);
+                                            break;
+                                        case "running":
+                                            // This status is not handled now Alien side so we do nothing right now
                                             break;
                                         case "done":
                                             log.debug("Post WorkflowMonitor succeeded event");
@@ -197,6 +201,9 @@ public class EventListenerTask extends AlienTask {
                                         case "initial":
                                             log.debug("Post WorkflowStep started event");
                                             orchestrator.postWorkflowStepEvent(new WorkflowStepStartedEvent(), event);
+                                            break;
+                                        case "running":
+                                            // This status is not handled now Alien side so we do nothing right now
                                             break;
                                         case "done":
                                         case "error":
