@@ -150,9 +150,6 @@ public class EventListenerTask extends AlienTask {
                                     eMessage += event.getType() + ":" + eState;
                                     log.debug("Received Event from Yorc <<< " + eMessage);
                                     synchronized (jrdi) {
-                                        if (jrdi.getLastEvent() != null) {
-                                            log.debug("Event not taken, forgot it: " + jrdi.getLastEvent());
-                                        }
                                         jrdi.setLastEvent(event);
                                         jrdi.notifyAll();
                                     }
@@ -160,12 +157,7 @@ public class EventListenerTask extends AlienTask {
                                 case EVT_WORKFLOW:
                                     eMessage += event.getType() + ":" + eState;
                                     log.debug("Received Event from Yorc <<< " + eMessage);
-                                    //FIXME not sure to know what is done here
                                     synchronized (jrdi) {
-                                        if (jrdi.getLastEvent() != null) {
-                                            log.debug("Event not taken, forgot it: " + jrdi.getLastEvent());
-                                        }
-
                                         jrdi.setLastEvent(event);
                                         jrdi.notifyAll();
                                     }
@@ -197,6 +189,10 @@ public class EventListenerTask extends AlienTask {
                                 case EVT_WORKFLOW_STEP:
                                     eMessage += event.getType() + ":" + eState;
                                     log.debug("Received Event from Yorc <<< " + eMessage);
+                                    synchronized (jrdi) {
+                                        jrdi.setLastEvent(event);
+                                        jrdi.notifyAll();
+                                    }
                                     switch (event.getStatus()) {
                                         case "initial":
                                             log.debug("Post WorkflowStep started event");
@@ -218,6 +214,10 @@ public class EventListenerTask extends AlienTask {
                                 case EVT_ALIEN_TASK:
                                     eMessage += event.getType() + ":" + eState;
                                     log.debug("Received Event from Yorc <<< " + eMessage);
+                                    synchronized (jrdi) {
+                                        jrdi.setLastEvent(event);
+                                        jrdi.notifyAll();
+                                    }
                                     switch (event.getStatus()) {
                                         case "initial":
                                             log.debug("Post Task sent event");
