@@ -268,7 +268,6 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
      */
     @Override
     public void deploy(PaaSTopologyDeploymentContext ctx, IPaaSCallback<?> callback) {
-        logListenerTask.registerDeployment(ctx);
         addTask(new DeployTask(ctx, this, callback, csarRepoSearchService));
     }
 
@@ -279,7 +278,6 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
      */
     @Override
     public void undeploy(PaaSDeploymentContext ctx, IPaaSCallback<?> callback) {
-        logListenerTask.unregisterDeployment(ctx);
         addTask(new UndeployTask(ctx, this, callback));
     }
 
