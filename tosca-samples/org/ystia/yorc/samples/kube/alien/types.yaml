@@ -37,7 +37,7 @@ node_types:
             ENV_YORC_PORT: { get_attribute: [TARGET, yorc_server, port] }
             ENV_NB_RETRY: 25
           implementation:
-            file: loicrosso/alien4cloud:2.1.0-SM7
+            file: ystia/alien4cloud:latest
             repository: docker
             type: tosca.artifacts.Deployment.Image.Container.Docker
 
