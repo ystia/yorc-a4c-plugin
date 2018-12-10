@@ -122,11 +122,17 @@ public class RestClient {
 
         // Instantiate restTemplate
         HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory(httpClient);
-        requestFactory.setHttpClient(httpClient);
         restTemplate = new RestTemplate(requestFactory);
 
         // Display deployments
-        logDeployments();
+        try{
+            logDeployments();
+        }catch(Exception e){
+            log.warn("Unable to retrieve deployments due to: {}", e.getMessage());
+            e.printStackTrace();
+            throw new PluginConfigurationException("Failed to connect to yorc", e);
+        }
+
     }
 
     /**
@@ -195,20 +201,13 @@ public class RestClient {
     /**
      * This allows to log deployments
      */
-    public void logDeployments() {
-        try {
+    public void logDeployments() throws Exception{
             DeployInfoResponseArray deployments = sendRequest(providerConfiguration.getUrlYorc() + "/deployments", HttpMethod.GET, DeployInfoResponseArray.class, buildHttpEntityWithDefaultHeader(null)).getBody();
             if (deployments != null && deployments.getDeployments() != null && deployments.getDeployments().length > 0) {
                 Arrays.asList(deployments).forEach(item -> log.debug("Found a deployment: " + item));
             } else {
                 log.debug("No deployment found");
             }
-
-        }
-        catch (Exception e) {
-            log.warn("Unable to retrieve deployments due to: {}", e.getMessage());
-            e.printStackTrace();
-        }
     }
 
     /**
