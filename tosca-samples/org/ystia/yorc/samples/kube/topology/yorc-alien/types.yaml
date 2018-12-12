@@ -36,10 +36,8 @@ topology_template:
             capability: org.alien4cloud.extended.container.capabilities.ApplicationHost
             relationship: org.alien4cloud.extended.container.relationships.HostedOnContainerRuntime
         - connect_yorc:
-            type_requirement: YorcRestAPI
+            type_requirement: yorc_server
             node: Yorc
-            capability: org.ystia.yorc.samples.kube.containers.capabilities.YorcRestAPI
-            relationship: tosca.relationships.ConnectsToYorcRestAPI
 
     YorcDeployment:
       type: org.alien4cloud.extended.container.types.ContainerDeploymentUnit

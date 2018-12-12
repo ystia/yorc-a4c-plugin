@@ -21,10 +21,10 @@ node_types:
     derived_from: tosca.nodes.Container.Application.DockerContainer
     capabilities:
       consul_ui:
-        type: org.ystia.yorc.samples.kube.containers.capabilities.consul_UI
+        type: org.ystia.yorc.samples.kube.containers.capabilities.ConsulUI
         description: Endpoint to acess consul UI
       yorc_server:
-        type: org.ystia.yorc.samples.kube.containers.capabilities.yorc_server
+        type: org.ystia.yorc.samples.kube.containers.capabilities.YorcRestAPI
         description: Endpoint to communicate with yorc API
     interfaces:
       Standard:
@@ -35,7 +35,7 @@ node_types:
             type: tosca.artifacts.Deployment.Image.Container.Docker
 
 capability_types:
-  org.ystia.yorc.samples.kube.containers.capabilities.consul_UI:
+  org.ystia.yorc.samples.kube.containers.capabilities.ConsulUI:
     derived_from: tosca.capabilities.Endpoint
     properties:
       docker_bridge_port_mapping:
@@ -45,7 +45,7 @@ capability_types:
       port:
         type: integer
         default: 8500
-  org.ystia.yorc.samples.kube.containers.capabilities.yorc_server:
+  org.ystia.yorc.samples.kube.containers.capabilities.YorcRestAPI:
     derived_from: tosca.capabilities.Endpoint
     properties:
       docker_bridge_port_mapping:
