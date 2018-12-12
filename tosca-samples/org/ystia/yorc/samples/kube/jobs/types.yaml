@@ -7,7 +7,7 @@ metadata:
 
 imports:
   - tosca-normative-types:1.0.0-ALIEN20
-  - docker-types:2.1.0-SNAPSHOT
+  - docker-types:2.1.0-RC1
 
 description: Contains types for testing Jobs in Kubernetes
 
