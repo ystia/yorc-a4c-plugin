@@ -105,6 +105,7 @@ public class LogListenerTask extends AlienTask {
         deploymentLog.setTimestamp(pLogEvent.getDate());
         deploymentLog.setWorkflowId(pLogEvent.getWorkflowId());
         deploymentLog.setOperationName(pLogEvent.getOperationName());
+        deploymentLog.setTaskId(pLogEvent.getAlienTaskId());
         return deploymentLog;
     }
 }
