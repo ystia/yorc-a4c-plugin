@@ -30,6 +30,6 @@ pyyaml==3.12              # via ansible
 requests==2.20.0          # via docker-py
 six==1.11.0               # via bcrypt, cryptography, docker-py, docker-pycreds, pynacl, tox, websocket-client
 tox==2.9.1
-urllib3==1.22             # via requests
+urllib3==1.23             # via requests
 virtualenv==15.1.0        # via tox
 websocket-client==0.46.0  # via docker-py
