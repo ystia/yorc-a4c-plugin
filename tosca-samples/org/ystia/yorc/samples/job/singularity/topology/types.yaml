@@ -65,6 +65,6 @@ topology_template:
             inputs:
               exec_command: {get_property: [SELF, exec_command]}
             implementation:
-              file: /home_nfs/benoists/hello-world.img
+              file: /home_nfs/commons/hello-world.img
               repository: cluster_nfs
               type: yorc.artifacts.Deployment.SlurmJobImage
