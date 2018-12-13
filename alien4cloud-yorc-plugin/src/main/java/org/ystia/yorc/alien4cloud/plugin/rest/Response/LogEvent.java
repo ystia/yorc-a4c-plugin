@@ -39,6 +39,7 @@ public class LogEvent {
     private String interfaceName;
     private String operationName;
     private String content;
+    private String alienTaskId;
 
     public Date getDate() {
         return Date.from(LocalDateTime.parse(this.getTimestamp(), DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(

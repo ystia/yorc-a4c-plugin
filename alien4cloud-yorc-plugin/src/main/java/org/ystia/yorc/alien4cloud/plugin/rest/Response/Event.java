@@ -19,16 +19,31 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
+
 @ToString
 @Getter
 @Setter
 public class Event {
-    // refer to yorc code to check this values: events/struct.go
     private String timestamp;
-    private String node;
-    private String instance;
+    private String deploymentId;
     private String status;
     private String type;
-    private String task_id;
-    private String deployment_id;
+    private String workflowId;
+    private String alienExecutionId;
+    private String nodeId;
+    private String instanceId;
+    private String operationName;
+    private String alienTaskId;
+    private String targetNodeId;
+    private String targetInstanceId;
+    private String stepId;
+
+    public Date getDate() {
+        return Date.from(LocalDateTime.parse(this.getTimestamp(), DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(
+                ZoneId.systemDefault()).toInstant());
+    }
 }
