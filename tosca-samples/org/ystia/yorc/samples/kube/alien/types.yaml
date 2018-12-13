@@ -33,23 +33,18 @@ node_types:
       Standard:
         create:
           inputs: 
-            
+            ENV_YORC_HOST: { get_attribute: [TARGET, yorc_server, ip_address] }
+            ENV_YORC_PORT: { get_attribute: [TARGET, yorc_server, port] }
+            ENV_NB_RETRY: 25
           implementation:
             file: ystia/alien4cloud:latest
             repository: docker
             type: tosca.artifacts.Deployment.Image.Container.Docker
-            
+
 relationship_types:
   org.ystia.yorc.sample.kube.relationships.ConnectsToYorcRestAPI:
     derived_from: tosca.relationships.ConnectsTo
     valid_target_types: [org.ystia.yorc.samples.kube.containers.capabilities.YorcRestAPI]
-    interfaces:
-      Configure:
-        pre_configure_source:
-          inputs:
-            ENV_YORC_HOST: { get_attribute: [TARGET, yorc_server, ip_address] }
-            ENV_YORC_PORT: { get_attribute: [TARGET, yorc_server, port] }
-            ENV_NB_RETRY: 25
 
 capability_types:
   org.ystia.yorc.samples.kube.containers.capabilities.alien_UI:
