@@ -29,9 +29,11 @@ node_types:
     properties:
       yorc_debug:
         description: Enable or not Yorc's log debuging
-        type: boolean
+        type: string
         required: true
-        default: false
+        default: "NO_DEBUG"
+        constraints:
+        - valid_values: [ "DEBUG", "NO_DEBUG" ]
       consul_ui:
         description: Enable consul UI available on port 8500
         type: boolean
