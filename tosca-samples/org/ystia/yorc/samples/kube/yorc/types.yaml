@@ -26,9 +26,24 @@ node_types:
       yorc_server:
         type: org.ystia.yorc.samples.kube.containers.capabilities.YorcRestAPI
         description: Endpoint to communicate with yorc API
+    properties:
+      yorc_debug:
+        description: Enable or not Yorc's log debuging
+        type: boolean
+        required: true
+        default: false
+      consul_ui:
+        description: Enable consul UI available on port 8500
+        type: boolean
+        required: true
+        default: true
     interfaces:
       Standard:
         create:
+          inputs:
+            ENV_YORC_LOG: { get_property: [SELF, yorc_debug] }
+            ENV_CONSUL_ENV_ui: { get_property: [SELF, consul_ui] }
+            ENV_CONSUL_ENV_client_addr: '"0.0.0.0"'
           implementation:
             file: ystia/yorc:3.0.2
             repository: docker

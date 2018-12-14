@@ -26,24 +26,6 @@ topology_template:
       type: org.ystia.yorc.samples.kube.containers.nodes.Yorc
       properties:
         cpu_share: 0.3
-        docker_env_vars:
-          YORC_LOG: "DEBUG"
-          CONSUL_ENV_ui: true
-      capabilities:
-        consul_ui:
-          properties:
-            port: 8500
-            protocol: tcp
-            secure: false
-            network_name: PRIVATE
-            initiator: source
-        yorc_server:
-          properties:
-            port: 8800
-            protocol: tcp
-            secure: false
-            network_name: PRIVATE
-            initiator: source
       requirements:
         - hostedOnContainerRuntimeContainer:
             type_requirement: host
