@@ -16,7 +16,7 @@
 package org.ystia.yorc.alien4cloud.plugin;
 
 import alien4cloud.paas.IPaaSCallback;
-import alien4cloud.paas.model.PaaSDeploymentContext;
+import alien4cloud.paas.model.*;
 import lombok.extern.slf4j.Slf4j;
 import org.ystia.yorc.alien4cloud.plugin.rest.Response.Event;
 
@@ -89,37 +89,65 @@ public class WorkflowTask extends AlienTask {
                 }
                 // Check if we received a Workflow Event and process it
                 evt = jrdi.getLastEvent();
-                if (evt != null && evt.getType().equals(EventListenerTask.EVT_WORKFLOW) && evt.getTask_id().equals(taskId)) {
+                if (evt != null && evt.getAlienExecutionId().equals(taskId)) {
                     jrdi.setLastEvent(null);
-                    switch (evt.getStatus()) {
-                        case "failed":
-                            log.warn("Workflow failed: " + paasId);
-                            //workflowStep(paasId, workflowName, "TODO", "TODO", "TODO");
-                            error = new Exception("Workflow " + workflowName + " failed");
+                    switch (evt.getType()) {
+                        case EventListenerTask.EVT_WORKFLOW:
+                            switch (evt.getStatus()) {
+                                case "failed":
+                                    log.warn("Workflow failed: " + paasId);
+                                    orchestrator.postWorkflowMonitorEvent(new PaaSWorkflowFailedEvent(), evt);
+                                    error = new Exception("Workflow " + workflowName + " failed");
+                                    break;
+                                case "canceled":
+                                    log.warn("Workflow canceled: " + paasId);
+                                    orchestrator.postWorkflowMonitorEvent(new PaaSWorkflowCancelledEvent(), evt);
+                                    error = new Exception("Workflow " + workflowName + " canceled");
+                                    break;
+                                case "done":
+                                    orchestrator.postWorkflowMonitorEvent(new PaaSWorkflowSucceededEvent(), evt);
+                                    done = true;
+                                    break;
+                                case "initial":
+                                    orchestrator.postWorkflowMonitorEvent(new PaaSWorkflowStartedEvent(), evt);
+                                    break;
+                                default:
+                                    log.warn("An event has been ignored. Unexpected status=" + evt.getStatus());
+                                    break;
+                            }
                             break;
-                        case "canceled":
-                            log.warn("Workflow canceled: " + paasId);
-                            //workflowStep(paasId, workflowName, "TODO", "TODO", "TODO");
-                            error = new Exception("Workflow " + workflowName + " canceled");
+                        case EventListenerTask.EVT_WORKFLOW_STEP:
+                            switch (evt.getStatus()) {
+                                case "initial":
+                                    orchestrator.postWorkflowStepEvent(new WorkflowStepStartedEvent(), evt);
+                                    break;
+                                case "done":
+                                case "error":
+                                    orchestrator.postWorkflowStepEvent(new WorkflowStepCompletedEvent(), evt);
+                                    break;
+                            }
                             break;
-                        case "done":
-                            log.debug("Workflow success: " + paasId);
-                            //workflowStep(paasId, workflowName, "TODO", "TODO", "TODO");
-                            done = true;
-                            break;
-                        case "initial":
-                            // TODO name of subworkflow ?
-                            //workflowStarted(paasId, workflowName, "TODO");
-                            break;
-                        case "running":
-                            // TODO get name of step and stage: need update of Yorc API
-                            //workflowStep(paasId, workflowName, "TODO", "TODO", "TODO");
-                            break;
-                        default:
-                            log.warn("An event has been ignored. Unexpected status=" + evt.getStatus());
+                        case EventListenerTask.EVT_ALIEN_TASK:
+                            switch (evt.getStatus()) {
+                                case "initial":
+                                    orchestrator.postTaskEvent(new TaskSentEvent(), evt);
+                                    break;
+                                case "running":
+                                    orchestrator.postTaskEvent(new TaskStartedEvent(), evt);
+                                    break;
+                                case "done":
+                                    orchestrator.postTaskEvent(new TaskSucceededEvent(), evt);
+                                    break;
+                                case "error":
+                                    orchestrator.postTaskEvent(new TaskFailedEvent(), evt);
+                                    break;
+                                case "canceled":
+                                    orchestrator.postTaskEvent(new TaskCancelledEvent(), evt);
+                                    break;
+                            }
                             break;
                     }
-                    continue;
+                 continue;
                 }
             }
             // We were awaken for some bad reason or a timeout
