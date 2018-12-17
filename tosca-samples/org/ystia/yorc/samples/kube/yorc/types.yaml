@@ -39,6 +39,11 @@ node_types:
         type: boolean
         required: true
         default: true
+    requirements:
+      - consul_server:
+          capability: org.ystia.yorc.samples.kube.containers.capabilities.serfLAN
+          relationship: org.ystia.yorc.samples.kube.relationships.JoinConsulServer
+          occurrences: [0, 1]
     interfaces:
       Standard:
         create:
@@ -72,3 +77,10 @@ capability_types:
       port:
         type: integer
         default: 8800
+
+relationship_types:
+  org.ystia.yorc.samples.kube.relationships.JoinConsulServer:
+    derived_from: tosca.relationships.ConnectsTo
+    description: >
+      Joins to a Consul server
+    valid_target_types: [ org.ystia.yorc.samples.kube.containers.nodes.Consul ]
