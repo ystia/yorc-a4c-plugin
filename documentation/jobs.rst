@@ -122,3 +122,36 @@ To allow Yorc to manage your job properly some conventions:
 You can find an example of a pure-TOSCA implementation of jobs in the official
 *CSARs public library* with an implementation of a
 `Spark Job <https://github.com/alien4cloud/csar-public-library/tree/develop/org/alien4cloud/spark/job-linux-sh>`_
+
+Specific workflows for Jobs
+---------------------------
+
+When your application contains Jobs (meaning node templates which implements
+the ``tosca.interfaces.node.lifecycle.Runnable`` interface) then Alien4Cloud
+will automatically generate two workflows:
+
+* ``run``: a workflow that submits and monitor jobs
+* ``cancel``: a workflow that cancels jobs
+
+.. warning:: The cancel workflow is a kind of temporary work around. It allows
+   to cancel jobs but do not take care if the job is submitted or not. The
+   recommended way to cancel a ``run`` workflow is to cancel the associated
+   task in Yorc using either the CLI or the Rest API.
+   This is temporary and we will provide soon a way to cancel workflows directly
+   from Alien4Cloud.
+
+The ``run`` workflow allows to orchestrate Jobs. That means that if for
+instance, ``jobB`` depends on ``jobA`` using a TOSCA ``dependsOn`` or
+``connectsTO`` relationship then Alien4Cloud will generate a workflow that
+first submit and wait for the completion of ``jobA`` before submitting
+``jobB``.
+
+Jobs cancellation
+-----------------
+
+The proper way to cancel Jobs that were submitted by a TOSCA workflow is
+to cancel the associated Yorc Task/Execution of this workflow.
+This way Yorc will automatically call ``cancel`` operations for nodes that
+implement it and which have successfully executed their ``submit`` operation.
+Currently those automatic cancellation steps do not appear in Alien4Cloud.
+We will work soon on making them visible.
