@@ -72,82 +72,20 @@ public class WorkflowTask extends AlienTask {
         Event evt;
         while (!done && error == null) {
             synchronized (jrdi) {
-                // Check for timeout
+                // Check deployment timeout
                 long timetowait = timeout - System.currentTimeMillis();
                 if (timetowait <= 0) {
-                    log.warn("Timeout occured");
-                    error = new Throwable("Workflow timeout");
+                    log.warn("Deployment Timeout occured");
+                    error = new Throwable("Deployment timeout");
+                    orchestrator.doChangeStatus(paasId, DeploymentStatus.FAILURE);
                     break;
                 }
-                // Wait Events from Yorc
-                log.debug(paasId + ": Waiting for workflow events.");
+                // Wait Deployment Events from Yorc
+                log.debug(paasId + ": Waiting for deployment events.");
                 try {
                     jrdi.wait(timetowait);
                 } catch (InterruptedException e) {
-                    log.error("Interrupted while waiting for task end");
-                    break;
-                }
-                // Check if we received a Workflow Event and process it
-                evt = jrdi.getLastEvent();
-                if (evt != null && evt.getAlienExecutionId().equals(taskId)) {
-                    jrdi.setLastEvent(null);
-                    switch (evt.getType()) {
-                        case EventListenerTask.EVT_WORKFLOW:
-                            switch (evt.getStatus()) {
-                                case "failed":
-                                    log.warn("Workflow failed: " + paasId);
-                                    orchestrator.postWorkflowMonitorEvent(new PaaSWorkflowFailedEvent(), evt);
-                                    error = new Exception("Workflow " + workflowName + " failed");
-                                    break;
-                                case "canceled":
-                                    log.warn("Workflow canceled: " + paasId);
-                                    orchestrator.postWorkflowMonitorEvent(new PaaSWorkflowCancelledEvent(), evt);
-                                    error = new Exception("Workflow " + workflowName + " canceled");
-                                    break;
-                                case "done":
-                                    orchestrator.postWorkflowMonitorEvent(new PaaSWorkflowSucceededEvent(), evt);
-                                    done = true;
-                                    break;
-                                case "initial":
-                                    orchestrator.postWorkflowMonitorEvent(new PaaSWorkflowStartedEvent(), evt);
-                                    break;
-                                default:
-                                    log.warn("An event has been ignored. Unexpected status=" + evt.getStatus());
-                                    break;
-                            }
-                            break;
-                        case EventListenerTask.EVT_WORKFLOW_STEP:
-                            switch (evt.getStatus()) {
-                                case "initial":
-                                    orchestrator.postWorkflowStepEvent(new WorkflowStepStartedEvent(), evt);
-                                    break;
-                                case "done":
-                                case "error":
-                                    orchestrator.postWorkflowStepEvent(new WorkflowStepCompletedEvent(), evt);
-                                    break;
-                            }
-                            break;
-                        case EventListenerTask.EVT_ALIEN_TASK:
-                            switch (evt.getStatus()) {
-                                case "initial":
-                                    orchestrator.postTaskEvent(new TaskSentEvent(), evt);
-                                    break;
-                                case "running":
-                                    orchestrator.postTaskEvent(new TaskStartedEvent(), evt);
-                                    break;
-                                case "done":
-                                    orchestrator.postTaskEvent(new TaskSucceededEvent(), evt);
-                                    break;
-                                case "error":
-                                    orchestrator.postTaskEvent(new TaskFailedEvent(), evt);
-                                    break;
-                                case "canceled":
-                                    orchestrator.postTaskEvent(new TaskCancelledEvent(), evt);
-                                    break;
-                            }
-                            break;
-                    }
-                 continue;
+                    log.warn("Interrupted while waiting for deployment");
                 }
             }
             // We were awaken for some bad reason or a timeout
