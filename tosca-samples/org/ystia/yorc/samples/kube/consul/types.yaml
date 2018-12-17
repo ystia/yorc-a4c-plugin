@@ -22,6 +22,8 @@ node_types:
     capabilities:
       ui_endpoint:
         type: org.ystia.yorc.samples.kube.containers.capabilities.UI
+      serflan_endpoint:
+        type: org.ystia.yorc.samples.kube.containers.capabilities.serfLAN
     interfaces:
       Standard:
         create:
@@ -37,7 +39,17 @@ capability_types:
       docker_bridge_port_mapping:
         type: integer
         description: Port used to bridge to the container's endpoint.
-        default: 0
+        default: 8500
       port:
         type: integer
         default: 8500
+  org.ystia.yorc.samples.kube.containers.capabilities.serfLAN:
+    derived_from: tosca.capabilities.Endpoint
+    properties:
+      docker_bridge_port_mapping:
+        type: integer
+        description: Port used to bridge to the container's endpoint.
+        default: 8301
+      port:
+        type: integer
+        default: 8301
