@@ -25,7 +25,7 @@ topology_template:
     Consul:
       type: org.ystia.yorc.samples.kube.containers.nodes.Consul
       properties:
-        cpu_share: 0.3
+        cpu_share: 0
         docker_run_args:
           - "agent"
           - "-client=0.0.0.0"
@@ -35,14 +35,6 @@ topology_template:
           - "-ui"
           - "-disable-host-node-id"
           - "-bootstrap-expect=1"
-      capabilities:
-        ui_endpoint:
-          properties:
-            port: 8500
-            protocol: tcp
-            secure: false
-            network_name: PRIVATE
-            initiator: source
       requirements:
         - hostedOnContainerRuntimeContainer:
             type_requirement: host
@@ -51,7 +43,12 @@ topology_template:
             relationship: org.alien4cloud.extended.container.relationships.HostedOnContainerRuntime
     ConsulDeployment:
       type: org.alien4cloud.extended.container.types.ContainerDeploymentUnit
-
+      capabilities:
+        scalable:
+          properties:
+            min_instances: 1
+            max_instances: 1
+            default_instances: 1
     Volume:
       type: org.alien4cloud.nodes.DockerExtVolume
       requirements:
