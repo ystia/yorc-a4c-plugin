@@ -52,7 +52,7 @@ operations:
   generally at the end of the ``submit`` we got a **job identifier**
 * ``run``: Run is an asynchronous operation that will be called periodically
   to check the **job status**.
-* ``cancel``: Cancel allows to *cancels* a **submitted job**.
+* ``cancel``: Cancel allows to *cancel* a **submitted job**.
 
 Supported Jobs Schedulers
 -------------------------
@@ -61,7 +61,7 @@ Slurm
 ~~~~~
 
 Slurm is an HPC scheduler. Unsurprisingly, it was our first builtin support for
-Jobs scheduling. Our Slurm support allows run single jobs and batches made of
+Jobs scheduling. Our Slurm support allows to run single jobs and batches made of
 several jobs.
 
 .. todo:: Include a description on how to write SlurmBin/SlurmBatch/Singularity
