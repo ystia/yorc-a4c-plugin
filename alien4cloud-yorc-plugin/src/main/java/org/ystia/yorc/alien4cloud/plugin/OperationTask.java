@@ -94,7 +94,7 @@ public class OperationTask extends AlienTask {
                     break;
                 }
                 evt = jrdi.getLastEvent();
-                if (evt != null && evt.getType().equals(EventListenerTask.EVT_OPERATION) && evt.getTask_id().equals(taskId)) {
+                if (evt != null && evt.getType().equals(EventListenerTask.EVT_CUSTOM_COMMAND) && evt.getAlienExecutionId().equals(taskId)) {
                     jrdi.setLastEvent(null);
                     switch (evt.getStatus()) {
                         case "failed":

@@ -15,8 +15,7 @@
  */
 package org.ystia.yorc.alien4cloud.plugin;
 
-import alien4cloud.paas.model.InstanceInformation;
-import alien4cloud.paas.model.PaaSInstancePersistentResourceMonitorEvent;
+import alien4cloud.paas.model.*;
 import alien4cloud.tosca.normative.NormativeBlockStorageConstants;
 import alien4cloud.utils.MapUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -34,11 +33,13 @@ import java.util.UUID;
 public class EventListenerTask extends AlienTask {
     // Possible values for Yorc event types
     // Check with Yorc code for these values.
-    public static final String EVT_INSTANCE   = "instance";
-    public static final String EVT_DEPLOYMENT = "deployment";
-    public static final String EVT_OPERATION  = "custom-command";
-    public static final String EVT_SCALING    = "scaling";
-    public static final String EVT_WORKFLOW   = "workflow";
+    public static final String EVT_INSTANCE   = "Instance";
+    public static final String EVT_DEPLOYMENT = "Deployment";
+    public static final String EVT_CUSTOM_COMMAND = "CustomCommand";
+    public static final String EVT_SCALING    = "Scaling";
+    public static final String EVT_WORKFLOW   = "Workflow";
+    public static final String EVT_WORKFLOW_STEP   = "WorkflowStep";
+    public static final String EVT_ALIEN_TASK   = "AlienTask";
 
     // Set this to false to stop pollong events
     private boolean valid = true;
@@ -62,7 +63,7 @@ public class EventListenerTask extends AlienTask {
                     prevIndex = eventResponse.getLast_index();
                     if (eventResponse.getEvents() != null) {
                         for (Event event : eventResponse.getEvents()) {
-                            String paasId = event.getDeployment_id();
+                            String paasId = event.getDeploymentId();
                             log.debug("Received event from Yorc: " + event.toString());
                             log.debug("Received event has deploymentId : " + paasId);
                             String deploymentId = orchestrator.getDeploymentId(paasId);
@@ -88,8 +89,8 @@ public class EventListenerTask extends AlienTask {
 
                             switch (event.getType()) {
                                 case EVT_INSTANCE:
-                                    String eNode = event.getNode();
-                                    String eInstance = event.getInstance();
+                                    String eNode = event.getNodeId();
+                                    String eInstance = event.getInstanceId();
                                     eMessage += "instance " + eNode + ":" + eInstance + ":" + eState;
                                     log.debug("Received Event from Yorc <<< " + eMessage);
                                     Map<String, InstanceInformation> ninfo = instanceInfo.get(eNode);
@@ -144,17 +145,100 @@ public class EventListenerTask extends AlienTask {
                                     }
                                     break;
                                 case EVT_DEPLOYMENT:
-                                case EVT_OPERATION:
+                                case EVT_CUSTOM_COMMAND:
                                 case EVT_SCALING:
+                                    eMessage += event.getType() + ":" + eState;
+                                    log.debug("Received Event from Yorc <<< " + eMessage);
+                                    synchronized (jrdi) {
+                                        jrdi.setLastEvent(event);
+                                        jrdi.notifyAll();
+                                    }
+                                    break;
                                 case EVT_WORKFLOW:
                                     eMessage += event.getType() + ":" + eState;
                                     log.debug("Received Event from Yorc <<< " + eMessage);
                                     synchronized (jrdi) {
-                                        if (jrdi.getLastEvent() != null) {
-                                            log.debug("Event not taken, forgot it: " + jrdi.getLastEvent());
-                                        }
-                                        jrdi.setLastEvent(event);
                                         jrdi.notifyAll();
+                                    }
+                                    switch (event.getStatus()) {
+                                        case "failed":
+                                            log.debug("Post WorkflowMonitor failed event");
+                                            orchestrator.postWorkflowMonitorEvent(new PaaSWorkflowFailedEvent(), event);
+                                            break;
+                                        case "canceled":
+                                            log.debug("Post WorkflowMonitor cancelled event");
+                                            orchestrator.postWorkflowMonitorEvent(new PaaSWorkflowCancelledEvent(), event);
+                                            break;
+                                        case "running":
+                                            // This status is not handled now Alien side so we do nothing right now
+                                            break;
+                                        case "done":
+                                            log.debug("Post WorkflowMonitor succeeded event");
+                                            orchestrator.postWorkflowMonitorEvent(new PaaSWorkflowSucceededEvent(), event);
+                                            break;
+                                        case "initial":
+                                            log.debug("Post WorkflowMonitor started event");
+                                            orchestrator.postWorkflowMonitorEvent(new PaaSWorkflowStartedEvent(), event);
+                                            break;
+                                        default:
+                                            log.warn("An event has been ignored. Unexpected status=" + event.getStatus());
+                                            break;
+                                    }
+                                    break;
+                                case EVT_WORKFLOW_STEP:
+                                    eMessage += event.getType() + ":" + eState;
+                                    log.debug("Received Event from Yorc <<< " + eMessage);
+                                    synchronized (jrdi) {
+                                        jrdi.notifyAll();
+                                    }
+                                    switch (event.getStatus()) {
+                                        case "initial":
+                                            log.debug("Post WorkflowStep started event");
+                                            orchestrator.postWorkflowStepEvent(new WorkflowStepStartedEvent(), event);
+                                            break;
+                                        case "running":
+                                            // This status is not handled now Alien side so we do nothing right now
+                                            break;
+                                        case "done":
+                                        case "error":
+                                            log.debug("Post WorkflowStep completed event");
+                                            orchestrator.postWorkflowStepEvent(new WorkflowStepCompletedEvent(), event);
+                                            break;
+                                        default:
+                                            log.warn("An event has been ignored. Unexpected status=" + event.getStatus());
+                                            break;
+                                    }
+                                    break;
+                                case EVT_ALIEN_TASK:
+                                    eMessage += event.getType() + ":" + eState;
+                                    log.debug("Received Event from Yorc <<< " + eMessage);
+                                    synchronized (jrdi) {
+                                        jrdi.notifyAll();
+                                    }
+                                    switch (event.getStatus()) {
+                                        case "initial":
+                                            log.debug("Post Task sent event");
+                                            orchestrator.postTaskEvent(new TaskSentEvent(), event);
+                                            break;
+                                        case "running":
+                                            log.debug("Post Task running event");
+                                            orchestrator.postTaskEvent(new TaskStartedEvent(), event);
+                                            break;
+                                        case "done":
+                                            log.debug("Post Task succeeded event");
+                                            orchestrator.postTaskEvent(new TaskSucceededEvent(), event);
+                                            break;
+                                        case "error":
+                                            log.debug("Post Task failed event");
+                                            orchestrator.postTaskEvent(new TaskFailedEvent(), event);
+                                            break;
+                                        case "canceled":
+                                            log.debug("Post Task cancelled event");
+                                            orchestrator.postTaskEvent(new TaskCancelledEvent(), event);
+                                            break;
+                                        default:
+                                            log.warn("An event has been ignored. Unexpected status=" + event.getStatus());
+                                            break;
                                     }
                                     break;
                                 default:

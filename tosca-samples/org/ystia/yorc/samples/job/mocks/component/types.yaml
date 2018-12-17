@@ -17,31 +17,39 @@ tosca_definitions_version: alien_dsl_2_0_0
 
 
 metadata:
-  template_name: org.ystia.yorc.samples.job.sbatch.Component
+  template_name: org.ystia.yorc.samples.job.mocks.Component
   template_version: 1.0.0-SNAPSHOT
   template_author: yorc
 
 imports:
   - tosca-normative-types:1.0.0-ALIEN20
-  - yorc-types:1.0.0
-  - yorc-slurm-types:1.1.0-SNAPSHOT
 
 node_types:
-  org.ystia.yorc.samples.job.sbatch.Component:
-    derived_from: yorc.nodes.slurm.Job
-    description: >
-      Sample component to show how to run a job
-    tags:
-      icon: /images/slurm.png
-    artifacts:
-      - bin:
-          type: tosca.artifacts.File
-          file: bin
+  org.ystia.yorc.samples.job.mocks.DelayJob:
+    derived_from: tosca.nodes.Root
+    properties:
+      run_delay: 
+        type: integer
+        default: 3
+        required: false
+        constraints:
+          - greater_or_equal: 0
+      random_status:
+        type: boolean
+        default: false
+        required: false
+      failure:
+        type: boolean
+        default: false
+        description: if both failure and random_status are true a fail become one of the possible status with running and done
+        required: false
     interfaces:
       tosca.interfaces.node.lifecycle.Runnable:
-        submit:
+        submit: scripts/submit.sh
+        run: 
           inputs:
-            args: {get_property: [SELF, exec_args]}
-          implementation:
-            file: bin/submit.sh
-            type: yorc.artifacts.Deployment.SlurmJobBin
+            DELAY: { get_property: [SELF, run_delay]}
+            RANDOM_STATUS: { get_property: [SELF, random_status]}
+            FAILURE: { get_property: [SELF, failure]}
+          implementation: scripts/run.sh
+        cancel: scripts/cancel.sh
