@@ -66,7 +66,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Alien4Cloud Yorc Plugin'
-copyright = u'2017, Atos BDS R&D'
+copyright = u'2017-2018, Atos BDS R&D'
 author = u'Atos BDS R&D'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -121,7 +121,7 @@ pygments_style = 'sphinx'
 #keep_warnings = False
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
-todo_include_todos = True
+todo_include_todos = False
 
 
 # -- Options for HTML output ----------------------------------------------

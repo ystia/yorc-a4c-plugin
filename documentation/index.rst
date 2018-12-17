@@ -32,5 +32,6 @@ Contents:
    location
    quickstart
    upgrade
+   jobs
 
 
