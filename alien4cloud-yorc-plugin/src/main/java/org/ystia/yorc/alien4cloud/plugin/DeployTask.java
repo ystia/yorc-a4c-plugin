@@ -225,6 +225,10 @@ public class DeployTask extends AlienTask {
                     orchestrator.changeStatus(paasId, DeploymentStatus.DEPLOYED);
                     done = true;
                     break;
+                case "DEPLOYMENT_FAILED":
+                    orchestrator.doChangeStatus(paasId, DeploymentStatus.FAILURE);
+                    error = new Exception("Deployment failed");
+                    break;
                 default:
                     log.debug("Deployment Status is currently " + status);
                     break;

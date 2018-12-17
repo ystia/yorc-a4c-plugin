@@ -75,5 +75,3 @@ node_types:
       endpoint:
         type: yorc.capabilities.Endpoint.ProvisioningAdmin
 
-  # NOTE: Alien specific
-
