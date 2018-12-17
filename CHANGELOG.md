@@ -7,6 +7,10 @@
 * Support Jobs lifecycle enhancements (new operations `submit`, `run`, `cancel`) ([GH-196](https://github.com/ystia/yorc/issues/196))
 * Generate Alien 2.1-compatible events ([GH-148](https://github.com/ystia/yorc/issues/148))
 
+### BUG FIXES
+
+* Even with a wrong yorc url in orchestrator configuration, it displays "connected" when enabled ([GH-72](https://github.com/ystia/yorc-a4c-plugin/issues/72))
+
 ## 3.1.0-M7 (December 07, 2018)
 
 ## 3.1.0-M6 (November 16, 2018)
