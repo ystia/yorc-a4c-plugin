@@ -2,6 +2,11 @@
 
 ## UNRELEASED
 
+### DEPENDENCIES
+
+* Technical update to use Alien4Cloud 2.1.0 final version
+* Updated Slurm and Kubernetes types to final version (respectively 1.1.0 and 2.0.0)
+
 ## 3.1.0-RC1 (December 17, 2018)
 
 ### ENHANCEMENTS

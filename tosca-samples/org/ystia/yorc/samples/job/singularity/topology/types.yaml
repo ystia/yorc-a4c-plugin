@@ -26,7 +26,7 @@ description: "Slurm singularity job template1"
 imports:
   - tosca-normative-types:1.0.0-ALIEN20
   - yorc-types:1.0.0
-  - yorc-slurm-types:1.1.0-SNAPSHOT
+  - yorc-slurm-types:1.1.0
   - org.ystia.yorc.samples.job.singularity.Component:1.0.0-SNAPSHOT
 
 repositories:

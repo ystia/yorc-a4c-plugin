@@ -36,7 +36,7 @@ public class KubernetesTopologyModifier extends TopologyModifierSupport {
      * template_version: ${yorc.types.version}
      */
     protected static final String YORC_KUBERNETES_TYPES_ARCHIVE_NAME = "yorc-kubernetes-types";
-    private String yorcKubernetesTypesArchiveVersion = "1.0.0-SNAPSHOT";
+    private String yorcKubernetesTypesArchiveVersion = "2.0.0";
 
     // Yorc K8S resource types
     protected static final String YORC_KUBERNETES_TYPES_DEPLOYMENT_RESOURCE = "yorc.nodes.kubernetes.api.types.DeploymentResource";
