@@ -20,9 +20,9 @@ node_types:
   org.ystia.yorc.samples.kube.containers.nodes.Consul:
     derived_from: tosca.nodes.Container.Application.DockerContainer
     capabilities:
-      ui_endpoint:
+      ui:
         type: org.ystia.yorc.samples.kube.containers.capabilities.UI
-      serflan_endpoint:
+      serflan:
         type: org.ystia.yorc.samples.kube.containers.capabilities.serfLAN
     interfaces:
       Standard:
