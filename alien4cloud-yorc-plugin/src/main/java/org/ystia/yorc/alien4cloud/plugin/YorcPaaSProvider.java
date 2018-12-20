@@ -31,19 +31,7 @@ import alien4cloud.paas.IPaaSCallback;
 import alien4cloud.paas.exception.MaintenanceModeException;
 import alien4cloud.paas.exception.OperationExecutionException;
 import alien4cloud.paas.exception.PluginConfigurationException;
-import alien4cloud.paas.model.AbstractMonitorEvent;
-import alien4cloud.paas.model.DeploymentStatus;
-import alien4cloud.paas.model.InstanceInformation;
-import alien4cloud.paas.model.InstanceStatus;
-import alien4cloud.paas.model.NodeOperationExecRequest;
-import alien4cloud.paas.model.PaaSDeploymentContext;
-import alien4cloud.paas.model.PaaSDeploymentLog;
-import alien4cloud.paas.model.PaaSDeploymentStatusMonitorEvent;
-import alien4cloud.paas.model.PaaSInstanceStateMonitorEvent;
-import alien4cloud.paas.model.PaaSMessageMonitorEvent;
-import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
-import alien4cloud.paas.model.PaaSWorkflowMonitorEvent;
-import alien4cloud.paas.model.PaaSWorkflowStepMonitorEvent;
+import alien4cloud.paas.model.*;
 import alien4cloud.paas.plan.ToscaNodeLifecycleConstants;
 import alien4cloud.tosca.parser.ToscaParser;
 import com.google.common.collect.Lists;
@@ -60,11 +48,7 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.ystia.yorc.alien4cloud.plugin.location.AbstractLocationConfigurerFactory;
-import org.ystia.yorc.alien4cloud.plugin.rest.Response.AttributeResponse;
-import org.ystia.yorc.alien4cloud.plugin.rest.Response.DeployInfosResponse;
-import org.ystia.yorc.alien4cloud.plugin.rest.Response.InstanceInfosResponse;
-import org.ystia.yorc.alien4cloud.plugin.rest.Response.Link;
-import org.ystia.yorc.alien4cloud.plugin.rest.Response.NodeInfosResponse;
+import org.ystia.yorc.alien4cloud.plugin.rest.Response.*;
 import org.ystia.yorc.alien4cloud.plugin.rest.RestClient;
 import org.ystia.yorc.alien4cloud.plugin.rest.YorcRestException;
 import org.ystia.yorc.alien4cloud.plugin.service.PluginArchiveService;
@@ -146,6 +130,22 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
         // Start the TaskManager
         // TODO make sizes configurable
         taskManager = new TaskManager(3, 120, 3600);
+        logListenerTask = new LogListenerTask(this);
+    }
+
+    public void stopLogsAndEvents() {
+        if (eventListenerTask != null) eventListenerTask.stop();
+        if (logListenerTask != null) logListenerTask.stop();
+        if (taskManager != null) taskManager.stop();
+    }
+
+    public void startLogsAndEvents() {
+        // Listen Events and logs from yorc about the deployment
+        log.info("Starting Yorc events & logs listeners");
+        eventListenerTask = new EventListenerTask(this);
+        logListenerTask = new LogListenerTask(this);
+        addTask(eventListenerTask);
+        addTask(logListenerTask);
     }
 
     public void stopLogsAndEvents() {
@@ -569,36 +569,47 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
         return retry;
     }
 
-    /**
-     * Notify a4c that a workflow has been started
-     * @param paasId
-     * @param workflow
-     * @param subworkflow
-     */
-    protected void workflowStarted(String paasId, String workflow, String subworkflow) {
-        PaaSWorkflowMonitorEvent event = new PaaSWorkflowMonitorEvent();
-        // TODO
-        event.setSubworkflow(subworkflow);
-        event.setWorkflowId(workflow);
-        postEvent(event, paasId);
+    protected void postWorkflowStepEvent(AbstractWorkflowStepEvent event, Event yorcEvent) {
+        event.setInstanceId(yorcEvent.getInstanceId());
+        event.setNodeId(yorcEvent.getNodeId());
+        event.setOperationName(yorcEvent.getOperationName());
+        event.setStepId(yorcEvent.getStepId());
+        event.setTargetInstanceId(yorcEvent.getTargetInstanceId());
+        event.setTargetNodeId(yorcEvent.getTargetNodeId());
+        event.setDate(event.getDate());
+        event.setExecutionId(yorcEvent.getAlienExecutionId());
+        event.setWorkflowId(yorcEvent.getWorkflowId());
+        postWorkflowMonitorEvent(event, yorcEvent);
     }
 
-    /**
-     * Notify a4c that a workflow has reached a step
-     * @param paasId
-     * @param workflow
-     * @param node
-     * @param step
-     * @param stage
-     */
-    protected void workflowStep(String paasId, String workflow, String node, String step, String stage) {
-        PaaSWorkflowStepMonitorEvent event = new PaaSWorkflowStepMonitorEvent();
-        // TODO
-        event.setWorkflowId(workflow);
-        event.setStepId(step);
-        event.setStage(stage);
-        event.setNodeId(node);
-        postEvent(event, paasId);
+    protected void postTaskEvent(AbstractTaskEvent event, Event yorcEvent) {
+        event.setTaskId(yorcEvent.getAlienTaskId());
+        event.setInstanceId(yorcEvent.getInstanceId());
+        event.setNodeId(yorcEvent.getNodeId());
+        event.setOperationName(yorcEvent.getOperationName());
+        event.setWorkflowStepId(yorcEvent.getStepId());
+        event.setTargetInstanceId(yorcEvent.getTargetInstanceId());
+        event.setTargetNodeId(yorcEvent.getTargetNodeId());
+        event.setDate(event.getDate());
+        event.setExecutionId(yorcEvent.getAlienExecutionId());
+        event.setWorkflowId(yorcEvent.getWorkflowId());
+        postWorkflowMonitorEvent(event, yorcEvent);
+    }
+
+    protected void postWorkflowMonitorEvent(AbstractPaaSWorkflowMonitorEvent a4cEvent, Event yorcEvent) {
+        a4cEvent.setDeploymentId(a4cDeploymentIds.get(yorcEvent.getDeploymentId()));
+        a4cEvent.setOrchestratorId(yorcEvent.getDeploymentId());
+        a4cEvent.setDate(yorcEvent.getDate().getTime());
+        a4cEvent.setExecutionId(yorcEvent.getAlienExecutionId());
+        a4cEvent.setWorkflowId(yorcEvent.getWorkflowId());
+        if (a4cEvent instanceof PaaSWorkflowStartedEvent) {
+            PaaSWorkflowStartedEvent wse = (PaaSWorkflowStartedEvent) a4cEvent;
+            wse.setWorkflowName(yorcEvent.getWorkflowId());
+            postEvent(wse, yorcEvent.getDeploymentId());
+            return;
+        }
+
+        postEvent(a4cEvent, yorcEvent.getDeploymentId());
     }
 
     /**
@@ -839,9 +850,17 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
             log.warn("The orchestrator deploymentID:{} doesn't match with any associated Alien4cloud deploymentID.", paasId);
             return;
         }
-        event.setDate((new Date()).getTime());
+        // Set date only if not filled before
+        if (event.getDate() == 0) {
+            event.setDate((new Date()).getTime());
+        }
+
         event.setDeploymentId(a4cDeploymentIds.get(paasId));
         event.setOrchestratorId(paasId);
+        if (event.getDeploymentId() == null) {
+            log.warn("Must provide an Id for this Event: " + event.toString());
+            return;
+        }
         synchronized (toBeDeliveredEvents) {
             toBeDeliveredEvents.add(event);
         }

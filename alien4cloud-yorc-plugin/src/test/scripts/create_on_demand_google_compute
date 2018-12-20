@@ -1,0 +1,262 @@
+#!/bin/bash
+
+#
+# create_on_demand_google_compute - creates and configures an on-demand compute
+# resource on a Google Cloud location
+#
+
+a4cURL="http://localhost:8088"
+userName="admin"
+password="admin"
+locationName="Google"
+imageProject="centos-cloud"
+imageFamily="centos-7"
+computeZone=""
+sshUserName="yorcuser"
+publicKey=""
+privateKeyFile=""
+usage() {
+    echo ""
+    echo "Usage:"
+    echo "create_on_demand_google_compute [--a4c-url <Alien4Cloud URL>]"
+    echo "                                [--user <Alien4Cloud administrator user name>]"
+    echo "                                [--password <Alien4Cloud administrator password>]"
+    echo "                                [--name <Location Name>]"
+    echo "                                [--image-project <Image Project>]"
+    echo "                                [--image-family <Image Family>]"
+    echo "                                [--ssh-user <User name used to ssh on compute node>]"
+    echo "                                --zone <Compute Zone>"
+    echo "                                --public-key <SSH Public key content>"
+    echo "                                --private-key-file <Path to private key file accessible to Yorc>"
+    echo "   - default A4C URL       : $a4cURL"
+    echo "   - default user          : $userName"
+    echo "   - default password      : $password"
+    echo "   - default Location Name : $locationName"
+    echo "   - default Image Project : $imageProject"
+    echo "   - default Image Family  : $imageFamily"
+    echo "   - default SSH User Name : $sshUserName"
+}
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+    -a|--a4c-url)
+    a4cURL="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -u|--user)
+    userName="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -p|--password)
+    password="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -n|--name)
+    locationName="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -i|--image-project)
+    imageProject="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -f|--image-family)
+    imageFamily="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -s|--ssh-user)
+    sshUserName="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -z|--zone)
+    computeZone="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -k|--public-key)
+    publicKey="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -r|--private-key-file)
+    privateKeyFile="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -h|--help)
+    usage
+    exit 0
+    ;;
+    *)    # unknown option
+    POSITIONAL+=("$1") # save it in an array for later
+    shift # past argument
+    ;;
+esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+if [ -z "$computeZone" ]
+then
+    echo "Error: missing mandatory parameter zone"
+    usage
+    exit 1
+fi
+
+if [ -z "$publicKey" ]
+then
+    echo "Error: missing mandatory parameter public-key"
+    usage
+    exit 1
+fi
+
+if [ -z "$privateKeyFile" ]
+then
+    echo "Error: missing mandatory parameter private-key-file"
+    usage
+    exit 1
+fi
+
+
+# Load utilities
+declare -r DIR=$(cd "$(dirname "$0")" && pwd)
+source $DIR/utils.bash
+
+# First, login and store the cookies
+a4c_login "$a4cURL" "$userName" "$password" "cookies.a4c"
+
+# Get Orchestratror ID
+res=`curl --request GET \
+          --url $a4cURL/rest/latest/orchestrators?query=Yorc \
+          --header 'Accept: application/json' \
+          --silent \
+          --cookie cookies.a4c`
+yorcID=`getJsonval id $res`
+
+if [ -z "$yorcID" ]
+then
+    echo "Exiting on error getting the Orchestrator ID"
+    exit 1
+fi
+
+# Get the location ID
+res=`curl --request GET \
+          --url $a4cURL/rest/latest/orchestrators/$yorcID/locations?query=$locationName \
+          --header 'Accept: application/json' \
+          --silent \
+          --cookie cookies.a4c`
+locationID=`getJsonval id $res`
+
+if [ -z "$locationID" ]
+then
+    echo "Exiting on error getting the ID for location $locationName"
+    exit 1
+fi
+
+
+# Create a Google Compute on-demand resource
+response=`curl --request POST \
+               --url $a4cURL/rest/latest/orchestrators/$yorcID/locations/$locationID/resources  \
+               --header 'Content-Type: application/json' \
+               --cookie cookies.a4c \
+               --silent \
+               --data "{\"archiveName\": \"yorc-google-types\", \"archiveVersion\": \"1.0.0\", \"resourceName\": \"Compute\", \"resourceType\": \"yorc.nodes.google.Compute\"}"`
+res=$?
+if [ $res -ne 0 ]
+then
+    echo "Exiting on error creating an on-demand resource on location $locationName: $response"
+    exit 1
+fi
+
+echo "On-demand Compute resource created on location $locationName"
+
+resourceID=`getJsonval id $response`
+if [ -z "$resourceID" ]
+then
+    echo "Exiting on error getting the ID for on-demand compute resource on location $locationName"
+    exit 1
+fi
+
+# Update properties
+response=`curl --request POST \
+               --url $a4cURL/rest/latest/orchestrators/$yorcID/locations/$locationID/resources/$resourceID/template/properties \
+               --header 'Content-Type: application/json' \
+               --cookie cookies.a4c \
+               --silent \
+               --data "{\"propertyName\": \"image_project\", \"propertyValue\": \"$imageProject\"}"`
+
+res=$?
+if [ $res -ne 0 ]
+then
+    echo "Exiting on error setting on-demand compute resource property image_project to $imageProject on location $locationName: $response"
+    exit 1
+fi
+
+response=`curl --request POST \
+               --url $a4cURL/rest/latest/orchestrators/$yorcID/locations/$locationID/resources/$resourceID/template/properties \
+               --header 'Content-Type: application/json' \
+               --cookie cookies.a4c \
+               --silent \
+               --data "{\"propertyName\": \"image_family\", \"propertyValue\": \"$imageFamily\"}"`
+
+res=$?
+if [ $res -ne 0 ]
+then
+    echo "Exiting on error setting on-demand compute resource property image_family to $imageFamily on location $locationName: $response"
+    exit 1
+fi
+
+response=`curl --request POST \
+               --url $a4cURL/rest/latest/orchestrators/$yorcID/locations/$locationID/resources/$resourceID/template/properties \
+               --header 'Content-Type: application/json' \
+               --cookie cookies.a4c \
+               --silent \
+               --data "{\"propertyName\": \"zone\", \"propertyValue\": \"$computeZone\"}"`
+
+res=$?
+if [ $res -ne 0 ]
+then
+    echo "Exiting on error setting on-demand compute resource property zone to $computeZone on location $locationName: $response"
+    exit 1
+fi
+
+# Add a key/value pair ssh-keys / user:ssh public key in the instance metadata
+response=`curl --request POST \
+               --url $a4cURL/rest/latest/orchestrators/$yorcID/locations/$locationID/resources/$resourceID/template/properties \
+               --header 'Content-Type: application/json' \
+               --cookie cookies.a4c \
+               --silent \
+               --data "{\"propertyName\": \"metadata\", \"propertyValue\": \"ssh-keys=$sshUserName:$publicKey\"}"`
+
+res=$?
+if [ $res -ne 0 ]
+then
+    echo "Exiting on error setting metadata to ssh-keys=$sshUserName:$publicKey on location $locationName: $response"
+    exit 1
+fi
+
+# Update username in credentials
+response=`curl --request POST \
+               --url $a4cURL/rest/latest/orchestrators/$yorcID/locations/$locationID/resources/$resourceID/template/capabilities/endpoint/properties \
+               --header 'Content-Type: application/json' \
+               --cookie cookies.a4c \
+               --silent \
+               --data "{\"propertyName\": \"credentials\", \"propertyValue\": {\"user\": \"$sshUserName\", \"keys\": {\"0\": \"$privateKeyFile\"}}}"`
+
+res=$?
+if [ $res -ne 0 ]
+then
+    echo "Exiting on error setting on-demand compute resource user name on location $locationName: $response"
+    exit 1
+fi
+
+echo "On-demand Compute resource configured on location $locationName"

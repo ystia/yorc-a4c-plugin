@@ -145,7 +145,7 @@ public class DeployTask extends AlienTask {
         }
         String taskId = taskUrl.substring(taskUrl.lastIndexOf("/") + 1);
         jrdi.setDeployTaskId(taskId);
-        orchestrator.sendMessage(paasId, "Deployment sent to Yorc. TaskId=" + taskId);
+        orchestrator.sendMessage(paasId, "Deployment sent to Yorc. TaskKey=" + taskId);
 
         // wait for Yorc deployment completion
         boolean done = false;
@@ -224,6 +224,10 @@ public class DeployTask extends AlienTask {
                     // Deployment is OK.
                     orchestrator.changeStatus(paasId, DeploymentStatus.DEPLOYED);
                     done = true;
+                    break;
+                case "DEPLOYMENT_FAILED":
+                    orchestrator.doChangeStatus(paasId, DeploymentStatus.FAILURE);
+                    error = new Exception("Deployment failed");
                     break;
                 default:
                     log.debug("Deployment Status is currently " + status);
@@ -316,7 +320,7 @@ public class DeployTask extends AlienTask {
             createZipEntries(topoFileName, zout);
             // Get the yaml of the application as built by from a4c
             DeploymentTopology dtopo = ctx.getDeploymentTopology();
-            Csar myCsar = new Csar(ctx.getDeploymentPaaSId(), dtopo.getArchiveVersion());
+            Csar myCsar = new Csar(dtopo.getArchiveName(), dtopo.getArchiveVersion());
             myCsar.setToscaDefinitionsVersion(ToscaParser.LATEST_DSL);
             String yaml = orchestrator.getToscaTopologyExporter().getYaml(myCsar, dtopo, true);
             zout.write(yaml.getBytes(Charset.forName("UTF-8")));

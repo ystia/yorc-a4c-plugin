@@ -24,7 +24,15 @@ metadata:
 imports:
   - tosca-normative-types:1.0.0-ALIEN20
   - yorc-types:1.0.0
-  - yorc-slurm-types:1.0.0
+  - yorc-slurm-types:1.1.0
+
+repositories:
+  docker:
+    url: https://hpda-docker-registry:5000/
+    type: a4c_ignore
+  cluster_nfs:
+    url: not used
+    type: a4c_ignore
 
 node_types:
   org.ystia.yorc.samples.job.singularity.Component:

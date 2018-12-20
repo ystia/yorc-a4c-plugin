@@ -86,8 +86,26 @@ public class WorkflowsUtils {
             );
 
         }
-        step.getPrecedingSteps().forEach(s -> workflow.getSteps().get(s).getOnSuccess().remove(stepName));
+        step.getPrecedingSteps().forEach(s -> {
+            WorkflowStep wfs = workflow.getSteps().get(s);
+            if (wfs != null) {
+                wfs.getOnSuccess().remove(stepName);
+            }
+        });
         workflow.getSteps().remove(stepName);
+    }
+
+    /**
+     *
+     * @param workflow
+     * @param step Workflow Step to look for
+     * @param stepName name of the step to remove
+     */
+    private static void removeStep(Workflow workflow, String step, String stepName) {
+        WorkflowStep ws = workflow.getSteps().get(step);
+        if (ws != null) {
+            ws.getOnSuccess().remove(stepName);
+        }
     }
 
     private static String addSetStateStep(Workflow workflow, String hostId, NodeTemplate nodeTemplate, String state) {
@@ -136,7 +154,9 @@ public class WorkflowsUtils {
     private static void linkToStep(Workflow workflow, Set<String> fromSteps, String toStep) {
         fromSteps.forEach(s -> {
             WorkflowStep wf = workflow.getSteps().get(s);
-            wf.addFollowing(toStep);
+            if (wf != null) {
+                wf.addFollowing(toStep);
+            }
         });
     }
 

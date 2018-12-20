@@ -1,0 +1,66 @@
+tosca_definitions_version: alien_dsl_2_0_0
+
+metadata:
+  template_name: org.ystia.yorc.samples.kube.jobs
+  template_version: 1.0.0-SNAPSHOT
+  template_author: Yorc team
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN20
+  - docker-types:2.1.0
+
+description: Contains types for testing Jobs in Kubernetes
+
+repositories:
+  docker:
+    url: https://hub.docker.com/
+    type: http
+
+node_types:
+  org.ystia.yorc.samples.kube.containers.nodes.ComputePIJob:
+    derived_from: tosca.nodes.Container.Application.DockerContainer
+    properties:
+      docker_run_cmd:
+        type: list
+        entry_schema: 
+          type: string
+        default: ["perl",  "-Mbignum=bpi", "-wle", "print bpi(2000)"]
+    interfaces:
+      Standard:
+        create:
+          implementation:
+            file: perl:latest
+            repository: docker
+            type: tosca.artifacts.Deployment.Image.Container.Docker
+
+  org.ystia.yorc.samples.kube.containers.nodes.ComputeBashLoop:
+    derived_from: tosca.nodes.Container.Application.DockerContainer
+    properties:
+      docker_run_cmd:
+        type: list
+        entry_schema: 
+          type: string
+        default: ["/bin/bash",  "-c", "for d in $(seq 1 15); do echo $d; sleep $d; done; echo 'Computation done!';"]
+    interfaces:
+      Standard:
+        create:
+          implementation:
+            file: "yikaus/alpine-bash:latest"
+            repository: docker
+            type: tosca.artifacts.Deployment.Image.Container.Docker
+
+  org.ystia.yorc.samples.kube.containers.nodes.ComputeFail:
+    derived_from: tosca.nodes.Container.Application.DockerContainer
+    properties:
+      docker_run_cmd:
+        type: list
+        entry_schema: 
+          type: string
+        default: ["/bin/bash",  "-c", "sleep 10; >&2 echo 'Computation Failed!'; exit 1"]
+    interfaces:
+      Standard:
+        create:
+          implementation:
+            file: "yikaus/alpine-bash:latest"
+            repository: docker
+            type: tosca.artifacts.Deployment.Image.Container.Docker

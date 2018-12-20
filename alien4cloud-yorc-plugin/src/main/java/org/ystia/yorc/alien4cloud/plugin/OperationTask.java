@@ -16,6 +16,7 @@
 package org.ystia.yorc.alien4cloud.plugin;
 
 import alien4cloud.paas.IPaaSCallback;
+import alien4cloud.paas.model.InstanceInformation;
 import alien4cloud.paas.model.NodeOperationExecRequest;
 import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +24,8 @@ import org.ystia.yorc.alien4cloud.plugin.rest.Response.Event;
 
 import java.util.Hashtable;
 import java.util.Map;
+
+import static alien4cloud.utils.AlienUtils.safe;
 
 /**
  * Operation Task
@@ -91,7 +94,7 @@ public class OperationTask extends AlienTask {
                     break;
                 }
                 evt = jrdi.getLastEvent();
-                if (evt != null && evt.getType().equals(EventListenerTask.EVT_OPERATION) && evt.getTask_id().equals(taskId)) {
+                if (evt != null && evt.getType().equals(EventListenerTask.EVT_CUSTOM_COMMAND) && evt.getAlienExecutionId().equals(taskId)) {
                     jrdi.setLastEvent(null);
                     switch (evt.getStatus()) {
                         case "failed":
@@ -149,5 +152,14 @@ public class OperationTask extends AlienTask {
         } else {
             callback.onFailure(error);
         }
+
+        // Update attributes 
+        Map<String,InstanceInformation> iinfos = jrdi.getInstanceInformations().get(this.request.getNodeTemplateName());
+        safe(iinfos).forEach((instanceId,iInfo)-> {
+            if(this.request.getInstanceId()==null ||this.request.getInstanceId().equals(instanceId) ) {
+                orchestrator.updateInstanceAttributes(paasId, iInfo, this.request.getNodeTemplateName(), instanceId);
+                orchestrator.updateInstanceState(paasId, this.request.getNodeTemplateName(), instanceId, iInfo, iInfo.getState());
+            }
+        });
     }
 }

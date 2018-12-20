@@ -1,17 +1,79 @@
 # Yorc Alien4Cloud Plugin Changelog
 
-## 3.0.2 (October 26, 2018)
+## 3.1.0 (December 20, 2018)
+
+### DEPENDENCIES
+
+* Technical update to use Alien4Cloud 2.1.0 final version
+* Updated Slurm and Kubernetes types to final version (respectively 1.1.0 and 2.0.0)
+
+## 3.1.0-RC1 (December 17, 2018)
+
+### ENHANCEMENTS
+
+* Support Jobs lifecycle enhancements (new operations `submit`, `run`, `cancel`) ([GH-196](https://github.com/ystia/yorc/issues/196))
+* Generate Alien 2.1-compatible events ([GH-148](https://github.com/ystia/yorc/issues/148))
+
+### BUG FIXES
+
+* Even with a wrong yorc url in orchestrator configuration, it displays "connected" when enabled ([GH-72](https://github.com/ystia/yorc-a4c-plugin/issues/72))
+
+## 3.1.0-M7 (December 07, 2018)
+
+## 3.1.0-M6 (November 16, 2018)
+
+### FEATURES
+
+* Support GCE virtual private networks (VPC) ([GH-80](https://github.com/ystia/yorc/issues/80))
+* Support Kubernetes Jobs. ([GH-67](https://github.com/ystia/yorc-a4c-plugin/issues/67))
+
+### ENHANCEMENTS
+
+* Take advantage of Alien4Cloud meta-properties to specify a namespace in which to deploy Kubernetes resources ([GH-76](https://github.com/ystia/yorc/issues/76))
+
+## 3.1.0-M5 (October 26, 2018)
+
+### ENHANCEMENTS
+
+* Enable scaling of Kubernetes deployments ([GH-77](https://github.com/ystia/yorc/issues/77))
 
 ### BUG FIXES
 
 * Node Instance attributes are only resolved when Node state is "started" ([GH-59](https://github.com/ystia/yorc-a4c-plugin/issues/59))
 
-## 3.0.1 (August 24, 2018)
+### FEATURES
+
+* Support GCE Block storages. ([GH-82](https://github.com/ystia/yorc/issues/81))
+
+## 3.1.0-M4 (October 08, 2018)
+
+### DEPENDENCIES
+
+* Upgrade to Alien4Cloud 2.1 ([GH-50](https://github.com/ystia/yorc-a4c-plugin/issues/50))
+
+### FEATURES
+
+* Support GCE Public IPs. ([GH-82](https://github.com/ystia/yorc/issues/82))
+
+### IMPROVEMENTS
+
+* Make the run step of a Job execution asynchronous not to block a worker during the duration of the job. ([GH-85](https://github.com/ystia/yorc/issues/85))
+
+## 3.1.0-M3 (September 14, 2018)
+
+## 3.1.0-M2 (August 24, 2018)
 
 ### BUG FIXES
 
-* When an artifact references a folder its content is not part of the resulting CSAR sent to Yorc (GH-44 backport of GH-43)
-* When an orchestrator has been disabled, the Yorc A4C plugin is still trying to listen log events (GH-41 backport of GH-34)
+* When an artifact references a folder its content is not part of the resulting CSAR sent to Yorc (GH-43)
+* When an orchestrator has been disabled, the Yorc A4C plugin is still trying to listen log events (GH-34)
+* On TOSCA types generation do not generate a artifact if its mandatory file parameter is empty (GH-15)
+
+## 3.1.0-M1 (August 6, 2018)
+
+### FEATURES
+
+* Support of applications secrets in Yorc engine makes it usable within Alien4Cloud (ystia/yorc#134)
 
 ## 3.0.0 (July 11, 2018)
 

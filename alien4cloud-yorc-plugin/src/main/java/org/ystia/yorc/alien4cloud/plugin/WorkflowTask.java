@@ -16,7 +16,7 @@
 package org.ystia.yorc.alien4cloud.plugin;
 
 import alien4cloud.paas.IPaaSCallback;
-import alien4cloud.paas.model.PaaSDeploymentContext;
+import alien4cloud.paas.model.*;
 import lombok.extern.slf4j.Slf4j;
 import org.ystia.yorc.alien4cloud.plugin.rest.Response.Event;
 
@@ -72,54 +72,20 @@ public class WorkflowTask extends AlienTask {
         Event evt;
         while (!done && error == null) {
             synchronized (jrdi) {
-                // Check for timeout
+                // Check deployment timeout
                 long timetowait = timeout - System.currentTimeMillis();
                 if (timetowait <= 0) {
-                    log.warn("Timeout occured");
-                    error = new Throwable("Workflow timeout");
+                    log.warn("Deployment Timeout occured");
+                    error = new Throwable("Deployment timeout");
+                    orchestrator.doChangeStatus(paasId, DeploymentStatus.FAILURE);
                     break;
                 }
-                // Wait Events from Yorc
-                log.debug(paasId + ": Waiting for workflow events.");
+                // Wait Deployment Events from Yorc
+                log.debug(paasId + ": Waiting for deployment events.");
                 try {
                     jrdi.wait(timetowait);
                 } catch (InterruptedException e) {
-                    log.error("Interrupted while waiting for task end");
-                    break;
-                }
-                // Check if we received a Workflow Event and process it
-                evt = jrdi.getLastEvent();
-                if (evt != null && evt.getType().equals(EventListenerTask.EVT_WORKFLOW) && evt.getTask_id().equals(taskId)) {
-                    jrdi.setLastEvent(null);
-                    switch (evt.getStatus()) {
-                        case "failed":
-                            log.warn("Workflow failed: " + paasId);
-                            //workflowStep(paasId, workflowName, "TODO", "TODO", "TODO");
-                            error = new Exception("Workflow " + workflowName + " failed");
-                            break;
-                        case "canceled":
-                            log.warn("Workflow canceled: " + paasId);
-                            //workflowStep(paasId, workflowName, "TODO", "TODO", "TODO");
-                            error = new Exception("Workflow " + workflowName + " canceled");
-                            break;
-                        case "done":
-                            log.debug("Workflow success: " + paasId);
-                            //workflowStep(paasId, workflowName, "TODO", "TODO", "TODO");
-                            done = true;
-                            break;
-                        case "initial":
-                            // TODO name of subworkflow ?
-                            //workflowStarted(paasId, workflowName, "TODO");
-                            break;
-                        case "running":
-                            // TODO get name of step and stage: need update of Yorc API
-                            //workflowStep(paasId, workflowName, "TODO", "TODO", "TODO");
-                            break;
-                        default:
-                            log.warn("An event has been ignored. Unexpected status=" + evt.getStatus());
-                            break;
-                    }
-                    continue;
+                    log.warn("Interrupted while waiting for deployment");
                 }
             }
             // We were awaken for some bad reason or a timeout

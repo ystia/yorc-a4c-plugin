@@ -31,5 +31,7 @@ Contents:
    install
    location
    quickstart
+   upgrade
+   jobs
 
 

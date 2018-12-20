@@ -48,7 +48,7 @@ public class YorcRuntimeDeploymentInfo {
     // Last event received from Yorc
     private Event lastEvent;
 
-    // TaskId of the current deployment
+    // TaskKey of the current deployment
     private String deployTaskId;
 
 

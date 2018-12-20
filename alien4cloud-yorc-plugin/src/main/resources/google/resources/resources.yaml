@@ -8,6 +8,122 @@ imports:
   - tosca-normative-types:${tosca.normative.types.version}
   - yorc-types:${yorc.types.version}
 
+artifact_types:
+  yorc.artifacts.google.Deployment:
+    derived_from: tosca.artifacts.Deployment
+
+data_types:
+  yorc.datatypes.google.EncryptionKey:
+    derived_from: tosca.datatypes.Root
+    properties:
+      raw_key:
+        type: string
+        required: false
+        description: Specifies a 256-bit customer-supplied encryption key, encoded in RFC 4648 base64 to either encrypt or decrypt this resource.
+      sha256:
+        type: string
+        required: false
+        description: The RFC 4648 base64 encoded SHA-256 hash of the customer-supplied encryption key that protects this resource.
+
+  yorc.datatypes.google.ScratchDisk:
+    derived_from: tosca.datatypes.Root
+    properties:
+      interface:
+        type: string
+        required: false
+        description: The disk interface to use for attaching the scratch disks; either SCSI or NVME. Defaults to SCSI.
+
+  yorc.datatypes.google.IPRange:
+    derived_from: tosca.datatypes.Root
+    properties:
+      name:
+        type: string
+        required: true
+        description: >
+          The name of this IP range, used when adding an alias IP range to a VM instance.
+          The name must be 1-63 characters long, and comply with RFC1035. The name must be unique within a subnetwork.
+      ip_cidr_range:
+        type: string
+        required: true
+        description: >
+          The range of IP addresses belonging to this range.
+          Ranges must be unique and non-overlapping with all primary and secondary IP ranges within a network.
+          Only IPv4 is supported.
+
+  yorc.datatypes.google.Subnetwork:
+    derived_from: tosca.datatypes.Root
+    properties:
+      name:
+        type: string
+        required: true
+        description: >
+          The name of the resource, provided by the client when initially creating the resource. The name must be 1-63 characters long, and comply with RFC1035.
+          Specifically, the name must be 1-63 characters long and match the regular expression [a-z]([-a-z0-9]*[a-z0-9])?
+          which means the first character must be a lowercase letter, and all following characters must be a dash, lowercase letter, or digit, except the last character, which cannot be a dash.
+      ip_cidr_range:
+        type: string
+        required: true
+        description: >
+          The range of internal addresses that are owned by this sub-network.
+          For example, 10.0.0.0/8 or 192.168.0.0/16. Ranges must be unique and non-overlapping within a network. Only IPv4 is supported.
+      project:
+        type: string
+        description: >
+          The ID of the project in which the resource belongs. If it is not provided, the infrastructure location project is used.
+        required: false
+      region:
+        type: string
+        description: >
+          The Region in which this subnet should reside.
+        required: true
+      enable_flow_logs:
+        type: boolean
+        description: Whether to enable flow logging for this subnetwork.
+        required: false
+      private_ip_google_access:
+        type: boolean
+        description: Whether the VMs in this subnet can access Google services without assigned external IP addresses.
+        required: false
+      secondary_ip_ranges:
+        type: list
+        description: >
+          A list of configurations for secondary IP ranges for VM instances contained in this sub-network.
+          The primary IP of such VM must belong to the primary ip_cidr_range of the sub-network.
+          The alias IPs may belong to either primary or secondary ranges.
+        entry_schema:
+          type: yorc.datatypes.google.IPRange
+        required: false
+
+relationship_types:
+  yorc.relationships.google.AttachesTo:
+    derived_from: tosca.relationships.AttachTo
+    description: >
+      This type represents an attachment relationship between two nodes.
+      For example, an AttachesTo relationship type would be used for attaching a storage node to a Compute node.
+    valid_target_types: [ tosca.capabilities.Attachment ]
+    properties:
+      mode:
+        type: string
+        description: >
+          The mode in which to attach this disk, either READ_WRITE or READ_ONLY. If not specified, the default is to attach the disk in READ_WRITE mode.
+        required: false
+    attributes:
+      device:
+        type: string
+        description: >
+          The logical name of the device as exposed to the instance.
+          Note: A runtime property that gets set when the model gets instantiated by the orchestrator.
+  yorc.relationships.google.Network:
+    derived_from: tosca.relationships.Network
+    valid_target_types: [ tosca.capabilities.Connectivity ]
+    properties:
+      subnet:
+        type: string
+        description: >
+          Specify the sub-network to use for this relationship if network contains multiple sub-networks.
+          If none is defined, the first matching subnet with the target Google region will be associated to it.
+        required: false
+
 node_types:
   yorc.nodes.google.Compute:
     derived_from: yorc.nodes.Compute
@@ -69,12 +185,6 @@ node_types:
           keys startup-script or startup-script-url can be used to specify a script
           that will be executed by the Compute Node once it starts running.
         required: false
-      addresses:
-        type: string
-        description: >
-          Comma-separated list of external addresses. One external address will be assigned to each scalable Compute Node instance.
-          If not specified or if there aren't enough addresses specified for the number of scalable instances to create, and no_address is not true, an ephemeral IP address will be assigned.
-        required: false
       no_address:
         type: boolean
         description: >
@@ -105,6 +215,287 @@ node_types:
           Comma-separated list of tags to apply to the instances for identifying
           the instances to which network firewall rules will apply.
         required: false
+      scratch_disks:
+        type: list
+        description: Additional scratch disks to attach to the instance. Maximum allowed is 8.
+        required: false
+        entry_schema:
+          type: yorc.datatypes.google.ScratchDisk
+          constraints:
+            - greater_or_equal: 0
+            - max_length: 8
+    requirements:
+      - assignment:
+          capability: yorc.capabilities.Assignable
+          node: yorc.nodes.google.Address
+          relationship: yorc.relationships.AssignsTo
+          occurrences: [0, UNBOUNDED]
+
+  yorc.nodes.google.PrivateNetwork:
+    derived_from: tosca.nodes.Network
+    properties:
+    # See https://www.terraform.io/docs/providers/google/r/compute_network.html
+      auto_create_subnetworks:
+        type: boolean
+        description: >
+          If set to true, this network will be created in auto subnet mode, and Google will create a subnet for each region automatically.
+          If set to false, a custom subnetted network must be created. Defaults to true.
+        required: false
+        default: false
+      routing_mode:
+        type: string
+        description: >
+          Sets the network-wide routing mode for Cloud Routers to use. Accepted values are "GLOBAL" or "REGIONAL". Defaults to "REGIONAL".
+          Refer to the Cloud Router (https://cloud.google.com/router/docs/concepts/overview#dynamic-routing-mode) documentation for more details.
+        required: false
+      description:
+        type: string
+        description: >
+          An optional description of this resource.
+        required: false
+      network_name:
+        type: string
+        description: >
+          Any existing network to use. You can create default or custom subnets with existing network.
+        required: false
+      cidr:
+        type: string
+        description: >
+          CIDR range for default subnet creation. If this field is specified, you must fill the cidr_region too.
+        required: false
+      cidr_region:
+        type: string
+        description: >
+          The Google region to used with specified cidr for default subnet creation. This field is mandatory is cidr is set.
+        required: false
+      project:
+        type: string
+        description: >
+          The ID of the project in which the resource belongs. If it is not provided, the infrastructure location project is used.
+        required: false
+      custom_subnetworks:
+        type: list
+        description: >
+          if auto_create_subnetworks is set to false, you must create at least one custom sub-network for this network.
+          Each VPC network is subdivided into subnets, and each subnet is contained within a single region.
+          You can have more than one subnet in a region for a given VPC network. Each subnet has a contiguous private RFC1918 IP space.
+          When you create an instance in a subnet, the instance draws its internal IP address from that subnet.
+        entry_schema:
+          type: yorc.datatypes.google.Subnetwork
+        required: false
+    attributes:
+      network_name:
+        type: string
+        description: The unique name of the network.
+
+  yorc.nodes.google.Subnetwork:
+    derived_from: tosca.nodes.Network
+    # See https://www.terraform.io/docs/providers/google/r/compute_subnetwork.html
+    properties:
+      name:
+        type: string
+        required: true
+        description: >
+          The name of the resource, provided by the client when initially creating the resource. The name must be 1-63 characters long, and comply with RFC1035.
+          Specifically, the name must be 1-63 characters long and match the regular expression [a-z]([-a-z0-9]*[a-z0-9])?
+          which means the first character must be a lowercase letter, and all following characters must be a dash, lowercase letter, or digit, except the last character, which cannot be a dash.
+      network:
+        type: string
+        required: true
+        description: >
+          The network this subnet belongs to.
+      ip_cidr_range:
+        type: string
+        required: true
+        description: >
+          The range of internal addresses that are owned by this sub-network.
+          For example, 10.0.0.0/8 or 192.168.0.0/16. Ranges must be unique and non-overlapping within a network. Only IPv4 is supported.
+      project:
+        type: string
+        description: >
+          The ID of the project in which the resource belongs. If it is not provided, the infrastructure location project is used.
+        required: false
+      region:
+        type: string
+        description: >
+          The Region in which this subnet should reside.
+        required: true
+      enable_flow_logs:
+        type: boolean
+        description: Whether to enable flow logging for this subnetwork.
+        required: false
+      private_ip_google_access:
+        type: boolean
+        description: Whether the VMs in this subnet can access Google services without assigned external IP addresses.
+        required: false
+      secondary_ip_ranges:
+        type: list
+        description: >
+          A list of configurations for secondary IP ranges for VM instances contained in this sub-network.
+          The primary IP of such VM must belong to the primary ip_cidr_range of the sub-network.
+          The alias IPs may belong to either primary or secondary ranges.
+        entry_schema:
+          type: yorc.datatypes.google.IPRange
+        required: false
+    attributes:
+      gateway_ip:
+        type: string
+        description: The IPv4 address of the gateway.
+      network_name:
+        type: string
+        description: The related name of the network of this subnet.
+      subnetwork_name:
+        type: string
+        description: The related name of this subnet.
+
+  yorc.nodes.google.Address:
+    derived_from: tosca.nodes.Root
+    properties:
+    # See https://www.terraform.io/docs/providers/google/r/compute_address.html
+      addresses:
+        type: string
+        description: >
+          Comma-separated list of external addresses. Only IPv4 is supported.
+          The IP address must be inside the specified subnetwork, if any.
+        required: false
+      address_type:
+        type: string
+        description: >
+          The type of address to reserve, either INTERNAL or EXTERNAL. If unspecified, defaults to EXTERNAL.
+        required: false
+      description:
+        type: string
+        description: >
+          An optional description of this resource.
+        required: false
+      network_tier:
+        type: string
+        description: >
+          The networking tier used for configuring this address. This field can take the following values: PREMIUM or STANDARD.
+          If this field is not specified, it is assumed to be PREMIUM.
+        required: false
+      subnetwork:
+        type: string
+        description: >
+          The URL of the subnetwork in which to reserve the address. If an IP address is specified, it must be within the subnetwork's IP range.
+          This field can only be used with INTERNAL type with GCE_ENDPOINT/DNS_RESOLVER purposes.
+        required: false
+      labels:
+        type: string
+        description: >
+          Comma-separated list of label KEY=VALUE pairs to assign to the Compute Address.
+        required: false
+        entry_schema:
+          type: string
+      region:
+        type: string
+        description: >
+          The Region in which the created address should reside. If it is not provided, the infrastructure location region is used.
+        required: false
+      project:
+        type: string
+        description: >
+          The ID of the project in which the resource belongs. If it is not provided, the infrastructure location project is used.
+        required: false
+    capabilities:
+      assignment:
+        type: yorc.capabilities.Assignable
+    interfaces:
+      Standard:
+        create:
+          implementation:
+            file: fake.sh
+            type: yorc.artifacts.google.Deployment
+        delete:
+          implementation:
+            file: fake.sh
+            type: yorc.artifacts.google.Deployment
+    attributes:
+      ip_address:
+        type: string
+        description: The compute IP address.
+
+  yorc.nodes.google.PublicNetwork:
+    derived_from: tosca.nodes.Network
+    properties:
+      addresses:
+        type: string
+        description: A comma-separated address IPs to use.
+        required: false
+      region:
+        type: string
+        description: >
+          The public network Google Compute Platform region. If it is not provided, the infrastructure location region is used.
+        required: false
+      subnetwork:
+        type: string
+        description: >
+          The URL of the subnetwork in which to reserve the address. If an IP address is specified, it must be within the subnetwork's IP range.
+          This field can only be used with INTERNAL type with GCE_ENDPOINT/DNS_RESOLVER purposes.
+        required: false
+
+  yorc.nodes.google.PersistentDisk:
+    derived_from: tosca.nodes.BlockStorage
+    properties:
+    # See https://www.terraform.io/docs/providers/google/r/compute_disk.html
+      description:
+        type: string
+        description: >
+          An optional description of this resource.
+        required: false
+      type:
+        type: string
+        description: >
+          URL of the disk type resource describing which disk type to use to create the disk.
+          If this field is not specified, it is assumed to be pd-standard for Standard Persistent Disk HDD.
+          pd-ssd is for solid-state drives (SSD).
+        required: false
+      labels:
+        type: string
+        description: >
+          Comma-separated list of label KEY=VALUE pairs to assign to the Compute Disk.
+        required: false
+      zone:
+        type: string
+        description: >
+          A reference to the zone where the disk resides. In any case the disk must be on the same zone as the associated Compute instances.
+        required: true
+      deletable:
+        type: boolean
+        description: should this volume be deleted at undeployment
+        required: false
+        default: false
+      disk_encryption_key:
+        type: yorc.datatypes.google.EncryptionKey
+        description: >
+          Encrypts the disk using a customer-supplied encryption key. After you encrypt a disk with a customer-supplied key, you must provide the same key if you use the disk later
+          (e.g. to create a disk snapshot or an image, or to attach the disk to a virtual machine).
+          Customer-supplied encryption keys do not protect access to metadata of the disk.
+          If you do not provide an encryption key when creating the disk, then the disk will be encrypted using an automatically generated key and you do not need to provide a key to use the disk later.
+        required: false
+      image_id:
+        type: string
+        description: >
+          The image from which to initialize this disk. This can be one of: the image's self_link, projects/{project}/global/images/{image}, projects/{project}/global/images/family/{family}, global/images/{image}, global/images/family/{family}, family/{family}, {project}/{family}, {project}/{image}, {family}, or {image}.
+          If referred by family, the images names must include the family name. If they don't, use the google_compute_image data source. For instance, the image centos-6-v20180104 includes its family name centos-6. These images can be referred by family name here.
+        required: false
+      image_encryption_key:
+        type: yorc.datatypes.google.EncryptionKey
+        description: >
+          The customer-supplied encryption key of the source image. Required if the source image is protected by a customer-supplied encryption key.
+        required: false
+      snapshot_id:
+        type: string
+        description: >
+          The source snapshot used to create this disk. You can provide this as a partial or full URL to the resource.
+          For example, https://www.googleapis.com/compute/v1/projects/project/global/snapshots/snapshot, projects/project/global/snapshots/snapshot, global/snapshots/snapshot, snapshot are valid values
+        required: false
+      snapshot_encryption_key:
+        type: yorc.datatypes.google.EncryptionKey
+        description: >
+          The customer-supplied encryption key of the source snapshot. Required if the source snapshot is protected by a customer-supplied encryption key.
+        required: false
+
 
   ##############################################
   # Abstract resources used for auto-config

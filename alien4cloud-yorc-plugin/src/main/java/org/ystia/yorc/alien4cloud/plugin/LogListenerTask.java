@@ -1,12 +1,12 @@
 /**
  * Copyright 2018 Bull S.A.S. Atos Technologies - Bull, Rue Jean Jaures, B.P.68, 78340, Les Clayes-sous-Bois, France.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,11 +15,11 @@
  */
 package org.ystia.yorc.alien4cloud.plugin;
 
-import alien4cloud.paas.model.PaaSDeploymentLog;
-import alien4cloud.paas.model.PaaSDeploymentLogLevel;
+import alien4cloud.paas.model.*;
 import lombok.extern.slf4j.Slf4j;
 import org.ystia.yorc.alien4cloud.plugin.rest.Response.LogEvent;
 import org.ystia.yorc.alien4cloud.plugin.rest.Response.LogResponse;
+
 
 /**
  * EventListener Task
@@ -39,6 +39,7 @@ public class LogListenerTask extends AlienTask {
         valid = false;
     }
 
+
     /**
      * Listen for Yorc Logs
      */
@@ -52,18 +53,10 @@ public class LogListenerTask extends AlienTask {
                     prevIndex = logResponse.getLast_index();
                     if (logResponse.getLogs() != null) {
                         for (LogEvent logEvent : logResponse.getLogs()) {
-                            String paasId = logEvent.getDeploymentId();
-                            String deploymentId = orchestrator.getDeploymentId(paasId);
                             log.debug("Received log from Yorc: " + logEvent.toString());
-                            log.debug("Received log has deploymentId : " + paasId);
-                            if (deploymentId == null) {
-                                continue;
-                            }
-                            // Post a PaaSDeploymentLog to a4c premium log
-                            PaaSDeploymentLog paasDeploymentLog = toPaasDeploymentLog(logEvent);
-                            paasDeploymentLog.setDeploymentId(deploymentId);
-                            paasDeploymentLog.setDeploymentPaaSId(paasId);
-                            orchestrator.saveLog(paasDeploymentLog);
+                            // add Premium Log
+                            PaaSDeploymentLog pLog = toPaasDeploymentLog(logEvent);
+                            postLog(pLog, logEvent.getDeploymentId());
                         }
                     }
                 }
@@ -74,12 +67,30 @@ public class LogListenerTask extends AlienTask {
                         // We will sleep for 2sec in order to limit logs flood if the Yorc server went down
                         Thread.sleep(2000L);
                     } catch (InterruptedException ex) {
-                        log.error("listenDeploymentEvent wait interrupted", ex);
+                        log.warn("listenDeploymentEvent wait interrupted ({})", ex.getMessage());
                     }
                 }
             }
         }
     }
+
+    /**
+     * Post a PaaSDeploymentLog to a4c premium log
+     *
+     * @param pdlog
+     * @param paasId
+     */
+    private void postLog(PaaSDeploymentLog pdlog, String paasId) {
+        // The DeploymentId is overridden by A4C plugin here with UUID
+        pdlog.setDeploymentId(orchestrator.getDeploymentId(paasId));
+        pdlog.setDeploymentPaaSId(paasId);
+        if (pdlog.getDeploymentId() == null) {
+            log.warn("Must provide an Id for this log: " + pdlog.toString());
+            return;
+        }
+        orchestrator.saveLog(pdlog);
+    }
+
 
     private PaaSDeploymentLog toPaasDeploymentLog(final LogEvent pLogEvent) {
         PaaSDeploymentLog deploymentLog = new PaaSDeploymentLog();
@@ -94,7 +105,7 @@ public class LogListenerTask extends AlienTask {
         deploymentLog.setTimestamp(pLogEvent.getDate());
         deploymentLog.setWorkflowId(pLogEvent.getWorkflowId());
         deploymentLog.setOperationName(pLogEvent.getOperationName());
+        deploymentLog.setTaskId(pLogEvent.getAlienTaskId());
         return deploymentLog;
     }
-
 }
