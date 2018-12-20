@@ -2,6 +2,10 @@
 
 ## UNRELEASED
 
+### BUG FIXES
+
+* Vision sample topology upload fails on component version issue ([GH-78](https://github.com/ystia/yorc-a4c-plugin/issues/78))
+
 ## 3.1.0-RC2 (December 18, 2018)
 
 ### DEPENDENCIES
