@@ -26,7 +26,7 @@ py==1.5.2                 # via tox
 pyasn1==0.4.2             # via paramiko
 pycparser==2.18           # via cffi
 pynacl==1.2.1             # via paramiko
-pyyaml==3.12              # via ansible
+pyyaml==4.2b1             # via ansible
 requests==2.20.0          # via docker-py
 six==1.11.0               # via bcrypt, cryptography, docker-py, docker-pycreds, pynacl, tox, websocket-client
 tox==2.9.1
