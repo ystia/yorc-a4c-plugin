@@ -2,6 +2,10 @@
 
 ## UNRELEASED
 
+### BUG FIXES
+
+* Can't connect to Yorc in secure mode  ([GH-81](https://github.com/ystia/yorc-a4c-plugin/issues/81))
+
 ## 3.1.0 (December 20, 2018)
 
 ### BUG FIXES
