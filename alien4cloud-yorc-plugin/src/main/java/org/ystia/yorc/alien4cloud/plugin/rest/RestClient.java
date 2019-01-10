@@ -33,6 +33,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.config.SocketConfig;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -73,11 +76,6 @@ public class RestClient {
                 .setSocketTimeout(((Long) SOCKET_TIMEOUT).intValue()).setConnectionRequestTimeout(((Long) SOCKET_TIMEOUT).intValue())
                 .build();
 
-        PoolingHttpClientConnectionManager poolHttpConnManager = new PoolingHttpClientConnectionManager();
-        poolHttpConnManager.setDefaultMaxPerRoute(20);
-        poolHttpConnManager.setMaxTotal(20);
-        SocketConfig sockConf = SocketConfig.custom().setSoTimeout(((Long) SOCKET_TIMEOUT).intValue()).build();
-        poolHttpConnManager.setDefaultSocketConfig(sockConf);
         CloseableHttpClient httpClient;
         if (Boolean.TRUE.equals(providerConfiguration.getInsecureTLS())) {
             SSLContext sslContext;
@@ -92,6 +90,8 @@ public class RestClient {
             SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
                     sslContext,
                     NoopHostnameVerifier.INSTANCE);
+            PoolingHttpClientConnectionManager poolHttpConnManager = new PoolingHttpClientConnectionManager();
+            configurePoolingHttpClientConnectionManager(poolHttpConnManager);
             httpClient = HttpClientBuilder.create().useSystemProperties()
                     .setConnectionManager(poolHttpConnManager)
                     .setDefaultRequestConfig(clientConfig)
@@ -108,12 +108,19 @@ public class RestClient {
             }
 
             SSLContext sslContext = SSLContexts.createSystemDefault();
+            SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(sslContext);
+            Registry<ConnectionSocketFactory> socketFactoryRegistry =
+                RegistryBuilder.<ConnectionSocketFactory> create().register("https", sslsf).build();
+            PoolingHttpClientConnectionManager poolHttpConnManager = new PoolingHttpClientConnectionManager(socketFactoryRegistry);
+            configurePoolingHttpClientConnectionManager(poolHttpConnManager);
             httpClient = HttpClientBuilder.create().useSystemProperties()
                     .setConnectionManager(poolHttpConnManager)
                     .setDefaultRequestConfig(clientConfig)
                     .setSslcontext(sslContext)
                     .build();
         } else {
+            PoolingHttpClientConnectionManager poolHttpConnManager = new PoolingHttpClientConnectionManager();
+            configurePoolingHttpClientConnectionManager(poolHttpConnManager);
             httpClient = HttpClientBuilder.create().useSystemProperties()
                     .setConnectionManager(poolHttpConnManager)
                     .setDefaultRequestConfig(clientConfig)
@@ -133,6 +140,13 @@ public class RestClient {
             throw new PluginConfigurationException("Failed to connect to yorc", e);
         }
 
+    }
+
+    private void configurePoolingHttpClientConnectionManager(PoolingHttpClientConnectionManager poolHttpConnManager) {
+        poolHttpConnManager.setDefaultMaxPerRoute(20);
+        poolHttpConnManager.setMaxTotal(20);
+        SocketConfig sockConf = SocketConfig.custom().setSoTimeout(((Long) SOCKET_TIMEOUT).intValue()).build();
+        poolHttpConnManager.setDefaultSocketConfig(sockConf);
     }
 
     /**
