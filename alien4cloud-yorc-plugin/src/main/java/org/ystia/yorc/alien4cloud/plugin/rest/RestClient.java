@@ -15,15 +15,29 @@
  */
 package org.ystia.yorc.alien4cloud.plugin.rest;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+import java.security.KeyFactory;
 import java.security.KeyManagementException;
+import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
 
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 
 import alien4cloud.paas.exception.PluginConfigurationException;
 import alien4cloud.paas.model.NodeOperationExecRequest;
@@ -98,16 +112,90 @@ public class RestClient {
                     .setSSLSocketFactory(sslsf)
                     .build();
         } else if (providerConfiguration.getUrlYorc().startsWith("https")){
-            if(System.getProperty("javax.net.ssl.keyStore") == null || System.getProperty("javax.net.ssl.keyStorePassword") == null){
-                log.warn("Using SSL but you didn't provide client keystore and password. This means that if required by Yorc client authentication will fail.\n" +
-                        "Please use -Djavax.net.ssl.keyStore <keyStorePath> -Djavax.net.ssl.keyStorePassword <password> while starting java VM");
-            }
-            if(System.getProperty("javax.net.ssl.trustStore") == null || System.getProperty("javax.net.ssl.trustStorePassword") == null){
-                log.warn("You didn't provide client trustore and password. Using defalut one \n" +
-                        "Please use -Djavax.net.ssl.trustStore <trustStorePath> -Djavax.net.ssl.trustStorePassword <password> while starting java VM");
+
+            SSLContext sslContext;
+
+            // If SSL configuration is not provided in the plugin, relying
+            // on system default keystore and truststore
+            if (providerConfiguration.getCaCertificate().isEmpty() ||
+                providerConfiguration.getClientCertificate().isEmpty() ||
+                providerConfiguration.getClientKey().isEmpty()) {
+
+                log.warn("Missing CA|Client certificate|Client key in plugin configuration, will use system defaults");
+                if(System.getProperty("javax.net.ssl.keyStore") == null || System.getProperty("javax.net.ssl.keyStorePassword") == null){
+                    log.warn("Using SSL but you didn't provide client keystore and password. This means that if required by Yorc client authentication will fail.\n" +
+                             "Please use -Djavax.net.ssl.keyStore <keyStorePath> -Djavax.net.ssl.keyStorePassword <password> while starting java VM");
+                }
+                if(System.getProperty("javax.net.ssl.trustStore") == null || System.getProperty("javax.net.ssl.trustStorePassword") == null){
+                    log.warn("You didn't provide client trustore and password. Using defalut one \n" +
+                             "Please use -Djavax.net.ssl.trustStore <trustStorePath> -Djavax.net.ssl.trustStorePassword <password> while starting java VM");
+                }
+                
+                sslContext = SSLContexts.createSystemDefault();
+            } else {
+
+                // Create a key store containing CA and client key/certificate provided
+                // in the plugin configuration
+
+                KeyStore keystore;
+                try {
+                    // Create the CA certificate from its configuration string value
+                    CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+                    ByteArrayInputStream inputStream = new ByteArrayInputStream(
+                        providerConfiguration.getCaCertificate().getBytes());
+                    X509Certificate trustedCert = (X509Certificate)certFactory.generateCertificate(inputStream);
+                    inputStream.close();
+
+                
+                    // Create the client private key from its configuration string value
+                    String keyContent = providerConfiguration.getClientKey().
+                        replaceFirst("-----BEGIN PRIVATE KEY-----\n", "").
+                        replaceFirst("\n-----END PRIVATE KEY-----", "").trim();
+                    PKCS8EncodedKeySpec clientKeySpec = new PKCS8EncodedKeySpec(
+                        Base64.getMimeDecoder().decode(keyContent));
+                    KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+                    RSAPrivateKey clientKey = (RSAPrivateKey)keyFactory.generatePrivate(clientKeySpec);
+
+                    // Create the client certificate from its configuration string value
+                    inputStream = new ByteArrayInputStream(
+                        providerConfiguration.getClientCertificate().getBytes());
+                    Certificate clientCert = certFactory.generateCertificate(inputStream);
+                    inputStream.close();
+
+                    // Create an empty keystore
+                    keystore = KeyStore.getInstance(KeyStore.getDefaultType());
+                    keystore.load(null);
+
+                    // Add the certificate authority
+                    keystore.setCertificateEntry(
+                        trustedCert.getSubjectX500Principal().getName(),
+                        trustedCert);
+            
+                    // Add client key/certificate and chain to the Key store
+                    Certificate[] chain = {clientCert, trustedCert};
+                    keystore.setKeyEntry("Yorc Client", clientKey, "yorc".toCharArray(), chain);
+                } catch (CertificateException | IOException | NoSuchAlgorithmException | InvalidKeySpecException
+                         | KeyStoreException e) {
+                    e.printStackTrace();
+                    throw new PluginConfigurationException("Failed to create keystore", e);
+			    }
+
+                // Create a SSL context using this Key Store
+                try {
+                    TrustManagerFactory tmf = TrustManagerFactory.getInstance(
+                        TrustManagerFactory.getDefaultAlgorithm());
+                    tmf.init(keystore);
+                    sslContext = SSLContext.getInstance("TLS");
+                    KeyManagerFactory kmf = KeyManagerFactory.getInstance("NewSunX509");
+                    kmf.init(keystore, "yorc".toCharArray());
+                    sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+                } catch (NoSuchAlgorithmException | KeyStoreException | UnrecoverableKeyException
+                         | KeyManagementException e) {
+                    e.printStackTrace();
+                    throw new PluginConfigurationException("Failed to create SSL context", e);
+                }
             }
 
-            SSLContext sslContext = SSLContexts.createSystemDefault();
             SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(sslContext);
             Registry<ConnectionSocketFactory> socketFactoryRegistry =
                 RegistryBuilder.<ConnectionSocketFactory> create().register("https", sslsf).build();
