@@ -17,7 +17,7 @@ script:
   - sudo update-ca-certificates
   - export M2_HOME=/usr/local/maven
   - ./jfrog rt c --apikey="${ARTIFACTORY_API_KEY}" --user=travis --url=https://ystia.jfrog.io/ystia ystia
-  - ./jfrog rt mvn "clean verify -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true -Dmaven.wagon.http.ssl.ignore.validity.dates=true" --build-name="yorc-a4c-plugin-mvn-travis-ci" --build-number="${TRAVIS_BUILD_NUMBER}" src/main/resources/artifactory/maven_config_file.yaml
+  - ./jfrog rt mvn "clean verify -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true -Dmaven.wagon.http.ssl.ignore.validity.dates=true" src/main/resources/artifactory/maven_config_file.yaml --build-name="yorc-a4c-plugin-mvn-travis-ci" --build-number="${TRAVIS_BUILD_NUMBER}"
   - ./jfrog rt bag "yorc-a4c-plugin-mvn-travis-ci" "${TRAVIS_BUILD_NUMBER}" .
   - ./jfrog rt bp "yorc-a4c-plugin-mvn-travis-ci" "${TRAVIS_BUILD_NUMBER}"
 
