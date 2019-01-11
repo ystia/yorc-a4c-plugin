@@ -3,23 +3,27 @@ language: java
 jdk:
   - oraclejdk8
 
+env:
+  global:
+    # ARTIFACTORY_API_KEY
+    - secure: "WS0CXs5AbxhJR+NCsvlvbkqL79/2flWZ2SJ8CeoPxlVdkviOGSrLg5V+edEciAJFe/8SvFBfTG+ESaeze2TGwVJrv6IpBvDiJxkC63AigjbbCHAPWsxCGHIq3DfG9K+ZDU2L1wNSOa6rWEfPQdIrnL/nELTWGNrqiqikCNqpBergwdmlghT54h4Qmyi/IWvmVagb2SoUxLMUUbzga8Kkc/ajfmJx5dKV4WyOADeojP0Dgv+ZQyEIy2SQOAw7hf4wO8DHWiTnWqzg0OgUHaExFZx/cjgtRyKyBf4zZ4w3QcfXbAPwX7Cczyql+zfGmm4Ge+Cx5gayhVtXtpfB45rZKDv3gsXQ130a3fLgRDCcBixqbz5tOzwEcQezL+Xz13ue2u0c7BOObglJ5HZPlsNKwDSuJEaNEYI0Dd9yoB+3Qf5YeJSKNRfRRGuMQn0ZGXUiMTL3X9gGIBA2p86CWuHicQgk0wtLu0pvXnrGH4C+JDmHCxEGYV+nHvTrG7Xy4e7cqoCIuhLAP6ofv25i7MARzl0olMHWJtOfVoh+xU3jfr0+T5b8DpqSlfcKjE5TV5mWvsSg9WizEDaKrIS6bzucDx5tPI/8XbLzTbzC7AiLHKQql2wKhXbt6LjrfB5/UMrHmRE83k7FlEEfGovufAIh7WsfchMd7oQpIHoal8w0xUs="
+
 install:
   - pip install --user --upgrade sphinx==1.7.9 semantic-version requests urllib3[secure]
+  - curl -fL https://getcli.jfrog.io | sh
 
 script:
   - sudo cp fastconnect.org.crt /usr/local/share/ca-certificates/
   - sudo update-ca-certificates
-  - mvn clean verify -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true -Dmaven.wagon.http.ssl.ignore.validity.dates=true
+  - ./jfrog rt c --apikey="${ARTIFACTORY_API_KEY}" --user=travis --url=https://ystia.jfrog.io/ystia ystia
+  - ./jfrog rt mvn "clean verify -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true -Dmaven.wagon.http.ssl.ignore.validity.dates=true" --build-name="yorc-a4c-plugin-mvn-travis-ci" --build-number="${TRAVIS_BUILD_NUMBER}" src/main/resources/artifactory/maven_config_file.yaml
+  - ./jfrog rt bag --build-name="yorc-a4c-plugin-mvn-travis-ci" --build-number="${TRAVIS_BUILD_NUMBER}" .
+  - ./jfrog bp bag --build-name="yorc-a4c-plugin-mvn-travis-ci" --build-number="${TRAVIS_BUILD_NUMBER}" .
+
 
 deploy:
   - provider: script
-    script: bash deploy.sh
-    on:
-      all_branches: true
-    skip_cleanup: true
-
-  - provider: script
-    script: bash cleanup_bintray.sh
+    script: bash src/main/resources/artifactory/deploy_artifactory.sh
     on:
       all_branches: true
     skip_cleanup: true
@@ -35,6 +39,16 @@ deploy:
     skip_cleanup: true
     on:
       tags: true
+    
+  - provider: bintray
+    file: "src/main/resources/bintray/bintray_release.json"
+    user: "loicalbertin"
+    key: 
+      secure: "P2mLECuyFKhwiqpXootyPhYXEj4p8L/ewpMmuzZWZxl3wjIS/Mz0Q8n6QpdUD9FD758E8aUYb0UyioeeiLtzKxdJaHzpQFAmstZxhzr0DTaqdkNuF38+XWtYydDp8nKQd3A2234155vKlFp5GxBZXCCm96RuwH/b3Q46fyHvaNNeg0s2eacvQtxvor9aG0WiocPoGqypUoArv1rYHRZ9Nt3Yiu52jkOpvaoQAHB7Jzh3qBnSjWXeSSy+wPydiywK57jtJZsmUyVTX1wuPjlzeUGnrfx05f+JfPVybOU2CK5tQ4OVmwxWM/Lp/XkmKOgW1+/tf/sF6RP1KEnwEaFzPdtN7CWai+WXAyCMX4yJNkUiqkCTqs2I+DqwZYzIDqk/Xdt8i2yN8QAf4zqNS0zfS/SvS+3sqTzc62wBMZL0Rz5yPu3YFCplPdP8xdQbxHjXvi1x+P1bYTNbIV0Trj5XlZ/gA8uC8TVt1H7Ay2C5K/+aHIZ8XVuQlcPl6TSyF9vJpCiHd+ugnsAXHkYXP0N9ybGmhB35dZL6dgnb9pnEaPBrFvFyTSWe+ZCLOZpMc9jlTsWjzVgVjdtqqWjXEHGyCVLPGYBZnyFlRKJokNiNXPHUa1k1mT6rvZO3VFF5sVxa8d0jPLI1FtKMSlgamWp7F/NcdFX24+iL3p8KG3Ol40g="
+    skip_cleanup: true
+    on:
+      tags: true
+
 
 addons:
   apt:
@@ -46,10 +60,6 @@ addons:
     - texlive-latex-base
     - texlive-latex-extra
     - texlive-latex-recommended
-
-env:
-  global:
-    secure: UYRcG6VFZrs26zy+L3p6AgfAfIjCU9VTHHeaTqDZ7mYSKl7ijn4Av/tYna/gblftq9k5Lh1pPW54q2pkdl0d9KPA6fDbsi1AGpBg3smVZ3znzC+N6Y/MUZvyI6UkmjC00tCwCBouB2E8mQ/7xLBfX/bY4QqZBiOWr86eTULBhW1og0PbATBggPLdrHXouC3NVB8/MrhWBssoGNYnBxeHDmmPklhwx1tHEfEIh+QKsDOmm4AVLVb/ZFLziIr/eQ0k8vqU9/nRKZY1ZQ4gOmnWZ/74AC7e2EwcYWcjVK62rE4ePE86LL3zpqfnFFgu/v5d5l8m8yoMTOYx09pL/6Zbw280ahit/P7oDUtSyx+Vejv3hPDkupmKcxqeTEpkRxmDWNu6dYOeuMGo3P3uVbKA7SaqZTjxNDhxAvaMxwUg4rR44o1Vxwz6VVAZPIcMdoYlN/LDn1oJCx4bWL9p+P0MIPZp4H0NnE5N//MgZLoy2GueBGSVrx7c272H8FaC+er7ZzItCm3qUKAKR4CYoogdDK9avuhw+Wy180FfVE1dUZzNKkEZfDKxz33AXqwnsaCtcmMkv/qccpVtTJ1NnVuvaHRReMT2bLZhQLBk73/380lrbc6XPlJJh1l7YzP0IarChWVxynA4qb5qIXTiuoXifSfV5xcDNT8UkKuh5Vw1bXM=
 
 cache:
   directories:

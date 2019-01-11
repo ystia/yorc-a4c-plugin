@@ -1,6 +1,6 @@
 # Alien4Cloud Yorc Plugin
 
-[![Build Status](https://travis-ci.org/ystia/yorc-a4c-plugin.svg?branch=develop)](https://travis-ci.org/ystia/yorc-a4c-plugin)
+[![Download](https://api.bintray.com/packages/ystia/yorc-a4c-plugin/distributions/images/download.svg?version=3.1.0)](https://bintray.com/ystia/yorc-a4c-plugin/distributions/3.1.0/link) [![Build Status](https://travis-ci.org/ystia/yorc-a4c-plugin.svg?branch=develop)](https://travis-ci.org/ystia/yorc-a4c-plugin)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
 This project is a plugin for [Alien4Cloud](http://alien4cloud.github.io) that enable it as UI companion of the [Ystia Orchestrator](https://github.com/ystia/yorc).
@@ -21,9 +21,11 @@ We recommend first to understand what the Ystia Orchestrator and Alien4Cloud are
 
 ### Yorc Plugin
 
-Please visit our [github project releases page](https://github.com/ystia/yorc/releases) for downloading a release.
+Please visit our [BinTray account](https://bintray.com/ystia/yorc-a4c-plugin/distributions) for downloading a release.
 
-Then follow our documentation to setup the Yorc plugin into Alien4Cloud
+Grab the [latest release here](https://bintray.com/ystia/yorc-a4c-plugin/distributions/_latestVersion).
+
+Then follow our documentation to setup the Yorc plugin into Alien4Cloud.
 
 ## How to contribute to this project
 
