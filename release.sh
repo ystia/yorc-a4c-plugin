@@ -97,14 +97,17 @@ if [[ "develop" == "${branch}" ]] && [[ -z "${prerelease}" ]]; then
     # create release branch
     releaseBranch="release/${major}.${minor}"
     git checkout -b "${releaseBranch}"
+    sed -i -e "s@svg?branch=[^)]*@svg?branch=${releaseBranch}@g" README.md
+    git commit -m "Update travis links in readme for release ${version}" README.md
 fi
 
 # Now checks are passed then tag, build, release and cleanup :)
 # Update changelog Release date
-if [[ -e CHANGELOG.md ]]; then
-    sed -i -e "s/^## UNRELEASED.*$/## ${version} ($(LC_ALL=C date +'%B %d, %Y'))/g" CHANGELOG.md
-    git commit -m "Update changelog for release ${version}" CHANGELOG.md
-fi
+sed -i -e "s/^## UNRELEASED.*$/## ${version} ($(LC_ALL=C date +'%B %d, %Y'))/g" CHANGELOG.md
+# Update readme for Release number
+sed -i -e "s@download.svg?version=[^)]*@download.svg?version=${version}@g" -e "s@distributions/[^/]*/link@distributions/${version}/link@g" README.md
+git commit -m "Update changelog and readme for release ${version}" CHANGELOG.md README.md
+
 
 if [[ -n "${prerelease}" ]]; then 
     # in prerelease revert to version minus prerelease plus -SNAPSHOT
@@ -123,24 +126,20 @@ if [ "${dryRun}" = false ] ; then
 else 
     mvnOpts="${mvnOpts} -DpushChanges=false"
 fi
+
 ####################################################
 # Make our build
 ####################################################
-echo "Building version v${version}"
+echo "Prepare release v${version}"
 set +x
 mvn release:clean release:prepare ${mvnOpts} --batch-mode -Dtag=v${version} -DreleaseVersion=${version} -DdevelopmentVersion=${nextDevelopmentVersion}
-echo "Tag done. Publishing release..."
-#if [ "${dryRun}" = true ] ; then
-#    mvnOpts="${mvnOpts} -DdryRun=true"
-#fi
-# mvn release:perform --batch-mode ${mvnOpts}
+echo "Tag done."
 set -x
 
-# Update changelog for future versions
-if [[ -e CHANGELOG.md ]]; then
-    sed -i -e "2a## UNRELEASED\n" CHANGELOG.md
-    git commit -m "Update changelog for future release" CHANGELOG.md
-fi
+# Update changelog for future release
+sed -i -e "2a## UNRELEASED\n" CHANGELOG.md
+git commit -m "Update changelog for future release" CHANGELOG.md
+
 
 if [[ "develop" == "${branch}" ]] && [[ -z "${prerelease}" ]]; then
     # merge back to develop and update version
@@ -162,7 +161,7 @@ if [[ -z "${prerelease}" ]]; then
     masterTag=$(git describe --abbrev=0 --tags master) || {
         masterTag="v0.0.0"
     }
-    masterTag=$(echo ${masterTag} | sed -e 's/^janus-a4c-plugin-\(.*\)$/\1/' -e 's/^v\(.*\)$/\1/')
+    masterTag=$(echo ${masterTag} | sed -e 's/^v\(.*\)$/\1/')
 
     if [[ "True" == "$(python -c "import semantic_version; print  semantic_version.Version('${version}') > semantic_version.Version('${masterTag}')" )" ]]; then
         # We should merge the tag to master as it is our highest release
@@ -171,9 +170,9 @@ if [[ -z "${prerelease}" ]]; then
                 git merge --abort || true
                 git reset --hard "v${version}"
         }
+
     fi
 fi
-
 
 # Push changes
 if [ "${dryRun}" = false ] ; then
