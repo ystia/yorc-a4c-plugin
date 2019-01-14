@@ -145,6 +145,23 @@ public class EventListenerTask extends AlienTask {
                                     }
                                     break;
                                 case EVT_DEPLOYMENT:
+                                    eMessage += event.getType() + ":" + eState;
+                                    log.debug("Received Event from Yorc <<< " + eMessage);
+                                    synchronized (jrdi) {
+                                        jrdi.setLastEvent(event);
+                                        jrdi.notifyAll();
+                                    }
+
+                                    // Check if deployment status needs to be updated with last event
+                                    DeploymentStatus ds = YorcPaaSProvider.getDeploymentStatusFromString(eState.toUpperCase());
+                                    if (! ds.equals(jrdi.getStatus())) {
+                                        log.info(String.format("Seems the current deployment status (%s) is out of date with received deployment event with status (%s) for deploymentID: <%s>. Let's update it.", jrdi.getStatus(), ds, paasId));
+                                        synchronized (jrdi) {
+                                            jrdi.setStatus(ds);
+                                            jrdi.notifyAll();
+                                        }
+                                    }
+                                    break;
                                 case EVT_CUSTOM_COMMAND:
                                 case EVT_SCALING:
                                     eMessage += event.getType() + ":" + eState;

@@ -857,7 +857,7 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
      * @param state
      * @return
      */
-    private static DeploymentStatus getDeploymentStatusFromString(String state) {
+    protected static DeploymentStatus getDeploymentStatusFromString(String state) {
         switch (state) {
             case "DEPLOYED":
                 return DeploymentStatus.DEPLOYED;
