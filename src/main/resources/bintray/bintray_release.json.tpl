@@ -28,7 +28,8 @@
     "files":
         [
         {"includePattern": "distribution/target/(alien4cloud-yorc-plugin-distribution-.*\\.zip)", "uploadPattern": "$1"},
-        {"includePattern": "alien4cloud-yorc-plugin/target/(alien4cloud-yorc-plugin-.*\\.zip)", "uploadPattern": "$1"},
+        {"includePattern": "alien4cloud-yorc-plugin/target/(alien4cloud-yorc-plugin-.*\\.zip)", "uploadPattern": "$1"}
         ],
     "publish": true
 }
+
