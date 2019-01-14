@@ -13,37 +13,13 @@ install:
   - curl -fL https://getcli.jfrog.io | sh
 
 script:
-  - sudo cp fastconnect.org.crt /usr/local/share/ca-certificates/
-  - sudo update-ca-certificates
-  - export M2_HOME=/usr/local/maven
-  - set -e
-  - ./jfrog rt c --apikey="${ARTIFACTORY_API_KEY}" --user=travis --url=https://ystia.jfrog.io/ystia ystia
-  - ./jfrog rt mvn "clean verify -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true -Dmaven.wagon.http.ssl.ignore.validity.dates=true" src/main/resources/artifactory/maven_config_file.yaml --build-name="yorc-a4c-plugin-mvn-travis-ci" --build-number="${TRAVIS_BUILD_NUMBER}"
-  - ./jfrog rt bag "yorc-a4c-plugin-mvn-travis-ci" "${TRAVIS_BUILD_NUMBER}" .
-  - ./jfrog rt bp "yorc-a4c-plugin-mvn-travis-ci" "${TRAVIS_BUILD_NUMBER}"
+  - bash ./src/main/resources/travis/ci_build.sh
+  - bash ./src/main/resources/artifactory/deploy_artifactory.sh
 
 before_deploy:
   - "bash ./src/main/resources/bintray/pre_bintray_release.sh"
 
 deploy:
-  - provider: script
-    script: bash src/main/resources/artifactory/deploy_artifactory.sh
-    on:
-      all_branches: true
-    skip_cleanup: true
-
-  - provider: releases
-    overwrite: true
-    file_glob: true
-    api_key:
-      secure: kXuP0Wz/tvm+F5pdCqSC2rRTiWIdVbnqxImeOn/1MfIYekcYkKjEfKO0UnL/FCJJ1MdNmZ6Q5Yn8aTZiUBXZeRiKLs/C2ka7cnwyGjXq2vykc11bPqr44o1J+sNuq85nxtKLIfXK+I4AfcmlBtofDVEBi6FFb+YXPFJRlowDqqbReKv8se0Ik5vcARBhrO/I30GuWP8Pf8AaiSrBYDvln1DazPKekR/mq3vhh5pW/WPfZW/gscXtuBUDU67eAhgh9JFLk/LiOOXNbnuQD2bfkFztZRVLbyt/FfJJHv78MXFslcGIvMR6wsG8WaPQuYh/36L1025dnIdFp7zranqlgk/heObzEOsyd+zb2yQyQJIan252EZbruf9m2/HlaiFR32QdQ6aSTa4JFbmp4e6FHxkU1eOerPiHMJwzelG1BXQaDBlo/5rfJSNGAOQmUAj13Kem2U3DcL8eQ7nfQaCTr0d7iOQTTxkzouSkIr3du5VlisaxR4zn+1MrxELmYBXNIpYCXOyqgpDRxLZ6dmBsNBMMcyFlzxULkfoSMb4DDiMyqlDddexcakvkqwzC6X5SmZCwRMQvZmVdsqupHS/KaiJWjGhl0ahIaCEUtW+jveVPScIGc0Vmje3Lnx8uh+Keuqu8Sr2uraVG/VVInYJsVKuVYNKD+8HLPxyXnZZVpig=
-    file:
-      - distribution/target/alien4cloud-yorc-plugin-distribution-*.zip
-      - alien4cloud-yorc-plugin/target/alien4cloud-yorc-plugin-*.zip
-    skip_cleanup: true
-    on:
-      tags: true
-
   - provider: bintray
     file: "src/main/resources/bintray/bintray_release.json"
     user: "loicalbertin"

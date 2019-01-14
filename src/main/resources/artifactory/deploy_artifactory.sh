@@ -8,6 +8,11 @@ if [[ "${TRAVIS}" != "true" ]] ; then
     exit 0
 fi
 
+if [[ "${TRAVIS_PULL_REQUEST}" != "false" ]] && [[ -z "${ARTIFACTORY_API_KEY}" ]] ; then
+    echo "Building an external pull request, artifactory publication is disabled"
+    exit 0
+fi
+
 if [[ -n "${TRAVIS_TAG}" ]] ; then
     deploy_path="yorc-a4c-plugin-product-ystia-dist/ystia/yorc-a4c-plugin/dist/${TRAVIS_TAG}/{1}"
 elif [[ "${TRAVIS_PULL_REQUEST}" != "false" ]]; then
