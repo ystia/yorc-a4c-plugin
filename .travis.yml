@@ -22,6 +22,8 @@ script:
   - ./jfrog rt bag "yorc-a4c-plugin-mvn-travis-ci" "${TRAVIS_BUILD_NUMBER}" .
   - ./jfrog rt bp "yorc-a4c-plugin-mvn-travis-ci" "${TRAVIS_BUILD_NUMBER}"
 
+before_deploy:
+  - "bash ./src/main/resources/bintray/pre_bintray_release.sh"
 
 deploy:
   - provider: script
