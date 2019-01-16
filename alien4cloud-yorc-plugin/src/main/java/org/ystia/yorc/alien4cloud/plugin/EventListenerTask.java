@@ -40,6 +40,7 @@ public class EventListenerTask extends AlienTask {
     public static final String EVT_WORKFLOW   = "Workflow";
     public static final String EVT_WORKFLOW_STEP   = "WorkflowStep";
     public static final String EVT_ALIEN_TASK   = "AlienTask";
+    public static final String EVT_ATTRIBUTE_CHANGE   = "AttributeValue";
 
     // Set this to false to stop pollong events
     private boolean valid = true;
@@ -108,10 +109,6 @@ public class EventListenerTask extends AlienTask {
                                         ninfo.put(eInstance, iinfo);
                                     }
                                     orchestrator.updateInstanceState(paasId, eNode, eInstance, iinfo, eState);
-
-                                    // Retrieve instance attribute for all states
-                                    orchestrator.updateInstanceAttributes(paasId, iinfo, eNode, eInstance);
-
                                     switch (eState) {
                                         case "initial":
                                         case "creating":
@@ -257,6 +254,39 @@ public class EventListenerTask extends AlienTask {
                                             log.warn("An event has been ignored. Unexpected status=" + event.getStatus());
                                             break;
                                     }
+                                    break;
+                                case EVT_ATTRIBUTE_CHANGE:
+                                    eNode = event.getNodeId();
+                                    eInstance = event.getInstanceId();
+                                    String eAttribute = event.getAttribute();
+                                    String eValue = event.getValue();
+                                    eMessage += event.getType() + ":" + eState + "";
+                                    String.format("Attribute (%s) updated to value:%s for node:%s, instance:%s", eAttribute, eValue, eNode, eInstance);
+                                    log.debug("Received Event from Yorc <<< " + eMessage);
+
+                                    ninfo = instanceInfo.get(eNode);
+                                    if (ninfo == null) {
+                                        // Add a new Node in YorcRuntimeDeploymentInfo
+                                        log.debug("Add a node in YorcRuntimeDeploymentInfo: " + eNode);
+                                        ninfo = Maps.newHashMap();
+                                        instanceInfo.put(eNode, ninfo);
+                                    }
+                                    iinfo = ninfo.get(eInstance);
+                                    if (iinfo == null) {
+                                        // Add a new Instance for this node in YorcRuntimeDeploymentInfo
+                                        log.debug("Add an instance in YorcRuntimeDeploymentInfo: " + eInstance);
+                                        iinfo = orchestrator.newInstance(new Integer(eInstance));
+                                        ninfo.put(eInstance, iinfo);
+                                    }
+
+                                    iinfo.getAttributes().put(eAttribute, eValue);
+
+                                    // Notify a4c
+                                    PaaSInstanceStateMonitorEvent a4cEvent = new PaaSInstanceStateMonitorEvent();
+                                    a4cEvent.setInstanceId(eInstance);
+                                    a4cEvent.setNodeTemplateId(eNode);
+                                    a4cEvent.setAttributes(iinfo.getAttributes());
+                                    orchestrator.postEvent(a4cEvent, paasId);
                                     break;
                                 default:
                                     log.warn("Unknown event type received from Yorc <<< " + event.getType());
