@@ -1,0 +1,10 @@
+version: 1
+type: maven
+resolver:
+  snapshotRepo: libs-snapshot
+  releaseRepo: libs-release
+  serverID: ystia
+deployer:
+  snapshotRepo: yorc-a4c-plugin-maven-snapshot-local
+  releaseRepo: yorc-a4c-plugin-maven-release-local
+  serverID: ystia
