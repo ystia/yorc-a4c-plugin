@@ -19,6 +19,8 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -28,6 +30,7 @@ import java.util.Date;
 @Getter
 @Setter
 public class LogEvent {
+
     private String timestamp;
     private String deploymentId;
     private String level;
@@ -47,6 +50,12 @@ public class LogEvent {
     }
     
     public Long getNanotimestamp() {
-        return Long.parseLong(this.getTimestamp());
+
+        Duration duration = Duration.between(
+            LocalDateTime.ofInstant(Instant.EPOCH, ZoneId.systemDefault()),
+            LocalDateTime.parse(this.getTimestamp(), DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(
+            ZoneId.systemDefault()));
+
+        return (duration.getSeconds() * 1000000000L) + duration.getNano();
     }
 }
