@@ -17,7 +17,7 @@ if [[ "${TRAVIS_PULL_REQUEST}" != "false" ]] && [[ -z "${ARTIFACTORY_API_KEY}" ]
     echo "Building an external pull request, artifactory publication is disabled"
     echo; echo
     mvn ${mvn_args}
-elif [[ "${DISABLE_ARTIFACTORY}" == "true" ]]
+elif [[ "${DISABLE_ARTIFACTORY}" == "true" ]] ; then
     echo "Skipping Artifactory publication"
     mvn ${mvn_args}
 else 
