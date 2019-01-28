@@ -46,7 +46,4 @@ public class LogEvent {
             ZoneId.systemDefault()).toInstant());
     }
 
-    public Long getNanotimestamp() {
-        return Long.parseLong(this.getTimestamp());
-    }
 }
