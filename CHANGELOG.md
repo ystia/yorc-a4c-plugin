@@ -2,6 +2,10 @@
 
 ## UNRELEASED
 
+### DEPENDENCIES
+
+* Upgrade to Alien4Cloud 2.1.1
+
 ## 3.2.0-M1 (January 28, 2019)
 
 ### BUG FIXES
