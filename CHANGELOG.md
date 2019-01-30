@@ -6,6 +6,10 @@
 
 * Upgrade to Alien4Cloud 2.1.1
 
+### BUG FIXES
+
+* Deploying applications simultaneously can fail on invalid zip error ([GH-45](https://github.com/ystia/yorc-a4c-plugin/issues/45))
+
 ## 3.2.0-M1 (January 28, 2019)
 
 ### BUG FIXES
