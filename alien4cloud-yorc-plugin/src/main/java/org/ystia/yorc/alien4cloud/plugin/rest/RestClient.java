@@ -227,11 +227,12 @@ public class RestClient {
     /**
      * Send a topology to Yorc
      * @param deploymentId
+     * @param archiveName
      * @return String
      * @throws Exception
      */
-    public String sendTopologyToYorc(String deploymentId) throws Exception {
-        try (InputStream stream = new FileInputStream(new File("topology.zip")))
+    public String sendTopologyToYorc(String deploymentId, String archiveName) throws Exception {
+        try (InputStream stream = new FileInputStream(new File(archiveName)))
         {
             // Get file to upload
             final byte[] bytes = new byte[stream.available()];
