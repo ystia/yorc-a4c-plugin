@@ -44,7 +44,8 @@ public class UndeployTask extends AlienTask {
      */
     public void run() {
         Throwable error = null;
-
+        String taskUrl = null;
+        boolean done = false;
         String paasId = ctx.getDeploymentPaaSId();
         String deploymentUrl = "/deployments/" + paasId;
         YorcRuntimeDeploymentInfo jrdi = orchestrator.getDeploymentInfo(paasId);
@@ -70,7 +71,12 @@ public class UndeployTask extends AlienTask {
 
         log.debug("Undeploying with purge deployment Id:" + paasId);
         try {
-            restClient.undeploy(deploymentUrl, true);
+            taskUrl = restClient.undeploy(deploymentUrl, true);
+            if (taskUrl == null) {
+                // Assumes already undeployed
+                orchestrator.changeStatus(paasId, DeploymentStatus.UNDEPLOYED);
+                done = true;
+            }
         }
         catch(YorcRestException jre){
             // If 400 code (bad request)  is returned, we retry requesting purge during at most 5 minutes
@@ -82,8 +88,12 @@ public class UndeployTask extends AlienTask {
                     retry = retryDeploymentPurge(paasId);
                 }
             }
-            // 404 status code is ignored for purge failure
-            else if (jre.getHttpStatusCode() != 404){
+            // Deployment is not found or already undeployed
+            else if (jre.getHttpStatusCode() == 404){
+                orchestrator.changeStatus(paasId, DeploymentStatus.UNDEPLOYED);
+                done = true;
+            }
+            else {
                 log.error("undeploy purge returned an exception: " + jre.getMessage());
                 orchestrator.changeStatus(paasId, DeploymentStatus.FAILURE);
                 error = jre;
@@ -95,10 +105,12 @@ public class UndeployTask extends AlienTask {
             error = e;
         }
 
-        if (error == null) {
+        if (!done && error == null) {
+            String taskId = taskUrl.substring(taskUrl.lastIndexOf("/") + 1);
+            orchestrator.sendMessage(paasId, "Undeployment sent to Yorc. taskId=" + taskId);
+
             // wait for Yorc undeployment completion
             long timeout = System.currentTimeMillis() + YORC_UNDEPLOY_TIMEOUT;
-            boolean done = false;
             String status;
             Event evt;
             while (!done && error == null) {
