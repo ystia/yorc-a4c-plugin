@@ -118,7 +118,6 @@ public class UndeployTask extends AlienTask {
                 // This may occur when undeploy is immediate
                 try {
                     status = restClient.getStatusFromYorc(deploymentUrl);
-                    orchestrator.doChangeStatus(paasId, DeploymentStatus.UNDEPLOYMENT_IN_PROGRESS);
                 }
                 catch (YorcRestException jre){
                     if (jre.getHttpStatusCode() == 404){
