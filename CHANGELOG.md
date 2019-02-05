@@ -2,10 +2,23 @@
 
 ## UNRELEASED
 
+### DEPENDENCIES
+
+* Upgrade to Alien4Cloud 2.1.1
+
+### BUG FIXES
+
+* Deploying applications simultaneously can fail on invalid zip error ([GH-45](https://github.com/ystia/yorc-a4c-plugin/issues/45))
+* Uninstall workflow is not correct for Topology involving BlockStorage node ([GH-90](https://github.com/ystia/yorc-a4c-plugin/issues/90))
+* Yorc failure at undeployment leaves an app unpurged on Yorc server while undeployed in Alien4Cloud ([GH-95](https://github.com/ystia/yorc-a4c-plugin/issues/95))
+
+## 3.2.0-M1 (January 28, 2019)
+
 ### BUG FIXES
 
 * Can't connect to Yorc in secure mode  ([GH-81](https://github.com/ystia/yorc-a4c-plugin/issues/81))
 * Deployment status inconsistency when restarting Alien4Cloud and an application finishes to deploy  ([GH-77](https://github.com/ystia/yorc-a4c-plugin/issues/77))
+* Uninstall workflow is not correct for Topology involving BlockStorage node ([GH-90](https://github.com/ystia/yorc-a4c-plugin/issues/90))
 
 ## 3.1.0 (December 20, 2018)
 

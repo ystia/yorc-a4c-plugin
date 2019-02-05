@@ -72,12 +72,11 @@ public class EventListenerTask extends AlienTask {
                                 continue;
                             }
                             YorcRuntimeDeploymentInfo jrdi = orchestrator.getDeploymentInfo(paasId);
-                            Map<String, Map<String, InstanceInformation>> instanceInfo = jrdi.getInstanceInformations();
-
                             if (jrdi == null) {
                                 log.error("listenYorcEvents: no YorcRuntimeDeploymentInfo for " + paasId);
                                 continue;
                             }
+                            Map<String, Map<String, InstanceInformation>> instanceInfo = jrdi.getInstanceInformations();
 
                             // Check type of Event sent by Yorc and process it
                             String eState = event.getStatus();
