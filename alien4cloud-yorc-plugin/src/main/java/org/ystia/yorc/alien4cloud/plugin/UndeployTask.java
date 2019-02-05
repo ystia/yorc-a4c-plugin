@@ -44,7 +44,8 @@ public class UndeployTask extends AlienTask {
      */
     public void run() {
         Throwable error = null;
-
+        String taskUrl = null;
+        boolean done = false;
         String paasId = ctx.getDeploymentPaaSId();
         String deploymentUrl = "/deployments/" + paasId;
         YorcRuntimeDeploymentInfo jrdi = orchestrator.getDeploymentInfo(paasId);
@@ -68,40 +69,50 @@ public class UndeployTask extends AlienTask {
             }
         }
 
-        log.debug("Undeploying deployment Id:" + paasId);
-        boolean done = false;
-        String taskUrl = null;
-        String status;
+        log.debug("Undeploying with purge deployment Id:" + paasId);
         try {
-            taskUrl = restClient.undeploy(deploymentUrl, false);
+            taskUrl = restClient.undeploy(deploymentUrl, true);
             if (taskUrl == null) {
                 // Assumes already undeployed
                 orchestrator.changeStatus(paasId, DeploymentStatus.UNDEPLOYED);
                 done = true;
             }
         }
-        catch (YorcRestException jre) {
+        catch(YorcRestException jre){
+            // If 400 code (bad request)  is returned, we retry requesting purge during at most 5 minutes
+            //TODO Do we still need to retry the undeployment with purge ?
+            if (jre.getHttpStatusCode() == 400) {
+                long timeout = System.currentTimeMillis() + 1000 * 60 * 5;
+                long timetowait = timeout - System.currentTimeMillis();
+                boolean retry = true;
+                while (retry && timetowait > 0) {
+                    retry = retryDeploymentPurge(paasId);
+                }
+            }
             // Deployment is not found or already undeployed
-            if (jre.getHttpStatusCode() == 404 || jre.getHttpStatusCode() == 400 ) {
+            else if (jre.getHttpStatusCode() == 404){
                 orchestrator.changeStatus(paasId, DeploymentStatus.UNDEPLOYED);
                 done = true;
-            } else {
-                log.debug("undeploy returned an exception: " + jre.getMessage());
+            }
+            else {
+                log.error("undeploy purge returned an exception: " + jre.getMessage());
                 orchestrator.changeStatus(paasId, DeploymentStatus.FAILURE);
                 error = jre;
             }
         }
-        catch (Exception e) {
-            log.error("undeploy returned an exception: " + e);
+        catch(Exception e){
+            log.error("undeploy purge returned an exception: " + e.getMessage());
             orchestrator.changeStatus(paasId, DeploymentStatus.FAILURE);
             error = e;
         }
-        if (! done && error == null) {
+
+        if (!done && error == null) {
             String taskId = taskUrl.substring(taskUrl.lastIndexOf("/") + 1);
             orchestrator.sendMessage(paasId, "Undeployment sent to Yorc. taskId=" + taskId);
 
             // wait for Yorc undeployment completion
             long timeout = System.currentTimeMillis() + YORC_UNDEPLOY_TIMEOUT;
+            String status;
             Event evt;
             while (!done && error == null) {
                 // Check if already done
@@ -180,6 +191,7 @@ public class UndeployTask extends AlienTask {
                 }
             }
         }
+
         // Return result to a4c
         if (error == null) {
             callback.onSuccess(null);
@@ -188,4 +200,40 @@ public class UndeployTask extends AlienTask {
             callback.onFailure(error);
         }
     }
+
+    /**
+     * Retry deployment purge
+     * @param paasId
+     * @return boolean
+     */
+    private boolean retryDeploymentPurge(String paasId) {
+        boolean retry = false;
+        try{
+            // Wait for 2 seconds before retrying purge request
+            Thread.sleep(2000L);
+            restClient.undeploy("/deployments/" + paasId, true);
+        }
+        catch (InterruptedException ex) {
+            log.error("Waiting for purge requesting has been interrupted", ex);
+            retry = true;
+        }
+        catch(YorcRestException jre){
+            if (jre.getHttpStatusCode() == 400){
+                log.warn("Purge will be requested again later because Yorc is still undeploying application with deployment id:" + paasId);
+                retry = true;
+            }
+            // 404 status code is ignored for purge failure
+            else if (jre.getHttpStatusCode() != 404){
+                log.error("undeploy purge returned an exception: " + jre.getMessage());
+                orchestrator.changeStatus(paasId, DeploymentStatus.FAILURE);
+            }
+        }
+        catch(Exception e){
+            log.error("undeploy purge returned an exception: " + e.getMessage());
+            orchestrator.changeStatus(paasId, DeploymentStatus.FAILURE);
+        }
+        return retry;
+    }
 }
+
+

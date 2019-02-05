@@ -10,6 +10,7 @@
 
 * Deploying applications simultaneously can fail on invalid zip error ([GH-45](https://github.com/ystia/yorc-a4c-plugin/issues/45))
 * Uninstall workflow is not correct for Topology involving BlockStorage node ([GH-90](https://github.com/ystia/yorc-a4c-plugin/issues/90))
+* Yorc failure at undeployment leaves an app unpurged on Yorc server while undeployed in Alien4Cloud ([GH-95](https://github.com/ystia/yorc-a4c-plugin/issues/95))
 
 ## 3.2.0-M1 (January 28, 2019)
 
