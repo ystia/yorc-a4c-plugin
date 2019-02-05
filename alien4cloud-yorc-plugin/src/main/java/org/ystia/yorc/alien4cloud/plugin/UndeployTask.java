@@ -80,6 +80,7 @@ public class UndeployTask extends AlienTask {
         }
         catch(YorcRestException jre){
             // If 400 code (bad request)  is returned, we retry requesting purge during at most 5 minutes
+            //TODO Do we still need to retry the undeployment with purge ?
             if (jre.getHttpStatusCode() == 400) {
                 long timeout = System.currentTimeMillis() + 1000 * 60 * 5;
                 long timetowait = timeout - System.currentTimeMillis();
