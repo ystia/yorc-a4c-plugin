@@ -119,30 +119,39 @@ public class DeployTask extends AlienTask {
         //ShowTopology.topologyInLog(ctx);
         //MappingTosca.quoteProperties(ctx);
 
-        // This operation must be synchronized, because it uses the same files topology.yml and topology.zip
+        // Create the deployment archive, using in its name the unique orchestrator
+        // deployment ID to ensure other deployments running in parallel won't 
+        // work on the same archive
+        String zipName = new StringBuilder(ctx.getDeploymentPaaSId()).append("-")
+                                .append("topology.zip").toString();
+        try {
+            buildZip(ctx, zipName);
+        } catch (Throwable e) {
+            orchestrator.doChangeStatus(paasId, DeploymentStatus.FAILURE);
+            callback.onFailure(e);
+            return;
+        }
+
+        // Send topology zip to Yorc
+        log.info("Sending Topology " + ctx.getDeploymentPaaSId() + " to Yorc");
         String taskUrl;
-        synchronized(this) {
-
-            // Create the yml of our topology and build our zip topology
+        try {
+            taskUrl = restClient.sendTopologyToYorc(paasId, zipName);
+        } catch (Exception e) {
+            orchestrator.sendMessage(paasId, "Deployment not accepted by Yorc: " + e.getMessage());
+            orchestrator.doChangeStatus(paasId, DeploymentStatus.FAILURE);
+            callback.onFailure(e);
+            return;
+        } finally {
+            // Cleanup now that the zip was sent to the orchestrator
+            File f = new File(zipName);
             try {
-                buildZip(ctx);
-            } catch (Throwable e) {
-                orchestrator.doChangeStatus(paasId, DeploymentStatus.FAILURE);
-                callback.onFailure(e);
-                return;
-            }
-
-            // put topology zip to Yorc
-            log.info("PUT Topology to Yorc");
-            try {
-                taskUrl = restClient.sendTopologyToYorc(paasId);
+                f.delete();
             } catch (Exception e) {
-                orchestrator.sendMessage(paasId, "Deployment not accepted by Yorc: " + e.getMessage());
-                orchestrator.doChangeStatus(paasId, DeploymentStatus.FAILURE);
-                callback.onFailure(e);
-                return;
+                log.warn("Unexpected non-blocking error cleaning file " + zipName + ":" + e.getMessage());
             }
         }
+
         String taskId = taskUrl.substring(taskUrl.lastIndexOf("/") + 1);
         jrdi.setDeployTaskId(taskId);
         orchestrator.sendMessage(paasId, "Deployment sent to Yorc. TaskKey=" + taskId);
@@ -257,9 +266,10 @@ public class DeployTask extends AlienTask {
      * Create the zip for yorc, with a modified yaml and all needed archives.
      * Assumes a file original.yml exists in the current directory
      * @param ctx all needed information about the deployment
+     * @param zipName Name of zip file to create
      * @throws IOException
      */
-    private void buildZip(PaaSTopologyDeploymentContext ctx) throws IOException {
+    private void buildZip(PaaSTopologyDeploymentContext ctx, String zipName) throws IOException {
         // Check location
         int location = LOC_OPENSTACK;
         Location loc = ctx.getLocations().get("_A4C_ALL");
@@ -281,7 +291,7 @@ public class DeployTask extends AlienTask {
 
         // Final zip file will be named topology.zip
         final int finalLocation = location;
-        try (ZipOutputStream zout = new ZipOutputStream(new FileOutputStream("topology.zip")))
+        try (ZipOutputStream zout = new ZipOutputStream(new FileOutputStream(zipName)))
         {
             this.ctx.getDeploymentTopology().getDependencies().forEach(d -> {
                 if (!"tosca-normative-types".equals(d.getName())) {

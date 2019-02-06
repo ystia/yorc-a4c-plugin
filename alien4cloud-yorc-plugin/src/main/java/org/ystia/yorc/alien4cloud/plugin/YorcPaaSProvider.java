@@ -493,35 +493,6 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
             return;
         }
 
-        if (status.equals(DeploymentStatus.UNDEPLOYED)) {
-            try {
-                log.debug("send deployment purge request to yorc");
-                restClient.undeploy("/deployments/" + paasId, true);
-            }
-            catch(YorcRestException jre){
-                // If 400 code (bad request)  is returned, we retry requesting purge during at most 5 minutes
-                if (jre.getHttpStatusCode() == 400) {
-                    long timeout = System.currentTimeMillis() + 1000 * 60 * 5;
-                    long timetowait = timeout - System.currentTimeMillis();
-                    boolean retry = true;
-                    while (retry && timetowait > 0) {
-                        retry = retryDeploymentPurge(paasId);
-                    }
-                }
-                // 404 status code is ignored for purge failure
-                else if (jre.getHttpStatusCode() != 404){
-                    log.error("undeploy purge returned an exception: " + jre.getMessage());
-                    changeStatus(paasId, DeploymentStatus.FAILURE);
-                    return;
-                }
-            }
-            catch(Exception e){
-                log.error("undeploy purge returned an exception: " + e.getMessage());
-                changeStatus(paasId, DeploymentStatus.FAILURE);
-                return;
-            }
-        }
-
         DeploymentStatus oldDeploymentStatus = jrdi.getStatus();
         log.debug("Deployment [" + paasId + "] moved from status [" + oldDeploymentStatus + "] to [" + status + "]");
         jrdi.setStatus(status);
@@ -534,40 +505,6 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
     // ------------------------------------------------------------------------------------------------------
     // private methods
     // ------------------------------------------------------------------------------------------------------
-
-    /**
-     * Retry deployment purge
-     * @param paasId
-     * @return boolean
-     */
-    private boolean retryDeploymentPurge(String paasId) {
-        boolean retry = false;
-        try{
-            // Wait for 2 seconds before retrying purge request
-            Thread.sleep(2000L);
-            restClient.undeploy("/deployments/" + paasId, true);
-        }
-        catch (InterruptedException ex) {
-            log.error("Waiting for purge requesting has been interrupted", ex);
-            retry = true;
-        }
-        catch(YorcRestException jre){
-            if (jre.getHttpStatusCode() == 400){
-                log.warn("Purge will be requested again later because Yorc is still undeploying application with deployment id:" + paasId);
-                retry = true;
-            }
-            // 404 status code is ignored for purge failure
-            else if (jre.getHttpStatusCode() != 404){
-                log.error("undeploy purge returned an exception: " + jre.getMessage());
-                changeStatus(paasId, DeploymentStatus.FAILURE);
-            }
-        }
-        catch(Exception e){
-            log.error("undeploy purge returned an exception: " + e.getMessage());
-            changeStatus(paasId, DeploymentStatus.FAILURE);
-        }
-        return retry;
-    }
 
     protected void postWorkflowStepEvent(AbstractWorkflowStepEvent event, Event yorcEvent) {
         event.setInstanceId(yorcEvent.getInstanceId());
@@ -872,7 +809,7 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
      * @param state
      * @return
      */
-    private static DeploymentStatus getDeploymentStatusFromString(String state) {
+    protected static DeploymentStatus getDeploymentStatusFromString(String state) {
         switch (state) {
             case "DEPLOYED":
                 return DeploymentStatus.DEPLOYED;
