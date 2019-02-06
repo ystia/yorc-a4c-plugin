@@ -153,11 +153,10 @@ public class OperationTask extends AlienTask {
             callback.onFailure(error);
         }
 
-        // Update attributes 
+        //TODO is this still useful as it's done wih events ?
         Map<String,InstanceInformation> iinfos = jrdi.getInstanceInformations().get(this.request.getNodeTemplateName());
         safe(iinfos).forEach((instanceId,iInfo)-> {
             if(this.request.getInstanceId()==null ||this.request.getInstanceId().equals(instanceId) ) {
-                orchestrator.updateInstanceAttributes(paasId, iInfo, this.request.getNodeTemplateName(), instanceId);
                 orchestrator.updateInstanceState(paasId, this.request.getNodeTemplateName(), instanceId, iInfo, iInfo.getState());
             }
         });
