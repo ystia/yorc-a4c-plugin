@@ -26,6 +26,7 @@ import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -56,6 +57,8 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.ssl.SSLContexts;
+import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.json.JSONObject;
 import org.springframework.http.*;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
@@ -153,8 +156,17 @@ public class RestClient {
                         replaceFirst("\n-----END PRIVATE KEY-----", "").trim();
                     PKCS8EncodedKeySpec clientKeySpec = new PKCS8EncodedKeySpec(
                         Base64.getMimeDecoder().decode(keyContent));
-                    KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-                    RSAPrivateKey clientKey = (RSAPrivateKey)keyFactory.generatePrivate(clientKeySpec);
+                    // Getting the key algorithm
+                    ASN1InputStream bIn = new ASN1InputStream(new ByteArrayInputStream(clientKeySpec.getEncoded()));
+                    PrivateKeyInfo pki = PrivateKeyInfo.getInstance(bIn.readObject());
+                    bIn.close();
+                    String algorithm = pki.getPrivateKeyAlgorithm().getAlgorithm().getId();
+                    // Workaround for a missing algorithm OID in the list of default providers
+                    if ("1.2.840.113549.1.1.1".equals(algorithm)) {
+                        algorithm = "RSA";
+                    }
+                    KeyFactory keyFactory = KeyFactory.getInstance(algorithm);
+                    PrivateKey clientKey = keyFactory.generatePrivate(clientKeySpec);
 
                     // Create the client certificate from its configuration string value
                     inputStream = new ByteArrayInputStream(
