@@ -28,7 +28,7 @@
 
       <properties>
         <lombok.version>1.16.20</lombok.version>
-        <httpclient.version>4.4.1</httpclient.version>
+        <httpclient.version>4.3.2</httpclient.version>
         <skipTests>false</skipTests>
 
         <!-- Embedded TOSCA types versions -->

@@ -51,7 +51,7 @@ import org.apache.http.config.SocketConfig;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -104,12 +104,11 @@ public class RestClient {
                 e.printStackTrace();
                 throw new PluginConfigurationException("Failed to create SSL socket factory", e);
             }
-            SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
-                    sslContext,
-                    NoopHostnameVerifier.INSTANCE);
+            SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(sslContext);
             PoolingHttpClientConnectionManager poolHttpConnManager = new PoolingHttpClientConnectionManager();
             configurePoolingHttpClientConnectionManager(poolHttpConnManager);
             httpClient = HttpClientBuilder.create().useSystemProperties()
+                    .setHostnameVerifier(new AllowAllHostnameVerifier())
                     .setConnectionManager(poolHttpConnManager)
                     .setDefaultRequestConfig(clientConfig)
                     .setSSLSocketFactory(sslsf)
