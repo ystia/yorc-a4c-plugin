@@ -48,7 +48,7 @@ public class ProviderConfig {
     @FormLabel("CA certificate")
     private String caCertificate;
 
-    @FormPropertyDefinition(type = "string", description = "Client key content")
+    @FormPropertyDefinition(type = "string", description = "PKCS #8 encoded private key  content")
     @FormLabel("Client key")
     private String clientKey;
 
