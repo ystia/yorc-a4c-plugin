@@ -17,7 +17,7 @@ tosca_definitions_version: alien_dsl_2_0_0
 
 
 metadata:
-  template_name: org.ystia.yorc.samples.job.srun.Topology
+  template_name: org.ystia.yorc.samples.job.srun.SrunJobTemplate
   template_version: 1.0.0-SNAPSHOT
   template_author: yorc
 
@@ -25,7 +25,7 @@ imports:
   - tosca-normative-types:1.0.0-ALIEN20
   - org.ystia.yorc.samples.job.srun.Component:1.0.0-SNAPSHOT
   - yorc-types:1.0.0
-  - yorc-slurm-types:1.1.0
+  - yorc-slurm-types:1.2.0
 
 topology_template:
   node_templates:
