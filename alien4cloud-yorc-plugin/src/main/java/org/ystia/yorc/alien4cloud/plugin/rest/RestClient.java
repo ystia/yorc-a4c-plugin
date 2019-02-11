@@ -32,7 +32,6 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 
@@ -104,14 +103,15 @@ public class RestClient {
                 e.printStackTrace();
                 throw new PluginConfigurationException("Failed to create SSL socket factory", e);
             }
-            SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(sslContext);
-            PoolingHttpClientConnectionManager poolHttpConnManager = new PoolingHttpClientConnectionManager();
+            SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(sslContext, new AllowAllHostnameVerifier());
+            Registry<ConnectionSocketFactory> socketFactoryRegistry =
+                RegistryBuilder.<ConnectionSocketFactory> create().register("https", sslsf).build();
+            PoolingHttpClientConnectionManager poolHttpConnManager = new PoolingHttpClientConnectionManager(socketFactoryRegistry);
             configurePoolingHttpClientConnectionManager(poolHttpConnManager);
             httpClient = HttpClientBuilder.create().useSystemProperties()
-                    .setHostnameVerifier(new AllowAllHostnameVerifier())
                     .setConnectionManager(poolHttpConnManager)
                     .setDefaultRequestConfig(clientConfig)
-                    .setSSLSocketFactory(sslsf)
+                    .setSslcontext(sslContext)
                     .build();
         } else if (providerConfiguration.getUrlYorc().startsWith("https")){
 

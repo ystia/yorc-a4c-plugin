@@ -58,7 +58,7 @@ click on the configuration menu icon |OrchConfigBtn|.
 In the Driver configuration part, add the URL of your Yorc server (should respect the format: ``http://yorc-ip:8800``) and return to the previous page to enable your orchestrator.
 
 If Yorc is secured (ssl enabled), the yorc URL should use the ``https`` protocol
-and you should provide as well (or else check ``insecureTL``):
+and you should provide as well (or else to connect in insecure mode, check ``insecureTLS`` and make sure Yorc is configured with ``ssl_verify`` set to false):
   * the trusted Certificate Authority used to sign Yorc server certificates
   * a client certificate that will be verified by Yorc
   * the PKCS #8 encoded client private key.
