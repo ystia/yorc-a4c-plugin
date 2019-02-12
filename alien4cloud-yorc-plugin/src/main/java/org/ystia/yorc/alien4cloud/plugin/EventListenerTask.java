@@ -282,6 +282,7 @@ public class EventListenerTask extends AlienTask {
 
                                     // Notify a4c
                                     PaaSInstanceStateMonitorEvent a4cEvent = new PaaSInstanceStateMonitorEvent();
+                                    a4cEvent.setInstanceState(eState);
                                     a4cEvent.setInstanceId(eInstance);
                                     a4cEvent.setNodeTemplateId(eNode);
                                     a4cEvent.setAttributes(iinfo.getAttributes());
