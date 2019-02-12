@@ -18,7 +18,7 @@ tosca_definitions_version: alien_dsl_2_0_0
 
 metadata:
   template_name: org.ystia.yorc.samples.job.sbatch.SbatchJobTemplate
-  template_version: 1.0.1-SNAPSHOT
+  template_version: 1.0.0-SNAPSHOT
   template_author: yorc
 
 description: "Slurm sbatch job template"
