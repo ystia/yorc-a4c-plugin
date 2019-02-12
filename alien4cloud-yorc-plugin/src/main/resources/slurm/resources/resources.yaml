@@ -45,6 +45,11 @@ node_types:
         type: string
         required: false
         description: Specify a name for the job allocation. The specified name will appear along with the job id.
+      user_account:
+        type: tosca.datatypes.Credential
+        description: >
+           Provide user account for connection to slurm client node
+        required: false
     attributes:
       cuda_visible_devices:
         type: string
@@ -55,11 +60,6 @@ node_types:
       partition:
         type: string
         description: Slurm partition where the nodes are deployed.
-      user_account:
-        type: tosca.datatypes.Credential
-        description: >
-           Provide user account for connection to slurm client node
-        required: false
 
   yorc.nodes.slurm.Job:
     derived_from: org.alien4cloud.nodes.Job
