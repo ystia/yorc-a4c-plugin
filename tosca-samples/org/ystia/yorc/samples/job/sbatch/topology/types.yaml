@@ -24,7 +24,7 @@ metadata:
 description: "Slurm sbatch job template"
 
 imports:
-  - org.ystia.yorc.samples.job.sbatch.Component:1.0.1-SNAPSHOT
+  - org.ystia.yorc.samples.job.sbatch.Component:1.0.0-SNAPSHOT
 
 topology_template:
   node_templates:
