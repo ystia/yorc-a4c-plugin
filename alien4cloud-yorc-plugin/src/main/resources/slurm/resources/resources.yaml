@@ -55,6 +55,11 @@ node_types:
       partition:
         type: string
         description: Slurm partition where the nodes are deployed.
+      user_account:
+        type: tosca.datatypes.Credential
+        description: >
+           Provide user account for connection to slurm client node
+        required: false
 
   yorc.nodes.slurm.Job:
     derived_from: org.alien4cloud.nodes.Job
