@@ -116,6 +116,7 @@ node_types:
         type: tosca.datatypes.Credential
         description: >
            Provide user account for connection to slurm client node
+        required: false
     attributes:
       job_id:
         type: string
