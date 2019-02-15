@@ -126,10 +126,10 @@ node_types:
           Time interval duration used for job monitoring as "5s" or "300ms"
           Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
         required: false
-      user_account:
+      credentials:
         type: tosca.datatypes.Credential
         description: >
-           Provide user account for connection to slurm client node
+           Provide user credentials for connection to slurm client node
         required: false
     attributes:
       job_id:
