@@ -6,6 +6,11 @@
 
 * Upgrade to Alien4Cloud 2.1.1
 
+### ENHANCEMENTS
+
+* Add SSL configuration parameters to connect to a secure Yorc Server ([GH-82](https://github.com/ystia/yorc-a4c-plugin/issues/82))
+* Publish value change event for instance attributes ([GH-222](https://github.com/ystia/yorc/issues/222))
+
 ### BUG FIXES
 
 * Deploying applications simultaneously can fail on invalid zip error ([GH-45](https://github.com/ystia/yorc-a4c-plugin/issues/45))
