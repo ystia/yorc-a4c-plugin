@@ -65,13 +65,12 @@ Jobs scheduling. Our Slurm support allows to run single jobs and batches made of
 several jobs. Moreover, Yorc supports the execution of jobs as Singularity jobs.
 Several TOSCA types are available for each of these use cases.
 
-Let's see how to define in a TOSCA component to run a Slurm job using one of the available node types:
+Let's see how to define in a TOSCA component to run a Slurm job.
 
-* For running a single job in real time, define a node type derived from ``org.ystia.yorc.samples.job.srun.Component`` type.
-* To execute jobs in batch mode, you have to define a node type derived from ``org.ystia.yorc.samples.job.sbatch.Component``.
-* To execute a Singularity job, define a node type derived from ``org.ystia.yorc.samples.job.singularity.Component``.
+You have to define a node type derived from ``yorc.nodes.slurm.Job`` type.
+Different node properties are available in order to configure your Slurm job component.
 
-In any of the above cases, the TOSCA component must provide an implementation for the ``tosca.interfaces.node.lifecycle.Runnable`` interface.
+The TOSCA component must provide an implementation for the ``tosca.interfaces.node.lifecycle.Runnable`` interface.
 
 Example of an ``srun`` job component with a ``submit`` operation implementation using the ``yorc.artifacts.Deployment.SlurmJobBin``.
 
