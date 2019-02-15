@@ -125,6 +125,32 @@ node_types:
             file: bin/submit.sh
             type: yorc.artifacts.Deployment.SlurmJobBin
 
+To run a Singularity job, users can provide in the component definition the docker image to be run by Singularity.
+
+.. code-block:: YAML
+
+repositories:
+  docker:
+    url: https://hpda-docker-registry:5000/
+    type: a4c_ignore
+
+node_types:
+  org.ystia.yorc.samples.job.singularity.Component:
+    derived_from: yorc.nodes.slurm.SingularityJob
+    description: >
+      Sample component to show how to run a job via singularity run
+    tags:
+      icon: /images/singularity.png
+
+    interfaces:
+      tosca.interfaces.node.lifecycle.Runnable:
+        submit:
+          inputs:
+              exec_command: {get_property: [SELF, exec_command]}
+          implementation:
+              file: docker://godlovedc/lolcow:latest
+              repository: docker
+              type: yorc.artifacts.Deployment.SlurmJobImage
 
 Kubernetes
 ~~~~~~~~~~
