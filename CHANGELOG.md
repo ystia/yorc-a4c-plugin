@@ -6,6 +6,12 @@
 
 * Upgrade to Alien4Cloud 2.1.1
 
+### ENHANCEMENTS
+
+* Add SSL configuration parameters to connect to a secure Yorc Server ([GH-82](https://github.com/ystia/yorc-a4c-plugin/issues/82))
+* Publish value change event for instance attributes ([GH-222](https://github.com/ystia/yorc/issues/222))
+* Slurm user credentials can be defined as slurm deployment topology properties, as an alternative to yorc configuration properties ([GH-281](https://github.com/ystia/yorc/issues/281))
+
 ### BUG FIXES
 
 * Deploying applications simultaneously can fail on invalid zip error ([GH-45](https://github.com/ystia/yorc-a4c-plugin/issues/45))
