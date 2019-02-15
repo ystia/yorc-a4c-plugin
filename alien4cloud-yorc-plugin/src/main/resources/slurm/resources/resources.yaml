@@ -23,6 +23,16 @@ artifact_types:
     description: Slurm Job Container image deployment descriptor
     derived_from: yorc.artifacts.Deployment.SlurmJob
 
+capability_types:
+  yorc.capabilities.slurm.Endpoint:
+    derived_from: yorc.capabilities.Endpoint.ProvisioningAdmin
+    properties:
+      # Adds non required credentials
+      credentials:
+        type: yorc.datatypes.ProvisioningCredential
+        description: Credentials used to provision the resource
+        required: false
+
 node_types:
   yorc.nodes.slurm.Compute:
     derived_from: yorc.nodes.Compute
@@ -45,6 +55,10 @@ node_types:
         type: string
         required: false
         description: Specify a name for the job allocation. The specified name will appear along with the job id.
+    capabilities:
+      endpoint:
+        type: yorc.capabilities.slurm.Endpoint
+
     attributes:
       cuda_visible_devices:
         type: string
@@ -111,6 +125,11 @@ node_types:
         description: >
           Time interval duration used for job monitoring as "5s" or "300ms"
           Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+        required: false
+      credentials:
+        type: tosca.datatypes.Credential
+        description: >
+           Provide user credentials for connection to slurm client node
         required: false
     attributes:
       job_id:

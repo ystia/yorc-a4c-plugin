@@ -1,13 +1,13 @@
 # Job sbatch component sample
 
-This sample illustrates how to write a slurm job component run in a batch mode (sbatch).
-They're 3 identical MPI programs which just print `hello <ARG>` or `hello world` without arguments.
-It's allows using sbatch script with defined parameters as ntasks, output, nodes and so on...
+This sample illustrates how to write a TOSCA component allowing to run a batch job using the Slurm job scheduler (sbatch).
+It provides a submission script that contains 3 identical MPI programs which just print `hello <ARG>` or `hello world` without arguments.
+The sbatch script contains directives such as ntasks, output, nodes and so on...
 There is a 30s delay to allow retrieving job information (job ID and job state) during the job execution.
 
-## Run operation implementation
+## Submit operation implementation
 
-This sample demonstrates how to provide run operation implementation with the executable run by the job in batch mode.
+This sample show how to define a submit operation implementation with the executable submit.sh submission script.
 
 Given the following TOSCA operation definition:
 ```yaml
@@ -19,7 +19,7 @@ Given the following TOSCA operation definition:
             type: yorc.artifacts.Deployment.SlurmJobBin
 ```
 
-A SBATCH script needs to be provided.
+A submission script needs to be provided.
 The implementation type must be `yorc.artifacts.Deployment.SlurmJobBin`.
 
 ## Outputs & logging
