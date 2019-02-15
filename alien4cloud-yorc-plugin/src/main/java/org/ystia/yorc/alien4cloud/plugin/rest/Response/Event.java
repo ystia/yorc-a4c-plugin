@@ -41,6 +41,8 @@ public class Event {
     private String targetNodeId;
     private String targetInstanceId;
     private String stepId;
+    private String attribute;
+    private String value;
 
     public Date getDate() {
         return Date.from(LocalDateTime.parse(this.getTimestamp(), DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(
