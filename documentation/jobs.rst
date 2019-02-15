@@ -62,10 +62,62 @@ Slurm
 
 Slurm is an HPC scheduler. Unsurprisingly, it was our first builtin support for
 Jobs scheduling. Our Slurm support allows to run single jobs and batches made of
-several jobs.
+several jobs. Moreover, Yorc supports the execution of jobs as Singularity jobs.
+Several TOSCA types are available for each of these use cases.
 
-.. todo:: Include a description on how to write SlurmBin/SlurmBatch/Singularity
-          Jobs
+Let's see how to define in a TOSCA component to run a Slurm job using one of the available node types:
+
+* For running a single job in real time, define a node type derived from ``org.ystia.yorc.samples.job.srun.Component`` type.
+* To execute jobs in batch mode, you have to define a node type derived from ``org.ystia.yorc.samples.job.sbatch.Component``.
+* To execute a Singularity job, define a node type derived from ``org.ystia.yorc.samples.job.singularity.Component``.
+
+In any of the above cases, the TOSCA component must provide an implementation for the ``tosca.interfaces.node.lifecycle.Runnable`` interface.
+
+Example of an ``srun`` job component with a ``submit`` operation implementation using the ``yorc.artifacts.Deployment.SlurmJobBin``.
+
+.. code-block:: YAML
+
+node_types:
+  org.ystia.yorc.samples.job.srun.Component:
+    derived_from: yorc.nodes.slurm.Job
+    description: >
+      Sample component to show how to run a job in real time
+    tags:
+      icon: /images/slurm.png
+    interfaces:
+      tosca.interfaces.node.lifecycle.Runnable:
+        submit:
+          inputs:
+            args: {get_property: [SELF, exec_args]}
+          implementation:
+            file: bin/test.mpi
+            type: yorc.artifacts.Deployment.SlurmJobBin
+
+
+Example of an ``sbatch`` job component. Here the ``submit`` operation definition provides the submission script ``submit.sh``.
+
+.. code-block:: YAML
+
+node_types:
+  org.ystia.yorc.samples.job.sbatch.Component:
+    derived_from: yorc.nodes.slurm.Job
+    description: >
+      Sample component to show how to submit jobs to slurm
+    tags:
+      icon: /images/slurm.png
+    artifacts:
+      - bin:
+          type: tosca.artifacts.File
+          file: bin
+    interfaces:
+      tosca.interfaces.node.lifecycle.Runnable:
+        submit:
+          inputs:
+            args: {get_property: [SELF, exec_args]}
+          implementation:
+            file: bin/submit.sh
+            type: yorc.artifacts.Deployment.SlurmJobBin
+
 
 Kubernetes
 ~~~~~~~~~~
