@@ -43,7 +43,6 @@ topology_template:
       type: org.ystia.yorc.samples.job.singularity.Component
       properties:
         name: job_singularity_test1
-        batch: false
       interfaces:
         tosca.interfaces.node.lifecycle.Runnable:
           submit:
@@ -58,7 +57,6 @@ topology_template:
       properties:
         name: job_singularity_test2
         exec_command: /usr/bin/hello-kitty.sh
-        batch: true
       interfaces:
         tosca.interfaces.node.lifecycle.Runnable:
           submit:

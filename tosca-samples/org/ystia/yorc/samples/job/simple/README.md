@@ -1,6 +1,6 @@
-# Job sbatch component sample
+# Job simple component sample
 
-This sample illustrates how to write a TOSCA component allowing to run a batch job using the Slurm job scheduler (sbatch).
+This sample illustrates how to write a TOSCA component allowing to run a job using the Slurm job scheduler (sbatch).
 It provides a submission script that contains 3 identical MPI programs which just print `hello <ARG>` or `hello world` without arguments.
 The sbatch script contains directives such as ntasks, output, nodes and so on...
 There is a 30s delay to allow retrieving job information (job ID and job state) during the job execution.

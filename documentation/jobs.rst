@@ -61,7 +61,7 @@ Slurm
 ~~~~~
 
 Slurm is an HPC scheduler. Unsurprisingly, it was our first builtin support for
-Jobs scheduling. Our Slurm support allows to run single jobs and batches made of
+Jobs scheduling. Our Slurm support allows to run single jobs made of
 several jobs. Moreover, Yorc supports the execution of jobs as Singularity jobs.
 Several TOSCA types are available for each of these use cases.
 
@@ -71,7 +71,6 @@ You have to define a node type derived from ``yorc.nodes.slurm.Job`` type.
 Different node properties are available in order to configure your Slurm job component.
 For example :
 
-* ``batch`` property must be set to true in order to run jobs in batch mode.
 * ``credentials`` property can be used to provide user credentials for slurm (used to connect to the slurm client node)
 * ``name`` property can be used to provide a job name
 * ``account`` property can be used to charge resources used by this job to specified account.
@@ -102,12 +101,12 @@ node_types:
             type: yorc.artifacts.Deployment.SlurmJobBin
 
 
-Example of an ``sbatch`` job component. Here the ``submit`` operation definition provides the submission script ``submit.sh``.
+Example of a job component. Here the ``submit`` operation definition provides the submission script ``submit.sh``.
 
 .. code-block:: YAML
 
 node_types:
-  org.ystia.yorc.samples.job.sbatch.Component:
+  org.ystia.yorc.samples.job.simple.Component:
     derived_from: yorc.nodes.slurm.Job
     description: >
       Sample component to show how to submit jobs to slurm

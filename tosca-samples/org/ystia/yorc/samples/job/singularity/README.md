@@ -1,6 +1,6 @@
 # Job singularity component sample
 
-This sample illustrates how to write a singularity slurm job component run in a batch or interactive mode (sbatch).
+This sample illustrates how to write a topology with 2 singularity slurm jobs.
 
 ## Run operation implementation
 
@@ -44,7 +44,7 @@ repositories:
 
 When the program will be run, the following messages will appear in Yorc/Alien logs, in function of the tasks and nodes job properties and in the res_mpi.out file:
 The first running job executes a "singularity run docker://godlovedc/lolcow:latest" command and returns the famous cow with random message in interactive mode (slurm srun).
-The second executes a "singularity exec /home_nfs/commons/hello-world.img /usr/bin/hello-kitty.sh" command and returns a simply "hello world" in batch mode (slurm sbatch)
+The second executes a "singularity exec /home_nfs/commons/hello-world.img /usr/bin/hello-kitty.sh" command and returns a simply "hello world".
 You need to modify the file implementation ans the exec command to run with your specific images and script paths.
 
 ```
