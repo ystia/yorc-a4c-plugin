@@ -74,6 +74,7 @@ For example :
 * ``batch`` property must be set to true in order to run jobs in batch mode.
 * ``credentials`` property can be used to provide user credentials for slurm (used to connect to the slurm client node)
 * ``name`` property can be used to provide a job name
+* ``account`` property can be used to charge resources used by this job to specified account.
 
 The complete list with detailed description can be found in the Alien4Cloud catalog ; search for ``Job`` component having ``yorc.nodes.slurm.Job`` type,
 after having created a Slurm location for your Yorc orchestrator.
