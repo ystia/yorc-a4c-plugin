@@ -141,6 +141,11 @@ node_types:
         description: >
            Allocate resources for the job from the named reservation.
         required: false
+      account:
+        type: string
+        description: >
+           Charge resources used by this job to specified account.
+        required: false
     attributes:
       job_id:
         type: string
