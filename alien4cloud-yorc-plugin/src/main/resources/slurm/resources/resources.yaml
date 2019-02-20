@@ -55,6 +55,11 @@ node_types:
         type: string
         required: false
         description: Specify a name for the job allocation. The specified name will appear along with the job id.
+      reservation:
+        type: string
+        description: >
+           Allocate resources from the named reservation.
+        required: false
     capabilities:
       endpoint:
         type: yorc.capabilities.slurm.Endpoint
@@ -130,6 +135,11 @@ node_types:
         type: tosca.datatypes.Credential
         description: >
            Provide user credentials for connection to slurm client node
+        required: false
+      reservation:
+        type: string
+        description: >
+           Allocate resources for the job from the named reservation.
         required: false
       account:
         type: string
