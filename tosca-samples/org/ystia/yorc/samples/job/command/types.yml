@@ -17,27 +17,17 @@ tosca_definitions_version: alien_dsl_2_0_0
 
 
 metadata:
-  template_name: org.ystia.yorc.samples.job.singularity.Component
+  template_name: org.ystia.yorc.samples.job.command.SimpleJobTemplate
   template_version: 1.0.0-SNAPSHOT
   template_author: yorc
 
-imports:
-  - tosca-normative-types:1.0.0-ALIEN20
-  - yorc-types:1.0.0
-  - yorc-slurm-types:1.2.0
+description: "Slurm simple job command template"
 
-repositories:
-  docker:
-    url: https://hpda-docker-registry:5000/
-    type: a4c_ignore
-  cluster_nfs:
-    url: not used
-    type: a4c_ignore
-
-node_types:
-  org.ystia.yorc.samples.job.singularity.Component:
-    derived_from: yorc.nodes.slurm.Job
-    description: >
-      Sample component to show how to run a job via singularity run
-    tags:
-      icon: /images/singularity.png
+topology_template:
+  node_templates:
+    Job:
+      type: yorc.nodes.slurm.Job
+      properties:
+        tasks: 1
+        nodes: 1
+        exec_command: "srun --mpi=pmi2 test.mpi john"
