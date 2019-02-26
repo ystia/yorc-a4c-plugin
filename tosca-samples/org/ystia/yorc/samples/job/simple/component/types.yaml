@@ -40,8 +40,6 @@ node_types:
     interfaces:
       tosca.interfaces.node.lifecycle.Runnable:
         submit:
-          inputs:
-            args: {get_property: [SELF, exec_args]}
           implementation:
             file: bin/submit.sh
             type: yorc.artifacts.Deployment.SlurmJobBin

@@ -35,4 +35,5 @@ topology_template:
       properties:
         tasks: 1
         nodes: 1
-        exec_command: "srun --mpi=pmi2 test.mpi john"
+        exec_command: "srun --mpi=pmi2 test.mpi"
+        exec_args: [john]

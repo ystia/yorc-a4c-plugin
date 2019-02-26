@@ -32,4 +32,4 @@ topology_template:
       type: org.ystia.yorc.samples.job.simple.Component
       properties:
         name: job_simple_test
-        exec_args: [NAME1=john, NAME2=mary, NAME3=fred]
+        env_vars: [NAME1=john, NAME2=mary, NAME3=fred]
