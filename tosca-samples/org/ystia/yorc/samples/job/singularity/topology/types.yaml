@@ -39,30 +39,39 @@ repositories:
 
 topology_template:
   node_templates:
-    Job1:
+    LolcowJob:
       type: org.ystia.yorc.samples.job.singularity.Component
       properties:
-        name: job_singularity_test1
+        name: job_singularity_lolcow
       interfaces:
         tosca.interfaces.node.lifecycle.Runnable:
           submit:
-            inputs:
-              exec_command: {get_property: [SELF, exec_command]}
             implementation:
               file: docker://godlovedc/lolcow:latest
               repository: docker
               type: yorc.artifacts.Deployment.SlurmJobImage
-    Job2:
+    HelloJob:
       type: org.ystia.yorc.samples.job.singularity.Component
       properties:
-        name: job_singularity_test2
+        name: job_singularity_hello
         exec_command: /usr/bin/hello-kitty.sh
       interfaces:
         tosca.interfaces.node.lifecycle.Runnable:
           submit:
-            inputs:
-              exec_command: {get_property: [SELF, exec_command]}
             implementation:
               file: /home_nfs/commons/hello-world.img
               repository: cluster_nfs
+              type: yorc.artifacts.Deployment.SlurmJobImage
+    ComputePIJob:
+      type: org.ystia.yorc.samples.job.singularity.Component
+      properties:
+        name: job_singularity_compute
+        exec_command: perl
+        exec_args: ["-Mbignum=bpi", "-wle", "print bpi(2000)"]
+      interfaces:
+        tosca.interfaces.node.lifecycle.Runnable:
+          submit:
+            implementation:
+              file: docker://perl:latest
+              repository: docker
               type: yorc.artifacts.Deployment.SlurmJobImage
