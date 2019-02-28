@@ -17,7 +17,7 @@ tosca_definitions_version: alien_dsl_2_0_0
 
 
 metadata:
-  template_name: org.ystia.yorc.samples.job.singularity.components
+  template_name: org.ystia.yorc.samples.job.slurm.singularity.components
   template_version: 1.0.0-SNAPSHOT
   template_author: yorc
 
@@ -35,8 +35,10 @@ repositories:
     type: a4c_ignore
 
 node_types:
-  org.ystia.yorc.samples.job.singularity.LolcowComponent:
+  org.ystia.yorc.samples.job.slurm.singularity.LolcowComponent:
     derived_from: yorc.nodes.slurm.Job
+    tags:
+      icon: /images/singularity.png
     interfaces:
       tosca.interfaces.node.lifecycle.Runnable:
         submit:
@@ -45,8 +47,10 @@ node_types:
             repository: docker
             type: yorc.artifacts.Deployment.SlurmJobImage
 
-  org.ystia.yorc.samples.job.singularity.HelloComponent:
+  org.ystia.yorc.samples.job.slurm.singularity.HelloComponent:
     derived_from: yorc.nodes.slurm.Job
+    tags:
+      icon: /images/singularity.png
     properties:
       exec_command:
         type: string
@@ -59,8 +63,10 @@ node_types:
             repository: cluster_nfs
             type: yorc.artifacts.Deployment.SlurmJobImage
 
-  org.ystia.yorc.samples.job.singularity.ComputePIComponent:
+  org.ystia.yorc.samples.job.slurm.singularity.ComputePIComponent:
     derived_from: yorc.nodes.slurm.Job
+    tags:
+      icon: /images/singularity.png
     properties:
       exec_command:
         type: string
@@ -75,5 +81,26 @@ node_types:
         submit:
           implementation:
             file: "docker://perl:latest"
+            repository: docker
+            type: yorc.artifacts.Deployment.SlurmJobImage
+
+  org.ystia.yorc.samples.job.slurm.singularity.BashLoopComponent:
+    derived_from: yorc.nodes.slurm.Job
+    tags:
+      icon: /images/singularity.png
+    properties:
+      exec_command:
+        type: string
+        default: "/bin/bash"
+      exec_args:
+        type: list
+        entry_schema:
+          type: string
+        default: [ "-c", "for d in $(seq 1 15); do echo $d; sleep $d; done; echo 'Computation done!';"]
+    interfaces:
+      tosca.interfaces.node.lifecycle.Runnable:
+        submit:
+          implementation:
+            file: "docker://yikaus/alpine-bash:latest"
             repository: docker
             type: yorc.artifacts.Deployment.SlurmJobImage

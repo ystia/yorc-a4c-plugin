@@ -17,19 +17,27 @@ tosca_definitions_version: alien_dsl_2_0_0
 
 
 metadata:
-  template_name: org.ystia.yorc.samples.job.simple.SimpleJobTemplate
+  template_name: MPIComponent
   template_version: 1.0.0-SNAPSHOT
   template_author: yorc
 
-description: "Slurm simple job template"
-
 imports:
-  - org.ystia.yorc.samples.job.simple.Component:1.0.0-SNAPSHOT
+  - tosca-normative-types:1.0.0-ALIEN20
+  - yorc-types:1.0.0
+  - yorc-slurm-types:1.2.0
 
-topology_template:
-  node_templates:
-    Job:
-      type: org.ystia.yorc.samples.job.simple.Component
-      properties:
-        name: job_simple_test
-        env_vars: [NAME1=john, NAME2=mary, NAME3=fred]
+node_types:
+  org.ystia.yorc.samples.job.slurm.MPIComponent:
+    derived_from: yorc.nodes.slurm.Job
+    tags:
+      icon: /images/slurm.png
+    artifacts:
+      - bin:
+          type: tosca.artifacts.File
+          file: bin
+    interfaces:
+      tosca.interfaces.node.lifecycle.Runnable:
+        submit:
+          implementation:
+            file: bin/submit.sh
+            type: yorc.artifacts.Deployment.SlurmJobBin

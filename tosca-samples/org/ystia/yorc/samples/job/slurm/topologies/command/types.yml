@@ -17,18 +17,23 @@ tosca_definitions_version: alien_dsl_2_0_0
 
 
 metadata:
-  template_name: org.ystia.yorc.samples.job.simple.JobFailure
+  template_name: CommandJobTemplate
   template_version: 1.0.0-SNAPSHOT
   template_author: yorc
 
-description: "Slurm job failure"
+description: "Slurm simple job command template"
 
 imports:
-  - org.ystia.yorc.samples.job.simple.ComponentFailure:1.0.0-SNAPSHOT
+  - tosca-normative-types:1.0.0-ALIEN20
+  - yorc-types:1.0.0
+  - yorc-slurm-types:1.2.0
 
 topology_template:
   node_templates:
-    Job:
-      type: org.ystia.yorc.samples.job.simple.ComponentFailure
+    JobCommand:
+      type: yorc.nodes.slurm.Job
       properties:
-        name: job_failure_test
+        tasks: 1
+        nodes: 1
+        exec_command: "srun --mpi=pmi2 /home_nfs/commons/test.mpi"
+        exec_args: [john]

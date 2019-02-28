@@ -17,23 +17,17 @@ tosca_definitions_version: alien_dsl_2_0_0
 
 
 metadata:
-  template_name: org.ystia.yorc.samples.job.command.SimpleCommandJobTemplate
+  template_name: SlurmMpiJobTemplate
   template_version: 1.0.0-SNAPSHOT
   template_author: yorc
 
-description: "Slurm simple job command template"
-
 imports:
-  - tosca-normative-types:1.0.0-ALIEN20
-  - yorc-types:1.0.0
-  - yorc-slurm-types:1.2.0
+  - org.ystia.yorc.samples.job.slurm.MPIComponent:1.0.0-SNAPSHOT
 
 topology_template:
   node_templates:
     Job:
-      type: yorc.nodes.slurm.Job
+      type: org.ystia.yorc.samples.job.slurm.MPIComponent
       properties:
-        tasks: 1
-        nodes: 1
-        exec_command: "srun --mpi=pmi2 test.mpi"
-        exec_args: [john]
+        name: job_simple_test
+        env_vars: [NAME1=john, NAME2=mary, NAME3=fred]

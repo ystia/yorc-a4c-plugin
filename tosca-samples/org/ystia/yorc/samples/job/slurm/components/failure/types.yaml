@@ -17,7 +17,7 @@ tosca_definitions_version: alien_dsl_2_0_0
 
 
 metadata:
-  template_name: org.ystia.yorc.samples.job.singularity.Component
+  template_name: SlurmJobFailureComponent
   template_version: 1.0.0-SNAPSHOT
   template_author: yorc
 
@@ -26,18 +26,21 @@ imports:
   - yorc-types:1.0.0
   - yorc-slurm-types:1.2.0
 
-repositories:
-  docker:
-    url: https://hpda-docker-registry:5000/
-    type: a4c_ignore
-  cluster_nfs:
-    url: not used
-    type: a4c_ignore
-
 node_types:
-  org.ystia.yorc.samples.job.singularity.Component:
+  org.ystia.yorc.samples.job.slurm.FailureComponent:
     derived_from: yorc.nodes.slurm.Job
-    description: >
-      Sample component to show how to run a job via singularity run
+    description: Component with batch script failure
     tags:
-      icon: /images/singularity.png
+      icon: /images/slurm.png
+    artifacts:
+      - bin:
+          type: tosca.artifacts.File
+          file: bin
+    interfaces:
+      tosca.interfaces.node.lifecycle.Runnable:
+        submit:
+          inputs:
+            args: {get_property: [SELF, exec_args]}
+          implementation:
+            file: bin/submit_err.sh
+            type: yorc.artifacts.Deployment.SlurmJobBin

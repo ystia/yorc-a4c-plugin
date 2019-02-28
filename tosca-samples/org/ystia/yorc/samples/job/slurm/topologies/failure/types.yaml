@@ -17,29 +17,18 @@ tosca_definitions_version: alien_dsl_2_0_0
 
 
 metadata:
-  template_name: org.ystia.yorc.samples.job.simple.Component
+  template_name: FailureComponentTemplate
   template_version: 1.0.0-SNAPSHOT
   template_author: yorc
 
-imports:
-  - tosca-normative-types:1.0.0-ALIEN20
-  - yorc-types:1.0.0
-  - yorc-slurm-types:1.2.0
+description: "Slurm job failure"
 
-node_types:
-  org.ystia.yorc.samples.job.simple.Component:
-    derived_from: yorc.nodes.slurm.Job
-    description: >
-      Sample component to show how to submit a job to slurm
-    tags:
-      icon: /images/slurm.png
-    artifacts:
-      - bin:
-          type: tosca.artifacts.File
-          file: bin
-    interfaces:
-      tosca.interfaces.node.lifecycle.Runnable:
-        submit:
-          implementation:
-            file: bin/submit.sh
-            type: yorc.artifacts.Deployment.SlurmJobBin
+imports:
+  - org.ystia.yorc.samples.job.slurm.FailureComponent:1.0.0-SNAPSHOT
+
+topology_template:
+  node_templates:
+    Job:
+      type: org.ystia.yorc.samples.job.slurm.FailureComponent
+      properties:
+        name: job_failure_test

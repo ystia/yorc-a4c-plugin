@@ -1,1 +1,0 @@
-# Job failure component teet
