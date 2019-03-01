@@ -16,7 +16,7 @@ imports:
 
 topology_template:
   node_templates:
-    ComputePIComponent:
+    BashLoopComponent:
       type: org.ystia.yorc.samples.job.slurm.singularity.nodes.BashLoopComponent
       properties:
         command: "/bin/bash"
