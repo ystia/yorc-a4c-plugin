@@ -17,10 +17,10 @@ imports:
 topology_template:
   node_templates:
     ComputePIComponent:
-      type: org.ystia.yorc.samples.job.slurm.singularity.BashLoopComponent
+      type: org.ystia.yorc.samples.job.slurm.singularity.nodes.BashLoopComponent
       properties:
-        exec_command: "/bin/bash"
-        exec_args:
+        command: "/bin/bash"
+        args:
           - "-c"
           - "for d in $(seq 1 15); do echo $d; sleep $d; done; echo 'Computation done!';"
         tasks: 1

@@ -17,18 +17,16 @@ tosca_definitions_version: alien_dsl_2_0_0
 
 
 metadata:
-  template_name: FailureComponentTemplate
+  template_name: SlurmFailureComponentTemplate
   template_version: 1.0.0-SNAPSHOT
   template_author: yorc
 
-description: "Slurm job failure"
-
 imports:
-  - org.ystia.yorc.samples.job.slurm.FailureComponent:1.0.0-SNAPSHOT
+  - org.ystia.yorc.samples.job.slurm.failure:1.0.0-SNAPSHOT
 
 topology_template:
   node_templates:
     Job:
-      type: org.ystia.yorc.samples.job.slurm.FailureComponent
+      type: org.ystia.yorc.samples.job.slurm.failure.nodes.FailureComponent
       properties:
-        name: job_failure_test
+        name: job_failure

@@ -17,11 +17,9 @@ tosca_definitions_version: alien_dsl_2_0_0
 
 
 metadata:
-  template_name: CommandJobTemplate
+  template_name: SlurmCommandJobTemplate
   template_version: 1.0.0-SNAPSHOT
   template_author: yorc
-
-description: "Slurm simple job command template"
 
 imports:
   - tosca-normative-types:1.0.0-ALIEN20
@@ -35,5 +33,5 @@ topology_template:
       properties:
         tasks: 1
         nodes: 1
-        exec_command: "srun --mpi=pmi2 /home_nfs/commons/test.mpi"
-        exec_args: [john]
+        command: "srun --mpi=pmi2 /home_nfs/commons/test.mpi"
+        args: [john]

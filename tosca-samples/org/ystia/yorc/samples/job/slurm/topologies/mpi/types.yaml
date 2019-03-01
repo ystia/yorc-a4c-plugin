@@ -22,12 +22,12 @@ metadata:
   template_author: yorc
 
 imports:
-  - org.ystia.yorc.samples.job.slurm.MPIComponent:1.0.0-SNAPSHOT
+  - org.ystia.yorc.samples.job.slurm.mpi:1.0.0-SNAPSHOT
 
 topology_template:
   node_templates:
     Job:
-      type: org.ystia.yorc.samples.job.slurm.MPIComponent
+      type: org.ystia.yorc.samples.job.slurm.mpi.nodes.MPIComponent
       properties:
-        name: job_simple_test
+        name: job_mpi
         env_vars: [NAME1=john, NAME2=mary, NAME3=fred]

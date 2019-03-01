@@ -17,10 +17,10 @@ imports:
 topology_template:
   node_templates:
     ComputePIComponent:
-      type: org.ystia.yorc.samples.job.slurm.singularity.ComputePIComponent
+      type: org.ystia.yorc.samples.job.slurm.singularity.nodes.ComputePIComponent
       properties:
-        exec_command: perl
-        exec_args:
+        command: perl
+        args:
           - "-Mbignum=bpi"
           - "-wle"
           - "print bpi(2000)"

@@ -17,8 +17,8 @@ imports:
 topology_template:
   node_templates:
     HelloComponent:
-      type: org.ystia.yorc.samples.job.slurm.singularity.HelloComponent
+      type: org.ystia.yorc.samples.job.slurm.singularity.nodes.HelloComponent
       properties:
-        exec_command: "/usr/bin/hello-kitty.sh"
+        command: "/usr/bin/hello-kitty.sh"
         tasks: 1
         nodes: 1

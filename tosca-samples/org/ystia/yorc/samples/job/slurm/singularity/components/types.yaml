@@ -35,8 +35,8 @@ repositories:
     type: a4c_ignore
 
 node_types:
-  org.ystia.yorc.samples.job.slurm.singularity.LolcowComponent:
-    derived_from: yorc.nodes.slurm.Job
+  org.ystia.yorc.samples.job.slurm.singularity.nodes.LolcowComponent:
+    derived_from: yorc.nodes.slurm.SingularityJob
     tags:
       icon: /images/singularity.png
     interfaces:
@@ -47,12 +47,12 @@ node_types:
             repository: docker
             type: yorc.artifacts.Deployment.SlurmJobImage
 
-  org.ystia.yorc.samples.job.slurm.singularity.HelloComponent:
-    derived_from: yorc.nodes.slurm.Job
+  org.ystia.yorc.samples.job.slurm.singularity.nodes.HelloComponent:
+    derived_from: yorc.nodes.slurm.SingularityJob
     tags:
       icon: /images/singularity.png
     properties:
-      exec_command:
+      command:
         type: string
         default: /usr/bin/hello-kitty.sh
     interfaces:
@@ -63,15 +63,15 @@ node_types:
             repository: cluster_nfs
             type: yorc.artifacts.Deployment.SlurmJobImage
 
-  org.ystia.yorc.samples.job.slurm.singularity.ComputePIComponent:
-    derived_from: yorc.nodes.slurm.Job
+  org.ystia.yorc.samples.job.slurm.singularity.nodes.ComputePIComponent:
+    derived_from: yorc.nodes.slurm.SingularityJob
     tags:
       icon: /images/singularity.png
     properties:
-      exec_command:
+      command:
         type: string
         default: perl
-      exec_args:
+      args:
         type: list
         entry_schema:
           type: string
@@ -84,15 +84,15 @@ node_types:
             repository: docker
             type: yorc.artifacts.Deployment.SlurmJobImage
 
-  org.ystia.yorc.samples.job.slurm.singularity.BashLoopComponent:
-    derived_from: yorc.nodes.slurm.Job
+  org.ystia.yorc.samples.job.slurm.singularity.nodes.BashLoopComponent:
+    derived_from: yorc.nodes.slurm.SingularityJob
     tags:
       icon: /images/singularity.png
     properties:
-      exec_command:
+      command:
         type: string
         default: "/bin/bash"
-      exec_args:
+      args:
         type: list
         entry_schema:
           type: string

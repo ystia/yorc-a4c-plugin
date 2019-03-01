@@ -17,7 +17,7 @@ tosca_definitions_version: alien_dsl_2_0_0
 
 
 metadata:
-  template_name: MPIComponent
+  template_name: org.ystia.yorc.samples.job.slurm.mpi
   template_version: 1.0.0-SNAPSHOT
   template_author: yorc
 
@@ -27,7 +27,7 @@ imports:
   - yorc-slurm-types:1.2.0
 
 node_types:
-  org.ystia.yorc.samples.job.slurm.MPIComponent:
+  org.ystia.yorc.samples.job.slurm.mpi.nodes.MPIComponent:
     derived_from: yorc.nodes.slurm.Job
     tags:
       icon: /images/slurm.png

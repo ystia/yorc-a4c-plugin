@@ -17,7 +17,7 @@ tosca_definitions_version: alien_dsl_2_0_0
 
 
 metadata:
-  template_name: SlurmJobFailureComponent
+  template_name: org.ystia.yorc.samples.job.slurm.failure
   template_version: 1.0.0-SNAPSHOT
   template_author: yorc
 
@@ -27,7 +27,7 @@ imports:
   - yorc-slurm-types:1.2.0
 
 node_types:
-  org.ystia.yorc.samples.job.slurm.FailureComponent:
+  org.ystia.yorc.samples.job.slurm.failure.nodes.FailureComponent:
     derived_from: yorc.nodes.slurm.Job
     description: Component with batch script failure
     tags:
@@ -39,8 +39,6 @@ node_types:
     interfaces:
       tosca.interfaces.node.lifecycle.Runnable:
         submit:
-          inputs:
-            args: {get_property: [SELF, exec_args]}
           implementation:
             file: bin/submit_err.sh
             type: yorc.artifacts.Deployment.SlurmJobBin

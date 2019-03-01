@@ -94,8 +94,6 @@ node_types:
     interfaces:
       tosca.interfaces.node.lifecycle.Runnable:
         submit:
-          inputs:
-            args: {get_property: [SELF, exec_args]}
           implementation:
             file: bin/test.mpi
             type: yorc.artifacts.Deployment.SlurmJobBin
@@ -119,8 +117,6 @@ node_types:
     interfaces:
       tosca.interfaces.node.lifecycle.Runnable:
         submit:
-          inputs:
-            args: {get_property: [SELF, exec_args]}
           implementation:
             file: bin/submit.sh
             type: yorc.artifacts.Deployment.SlurmJobBin
@@ -145,8 +141,6 @@ node_types:
     interfaces:
       tosca.interfaces.node.lifecycle.Runnable:
         submit:
-          inputs:
-              exec_command: {get_property: [SELF, exec_command]}
           implementation:
               file: docker://godlovedc/lolcow:latest
               repository: docker
