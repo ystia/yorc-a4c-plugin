@@ -16,7 +16,7 @@ imports:
 
 topology_template:
   node_templates:
-    ComputePIComponent:
+    MNISTComponent:
       type: org.ystia.yorc.samples.job.slurm.singularity.nodes.MNISTComponent
       properties:
         command: "bin/run_cmd.sh"
