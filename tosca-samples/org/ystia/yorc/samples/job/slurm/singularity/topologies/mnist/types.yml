@@ -20,6 +20,8 @@ topology_template:
       type: org.ystia.yorc.samples.job.slurm.singularity.nodes.MNISTComponent
       properties:
         command: "bin/run_cmd.sh"
+        extra_options:
+          - "-p avx"
         working_directory: mnist
         options:
           - "-B \"output:/out,data:/data\""

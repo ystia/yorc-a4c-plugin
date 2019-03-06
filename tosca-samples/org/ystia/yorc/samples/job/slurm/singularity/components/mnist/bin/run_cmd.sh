@@ -1,4 +1,6 @@
 #!/bin/bash
+
+# Take care to this: https://github.com/sylabs/singularity/issues/2146
 set -o pipefail
 
 echo "date debut " > /out/output.txt

@@ -50,6 +50,6 @@ node_types:
       tosca.interfaces.node.lifecycle.Runnable:
         submit:
           implementation:
-            file: "docker://tensorflow:latest"
+            file: "docker://tensorflow/tensorflow:1.13.1-py3 "
             repository: docker
             type: yorc.artifacts.Deployment.SlurmJobImage
