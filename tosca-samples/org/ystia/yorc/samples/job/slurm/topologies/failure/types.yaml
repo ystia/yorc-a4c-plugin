@@ -30,3 +30,4 @@ topology_template:
       type: org.ystia.yorc.samples.job.slurm.failure.nodes.FailureComponent
       properties:
         name: job_failure
+        working_directory: workFailure

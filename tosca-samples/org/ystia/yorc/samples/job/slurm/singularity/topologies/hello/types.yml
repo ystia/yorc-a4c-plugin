@@ -22,3 +22,4 @@ topology_template:
         command: "/usr/bin/hello-kitty.sh"
         tasks: 1
         nodes: 1
+        working_directory: work

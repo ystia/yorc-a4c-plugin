@@ -21,3 +21,4 @@ topology_template:
       properties:
         tasks: 1
         nodes: 1
+        working_directory: work
