@@ -46,3 +46,9 @@ topology_template:
         args:
           - "-c"
           - "for d in $(seq 1 15); do echo $d; sleep $d; done; echo 'Computation done!';"
+      requirements:
+        - dependsOnJobCommandFeature:
+            type_requirement: dependency
+            node: JobCommand
+            capability: tosca.capabilities.Node
+            relationship: tosca.relationships.DependsOn

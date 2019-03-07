@@ -1,4 +1,4 @@
-Run Tensorflow Mnist tutorial with Singularity Slurm Job
+# Run Tensorflow Mnist tutorial with Singularity Slurm Job
 
 Results are logged into output directory.
 
