@@ -43,9 +43,6 @@ node_types:
       - data:
           type: tosca.artifacts.File
           file: data
-      - output:
-          type: tosca.artifacts.File
-          file: output
     interfaces:
       tosca.interfaces.node.lifecycle.Runnable:
         submit:
