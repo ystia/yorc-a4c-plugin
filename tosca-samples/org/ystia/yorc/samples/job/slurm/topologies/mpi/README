@@ -16,11 +16,11 @@ Given the following TOSCA operation definition:
         submit:
           implementation:
             file: bin/submit.sh
-            type: yorc.artifacts.Deployment.SlurmJobBin
+            type: yorc.artifacts.Deployment.SlurmJobBatch
 ```
 
 A submission script needs to be provided.
-The implementation type must be `yorc.artifacts.Deployment.SlurmJobBin`.
+The implementation type must be `yorc.artifacts.Deployment.SlurmJobBatch`.
 
 ## Stdout
 

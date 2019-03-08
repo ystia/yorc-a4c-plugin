@@ -36,4 +36,4 @@ node_types:
         submit:
           implementation:
             file: bin/submit.sh
-            type: yorc.artifacts.Deployment.SlurmJobBin
+            type: yorc.artifacts.Deployment.SlurmJobBatch
