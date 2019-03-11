@@ -2,6 +2,8 @@
 
 ## UNRELEASED
 
+## 3.2.0-M3 (March 11, 2019)
+
 ### FEATURES
 
 * Yorc supports Slurm Accounting ([GH-280](https://github.com/ystia/yorc/issues/280))
