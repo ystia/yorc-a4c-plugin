@@ -31,16 +31,18 @@ topology_template:
     JobCommand:
       type: yorc.nodes.slurm.Job
       properties:
-        tasks: 1
-        nodes: 1
-        working_directory: work1
-        command: "srun --mpi=pmi2 /home_nfs/commons/test.mpi"
-        args: [john]
+        job_properties:
+          tasks: 1
+          nodes: 1
+          working_directory: work1
+          command: "srun --mpi=pmi2 /home_nfs/commons/test.mpi"
+          args: [john]
     JobCommand2:
       type: yorc.nodes.slurm.Job
       properties:
-        tasks: 1
-        nodes: 1
+        job_properties:
+          tasks: 1
+          nodes: 1
         working_directory: work2
         command: "/bin/bash"
         args:

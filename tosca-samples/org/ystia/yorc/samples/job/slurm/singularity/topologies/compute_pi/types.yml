@@ -24,6 +24,7 @@ topology_template:
           - "-Mbignum=bpi"
           - "-wle"
           - "print bpi(2000)"
-        tasks: 1
-        nodes: 1
+        job_properties:
+          tasks: 1
+          nodes: 1
         working_directory: work
