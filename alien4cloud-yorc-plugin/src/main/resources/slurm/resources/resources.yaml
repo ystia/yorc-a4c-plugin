@@ -114,7 +114,7 @@ node_types:
       extra_job_options:
         type: list
         description: >
-         This define all other slurm job options (ex: --mpi=pmi2 or --partition=MyPartition).
+         This define all other slurm job options (ex: --mpi=pmi2 or --partition=MyPartition). See Slurm documentation (https://slurm.schedmd.com/sbatch.html) for more details.
         required: false
         entry_schema:
           type: string
@@ -195,7 +195,8 @@ node_types:
         required: false
       singularity_command_options:
         type: list
-        description: Options passed to the "singularity run" or "singularity exec" command.
+        description: >
+          Options passed to the "singularity run" or "singularity exec" command. See Singularity documentation (https://www.sylabs.io/docs/) for more details.
         required: false
         entry_schema:
           type: string
