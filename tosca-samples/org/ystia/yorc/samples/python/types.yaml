@@ -32,6 +32,11 @@ node_types:
     tags:
       icon: /images/python.png
     properties:
+      user:
+        description: name to whom say hello or goodbye in custom command
+        type: string
+        required: true
+        default: "John Doe"
       hello_message:
         description: A simple message to print
         type: string
@@ -61,3 +66,10 @@ node_types:
           inputs:
             msg: {get_property: [SELF, hello_message]}
           implementation: scripts/start.py
+      custom:
+        inputs:
+          user: {get_property: [SELF, user]}
+        say_hello:
+          implementation: scripts/hello.py
+        say_goodbye:
+          implementation: scripts/goodbye.py
