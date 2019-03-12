@@ -24,6 +24,6 @@ topology_template:
           - "-c"
           - "for d in $(seq 1 15); do echo $d; sleep $d; done; echo 'Computation done!';"
         working_directory: work
-        job_properties:
+        slurm_options:
           tasks: 1
           nodes: 1

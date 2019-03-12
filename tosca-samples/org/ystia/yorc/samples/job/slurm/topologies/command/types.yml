@@ -31,7 +31,7 @@ topology_template:
     JobCommand:
       type: yorc.nodes.slurm.Job
       properties:
-        job_properties:
+        slurm_options:
           tasks: 1
           nodes: 1
           working_directory: work1
@@ -40,7 +40,7 @@ topology_template:
     JobCommand2:
       type: yorc.nodes.slurm.Job
       properties:
-        job_properties:
+        slurm_options:
           tasks: 1
           nodes: 1
         working_directory: work2

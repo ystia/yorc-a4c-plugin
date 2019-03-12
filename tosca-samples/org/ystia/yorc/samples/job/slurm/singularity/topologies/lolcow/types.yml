@@ -19,7 +19,7 @@ topology_template:
     LolcowComponent:
       type: org.ystia.yorc.samples.job.slurm.singularity.nodes.LolcowComponent
       properties:
-        job_properties:
+        slurm_options:
           tasks: 1
           nodes: 1
         working_directory: work

@@ -23,7 +23,7 @@ topology_template:
         working_directory: mnist
         singularity_command_options:
           - "-B \"../output:/out,data:/data\""
-        job_properties:
+        slurm_options:
           tasks: 1
           nodes: 1
           extra_job_options:

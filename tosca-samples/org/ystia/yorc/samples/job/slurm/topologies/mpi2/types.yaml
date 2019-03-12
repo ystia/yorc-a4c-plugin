@@ -29,7 +29,7 @@ topology_template:
     Job:
       type: org.ystia.yorc.samples.job.slurm.mpi.nodes.MPI2Component
       properties:
-        job_properties:
+        slurm_options:
           name: job_mpi
         working_directory: work
         env_vars: [NAME1=john, NAME2=mary, NAME3=fred]

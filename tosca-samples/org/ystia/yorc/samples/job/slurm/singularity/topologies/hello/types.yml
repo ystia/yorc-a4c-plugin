@@ -20,7 +20,7 @@ topology_template:
       type: org.ystia.yorc.samples.job.slurm.singularity.nodes.HelloComponent
       properties:
         command: "/usr/bin/hello-kitty.sh"
-        job_properties:
+        slurm_options:
           tasks: 1
           nodes: 1
         working_directory: work
