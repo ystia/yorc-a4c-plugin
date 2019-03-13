@@ -32,4 +32,5 @@ topology_template:
         slurm_options:
           name: job_mpi
         working_directory: work
-        env_vars: [NAME1=john, NAME2=mary, NAME3=fred]
+        execution_options:
+          env_vars: [NAME1=john, NAME2=mary, NAME3=fred]

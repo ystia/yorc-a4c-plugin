@@ -35,8 +35,9 @@ topology_template:
           tasks: 1
           nodes: 1
         working_directory: work1
-        command: "srun --mpi=pmi2 /home_nfs/commons/test.mpi"
-        args: [john]
+        execution_options:
+          command: "srun --mpi=pmi2 /home_nfs/commons/test.mpi"
+          args: [john]
     JobCommand2:
       type: yorc.nodes.slurm.Job
       properties:
@@ -44,10 +45,11 @@ topology_template:
           tasks: 1
           nodes: 1
         working_directory: work2
-        command: "/bin/bash"
-        args:
-          - "-c"
-          - "for d in $(seq 1 15); do echo $d; sleep $d; done; echo 'Computation done!';"
+        execution_options:
+          command: "/bin/bash"
+          args:
+            - "-c"
+            - "for d in $(seq 1 15); do echo $d; sleep $d; done; echo 'Computation done!';"
       requirements:
         - dependsOnJobCommandFeature:
             type_requirement: dependency

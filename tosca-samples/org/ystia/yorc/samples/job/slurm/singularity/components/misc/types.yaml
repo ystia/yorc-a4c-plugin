@@ -51,10 +51,6 @@ node_types:
     derived_from: yorc.nodes.slurm.SingularityJob
     tags:
       icon: /images/singularity.png
-    properties:
-      command:
-        type: string
-        default: /usr/bin/hello-kitty.sh
     interfaces:
       tosca.interfaces.node.lifecycle.Runnable:
         submit:
@@ -67,15 +63,6 @@ node_types:
     derived_from: yorc.nodes.slurm.SingularityJob
     tags:
       icon: /images/singularity.png
-    properties:
-      command:
-        type: string
-        default: perl
-      args:
-        type: list
-        entry_schema:
-          type: string
-        default: ["-Mbignum=bpi", "-wle", "print bpi(2000)"]
     interfaces:
       tosca.interfaces.node.lifecycle.Runnable:
         submit:
@@ -88,15 +75,6 @@ node_types:
     derived_from: yorc.nodes.slurm.SingularityJob
     tags:
       icon: /images/singularity.png
-    properties:
-      command:
-        type: string
-        default: "/bin/bash"
-      args:
-        type: list
-        entry_schema:
-          type: string
-        default: [ "-c", "for d in $(seq 1 15); do echo $d; sleep $d; done; echo 'Computation done!';"]
     interfaces:
       tosca.interfaces.node.lifecycle.Runnable:
         submit:

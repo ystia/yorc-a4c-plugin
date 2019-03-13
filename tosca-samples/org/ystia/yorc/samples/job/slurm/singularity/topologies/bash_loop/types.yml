@@ -19,10 +19,11 @@ topology_template:
     BashLoopComponent:
       type: org.ystia.yorc.samples.job.slurm.singularity.nodes.BashLoopComponent
       properties:
-        command: "/bin/bash"
-        args:
-          - "-c"
-          - "for d in $(seq 1 15); do echo $d; sleep $d; done; echo 'Computation done!';"
+        execution_options:
+          command: "/bin/bash"
+          args:
+            - "-c"
+            - "for d in $(seq 1 15); do echo $d; sleep $d; done; echo 'Computation done!';"
         working_directory: work
         slurm_options:
           tasks: 1

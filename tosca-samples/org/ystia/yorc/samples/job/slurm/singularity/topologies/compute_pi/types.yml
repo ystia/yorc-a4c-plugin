@@ -19,11 +19,12 @@ topology_template:
     ComputePIComponent:
       type: org.ystia.yorc.samples.job.slurm.singularity.nodes.ComputePIComponent
       properties:
-        command: perl
-        args:
-          - "-Mbignum=bpi"
-          - "-wle"
-          - "print bpi(2000)"
+        execution_options:
+          command: perl
+          args:
+            - "-Mbignum=bpi"
+            - "-wle"
+            - "print bpi(2000)"
         slurm_options:
           tasks: 1
           nodes: 1
