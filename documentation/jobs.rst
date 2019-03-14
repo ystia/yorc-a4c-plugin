@@ -61,7 +61,7 @@ Slurm
 ~~~~~
 
 Slurm is an HPC scheduler. Unsurprisingly, it was our first builtin support for
-Jobs scheduling. Our Slurm support allows to run single jobs and batches made of
+Jobs scheduling. Our Slurm support allows to run single jobs made of
 several jobs. Moreover, Yorc supports the execution of jobs as Singularity jobs.
 Several TOSCA types are available for each of these use cases.
 
@@ -71,7 +71,6 @@ You have to define a node type derived from ``yorc.nodes.slurm.Job`` type.
 Different node properties are available in order to configure your Slurm job component.
 For example :
 
-* ``batch`` property must be set to true in order to run jobs in batch mode.
 * ``credentials`` property can be used to provide user credentials for slurm (used to connect to the slurm client node)
 * ``name`` property can be used to provide a job name
 * ``account`` property can be used to charge resources used by this job to specified account.
@@ -81,33 +80,29 @@ after having created a Slurm location for your Yorc orchestrator.
 
 The TOSCA component must provide an implementation for the ``tosca.interfaces.node.lifecycle.Runnable`` interface.
 
-Example of an ``srun`` job component with a ``submit`` operation implementation using the ``yorc.artifacts.Deployment.SlurmJobBin``.
+Example of a job component with a ``submit`` operation implementation using the ``yorc.artifacts.Deployment.SlurmJobBatch``.
 
 .. code-block:: YAML
 
 node_types:
-  org.ystia.yorc.samples.job.srun.Component:
+  org.ystia.yorc.samples.job.simple.Component:
     derived_from: yorc.nodes.slurm.Job
-    description: >
-      Sample component to show how to run a job in real time
     tags:
       icon: /images/slurm.png
     interfaces:
       tosca.interfaces.node.lifecycle.Runnable:
         submit:
-          inputs:
-            args: {get_property: [SELF, exec_args]}
           implementation:
             file: bin/test.mpi
-            type: yorc.artifacts.Deployment.SlurmJobBin
+            type: yorc.artifacts.Deployment.SlurmJobBatch
 
 
-Example of an ``sbatch`` job component. Here the ``submit`` operation definition provides the submission script ``submit.sh``.
+Example of a job component. Here the ``submit`` operation definition provides the submission script ``submit.sh``.
 
 .. code-block:: YAML
 
 node_types:
-  org.ystia.yorc.samples.job.sbatch.Component:
+  org.ystia.yorc.samples.job.simple.Component:
     derived_from: yorc.nodes.slurm.Job
     description: >
       Sample component to show how to submit jobs to slurm
@@ -120,11 +115,9 @@ node_types:
     interfaces:
       tosca.interfaces.node.lifecycle.Runnable:
         submit:
-          inputs:
-            args: {get_property: [SELF, exec_args]}
           implementation:
             file: bin/submit.sh
-            type: yorc.artifacts.Deployment.SlurmJobBin
+            type: yorc.artifacts.Deployment.SlurmJobBatch
 
 To run a Singularity job, users can provide in the component definition the docker image to be run by Singularity.
 
@@ -146,8 +139,6 @@ node_types:
     interfaces:
       tosca.interfaces.node.lifecycle.Runnable:
         submit:
-          inputs:
-              exec_command: {get_property: [SELF, exec_command]}
           implementation:
               file: docker://godlovedc/lolcow:latest
               repository: docker

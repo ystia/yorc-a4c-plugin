@@ -1,0 +1,58 @@
+tosca_definitions_version: alien_dsl_2_0_0
+#
+# Copyright 2018 Bull S.A.S. Atos Technologies - Bull, Rue Jean Jaures, B.P.68, 78340, Les Clayes-sous-Bois, France.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+
+metadata:
+  template_name: SlurmCommandJobTemplate
+  template_version: 1.0.0-SNAPSHOT
+  template_author: yorc
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN20
+  - yorc-types:1.0.0
+  - yorc-slurm-types:1.2.0
+
+topology_template:
+  node_templates:
+    JobCommand:
+      type: yorc.nodes.slurm.Job
+      properties:
+        slurm_options:
+          tasks: 1
+          nodes: 1
+        working_directory: work1
+        execution_options:
+          command: "srun --mpi=pmi2 /home_nfs/commons/test.mpi"
+          args: [john]
+    JobCommand2:
+      type: yorc.nodes.slurm.Job
+      properties:
+        slurm_options:
+          tasks: 1
+          nodes: 1
+        working_directory: work2
+        execution_options:
+          command: "/bin/bash"
+          args:
+            - "-c"
+            - "for d in $(seq 1 15); do echo $d; sleep $d; done; echo 'Computation done!';"
+      requirements:
+        - dependsOnJobCommandFeature:
+            type_requirement: dependency
+            node: JobCommand
+            capability: tosca.capabilities.Node
+            relationship: tosca.relationships.DependsOn
