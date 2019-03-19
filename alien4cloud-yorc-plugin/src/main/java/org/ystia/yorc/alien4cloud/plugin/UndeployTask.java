@@ -163,6 +163,7 @@ public class UndeployTask extends AlienTask {
                     long remainingTime = timeout - System.currentTimeMillis();
                     if (remainingTime <= 0) {
                         log.warn("Timeout occured");
+                        error = new Exception("Undeployment failed on timeout");
                         break;
                     }
                     try {
