@@ -2,6 +2,11 @@
 
 ## UNRELEASED
 
+### BUG FIXES
+
+* Application undeployment seen in progress until timeout of 30 minutes occurs ([GH-110](https://github.com/ystia/yorc-a4c-plugin/issues/110))
+
+
 ## 3.2.0-M3 (March 11, 2019)
 
 ### FEATURES
