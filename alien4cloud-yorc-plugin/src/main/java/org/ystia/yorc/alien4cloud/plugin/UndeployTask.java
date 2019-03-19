@@ -144,6 +144,7 @@ public class UndeployTask extends AlienTask {
                         log.debug("Undeployment OK");
                         // Undeployment OK.
                         orchestrator.changeStatus(paasId, DeploymentStatus.UNDEPLOYED);
+                        done = true;
                         break;
                     case "INITIAL":
                         // No event will be received, and the undeployment should be straightforward
@@ -152,6 +153,10 @@ public class UndeployTask extends AlienTask {
                     default:
                         log.debug("Deployment Status is currently " + status);
                         break;
+                }
+                if (done) {
+                    // No need to wait for an event, the status is already undeployed
+                    break;
                 }
                 // Wait an Event from Yorc or timeout
                 synchronized (jrdi) {
@@ -207,8 +212,8 @@ public class UndeployTask extends AlienTask {
 
         // Return result to a4c
         if (error == null) {
-            callback.onSuccess(null);
             orchestrator.removeDeploymentInfo(paasId);
+            callback.onSuccess(null);
         } else {
             callback.onFailure(error);
         }
