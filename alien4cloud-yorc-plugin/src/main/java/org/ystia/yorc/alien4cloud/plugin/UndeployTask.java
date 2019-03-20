@@ -108,8 +108,14 @@ public class UndeployTask extends AlienTask {
         }
 
         if (!done && error == null) {
-            String taskId = taskUrl.substring(taskUrl.lastIndexOf("/") + 1);
-            orchestrator.sendMessage(paasId, "Undeployment sent to Yorc. taskId=" + taskId);
+            if (taskUrl != null) {
+                try {
+                    String taskId = taskUrl.substring(taskUrl.lastIndexOf("/") + 1);
+                    orchestrator.sendMessage(paasId, "Undeployment sent to Yorc. taskId=" + taskId);
+                } catch (Exception ex) {
+                    log.error("Failed to get undeployment task ID from URL: " + taskUrl);
+                }
+            }
 
             // wait for Yorc undeployment completion
             long timeout = System.currentTimeMillis() + YORC_UNDEPLOY_TIMEOUT;
