@@ -125,6 +125,8 @@ public class BlockStorageComputeWFModifier extends TopologyModifierSupport {
                     }
                 }
 
+                Set<Map.Entry<String, WorkflowStep>> stepsPrecedingComputeUninstall = new HashSet<>();
+                Set<String> uninstallStepsOnSuccess = new HashSet<>();
                 // Now lets locate corresponding wf steps in uninstall wf
                 for (Map.Entry<String, WorkflowStep> workflowStepEntry : uninstallWF.getSteps().entrySet()) {
                     if (workflowStepEntry.getValue().getTarget().equals(bs.getName())) {
@@ -145,11 +147,25 @@ public class BlockStorageComputeWFModifier extends TopologyModifierSupport {
                                 connectStepFromOperation.setFromStepIds(new String[]{onSuccessStepName});
                                 connectStepFromOperation.setToStepId(workflowStepEntry.getKey());
                                 connectStepFromProcessor.process(csar, topology, connectStepFromOperation);
-                                break;
                             }
                         }
-                        break;
                     }
+                    if (!workflowStepEntry.getValue().getTarget().equals(computeNodeName)) {
+                        for (String onSuccessStepName : workflowStepEntry.getValue().getOnSuccess()) {
+                            WorkflowStep onSuccessStep = uninstallWF.getSteps().get(onSuccessStepName);
+                            if (onSuccessStep.getTarget().equals(bs.getName())) {
+                                // Candidate for triggering Compute uninstall
+                                stepsPrecedingComputeUninstall.add(workflowStepEntry);
+                            }
+                        }
+                    } else {
+                        uninstallStepsOnSuccess.add(workflowStepEntry.getValue().getName());
+                    }
+                }
+
+                // Add Compute uninstall steps
+                for (Map.Entry<String, WorkflowStep> workflowStepEntry : stepsPrecedingComputeUninstall) {
+                    workflowStepEntry.getValue().getOnSuccess().addAll(uninstallStepsOnSuccess);
                 }
 
                 // Start & Stop makes no sense for those kind of nodes in Yorc as those operations are not implemented.

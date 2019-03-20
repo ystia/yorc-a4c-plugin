@@ -1,0 +1,6 @@
+# Run Job commands without providing any artifact
+
+Command1 is a srun command with accessible path executable
+Command2 is a bash loop
+
+Command2 depends on Command1 so is executed when Command2 is done successfully

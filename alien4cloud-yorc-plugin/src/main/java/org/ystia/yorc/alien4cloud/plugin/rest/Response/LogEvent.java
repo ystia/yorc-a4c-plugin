@@ -45,4 +45,5 @@ public class LogEvent {
         return Date.from(LocalDateTime.parse(this.getTimestamp(), DateTimeFormatter.ISO_OFFSET_DATE_TIME).atZone(
             ZoneId.systemDefault()).toInstant());
     }
+
 }

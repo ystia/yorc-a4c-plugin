@@ -61,11 +61,88 @@ Slurm
 ~~~~~
 
 Slurm is an HPC scheduler. Unsurprisingly, it was our first builtin support for
-Jobs scheduling. Our Slurm support allows to run single jobs and batches made of
-several jobs.
+Jobs scheduling. Our Slurm support allows to run single jobs made of
+several jobs. Moreover, Yorc supports the execution of jobs as Singularity jobs.
+Several TOSCA types are available for each of these use cases.
 
-.. todo:: Include a description on how to write SlurmBin/SlurmBatch/Singularity
-          Jobs
+Let's see how to define in a TOSCA component to run a Slurm job.
+
+You have to define a node type derived from ``yorc.nodes.slurm.Job`` type.
+Different node properties are available in order to configure your Slurm job component.
+For example :
+
+* ``credentials`` property can be used to provide user credentials for slurm (used to connect to the slurm client node)
+* ``name`` property can be used to provide a job name
+* ``account`` property can be used to charge resources used by this job to specified account.
+
+The complete list with detailed description can be found in the Alien4Cloud catalog ; search for ``Job`` component having ``yorc.nodes.slurm.Job`` type,
+after having created a Slurm location for your Yorc orchestrator.
+
+The TOSCA component must provide an implementation for the ``tosca.interfaces.node.lifecycle.Runnable`` interface.
+
+Example of a job component with a ``submit`` operation implementation using the ``yorc.artifacts.Deployment.SlurmJobBatch``.
+
+.. code-block:: YAML
+
+node_types:
+  org.ystia.yorc.samples.job.simple.Component:
+    derived_from: yorc.nodes.slurm.Job
+    tags:
+      icon: /images/slurm.png
+    interfaces:
+      tosca.interfaces.node.lifecycle.Runnable:
+        submit:
+          implementation:
+            file: bin/test.mpi
+            type: yorc.artifacts.Deployment.SlurmJobBatch
+
+
+Example of a job component. Here the ``submit`` operation definition provides the submission script ``submit.sh``.
+
+.. code-block:: YAML
+
+node_types:
+  org.ystia.yorc.samples.job.simple.Component:
+    derived_from: yorc.nodes.slurm.Job
+    description: >
+      Sample component to show how to submit jobs to slurm
+    tags:
+      icon: /images/slurm.png
+    artifacts:
+      - bin:
+          type: tosca.artifacts.File
+          file: bin
+    interfaces:
+      tosca.interfaces.node.lifecycle.Runnable:
+        submit:
+          implementation:
+            file: bin/submit.sh
+            type: yorc.artifacts.Deployment.SlurmJobBatch
+
+To run a Singularity job, users can provide in the component definition the docker image to be run by Singularity.
+
+.. code-block:: YAML
+
+repositories:
+  docker:
+    url: https://hpda-docker-registry:5000/
+    type: a4c_ignore
+
+node_types:
+  org.ystia.yorc.samples.job.singularity.Component:
+    derived_from: yorc.nodes.slurm.SingularityJob
+    description: >
+      Sample component to show how to run a job via singularity run
+    tags:
+      icon: /images/singularity.png
+
+    interfaces:
+      tosca.interfaces.node.lifecycle.Runnable:
+        submit:
+          implementation:
+              file: docker://godlovedc/lolcow:latest
+              repository: docker
+              type: yorc.artifacts.Deployment.SlurmJobImage
 
 Kubernetes
 ~~~~~~~~~~

@@ -2,10 +2,38 @@
 
 ## UNRELEASED
 
+## 3.2.0-M3 (March 11, 2019)
+
+### FEATURES
+
+* Yorc supports Slurm Accounting ([GH-280](https://github.com/ystia/yorc/issues/280))
+* Yorc supports Slurm reservation ([GH-132](https://github.com/ystia/yorc/issues/132))
+
+## 3.2.0-M2 (February 15, 2019)
+
+### DEPENDENCIES
+
+* Upgrade to Alien4Cloud 2.1.1
+
+### ENHANCEMENTS
+
+* Add SSL configuration parameters to connect to a secure Yorc Server ([GH-82](https://github.com/ystia/yorc-a4c-plugin/issues/82))
+* Publish value change event for instance attributes ([GH-222](https://github.com/ystia/yorc/issues/222))
+* Slurm user credentials can be defined as slurm deployment topology properties, as an alternative to yorc configuration properties ([GH-281](https://github.com/ystia/yorc/issues/281))
+
+### BUG FIXES
+
+* Deploying applications simultaneously can fail on invalid zip error ([GH-45](https://github.com/ystia/yorc-a4c-plugin/issues/45))
+* Uninstall workflow is not correct for Topology involving BlockStorage node ([GH-90](https://github.com/ystia/yorc-a4c-plugin/issues/90))
+* Yorc failure at undeployment leaves an app unpurged on Yorc server while undeployed in Alien4Cloud ([GH-95](https://github.com/ystia/yorc-a4c-plugin/issues/95))
+
+## 3.2.0-M1 (January 28, 2019)
+
 ### BUG FIXES
 
 * Can't connect to Yorc in secure mode  ([GH-81](https://github.com/ystia/yorc-a4c-plugin/issues/81))
 * Deployment status inconsistency when restarting Alien4Cloud and an application finishes to deploy  ([GH-77](https://github.com/ystia/yorc-a4c-plugin/issues/77))
+* Uninstall workflow is not correct for Topology involving BlockStorage node ([GH-90](https://github.com/ystia/yorc-a4c-plugin/issues/90))
 
 ## 3.1.0 (December 20, 2018)
 

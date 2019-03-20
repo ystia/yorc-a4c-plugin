@@ -28,7 +28,7 @@
 
       <properties>
         <lombok.version>1.16.20</lombok.version>
-        <httpclient.version>4.4.1</httpclient.version>
+        <httpclient.version>4.3.2</httpclient.version>
         <skipTests>false</skipTests>
 
         <!-- Embedded TOSCA types versions -->
@@ -39,7 +39,7 @@
         <yorc.hp.types.version>1.0.0</yorc.hp.types.version>
         <yorc.k8s.types.version>2.0.0</yorc.k8s.types.version>
         <yorc.os.types.version>1.0.0</yorc.os.types.version>
-        <yorc.slurm.types.version>1.1.0</yorc.slurm.types.version>
+        <yorc.slurm.types.version>1.2.0</yorc.slurm.types.version>
       </properties>
 
     <dependencies>
@@ -59,6 +59,11 @@
         <groupId>org.json</groupId>
         <artifactId>json</artifactId>
         <version>20180130</version>
+      </dependency>
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcpkix-jdk15on</artifactId>
+        <version>1.60</version>
       </dependency>
 
       <!-- tests -->

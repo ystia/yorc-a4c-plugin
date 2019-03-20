@@ -43,6 +43,11 @@ node_types:
         type: boolean
         required: false
         default: false
+      failOnStop:
+        description: "Should the stop operation implemented with an Ansible playbook fail?"
+        type: boolean
+        required: false
+        default: false
     interfaces:
       Standard:
         create:
@@ -53,3 +58,7 @@ node_types:
           inputs:
             SHOULD_FAIL: { get_property: [SELF, failOnStart] }
           implementation: implementation/start.yaml
+        stop:
+          inputs:
+            SHOULD_FAIL: { get_property: [SELF, failOnStop] }
+          implementation: implementation/stop.yaml

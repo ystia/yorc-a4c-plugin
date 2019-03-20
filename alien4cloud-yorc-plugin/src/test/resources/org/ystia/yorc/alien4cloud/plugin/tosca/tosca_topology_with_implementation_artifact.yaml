@@ -39,4 +39,4 @@ topology_template:
           run:
             implementation:
               file: bin/submit.sh
-              type: yorc.artifacts.Deployment.SlurmJobBin
+              type: yorc.artifacts.Deployment.SlurmJobBatch

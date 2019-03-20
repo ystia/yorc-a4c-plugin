@@ -1,0 +1,1 @@
+# Run script /usr/bin/hello-kitty.sh inside singularity container image built from docker hello-world image.
