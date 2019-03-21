@@ -95,14 +95,21 @@ public class DeployTask extends AlienTask {
      * Execute the Deployment
      */
     public void run() {
-        Throwable error = null;
 
         // Keep Ids in a Map
         String paasId = ctx.getDeploymentPaaSId();
         String alienId = ctx.getDeploymentId();
-        String deploymentUrl = "/deployments/" + paasId;
-        log.debug("Deploying " + paasId + "with id : " + alienId);
         orchestrator.putDeploymentId(paasId, alienId);
+
+        log.info("Deploying " + paasId + "with id : " + alienId);
+        deploy(paasId, alienId);
+    }
+
+    protected void deploy(String paasId, String alienId) {
+
+        Throwable error = null;
+
+        String deploymentUrl = "/deployments/" + paasId;
 
         // Init Deployment Info from topology
         DeploymentTopology dtopo = ctx.getDeploymentTopology();
@@ -133,11 +140,12 @@ public class DeployTask extends AlienTask {
         }
 
         // Send topology zip to Yorc
-        log.info("Sending Topology " + ctx.getDeploymentPaaSId() + " to Yorc");
+        log.info("Sending Topology " + paasId + " to Yorc");
         String taskUrl;
         try {
             taskUrl = restClient.sendTopologyToYorc(paasId, zipName);
         } catch (Exception e) {
+            log.error("Yorc returned an error for topology " + paasId + " : " + e.getMessage());
             orchestrator.sendMessage(paasId, "Deployment not accepted by Yorc: " + e.getMessage());
             orchestrator.doChangeStatus(paasId, DeploymentStatus.FAILURE);
             callback.onFailure(e);

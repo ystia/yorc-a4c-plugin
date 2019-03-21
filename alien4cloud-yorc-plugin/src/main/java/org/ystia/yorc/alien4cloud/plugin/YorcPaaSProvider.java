@@ -257,7 +257,7 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
      * @param callback to call when update is done or has failed.
      */
     public void update(PaaSTopologyDeploymentContext ctx, IPaaSCallback<?> callback) {
-        callback.onFailure(new UnsupportedOperationException("update topology not supported in Yorc"));
+        addTask(new UpdateTask(ctx, this, callback, csarRepoSearchService));
     }
 
     /**
