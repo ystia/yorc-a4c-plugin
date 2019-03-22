@@ -32,6 +32,7 @@ public class UndeployTask extends AlienTask {
     IPaaSCallback<?> callback;
 
     private final int YORC_UNDEPLOY_TIMEOUT = 1000 * 60 * 30;  //  30 mn
+    private final int WAIT_EVENT_TIMEOUT = 1000 * 30; // 30 seconds
 
     public UndeployTask(PaaSDeploymentContext ctx, YorcPaaSProvider prov, IPaaSCallback<?> callback) {
         super(prov);
@@ -57,7 +58,7 @@ public class UndeployTask extends AlienTask {
                 try {
                     restClient.stopTask(deploymentUrl + "/tasks/" + jrdi.getDeployTaskId());
                     // do not wait more than 30 sec.
-                    jrdi.wait(1000 * 30);
+                    jrdi.wait(WAIT_EVENT_TIMEOUT);
                 } catch (Exception e) {
                     log.error("stopTask returned an exception", e);
                 }
@@ -107,8 +108,14 @@ public class UndeployTask extends AlienTask {
         }
 
         if (!done && error == null) {
-            String taskId = taskUrl.substring(taskUrl.lastIndexOf("/") + 1);
-            orchestrator.sendMessage(paasId, "Undeployment sent to Yorc. taskId=" + taskId);
+            if (taskUrl != null) {
+                try {
+                    String taskId = taskUrl.substring(taskUrl.lastIndexOf("/") + 1);
+                    orchestrator.sendMessage(paasId, "Undeployment sent to Yorc. taskId=" + taskId);
+                } catch (Exception ex) {
+                    log.error("Failed to get undeployment task ID from URL: " + taskUrl);
+                }
+            }
 
             // wait for Yorc undeployment completion
             long timeout = System.currentTimeMillis() + YORC_UNDEPLOY_TIMEOUT;
@@ -143,6 +150,7 @@ public class UndeployTask extends AlienTask {
                         log.debug("Undeployment OK");
                         // Undeployment OK.
                         orchestrator.changeStatus(paasId, DeploymentStatus.UNDEPLOYED);
+                        done = true;
                         break;
                     case "INITIAL":
                         // No event will be received, and the undeployment should be straightforward
@@ -152,15 +160,32 @@ public class UndeployTask extends AlienTask {
                         log.debug("Deployment Status is currently " + status);
                         break;
                 }
+                if (done) {
+                    // No need to wait for an event, the status is already undeployed
+                    break;
+                }
                 // Wait an Event from Yorc or timeout
                 synchronized (jrdi) {
-                    long timetowait = timeout - System.currentTimeMillis();
-                    if (timetowait <= 0) {
+                    long remainingTime = timeout - System.currentTimeMillis();
+                    if (remainingTime <= 0) {
                         log.warn("Timeout occured");
+                        error = new Exception("Undeployment failed on timeout");
                         break;
                     }
                     try {
-                        jrdi.wait(timetowait);
+                        // Not waiting for the overall remaining time here,
+                        // as the plugin may never be notified of the undeployment
+                        // if Yorc purge has deleted all events before clients
+                        // listening to events were notified.
+                        // Waiting for a shorter time here.
+                        // If no event is received, we'll go back at the beginning
+                        // of the loop and check the deployment existence and status
+                        // and wait again here if needed
+                        long waitTime = WAIT_EVENT_TIMEOUT;
+                        if (waitTime >  remainingTime) {
+                            waitTime = remainingTime;
+                        }
+                        jrdi.wait(waitTime);
                     } catch (InterruptedException e) {
                         log.error("Interrupted while waiting for undeployment");
                         break;
@@ -194,8 +219,8 @@ public class UndeployTask extends AlienTask {
 
         // Return result to a4c
         if (error == null) {
-            callback.onSuccess(null);
             orchestrator.removeDeploymentInfo(paasId);
+            callback.onSuccess(null);
         } else {
             callback.onFailure(error);
         }
