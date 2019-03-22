@@ -105,6 +105,10 @@ public class DeployTask extends AlienTask {
         deploy(paasId, alienId);
     }
 
+    protected void changeStatusToFailure(String paasId) {
+        orchestrator.doChangeStatus(paasId, DeploymentStatus.FAILURE);
+    }
+
     protected void deploy(String paasId, String alienId) {
 
         Throwable error = null;
@@ -134,7 +138,7 @@ public class DeployTask extends AlienTask {
         try {
             buildZip(ctx, zipName);
         } catch (Throwable e) {
-            orchestrator.doChangeStatus(paasId, DeploymentStatus.FAILURE);
+            changeStatusToFailure(paasId);
             callback.onFailure(e);
             return;
         }
@@ -147,7 +151,7 @@ public class DeployTask extends AlienTask {
         } catch (Exception e) {
             log.error("Yorc returned an error for topology " + paasId + " : " + e.getMessage());
             orchestrator.sendMessage(paasId, "Deployment not accepted by Yorc: " + e.getMessage());
-            orchestrator.doChangeStatus(paasId, DeploymentStatus.FAILURE);
+            changeStatusToFailure(paasId);
             callback.onFailure(e);
             return;
         } finally {
@@ -175,7 +179,7 @@ public class DeployTask extends AlienTask {
                 if (timetowait <= 0) {
                     log.warn("Deployment Timeout occured");
                     error = new Throwable("Deployment timeout");
-                    orchestrator.doChangeStatus(paasId, DeploymentStatus.FAILURE);
+                    changeStatusToFailure(paasId);
                     break;
                 }
                 // Wait Deployment Events from Yorc
@@ -202,6 +206,19 @@ public class DeployTask extends AlienTask {
                             break;
                         case "deployment_in_progress":
                             orchestrator.doChangeStatus(paasId, DeploymentStatus.DEPLOYMENT_IN_PROGRESS);
+                            break;
+                        case "update_failure":
+                            log.warn("Update failed: " + paasId);
+                            orchestrator.doChangeStatus(paasId, DeploymentStatus.UPDATE_FAILURE);
+                            error = new Exception("Update failed");
+                            break;
+                        case "updated":
+                            log.debug("Update success: " + paasId);
+                            orchestrator.doChangeStatus(paasId, DeploymentStatus.UPDATED);
+                            done = true;
+                            break;
+                        case "update_in_progress":
+                            orchestrator.doChangeStatus(paasId, DeploymentStatus.UPDATE_IN_PROGRESS);
                             break;
                         default:
                             orchestrator.sendMessage(paasId, "Deployment status = " + evt.getStatus());
@@ -245,6 +262,15 @@ public class DeployTask extends AlienTask {
                 case "DEPLOYMENT_FAILED":
                     orchestrator.doChangeStatus(paasId, DeploymentStatus.FAILURE);
                     error = new Exception("Deployment failed");
+                    break;
+                case "UPDATED":
+                    // Update is OK.
+                    orchestrator.changeStatus(paasId, DeploymentStatus.UPDATED);
+                    done = true;
+                    break;
+                case "UPDATE_FAILURE":
+                    orchestrator.doChangeStatus(paasId, DeploymentStatus.UPDATE_FAILURE);
+                    error = new Exception("Update failed");
                     break;
                 default:
                     log.debug("Deployment Status is currently " + status);

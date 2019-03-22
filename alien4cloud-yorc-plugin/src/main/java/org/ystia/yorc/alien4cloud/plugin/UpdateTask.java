@@ -18,6 +18,7 @@ package org.ystia.yorc.alien4cloud.plugin;
 
 import alien4cloud.component.ICSARRepositorySearchService;
 import alien4cloud.paas.IPaaSCallback;
+import alien4cloud.paas.model.DeploymentStatus;
 import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,4 +43,11 @@ public class UpdateTask extends DeployTask {
         log.info("Updating deployment" + paasId + "with id : " + alienId);
         deploy(paasId, alienId);
     }
+
+    // Overriding parent class method to set a UPDATE_FAILURE status
+    // when the operation fails before even being run by the orchestrator
+    protected void changeStatusToFailure(String paasId) {
+        orchestrator.doChangeStatus(paasId, DeploymentStatus.UPDATE_FAILURE);
+    }
+
 }
