@@ -346,7 +346,8 @@ public class RestClient {
 
             String targetUrl = providerConfiguration.getUrlYorc() + "/deployments/" + deploymentId;
             ResponseEntity<String> resp = sendRequest(targetUrl, HttpMethod.PUT, String.class, request);
-            if (!resp.getStatusCode().getReasonPhrase().equals("Created")){
+            if (!resp.getStatusCode().getReasonPhrase().equals("Created") &&
+                !resp.getStatusCode().getReasonPhrase().equals("OK")) {
                 throw new Exception("sendTopologyToYorc: Yorc returned an unexpected status: " + resp.getStatusCode().getReasonPhrase());
             }
             return resp.getHeaders().getFirst("Location");
