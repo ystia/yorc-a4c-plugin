@@ -15,8 +15,8 @@
  */
 package org.ystia.yorc.alien4cloud.plugin;
 
-
 import alien4cloud.component.ICSARRepositorySearchService;
+import alien4cloud.model.deployment.DeploymentTopology;
 import alien4cloud.paas.IPaaSCallback;
 import alien4cloud.paas.model.DeploymentStatus;
 import alien4cloud.paas.model.PaaSTopologyDeploymentContext;
@@ -48,6 +48,16 @@ public class UpdateTask extends DeployTask {
     // when the operation fails before even being run by the orchestrator
     protected void changeStatusToFailure(String paasId) {
         orchestrator.doChangeStatus(paasId, DeploymentStatus.UPDATE_FAILURE);
+    }
+
+    // Overriding parent class method
+    protected YorcRuntimeDeploymentInfo setupDeploymentInfo(
+        DeploymentTopology dtopo, String paasId, String deploymentURL) {
+
+        // Here for an update, the deployment info has already been created
+        // and doesn' need to be updated in the current implementation
+        // where the only update supported is the update of workflows
+        return orchestrator.getDeploymentInfo(paasId);
     }
 
 }

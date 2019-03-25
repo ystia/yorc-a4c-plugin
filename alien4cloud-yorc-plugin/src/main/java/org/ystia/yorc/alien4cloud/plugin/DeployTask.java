@@ -109,6 +109,16 @@ public class DeployTask extends AlienTask {
         orchestrator.doChangeStatus(paasId, DeploymentStatus.FAILURE);
     }
 
+    protected YorcRuntimeDeploymentInfo setupDeploymentInfo(
+        DeploymentTopology dtopo, String paasId, String deploymentURL) {
+
+        Map<String, Map<String, InstanceInformation>> curinfo = setupInstanceInformations(dtopo);
+        YorcRuntimeDeploymentInfo jrdi = new YorcRuntimeDeploymentInfo(ctx, DeploymentStatus.INIT_DEPLOYMENT, curinfo, deploymentURL);
+        orchestrator.putDeploymentInfo(paasId, jrdi);
+        orchestrator.doChangeStatus(paasId, DeploymentStatus.INIT_DEPLOYMENT);
+        return jrdi;
+    }
+
     protected void deploy(String paasId, String alienId) {
 
         Throwable error = null;
@@ -121,10 +131,7 @@ public class DeployTask extends AlienTask {
         // Build Monitoring tags for computes
         buildComputeMonitoringTags(dtopo, ctx.getPaaSTopology());
 
-        Map<String, Map<String, InstanceInformation>> curinfo = setupInstanceInformations(dtopo);
-        YorcRuntimeDeploymentInfo jrdi = new YorcRuntimeDeploymentInfo(ctx, DeploymentStatus.INIT_DEPLOYMENT, curinfo, deploymentUrl);
-        orchestrator.putDeploymentInfo(paasId, jrdi);
-        orchestrator.doChangeStatus(paasId, DeploymentStatus.INIT_DEPLOYMENT);
+        YorcRuntimeDeploymentInfo jrdi = setupDeploymentInfo(dtopo, paasId, deploymentUrl);
 
         // Show Topoloy for debug
         //ShowTopology.topologyInLog(ctx);
@@ -164,9 +171,11 @@ public class DeployTask extends AlienTask {
             }
         }
 
-        String taskId = taskUrl.substring(taskUrl.lastIndexOf("/") + 1);
-        jrdi.setDeployTaskId(taskId);
-        orchestrator.sendMessage(paasId, "Deployment sent to Yorc. TaskKey=" + taskId);
+        if (taskUrl != null) {
+            String taskId = taskUrl.substring(taskUrl.lastIndexOf("/") + 1);
+            jrdi.setDeployTaskId(taskId);
+            orchestrator.sendMessage(paasId, "Deployment sent to Yorc. TaskKey=" + taskId);
+        }
 
         // wait for Yorc deployment completion
         boolean done = false;
@@ -174,21 +183,24 @@ public class DeployTask extends AlienTask {
         Event evt;
         while (!done && error == null) {
             synchronized (jrdi) {
-                // Check deployment timeout
-                long timetowait = timeout - System.currentTimeMillis();
-                if (timetowait <= 0) {
-                    log.warn("Deployment Timeout occured");
-                    error = new Throwable("Deployment timeout");
-                    changeStatusToFailure(paasId);
-                    break;
+                // Wait for an event unless no task was scheduled
+                if (taskUrl != null) {
+                    long timetowait = timeout - System.currentTimeMillis();
+                    if (timetowait <= 0) {
+                        log.warn("Deployment Timeout occured");
+                        error = new Throwable("Deployment timeout");
+                        changeStatusToFailure(paasId);
+                        break;
+                    }
+                    // Wait Deployment Events from Yorc
+                    log.debug(paasId + ": Waiting for deployment events.");
+                    try {
+                        jrdi.wait(timetowait);
+                    } catch (InterruptedException e) {
+                        log.warn("Interrupted while waiting for deployment");
+                    }
                 }
-                // Wait Deployment Events from Yorc
-                log.debug(paasId + ": Waiting for deployment events.");
-                try {
-                    jrdi.wait(timetowait);
-                } catch (InterruptedException e) {
-                    log.warn("Interrupted while waiting for deployment");
-                }
+
                 // Check if we received a Deployment Event and process it
                 evt = jrdi.getLastEvent();
                 if (evt != null && evt.getType().equals(EventListenerTask.EVT_DEPLOYMENT)) {
@@ -200,7 +212,7 @@ public class DeployTask extends AlienTask {
                             error = new Exception("Deployment failed");
                             break;
                         case "deployed":
-                            log.debug("Deployment success: " + paasId);
+                            log.info("Deployment success: " + paasId);
                             orchestrator.doChangeStatus(paasId, DeploymentStatus.DEPLOYED);
                             done = true;
                             break;
@@ -213,7 +225,7 @@ public class DeployTask extends AlienTask {
                             error = new Exception("Update failed");
                             break;
                         case "updated":
-                            log.debug("Update success: " + paasId);
+                            log.info("Update success: " + paasId);
                             orchestrator.doChangeStatus(paasId, DeploymentStatus.UPDATED);
                             done = true;
                             break;
@@ -256,6 +268,7 @@ public class DeployTask extends AlienTask {
                     break;
                 case "DEPLOYED":
                     // Deployment is OK.
+                    log.info("Deployment was successful: " + paasId);
                     orchestrator.changeStatus(paasId, DeploymentStatus.DEPLOYED);
                     done = true;
                     break;
@@ -265,6 +278,7 @@ public class DeployTask extends AlienTask {
                     break;
                 case "UPDATED":
                     // Update is OK.
+                    log.info("Update was successful: " + paasId);
                     orchestrator.changeStatus(paasId, DeploymentStatus.UPDATED);
                     done = true;
                     break;
