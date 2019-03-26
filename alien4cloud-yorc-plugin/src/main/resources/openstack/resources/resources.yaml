@@ -13,6 +13,16 @@ capability_types:
   yorc.capabilities.openstack.FIPConnectivity:
     derived_from: tosca.capabilities.Connectivity
 
+policy_types:
+  yorc.openstack.policies.AntiAffinity:
+    derived_from: tosca.policies.Placement
+    description: >
+      Allows to place compute instances in different Availability Zones
+    metadata:
+      # pluginId:pluginBean:phase
+      a4c_policy_impl: alien4cloud-yorc-plugin:yorc-openstack-anti-affinity-modifier:post-node-match
+    targets: [ tosca.nodes.Compute ]
+
 node_types:
   yorc.nodes.openstack.FloatingIP:
     #derived_from: tosca.nodes.Root
@@ -107,6 +117,10 @@ node_types:
 
   yorc.nodes.openstack.Network:
     derived_from: tosca.nodes.Network
+
+    # properties:
+    #   affinity:
+    #     type: org.alien4cloud.kubernetes.api.datatypes.PodAntiAffinity
 
   ##############################################
   # Abstract resources used for auto-config
