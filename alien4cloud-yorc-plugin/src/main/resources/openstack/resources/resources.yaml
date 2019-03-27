@@ -14,14 +14,26 @@ capability_types:
     derived_from: tosca.capabilities.Connectivity
 
 policy_types:
-  yorc.openstack.policies.AntiAffinity:
+  yorc.openstack.policies.ServerGroupPolicy:
     derived_from: tosca.policies.Placement
     description: >
-      Allows to place compute instances in different Availability Zones
+      Allows to apply a placement policy to compute instances
     metadata:
       # pluginId:pluginBean:phase
-      a4c_policy_impl: alien4cloud-yorc-plugin:yorc-openstack-anti-affinity-modifier:post-node-match
+      a4c_policy_impl: alien4cloud-yorc-plugin:yorc-openstack-server-group-modifier:post-policy-match
     targets: [ tosca.nodes.Compute ]
+    properties:
+      policy:
+        type: string
+        description: >
+          The placement policy applied. Possible policies are:
+          - Affinity: all instances launched in this group will be hosted on the same hypervisor.
+          - Anti-affinity: all instances launched in this group will be hosted on different hypervisors.
+          - Soft-affinity: Affinity if possible. But no failure if not.
+          - Soft-anti-affinity: Anti-affinity if possible. But no failure if not.
+        required: true
+        constraints:
+          - valid_values: [ affinity, anti-affinity, soft-affinity, soft-anti-affinity ]
 
 node_types:
   yorc.nodes.openstack.FloatingIP:

@@ -13,8 +13,8 @@ component_descriptors:
     name: Yorc Modifier for Kubernetes
     description: >
       Yorc Modifier for Kubernetes
-  - bean_name: yorc-openstack-anti-affinity-modifier
-    name: Openstack modifier for anti-affinity policy.
-    description: Openstack Anti-affinity policy implementation modifier.
+  - bean_name: yorc-openstack-server-group-modifier
+    name: Openstack modifier for Server Group policy
+    description: Openstack modifier for Server Group policy
 dependencies:
   - alien4cloud-kubernetes-plugin
