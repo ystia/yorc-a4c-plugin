@@ -12,3 +12,6 @@ matching_configurations:
       - docker_options: { equal: "" }
       - docker_run_cmd: { equal: "" }
       - gpuType: { equal: "" }
+  yorc.nodes.kubernetes.api.types.SimpleResource:
+    properties:
+      - size: { less_or_equal: 0 B }
