@@ -8,6 +8,10 @@ imports:
   - tosca-normative-types:${tosca.normative.types.version}
   - yorc-types:${yorc.types.version}
 
+artifact_types:
+  yorc.artifacts.openstack.Deployment:
+    derived_from: tosca.artifacts.Deployment
+
 capability_types:
   # NOTE: Alien specific
   yorc.capabilities.openstack.FIPConnectivity:
@@ -20,7 +24,7 @@ policy_types:
       Allows to apply a placement policy to compute instances
     metadata:
       # pluginId:pluginBean:phase
-      a4c_policy_impl: alien4cloud-yorc-plugin:yorc-openstack-server-group-modifier:post-policy-match
+      a4c_policy_impl: alien4cloud-yorc-plugin:yorc-openstack-server-group-modifier:post-node-match
     targets: [ tosca.nodes.Compute ]
     properties:
       policy:
@@ -95,6 +99,12 @@ node_types:
         description: >
           Coma separated list of security groups to add to the Compute
         required: false
+    requirements:
+      - group:
+          capability: yorc.capabilities.Group
+          node: yorc.nodes.openstack.ServerGroup
+          relationship: yorc.relationships.MemberOf
+          occurrences: [0, 1]
 
   yorc.nodes.openstack.BlockStorage:
     derived_from: tosca.nodes.BlockStorage
@@ -130,9 +140,31 @@ node_types:
   yorc.nodes.openstack.Network:
     derived_from: tosca.nodes.Network
 
-    # properties:
-    #   affinity:
-    #     type: org.alien4cloud.kubernetes.api.datatypes.PodAntiAffinity
+  yorc.nodes.openstack.ServerGroup:
+    derived_from: tosca.nodes.Root
+    properties:
+      name:
+        type: string
+        description: The name of the server group.
+        required: true
+      policy:
+        type: string
+        description: The policy applied to the server group.
+        required: true
+    capabilities:
+      group:
+        type: yorc.capabilities.Group
+        valid_source_types: [yorc.nodes.openstack.Compute]
+    interfaces:
+      Standard:
+        create:
+          implementation:
+            file: fake.sh
+            type: yorc.artifacts.openstack.Deployment
+        delete:
+          implementation:
+            file: fake.sh
+            type: yorc.artifacts.openstack.Deployment
 
   ##############################################
   # Abstract resources used for auto-config
