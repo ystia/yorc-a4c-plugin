@@ -102,13 +102,18 @@ public class OpenStackServerGroupTopologyModifier extends TopologyModifierSuppor
         Map<String, AbstractPropertyValue> properties = new LinkedHashMap<>();
         properties.put("policy", policy.getProperties().get("policy"));
 
+        // Set unique name to serverGroup
+        ScalarPropertyValue spv = new ScalarPropertyValue();
+        spv.setValue(String.format("sg-%s", UUID.randomUUID().toString()));
+        properties.put("name", spv);
+
         Map<String, Capability> capabilities = new LinkedHashMap<>();
         Capability groupCap = new Capability();
         groupCap.setType("yorc.capabilities.Group");
         capabilities.put("group", groupCap);
 
         // Creating a new Server group associated to the policy
-        String name = policy.getName() + "_serverGroup";
+        String name = policy.getName() + "_sg";
         NodeTemplate serverGroupNodeTemplate = addNodeTemplate(
                 csar,
                 topology,
