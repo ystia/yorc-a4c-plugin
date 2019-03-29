@@ -4,6 +4,7 @@
 
 ### FEATURES
 
+* Deployment update: support the ability to add/remove workflows with Yorc Premium version ([GH-112](https://github.com/ystia/yorc-a4c-plugin/issues/112))
 * Yorc support of kubernetes PersistentVolumeClaim ([GH-209](https://github.com/ystia/yorc/issues/209))
 
 ### BUG FIXES

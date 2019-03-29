@@ -1,0 +1,13 @@
+# Run Job commands without providing any artifact
+
+
+JobOne is a bash loop
+JobTwo is a srun command with an accessible path executable demo.sh
+
+JobTwo depends on JobOne so is executed when JobOne is done successfully
+
+demo.sh is very simple
+$ cat demo.sh
+#!/bin/bash
+
+echo "hey $NAME, whaouuuuuh this demo is awesome !!!"
