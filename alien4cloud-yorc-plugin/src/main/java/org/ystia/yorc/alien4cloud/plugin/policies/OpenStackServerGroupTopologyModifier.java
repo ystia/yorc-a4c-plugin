@@ -44,14 +44,31 @@ public class OpenStackServerGroupTopologyModifier extends TopologyModifierSuppor
         log.debug("Processing OpenStack ServerGroupPolicy modifier for topology " + topology.getId());
         try {
             WorkflowValidator.disableValidationThreadLocal.set(true);
-
             List<PolicyTemplate> policies = safe(topology.getPolicies()).values().stream()
                     .filter(policyTemplate -> Objects.equals(SERVER_GROUP_POLICY, policyTemplate.getType())).collect(Collectors.toList());
 
-            safe(policies).forEach(policyTemplate -> apply(policyTemplate, topology, context));
+            if (!checkDuplicatedTargetsIntoPolicies(policies, context)) {
+                safe(policies).forEach(policyTemplate -> apply(policyTemplate, topology, context));
+            }
         } finally {
             WorkflowValidator.disableValidationThreadLocal.remove();
         }
+    }
+
+
+
+    private boolean checkDuplicatedTargetsIntoPolicies(final List<PolicyTemplate> policies, final FlowExecutionContext context) {
+        Map<String, String> allTargets = new HashMap<>();
+        for (PolicyTemplate policy : policies) {
+            for (String target :  policy.getTargets()) {
+                if (allTargets.containsKey(target)) {
+                    context.log().error("Found target <{}> into several policies: <{}, {}>. Can't associate a target to several policies.", target, allTargets.get(target), policy.getName());
+                    return true;
+                }
+                allTargets.put(target, policy.getName());
+            }
+        }
+        return false;
     }
 
     // Server group is required only if:
@@ -104,7 +121,7 @@ public class OpenStackServerGroupTopologyModifier extends TopologyModifierSuppor
 
         // Set unique name to serverGroup
         ScalarPropertyValue spv = new ScalarPropertyValue();
-        spv.setValue(String.format("sg-%s", UUID.randomUUID().toString()));
+        spv.setValue(String.format("sg-%s-%s", topology.getArchiveName(), policy.getName()));
         properties.put("name", spv);
 
         Map<String, Capability> capabilities = new LinkedHashMap<>();
