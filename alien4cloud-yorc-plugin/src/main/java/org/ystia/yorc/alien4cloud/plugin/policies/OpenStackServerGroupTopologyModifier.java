@@ -141,24 +141,17 @@ public class OpenStackServerGroupTopologyModifier extends TopologyModifierSuppor
         serverGroupNodeTemplate.setProperties(properties);
         serverGroupNodeTemplate.setCapabilities(capabilities);
         String policyType = ((ScalarPropertyValue) policy.getProperties().get("policy")).getValue();
-        context.getLog().info(String.format("Add server group node template with policy; <%s>", policyType));
-
+        context.getLog().info(String.format("Add server group node template with name:<%s> and policy; <%s>", name, policyType));
 
         // Add relationship MemberOf with each target
-        validTargets.forEach(target -> safe(target.getCapabilities()).forEach((key, capability) -> {
-            if ("tosca.capabilities.Scalable".equals(capability.getType())) {
-                String maxInstancesVal = ((ScalarPropertyValue) capability.getProperties().get("max_instances")).getValue();
-                int maxInstances = Integer.parseInt(maxInstancesVal);
-                if (maxInstances > 1) {
-                    // Creating a new relationship btw the target and the server group
-                    relationshipsToAdd.add(new MemberRelationship(
-                            target, // source
-                            serverGroupNodeTemplate.getName(), // target
-                            "group",
-                            "group"));
-                }
-            }
-        }));
+        validTargets.forEach(target -> {
+            // Creating a new relationship btw the target and the server group
+            relationshipsToAdd.add(new MemberRelationship(
+                    target, // source
+                    serverGroupNodeTemplate.getName(), // target
+                    "group",
+                    "group"));
+        });
 
         // Add related relationships
         relationshipsToAdd.forEach( rel -> addRelationshipTemplate(
