@@ -36,7 +36,7 @@ After configuring your OpenStack location as described :ref:`here <location_conf
    :align: center
 
 Next, drag-and-drop the policy in the new policies resources list of your OpenStack location.
-Rename the resource by example ``AntiAffinityPolicy``. Select ``anti-affinity`` in the policy property.
+Rename the resource, for example ``AntiAffinityPolicy``. Select ``anti-affinity`` in the policy property.
 You must finally have this configuration:
 
 .. image:: _static/img/servergroup-policy-resource.png
