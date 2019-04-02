@@ -257,7 +257,7 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
      * @param callback to call when update is done or has failed.
      */
     public void update(PaaSTopologyDeploymentContext ctx, IPaaSCallback<?> callback) {
-        callback.onFailure(new UnsupportedOperationException("update topology not supported in Yorc"));
+        addTask(new UpdateTask(ctx, this, callback, csarRepoSearchService));
     }
 
     /**
@@ -795,24 +795,42 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
      * @return
      */
     protected static DeploymentStatus getDeploymentStatusFromString(String state) {
+        DeploymentStatus deploymentStatus;
         switch (state) {
             case "DEPLOYED":
-                return DeploymentStatus.DEPLOYED;
+                deploymentStatus = DeploymentStatus.DEPLOYED;
+                break;
             case "UNDEPLOYED":
-                return DeploymentStatus.UNDEPLOYED;
+                deploymentStatus = DeploymentStatus.UNDEPLOYED;
+                break;
             case "DEPLOYMENT_IN_PROGRESS":
             case "SCALING_IN_PROGRESS":
-                return DeploymentStatus.DEPLOYMENT_IN_PROGRESS;
+                deploymentStatus = DeploymentStatus.DEPLOYMENT_IN_PROGRESS;
+                break;
             case "UNDEPLOYMENT_IN_PROGRESS":
-                return DeploymentStatus.UNDEPLOYMENT_IN_PROGRESS;
+                deploymentStatus = DeploymentStatus.UNDEPLOYMENT_IN_PROGRESS;
+                break;
             case "INITIAL":
-                return DeploymentStatus.INIT_DEPLOYMENT;
+                deploymentStatus = DeploymentStatus.INIT_DEPLOYMENT;
+                break;
             case "DEPLOYMENT_FAILED":
             case "UNDEPLOYMENT_FAILED":
-                return DeploymentStatus.FAILURE;
+                deploymentStatus = DeploymentStatus.FAILURE;
+                break;
+            case "UPDATE_IN_PROGRESS":
+                deploymentStatus = DeploymentStatus.UPDATE_IN_PROGRESS;
+                break;
+            case "UPDATED":
+                deploymentStatus = DeploymentStatus.UPDATED;
+                break;
+            case "UPDATE_FAILURE":
+                deploymentStatus = DeploymentStatus.UPDATE_FAILURE;
+                break;
             default:
-                return DeploymentStatus.UNKNOWN;
+                deploymentStatus =  DeploymentStatus.UNKNOWN;
         }
+
+        return deploymentStatus;
     }
 
 

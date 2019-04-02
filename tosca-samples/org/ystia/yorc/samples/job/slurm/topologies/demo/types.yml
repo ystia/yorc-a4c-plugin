@@ -1,0 +1,44 @@
+tosca_definitions_version: alien_dsl_2_0_0
+
+metadata:
+  template_name: SlurmDemoTemplate
+  template_version: 0.1.0-SNAPSHOT
+  template_author: yorc
+
+description: ""
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN20
+  - alien-base-types:2.1.1
+  - yorc-slurm-types:1.2.0
+  - yorc-types:1.0.0
+
+topology_template:
+  node_templates:
+    JobOne:
+      type: yorc.nodes.slurm.Job
+      properties:
+        slurm_options:
+          nodes: 1
+          tasks: 1
+        working_directory: work2
+        execution_options:
+          args:
+            - "-c"
+            - "for d in $(seq 1 5); do echo $d; sleep $d; done; echo 'Computation done!';"
+          command: "/bin/bash"
+    JobTwo:
+      type: yorc.nodes.slurm.Job
+      properties:
+        execution_options:
+          command: srun
+          args:
+            - "/home_nfs/commons/demo.sh"
+          env_vars:
+            - "NAME=\"john, mary and david\""
+      requirements:
+        - dependsOnJobOneFeature:
+            type_requirement: dependency
+            node: JobOne
+            capability: tosca.capabilities.Node
+            relationship: tosca.relationships.DependsOn
