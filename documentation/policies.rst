@@ -52,7 +52,7 @@ Now, your OpenStack location is configured with a Server Group anti-affinity pla
 You can apply it on your topology application by using abstract and so non infrastructure-dependent nodes and policies that let you deploy your application as well on OpenStack or on GCP if another specific placement policy is implemented for GCP too.
 
 Select your application and go to the ``Topology Editor``. Click on the |TopologyEditorPolicies| button on the vertical blue bar on the left.
-Click on the ``+ Add policies`` button, search the abstract policy node ``AntiAffinity`` (org.alien4cloud.policies.Affinity) from alien-base-types and drag-and-drop it on the policies list of your topology.
+Click on the ``+ Add policies`` button, search the abstract policy node ``AntiAffinity`` (org.alien4cloud.policies.AntiAffinity) from alien-base-types and drag-and-drop it on the policies list of your topology.
 
 Set the ``level`` property to ``host``.
 
