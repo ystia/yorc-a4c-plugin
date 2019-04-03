@@ -33,7 +33,8 @@ public class OpenStackServerGroupTopologyModifier extends TopologyModifierSuppor
 
     protected static final String YORC_OPENSTACK_SERVER_GROUP_TOPOLOGY_MODIFIER = "yorc-openstack-server-group-modifier";
     private static final String TOSCA_NODES_COMPUTE = "tosca.nodes.Compute";
-    private static final String SERVER_GROUP_POLICY = "yorc.openstack.policies.ServerGroupPolicy";
+    private static final String AFFINITY_POLICY = "yorc.openstack.policies.ServerGroupAffinity";
+    private static final String ANTI_AFFINITY_POLICY = "yorc.openstack.policies.ServerGroupAntiAffinity";
 
     @Inject
     private IToscaTypeSearchService toscaTypeSearchService;
@@ -45,7 +46,7 @@ public class OpenStackServerGroupTopologyModifier extends TopologyModifierSuppor
         try {
             WorkflowValidator.disableValidationThreadLocal.set(true);
             List<PolicyTemplate> policies = safe(topology.getPolicies()).values().stream()
-                    .filter(policyTemplate -> Objects.equals(SERVER_GROUP_POLICY, policyTemplate.getType())).collect(Collectors.toList());
+                    .filter(policyTemplate -> Objects.equals(AFFINITY_POLICY, policyTemplate.getType()) || Objects.equals(ANTI_AFFINITY_POLICY, policyTemplate.getType())).collect(Collectors.toList());
 
             if (!checkDuplicatedTargetsIntoPolicies(policies, context)) {
                 safe(policies).forEach(policyTemplate -> apply(policyTemplate, topology, context));
@@ -62,7 +63,7 @@ public class OpenStackServerGroupTopologyModifier extends TopologyModifierSuppor
         for (PolicyTemplate policy : policies) {
             for (String target :  policy.getTargets()) {
                 if (allTargets.containsKey(target)) {
-                    context.log().error("Found target <{}> into several policies: <{}, {}>. Can't associate a target to several policies.", target, allTargets.get(target), policy.getName());
+                    context.log().error("Found target <{}> into several policies: <{}, {}>. Can't associate a target to several affinity/anti-affinity policies.", target, allTargets.get(target), policy.getName());
                     return true;
                 }
                 allTargets.put(target, policy.getName());
@@ -95,17 +96,12 @@ public class OpenStackServerGroupTopologyModifier extends TopologyModifierSuppor
     }
 
     private void apply(final PolicyTemplate policy, final Topology topology, final FlowExecutionContext context) {
-        if (policy.getProperties() == null || policy.getProperties().get("policy") == null) {
-            context.log().error("policy property for {} must be filled", SERVER_GROUP_POLICY);
-            return;
-        }
-
         Set<NodeTemplate> validTargets = getValidTargets(policy, topology,
                 invalidName -> context.log().warn("OpenStack ServerGroup policy <{}>: will ignore target <{}> as it IS NOT an instance of <{}>.", policy.getName(),
                         invalidName, TOSCA_NODES_COMPUTE));
 
         if (!checkIfServerGroupIsRequired(validTargets)) {
-            context.log().warn("no valid target found for applying policy:", SERVER_GROUP_POLICY);
+            context.log().warn("no valid target found for applying policy <{}>", policy.getName());
             return;
         }
 
@@ -116,8 +112,29 @@ public class OpenStackServerGroupTopologyModifier extends TopologyModifierSuppor
         NodeType serverGroupNodeType = toscaTypeSearchService.findMostRecent(NodeType.class, serverGroupTypeName);
         List<MemberRelationship> relationshipsToAdd = new ArrayList<>();
 
+        // Set policy
+        String policyType = "";
+        String strictStr = ((ScalarPropertyValue)policy.getProperties().get("strict")).getValue();
+        boolean strict = Boolean.parseBoolean(strictStr);
+
+        switch (policy.getType()) {
+            case AFFINITY_POLICY:
+                if (strict) {
+                    policyType = "affinity";
+                } else {
+                    policyType = "soft-affinity";
+                }
+                break;
+            case ANTI_AFFINITY_POLICY:
+                if (strict) {
+                    policyType = "anti-affinity";
+                } else {
+                    policyType = "soft-anti-affinity";
+                }
+                break;
+        }
         Map<String, AbstractPropertyValue> properties = new LinkedHashMap<>();
-        properties.put("policy", policy.getProperties().get("policy"));
+        properties.put("policy", new ScalarPropertyValue(policyType));
 
         // Set unique name to serverGroup
         ScalarPropertyValue spv = new ScalarPropertyValue();
@@ -140,7 +157,6 @@ public class OpenStackServerGroupTopologyModifier extends TopologyModifierSuppor
 
         serverGroupNodeTemplate.setProperties(properties);
         serverGroupNodeTemplate.setCapabilities(capabilities);
-        String policyType = ((ScalarPropertyValue) policy.getProperties().get("policy")).getValue();
         context.getLog().info(String.format("Add server group node template with name:<%s> and policy; <%s>", name, policyType));
 
         // Add relationship MemberOf with each target

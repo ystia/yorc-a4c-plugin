@@ -18,3 +18,9 @@ matching_configurations:
   yorc.nodes.openstack.BlockStorage:
     properties:
       - size: { less_or_equal: 0 B }
+  yorc.openstack.policies.Affinity:
+    properties:
+      - level: { equal: "host" }
+  yorc.openstack.policies.AntiAffinity:
+    properties:
+      - level: { equal: "host" }
