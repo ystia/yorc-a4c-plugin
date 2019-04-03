@@ -36,7 +36,7 @@ After configuring your OpenStack location as described :ref:`here <location_conf
    :align: center
 
 Next, drag-and-drop the policy in the new policies resources list of your OpenStack location.
-Rename the resource, for example ``ServerGroupAntiAffinity``. Select ``anti-affinity`` in the policy property.
+Rename the resource, for example ``ServerGroupAntiAffinity``.
 Set the ``level`` property to ``host`` as it's a policy placement of ``host`` type by opposition to ``zone`` or ``region`` placement.
 
 You can set the strict property to false (by default, this is set to true) if you accept that your deployment will be successful even if some instances are co-located.
