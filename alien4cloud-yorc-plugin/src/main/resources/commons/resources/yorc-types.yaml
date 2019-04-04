@@ -112,7 +112,7 @@ policy_types:
         description: Path to access on the target endpoint.
         required: false
       http_headers:
-        type: list
+        type: map
         description: Custom headers to set in the request.
         required: false
         entry_schema:
