@@ -63,7 +63,7 @@ and you should provide as well (or else to connect in insecure mode, check ``ins
   * a client certificate that will be verified by Yorc
   * the PKCS #8 encoded client private key.
 
-
+.. _location_config_openstack_section:
 Configure an OpenStack Location
 -------------------------------
 
