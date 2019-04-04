@@ -88,20 +88,6 @@ policy_types:
           Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
         required: true
         default: "5s"
-      initial_delay:
-        type: integer
-        description: Number of seconds after the node has started before monitoring is initiated
-        default: 0
-        required: false
-        constraints:
-          - greater_or_equal: 0
-      timeout:
-        type: integer
-        description: Number of seconds after which the monitoring check times out.
-        default: 1
-        required: false
-        constraints:
-          - greater_or_equal: 1
   yorc.policies.monitoring.HTTPMonitoring:
     derived_from: yorc.policies.Monitoring
     description: The yorc TOSCA Policy that is used to monitor applications with HTTP checks.
