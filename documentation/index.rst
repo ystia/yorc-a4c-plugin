@@ -33,5 +33,6 @@ Contents:
    quickstart
    upgrade
    jobs
+   policies
 
 
