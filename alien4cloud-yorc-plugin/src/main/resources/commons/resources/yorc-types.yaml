@@ -98,6 +98,9 @@ policy_types:
   yorc.policies.monitoring.HTTPMonitoring:
     derived_from: yorc.policies.Monitoring
     description: The yorc TOSCA Policy that is used to monitor applications with HTTP checks.
+    metadata:
+      # pluginId:pluginBean:phase
+      a4c_policy_impl: alien4cloud-yorc-plugin:yorc-monitoring-modifier:post-node-match
     targets: [ tosca.nodes.SoftwareComponent ]
     properties:
       scheme:
@@ -127,6 +130,9 @@ policy_types:
   yorc.policies.monitoring.TCPMonitoring:
     derived_from: yorc.policies.Monitoring
     description: The yorc TOSCA Policy that is used to monitor computes and applications with TCP checks.
+    metadata:
+      # pluginId:pluginBean:phase
+      a4c_policy_impl: alien4cloud-yorc-plugin:yorc-monitoring-modifier:post-node-match
     targets: [ tosca.nodes.Compute, tosca.nodes.SoftwareComponent ]
     properties:
       port:
