@@ -139,6 +139,7 @@ policy_types:
         type: integer
         description: Port to use for opening a socket.
         required: true
+        default: 22
         constraints:
           - in_range: [ 1, 65535 ]
 

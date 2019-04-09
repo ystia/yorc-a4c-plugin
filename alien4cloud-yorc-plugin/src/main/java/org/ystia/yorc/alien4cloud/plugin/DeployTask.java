@@ -51,7 +51,6 @@ import alien4cloud.tosca.parser.ParsingErrorLevel;
 import alien4cloud.tosca.parser.ParsingException;
 import alien4cloud.tosca.parser.ParsingResult;
 import alien4cloud.tosca.parser.ToscaParser;
-import alien4cloud.utils.MapUtil;
 import com.google.common.collect.Sets;
 import lombok.extern.slf4j.Slf4j;
 import org.alien4cloud.tosca.model.CSARDependency;
@@ -127,9 +126,6 @@ public class DeployTask extends AlienTask {
 
         // Init Deployment Info from topology
         DeploymentTopology dtopo = ctx.getDeploymentTopology();
-
-        // Build Monitoring tags for computes
-        buildComputeMonitoringTags(dtopo, ctx.getPaaSTopology());
 
         YorcRuntimeDeploymentInfo jrdi = setupDeploymentInfo(dtopo, paasId, deploymentUrl);
 
@@ -717,34 +713,5 @@ public class DeployTask extends AlienTask {
             }
         }
         return currentInformations;
-    }
-
-    private void buildComputeMonitoringTags(final DeploymentTopology depTopology, PaaSTopology ptopo) {
-        Map<String, String> depProps = depTopology.getProviderDeploymentProperties();
-        if (depProps != null && !depProps.isEmpty()) {
-            // Check for Monitoring time interval : it enables monitoring only if time interval is > 0
-            String monitoringIntervalStr = (String) MapUtil.get(depProps, YstiaOrchestratorFactory.MONITORING_TIME_INTERVAL);
-            log.debug("monitoringIntervalStr='" + monitoringIntervalStr + "'");
-            if (monitoringIntervalStr != "") {
-                int monitoringInterval = 0;
-                // No blocking error for deployment
-                try {
-                    monitoringInterval = Integer.parseInt(monitoringIntervalStr);
-                } catch(NumberFormatException nfe) {
-                    log.error(String.format("Failed to parse number from value=\"%s\". No monitoring will be planned but deployment goes on.", monitoringIntervalStr));
-                    return;
-                }
-                if (monitoringInterval > 0) {
-                    List<Tag> tags = new ArrayList<>();
-                    Tag tag = new Tag();
-                    tag.setName(YstiaOrchestratorFactory.MONITORING_TIME_INTERVAL);
-                    tag.setValue(monitoringIntervalStr);
-                    tags.add(tag);
-                    for (PaaSNodeTemplate compute : ptopo.getComputes()) {
-                        compute.getTemplate().setTags(tags);
-                    }
-                }
-            }
-        }
     }
 }
