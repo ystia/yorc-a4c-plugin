@@ -18,7 +18,7 @@ Applying policies
 =================
 
 Applying a Server Group Anti-affinity placement policy on OpenStack
-----------------------------------------
+-------------------------------------------------------------------
 
 Let's imagine the use case of a resilient application on OpenStack:
 
@@ -82,3 +82,46 @@ Deploy the application and enjoy !
 
 .. |TopologyEditorPolicies| image:: _static/img/topology-policies-button.png
                   :alt: policies button
+
+Applying HTTP Monitoring policy on a web application
+-----------------------------------------------------
+
+This chapter presents how to apply an HTTP Monitoring policy on a web application in order to be inform when the web server
+is down.
+
+This can be done with ``yorc.policies.monitoring.HTTPMonitoring`` on any location.
+
+Valid target for applying ``yorc.policies.monitoring.HTTPMonitoring`` is ``tosca.nodes.SoftwareComponent`` .
+
+Only one monitoring policy can be applied on a node template instance.
+
+Let's deploy the ``Welcome Application`` as seen before and let's configure our HTTP monitoring policy.
+
+Select your application and go to the ``Topology Editor``.
+
+Click on the |TopologyEditorPolicies| button on the vertical blue bar on the left.
+
+Click on the ``+ Add policies`` button, search the policy node ``httpMonitoring`` (yorc.policies.monitoring.HTTPMonitoring) from yorc-types and drag-and-drop it on the policies list of your topology.
+
+Next, you just need to add the ``Welcome`` node template as target of the policy and set the policy properties as below:
+
+The ``scheme`` property allows to select http or https protocol.
+
+The ``port`` property allows to set the port of your web application you want to monitor.
+
+The ``path`` and ``http_headers`` properties allows to specify an URL path and HTTP headers to use for sending request to the web application.
+
+The ``time_interval`` property let you define how often the application must be checked.
+
+.. image:: _static/img/configure-http-monitoring-policy.png
+   :alt: Configure HTTP Monitoring policy
+   :align: center
+
+Once the application is deployed, you can stop the Welcome WebServer for example with the Stop custom workflow and in function of the time_interval you specified,
+you can rapidly observe the Welcome node in Error State in the runtime view and the following log:
+
+      ``[2019-04-09 15:15:31] [] [Welcome] Monitoring Check returned a failure for node (Welcome-0)``
+
+.. image:: _static/img/welcome-error.png
+   :alt: Welcome component in error state
+   :align: center
