@@ -6,6 +6,11 @@
 
 * Implement an anti-affinity placement policy for Openstack ([GH-84](https://github.com/ystia/yorc/issues/84))
 
+### BUG FIXES
+
+* Scale Down operation never ending with compute instance final status 'Initial' ([GH-117](https://github.com/ystia/yorc-a4c-plugin/issues/117))
+
+
 ## 3.2.0-M4 (March 29, 2019)
 
 ### FEATURES
