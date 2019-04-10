@@ -85,10 +85,11 @@ public class MonitoringTopologyModifier extends TopologyModifierSupport {
         while (iter.hasNext()) {
             NodeTemplate nodeTemplate = iter.next();
             NodeType nodeType = ToscaContext.get(NodeType.class, nodeTemplate.getType());
-            boolean isValid = true;
+            boolean isValid = false;
             for (String valid : valids) {
-                if (!Objects.equals(valid, nodeTemplate.getType()) && !nodeType.getDerivedFrom().contains(valid)) {
-                    isValid = false;
+                if (Objects.equals(valid, nodeTemplate.getType()) || nodeType.getDerivedFrom().contains(valid)) {
+                    isValid = true;
+                    break;
                 }
             }
             if (!isValid) {

@@ -25,6 +25,7 @@ Click on the |ComponentsBtn| button in the navigation bar.
 Locate the ``welcome-<version>-csar.zip`` and ``welcome-basic-<version>-topo.zip`` in the yorc distribution and drop them
 **in this order** into the catalog's drop area.
 
+.. _welcome_app_section:
 Create a Welcome application
 ----------------------------
 

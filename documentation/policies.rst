@@ -84,7 +84,7 @@ Deploy the application and enjoy !
                   :alt: policies button
 
 Applying HTTP Monitoring policy on a web application
------------------------------------------------------
+----------------------------------------------------
 
 This chapter presents how to apply an HTTP Monitoring policy on a web application in order to be inform when the web server
 is down.
@@ -95,7 +95,7 @@ Valid target for applying ``yorc.policies.monitoring.HTTPMonitoring`` is ``tosca
 
 Only one monitoring policy can be applied on a node template instance.
 
-Let's deploy the ``Welcome Application`` as seen before and let's configure our HTTP monitoring policy.
+Let's deploy the ``Welcome Application`` as seen before :ref:`here <welcome_app_section>` and let's configure our HTTP monitoring policy.
 
 Select your application and go to the ``Topology Editor``.
 
@@ -117,11 +117,21 @@ The ``time_interval`` property let you define how often the application must be 
    :alt: Configure HTTP Monitoring policy
    :align: center
 
-Once the application is deployed, you can stop the Welcome WebServer for example with the Stop custom workflow and in function of the time_interval you specified,
-you can rapidly observe the Welcome node in Error State in the runtime view and the following log:
+Once the application is deployed, you can stop the ``Welcome ``WebServer by running the ``StopWebServer`` custom workflow and in function of the time_interval you specified,
+you can rapidly (or not...) observe the Welcome node in Error State in the runtime view and the following log:
 
       ``[2019-04-09 15:15:31] [] [Welcome] Monitoring Check returned a failure for node (Welcome-0)``
 
 .. image:: _static/img/welcome-error.png
    :alt: Welcome component in error state
    :align: center
+
+Next, by running the ``startWebServer`` custom workflow, you restart the webserver and can observe the ``Welcome`` node is backed to normal:
+
+     ``[2019-04-10 11:12:24] [] [Welcome] Monitoring Check is back to normal for node (Welcome-0) ``
+
+.. image:: _static/img/welcome-ok.png
+   :alt: Welcome component in started state
+   :align: center
+
+The next step will be to fix this by a self-healing policy !
