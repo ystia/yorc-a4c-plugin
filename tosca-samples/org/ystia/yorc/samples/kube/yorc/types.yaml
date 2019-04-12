@@ -1,0 +1,74 @@
+tosca_definitions_version: alien_dsl_2_0_0
+
+metadata:
+  template_name: org.ystia.yorc.samples.kube.yorc
+  template_version: 1.0.0-SNAPSHOT
+  template_author: Yorc team
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN20
+  - docker-types:2.1.1
+
+description: Yorc Docker that can be deployed on K8S
+
+repositories:
+  docker:
+    url: https://hub.docker.com/
+    type: docker
+
+node_types:
+  org.ystia.yorc.samples.kube.containers.nodes.Yorc:
+    derived_from: tosca.nodes.Container.Application.DockerContainer
+    capabilities:
+      consul_ui:
+        type: org.ystia.yorc.samples.kube.containers.capabilities.ConsulUI
+        description: Endpoint to acess consul UI
+      yorc_server:
+        type: org.ystia.yorc.samples.kube.containers.capabilities.YorcRestAPI
+        description: Endpoint to communicate with yorc API
+    properties:
+      yorc_debug:
+        description: Enable or not Yorc's log debuging
+        type: string
+        required: true
+        default: "NO_DEBUG"
+        constraints:
+        - valid_values: [ "DEBUG", "NO_DEBUG" ]
+      consul_ui:
+        description: Enable consul UI available on port 8500
+        type: boolean
+        required: true
+        default: true
+    interfaces:
+      Standard:
+        create:
+          inputs:
+            ENV_YORC_LOG: { get_property: [SELF, yorc_debug] }
+            ENV_CONSUL_ENV_ui: { get_property: [SELF, consul_ui] }
+            ENV_CONSUL_ENV_client_addr: '"0.0.0.0"'
+          implementation:
+            file: ystia/yorc:3.0.2
+            repository: docker
+            type: tosca.artifacts.Deployment.Image.Container.Docker
+
+capability_types:
+  org.ystia.yorc.samples.kube.containers.capabilities.ConsulUI:
+    derived_from: tosca.capabilities.Endpoint
+    properties:
+      docker_bridge_port_mapping:
+        type: integer
+        description: Port used to bridge to the container's endpoint.
+        default: 8500
+      port:
+        type: integer
+        default: 8500
+  org.ystia.yorc.samples.kube.containers.capabilities.YorcRestAPI:
+    derived_from: tosca.capabilities.Endpoint
+    properties:
+      docker_bridge_port_mapping:
+        type: integer
+        description: Port used to bridge to the container's endpoint.
+        default: 8800
+      port:
+        type: integer
+        default: 8800

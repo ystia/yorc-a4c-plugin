@@ -27,3 +27,6 @@ node_types:
 
   yorc.nodes.kubernetes.api.types.ServiceResource:
     derived_from: org.alien4cloud.kubernetes.api.types.ServiceResource
+  
+  yorc.nodes.kubernetes.api.types.SimpleResource:
+    derived_from: org.alien4cloud.kubernetes.api.types.SimpleResource
