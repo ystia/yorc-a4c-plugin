@@ -29,13 +29,13 @@ This can be done by applying ``yorc.openstack.policies.ServerGroupAntiAffinity``
 
 Let's do it !
 
-After configuring your OpenStack location as described :ref:`here <location_config_openstack_section>`, click on the |OrchLocPolicies| button, select ``catalog`` and use the search to find the ServerGroupAntiAffinity as below.
+After configuring your OpenStack location as described :ref:`here <location_config_openstack_section>`, click on the |OrchLocPolicies| button, select ``Catalog`` and use the search to find the ServerGroupAntiAffinity as below.
 
 .. image:: _static/img/search-servergroup-policy.png
    :alt: Search serverGroup policy
    :align: center
 
-Next, drag-and-drop the policy in the new policies resources list of your OpenStack location.
+Next, drag-and-drop the policy in the ``Policies`` resources list of your OpenStack location.
 Rename the resource, for example ``ServerGroupAntiAffinity``.
 Set the ``level`` property to ``host`` as it's a policy placement of ``host`` type by opposition to ``zone`` or ``region`` placement.
 
@@ -49,7 +49,7 @@ You must finally have this configuration:
    :align: center
 
 Now, your OpenStack location is configured with a Server Group anti-affinity placement policy.
-You can apply it on your topology application by using abstract and so non infrastructure-dependent nodes and policies that let you deploy your application as well on OpenStack or on GCP if another specific placement policy is implemented for GCP too.
+You can apply it on your application topology by using an abstract policy ; this allows to deploy your application on OpenStack, as well as on GCP, if another specific placement policy is implemented for GCP too.
 
 Select your application and go to the ``Topology Editor``. Click on the |TopologyEditorPolicies| button on the vertical blue bar on the left.
 Click on the ``+ Add policies`` button, search the abstract policy node ``AntiAffinity`` (org.alien4cloud.policies.AntiAffinity) from alien-base-types and drag-and-drop it on the policies list of your topology.
@@ -60,7 +60,7 @@ Then you can select the ``Targets`` of the placement policy, i.e in this case, t
 
 Valid targets for applying ``ServerGroupAntiAffinity`` are:
 
-  * One scalable compute node template with at least two as max instances number.
+  * One scalable compute node template (having tosca.nodes.Compute type) with at least two as max instances number.
   * At least two different compute node templates, not necessarily scalable.
 
 .. image:: _static/img/placement-topology-editor.png
@@ -89,7 +89,7 @@ Applying HTTP Monitoring policy on a web application
 This chapter presents how to apply an HTTP Monitoring policy on a web application in order to be informed when the web server
 is down.
 
-This can be done with ``yorc.policies.monitoring.HTTPMonitoring`` on any location.
+This can be done using ``yorc.policies.monitoring.HTTPMonitoring`` policy on any location.
 
 A valid target type for applying ``yorc.policies.monitoring.HTTPMonitoring`` is ``tosca.nodes.SoftwareComponent`` .
 
@@ -117,16 +117,16 @@ The ``time_interval`` property let you define how often the application must be 
    :alt: Configure HTTP Monitoring policy
    :align: center
 
-Once the application is deployed, you can stop the ``Welcome ``WebServer by running the ``StopWebServer`` custom workflow and in function of the time_interval you specified,
-you can rapidly (or not...) observe the Welcome node in Error State in the runtime view and the following log:
+Once the application is deployed, you can stop the ``Welcome`` web server by running the ``StopWebServer`` custom workflow and depending the time_interval you specified,
+you can rapidly (or not...) observe the Welcome node in Stopped State in the runtime view and the following log:
 
       ``[2019-04-09 15:15:31] [] [Welcome] Monitoring Check returned a failure for node (Welcome-0)``
 
-.. image:: _static/img/welcome-error.png
-   :alt: Welcome component in error state
+.. image:: _static/img/welcome-stopped.png
+   :alt: Welcome component in stopped state
    :align: center
 
-Next, by running the ``startWebServer`` custom workflow, you restart the webserver and can observe the ``Welcome`` node is backed to normal:
+Next, by running the ``startWebServer`` custom workflow, you restart the web server and can observe the ``Welcome`` node is backed to normal:
 
      ``[2019-04-10 11:12:24] [] [Welcome] Monitoring Check is back to normal for node (Welcome-0) ``
 
