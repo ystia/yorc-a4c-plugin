@@ -45,7 +45,7 @@ data_types:
       ca_cert:
         type: string
         required: false
-        description: PEM-encoded client certificate content authority used for TLS configuration.
+        description: PEM-encoded client certificate authority content used for TLS configuration.
       skip_verify:
         type: boolean
         required: false
