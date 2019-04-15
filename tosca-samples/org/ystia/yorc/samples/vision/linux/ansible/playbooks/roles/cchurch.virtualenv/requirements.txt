@@ -18,7 +18,7 @@ docker-pycreds==0.2.1     # via docker-py
 enum34==1.1.6             # via cryptography
 idna==2.6                 # via cryptography, requests
 ipaddress==1.0.19         # via cryptography, docker-py
-jinja2==2.10              # via ansible
+jinja2==2.10.1            # via ansible
 markupsafe==1.0           # via jinja2
 paramiko==2.4.2           # via ansible
 pluggy==0.6.0             # via tox
