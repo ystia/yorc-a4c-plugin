@@ -86,12 +86,12 @@ Deploy the application and enjoy !
 Applying HTTP Monitoring policy on a web application
 ----------------------------------------------------
 
-This chapter presents how to apply an HTTP Monitoring policy on a web application in order to be inform when the web server
+This chapter presents how to apply an HTTP Monitoring policy on a web application in order to be informed when the web server
 is down.
 
 This can be done with ``yorc.policies.monitoring.HTTPMonitoring`` on any location.
 
-Valid target for applying ``yorc.policies.monitoring.HTTPMonitoring`` is ``tosca.nodes.SoftwareComponent`` .
+A valid target type for applying ``yorc.policies.monitoring.HTTPMonitoring`` is ``tosca.nodes.SoftwareComponent`` .
 
 Only one monitoring policy can be applied on a node template instance.
 
