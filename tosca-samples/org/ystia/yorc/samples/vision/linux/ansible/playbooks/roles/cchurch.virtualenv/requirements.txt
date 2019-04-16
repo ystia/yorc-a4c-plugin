@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file requirements.txt requirements.in
 #
-ansible==2.4.5
+ansible==2.7.2
 asn1crypto==0.24.0        # via cryptography
 backports.ssl-match-hostname==3.5.0.1  # via docker-py
 bcrypt==3.1.4             # via paramiko
