@@ -121,7 +121,7 @@ Edit application topology
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Select your application and go to the ``Topology Editor``. Click on the |TopologyEditorPolicies| button on the vertical blue bar on the left.
-Click on the ``+ Add policies`` button, search the policy node ``TCPMonitoring`` (yorc.policies.monitoring.TCPMonitoring) from and drag-and-drop it on the policies list of your topology.
+Click on the ``+ Add policies`` button, search the policy node ``TCPMonitoring`` (yorc.policies.monitoring.TCPMonitoring) and drag-and-drop it on the policies list of your topology.
 
 Then you can select the ``Targets`` of the policy, i.e in this case, the node name of the compute instances you want not to be monitored, which is ``Compute``.
 
@@ -148,11 +148,32 @@ Applying HTTP Monitoring policy on a web application
 The HTTP Monitoring policy can be used by a web application in order to be informed when the web server
 is down.
 
-This can be done using ``yorc.policies.monitoring.HTTPMonitoring`` policy on any location.
+To enable HTTP monitoring, you need to configure the location by adding ``yorc.policies.monitoring.HTTPMonitoring`` policy on any location.
 
-A valid target type for applying ``yorc.policies.monitoring.HTTPMonitoring`` is ``tosca.nodes.SoftwareComponent`` .
+Moreover, the application topology, the web server nodes need to have ``yorc.policies.monitoring.HTTPMonitoring`` policy set and configured.
 
-Only one monitoring policy can be applied on a node template instance.
+Configure location
+~~~~~~~~~~~~~~~~~~
+
+After configuring your OpenStack location as described :ref:`here <location_config_openstack_section>`, click on the |OrchLocPolicies| button, select ``Catalog`` and use the search to find the HTTPMonitoring as below.
+
+.. image:: _static/img/search-httpmonitoring-policy.png
+   :alt: Search HTTP monitoring policy
+   :align: center
+
+Next, drag-and-drop the policy in the ``Policies`` resources list of your location.
+Rename the resource, for example ``HTTPMonitoring``.
+
+A valid ``target`` type for applying ``yorc.policies.monitoring.HTTPMonitoring`` is ``tosca.nodes.SoftwareComponent`` .
+
+You must finally have this configuration:
+
+.. image:: _static/img/httpmonitoring-policy-resource.png
+   :alt: Configure your HTTP monitoring policy
+   :align: center
+
+Edit application topology
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Let's deploy the ``Welcome Application`` as seen before :ref:`here <welcome_app_section>` and let's configure our HTTP monitoring policy.
 
@@ -176,12 +197,12 @@ The ``time_interval`` property let you define how often the application must be 
    :alt: Configure HTTP Monitoring policy
    :align: center
 
-Once the application is deployed, you can stop the ``Welcome`` web server by running the ``StopWebServer`` custom workflow and depending the time_interval you specified,
-you can rapidly (or not...) observe the Welcome node in Stopped State in the runtime view and the following log:
+Once the application is deployed, you can simulate the ``Welcome`` web server failure by running the ``KillWebServer`` custom workflow and depending the time_interval you specified,
+you can rapidly (or not...) observe the Welcome node in Error State in the runtime view and the following log:
 
       ``[2019-04-09 15:15:31] [] [Welcome] Monitoring Check returned a failure for node (Welcome-0)``
 
-.. image:: _static/img/welcome-stopped.png
+.. image:: _static/img/welcome-error.png
    :alt: Welcome component in stopped state
    :align: center
 
