@@ -29,6 +29,9 @@ This can be done by applying ``yorc.openstack.policies.ServerGroupAntiAffinity``
 
 Let's do it !
 
+Configure location
+~~~~~~~~~~~~~~~~~~
+
 After configuring your OpenStack location as described :ref:`here <location_config_openstack_section>`, click on the |OrchLocPolicies| button, select ``Catalog`` and use the search to find the ServerGroupAntiAffinity as below.
 
 .. image:: _static/img/search-servergroup-policy.png
@@ -49,7 +52,11 @@ You must finally have this configuration:
    :align: center
 
 Now, your OpenStack location is configured with a Server Group anti-affinity placement policy.
-You can apply it on your application topology by using an abstract policy ; this allows to deploy your application on OpenStack, as well as on GCP, if another specific placement policy is implemented for GCP too.
+
+Edit application topology
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can apply a Server Group anti-affinity placement policy to your application topology by using an abstract policy ; this allows to deploy your application on OpenStack, as well as on GCP, if another specific placement policy is implemented for GCP too.
 
 Select your application and go to the ``Topology Editor``. Click on the |TopologyEditorPolicies| button on the vertical blue bar on the left.
 Click on the ``+ Add policies`` button, search the abstract policy node ``AntiAffinity`` (org.alien4cloud.policies.AntiAffinity) from alien-base-types and drag-and-drop it on the policies list of your topology.
@@ -83,10 +90,62 @@ Deploy the application and enjoy !
 .. |TopologyEditorPolicies| image:: _static/img/topology-policies-button.png
                   :alt: policies button
 
+Applying TCP Monitoring policy
+------------------------------
+
+The TCP Monitoring policy can be used for monitoring Compute instances liveness.
+
+To enable TCP monitoring, you need to configure the location by adding ``yorc.policies.monitoring.TCPMonitoring`` to the ``Policies`` resource list.
+
+Moreover, in the application topology, the Compute nodes need to have ``yorc.policies.monitoring.TCPMonitoring`` policy set and configured.
+
+Configure location
+~~~~~~~~~~~~~~~~~~
+
+After configuring your OpenStack location as described :ref:`here <location_config_openstack_section>`, click on the |OrchLocPolicies| button, select ``Catalog`` and use the search to find the TCPMonitoring as below.
+
+.. image:: _static/img/search-tcpmonitoring-policy.png
+   :alt: Search TCP monitoring policy
+   :align: center
+
+Next, drag-and-drop the policy in the ``Policies`` resources list of your location.
+Rename the resource, for example ``TCPMonitoring``.
+
+You must finally have this configuration:
+
+.. image:: _static/img/tcpmonitoring-policy-resource.png
+   :alt: Configure your TCP monitoring policy
+   :align: center
+
+Edit application topology
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Select your application and go to the ``Topology Editor``. Click on the |TopologyEditorPolicies| button on the vertical blue bar on the left.
+Click on the ``+ Add policies`` button, search the policy node ``TCPMonitoring`` (yorc.policies.monitoring.TCPMonitoring) from and drag-and-drop it on the policies list of your topology.
+
+Then you can select the ``Targets`` of the policy, i.e in this case, the node name of the compute instances you want not to be monitored, which is ``Compute``.
+
+.. image:: _static/img/tcpmonitoring-topology-editor.png
+   :alt: Add TCP monitoring policy to your application topology
+   :align: center
+
+Deploy your application and check in the runtime view the logs concerning the node ``Compute``. You should find a message like this:
+
+      ``[2019-04-09 15:15:31] [] [Compute] Monitoring Check is back to normal for node (Compute-0)``
+
+In case the node goes down, you should find a message like this:
+
+      ``[2019-04-09 15:26:31] [] [Compute] Monitoring Check returned a failure for node (Compute-0)``
+
+In case the node comes back, you should find the message:
+
+      ``[2019-04-09 15:28:31] [] [Compute] Monitoring Check is back to normal for node (Compute-0)``
+
+
 Applying HTTP Monitoring policy on a web application
 ----------------------------------------------------
 
-This chapter presents how to apply an HTTP Monitoring policy on a web application in order to be informed when the web server
+The HTTP Monitoring policy can be used by a web application in order to be informed when the web server
 is down.
 
 This can be done using ``yorc.policies.monitoring.HTTPMonitoring`` policy on any location.
