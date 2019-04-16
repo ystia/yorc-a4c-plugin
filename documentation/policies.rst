@@ -164,8 +164,6 @@ After configuring your OpenStack location as described :ref:`here <location_conf
 Next, drag-and-drop the policy in the ``Policies`` resources list of your location.
 Rename the resource, for example ``HTTPMonitoring``.
 
-A valid ``target`` type for applying ``yorc.policies.monitoring.HTTPMonitoring`` is ``tosca.nodes.SoftwareComponent`` .
-
 You must finally have this configuration:
 
 .. image:: _static/img/httpmonitoring-policy-resource.png
@@ -182,6 +180,8 @@ Select your application and go to the ``Topology Editor``.
 Click on the |TopologyEditorPolicies| button on the vertical blue bar on the left.
 
 Click on the ``+ Add policies`` button, search the policy node ``httpMonitoring`` (yorc.policies.monitoring.HTTPMonitoring) from yorc-types and drag-and-drop it on the policies list of your topology.
+
+A valid ``target`` type for applying ``yorc.policies.monitoring.HTTPMonitoring`` is ``tosca.nodes.SoftwareComponent``.
 
 Next, you just need to add the ``Welcome`` node template as target of the policy and set the policy properties as below:
 
