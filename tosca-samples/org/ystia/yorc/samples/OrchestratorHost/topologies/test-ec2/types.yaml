@@ -11,7 +11,7 @@ imports:
   - tosca-normative-types:1.0.0-ALIEN20
   - org.ystia.yorc.samples.python:1.0.0-SNAPSHOT
   - aws-custom-resources:1.0.0-SNAPSHOT
-  - yorc-types:1.0.0
+  - yorc-types:1.1.0
 
 topology_template:
   node_templates:

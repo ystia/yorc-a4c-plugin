@@ -26,7 +26,7 @@ description: >
 
 imports:
   - tosca-normative-types:1.0.0-ALIEN20
-  - yorc-types:1.0.0
+  - yorc-types:1.1.0
   - org.ystia.yorc.samples.vision.linux.ansible:1.0.0-SNAPSHOT
 
 topology_template:

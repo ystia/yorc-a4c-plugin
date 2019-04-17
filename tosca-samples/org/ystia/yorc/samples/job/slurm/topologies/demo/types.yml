@@ -11,7 +11,7 @@ imports:
   - tosca-normative-types:1.0.0-ALIEN20
   - alien-base-types:2.1.1
   - yorc-slurm-types:1.2.0
-  - yorc-types:1.0.0
+  - yorc-types:1.1.0
 
 topology_template:
   node_templates:
