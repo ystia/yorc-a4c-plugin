@@ -136,6 +136,10 @@ public class EventListenerTask extends AlienTask {
                                         case "error":
                                             log.warn("Error instance status in deploymentID: {} and nodeID: {}", paasId, eNode);
                                             break;
+                                        case "submitting":
+                                        case "submitted":
+                                        case "executing":
+                                        case "executed":
                                         case "running":
                                         case "pending":
                                         case "failed":
