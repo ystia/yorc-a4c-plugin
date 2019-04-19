@@ -110,19 +110,8 @@ public class EventListenerTask extends AlienTask {
                                     }
                                     orchestrator.updateInstanceState(paasId, eNode, eInstance, iinfo, eState);
                                     switch (eState) {
-                                        case "initial":
-                                        case "creating":
-                                        case "deleting":
-                                        case "starting":
-                                        case "stopping":
-                                        case "configured":
-                                        case "configuring":
-                                        case "created":
-                                            break;
                                         case "deleted":
                                             ninfo.remove(eInstance);
-                                            break;
-                                        case "stopped":
                                             break;
                                         case "started":
                                             // persist BS Id
@@ -136,24 +125,7 @@ public class EventListenerTask extends AlienTask {
                                         case "error":
                                             log.warn("Error instance status in deploymentID: {} and nodeID: {}", paasId, eNode);
                                             break;
-                                        case "submitting":
-                                        case "submitted":
-                                        case "executing":
-                                        case "executed":
-                                        case "running":
-                                        case "pending":
-                                        case "failed":
-                                        case "succeeded":
-                                        case "unknown":
-                                        case "No pods created":
-                                        case "completed":
-                                        case "completing":
-                                        case "signaling":
-                                        case "resizing":
-                                            // currently managed states that correspond to k8s and slurm job statuses
-                                            break;
                                         default:
-                                            log.warn("Unknown instance status: " + eState);
                                             break;
                                     }
                                     break;
