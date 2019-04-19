@@ -110,19 +110,8 @@ public class EventListenerTask extends AlienTask {
                                     }
                                     orchestrator.updateInstanceState(paasId, eNode, eInstance, iinfo, eState);
                                     switch (eState) {
-                                        case "initial":
-                                        case "creating":
-                                        case "deleting":
-                                        case "starting":
-                                        case "stopping":
-                                        case "configured":
-                                        case "configuring":
-                                        case "created":
-                                            break;
                                         case "deleted":
                                             ninfo.remove(eInstance);
-                                            break;
-                                        case "stopped":
                                             break;
                                         case "started":
                                             // persist BS Id
@@ -137,7 +126,6 @@ public class EventListenerTask extends AlienTask {
                                             log.warn("Error instance status in deploymentID: {} and nodeID: {}", paasId, eNode);
                                             break;
                                         default:
-                                            log.warn("Unknown instance status: " + eState);
                                             break;
                                     }
                                     break;
