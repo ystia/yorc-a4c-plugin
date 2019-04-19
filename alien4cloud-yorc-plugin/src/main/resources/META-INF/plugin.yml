@@ -16,5 +16,8 @@ component_descriptors:
   - bean_name: yorc-openstack-server-group-modifier
     name: Openstack modifier for Server Group affinity and anti-affinity policies
     description: Openstack modifier for Server Group affinity and anti-affinity policies
+  - bean_name: yorc-monitoring-modifier
+    name: Yorc modifier for handling monitoring policies
+    description: Yorc modifier for handling monitoring policies
 dependencies:
   - alien4cloud-kubernetes-plugin

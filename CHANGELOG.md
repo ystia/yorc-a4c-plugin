@@ -5,6 +5,7 @@
 ### FEATURES
 
 * Implement an anti-affinity placement policy for Openstack ([GH-84](https://github.com/ystia/yorc/issues/84))
+* Monitor deployed services liveness ([GH-104](https://github.com/ystia/yorc/issues/104))
 
 ### BUG FIXES
 
