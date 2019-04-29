@@ -496,6 +496,13 @@ public class RestClient {
         jsonObj.put("interface", request.getInterfaceName());
         jsonObj.put("name", request.getOperationName());
         jsonObj.put("inputs", request.getParameters());
+        String instId = request.getInstanceId();
+        if ((instId != null) && (instId.length() != 0)) {
+            // currently one instance can be selected
+            String[] ids = new String[1];
+            ids[0] = instId;
+            jsonObj.put("instances", ids);
+        }
 
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
