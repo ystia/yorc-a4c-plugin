@@ -801,6 +801,7 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
                 deploymentStatus = DeploymentStatus.DEPLOYED;
                 break;
             case "UNDEPLOYED":
+            case "PURGED":
                 deploymentStatus = DeploymentStatus.UNDEPLOYED;
                 break;
             case "DEPLOYMENT_IN_PROGRESS":
