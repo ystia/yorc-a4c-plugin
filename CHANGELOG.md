@@ -2,6 +2,11 @@
 
 ## UNRELEASED
 
+### BUG FIXES
+
+* Emit a persistent event on deployment purge ([GH-402](https://github.com/ystia/yorc/issues/402))
+
+
 ## 3.2.0-RC1 (May 10, 2019)
 
 ## 3.2.0-M5 (April 19, 2019)
@@ -206,7 +211,7 @@ This release brings a tech preview support of jobs scheduling. It allows to desi
 
 In this release we mainly focused on the integration with Slurm for supporting this feature (but we are also working on Kubernetes for the next release :smile:). Bellow are new supported TOSCA types and implementations:
 
-* SlurmJobs: will lead to issuing a srun command with a given executable file.  
+* SlurmJobs: will lead to issuing a srun command with a given executable file.
 * SlurmBatch: will lead to issuing a sbatch command with a given batch file and associated executables
 * Singularity integration: allows to execute a Singularity container instead of an executable file.
 
