@@ -2,6 +2,11 @@
 
 ## UNRELEASED
 
+### ENHANCEMENTS
+
+* Add an example of basic job implementation for infrastructures without a default
+  job scheduler ([GH-125](https://github.com/ystia/yorc-a4c-plugin/issues/125))
+
 ## 3.2.0 (May 31, 2019)
 
 ### BUG FIXES
