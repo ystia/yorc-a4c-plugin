@@ -1,0 +1,71 @@
+tosca_definitions_version: alien_dsl_2_0_0
+
+metadata:
+  template_name: ChainedJobs
+  template_version: 0.1.0-SNAPSHOT
+  template_author: appmanager
+
+description: |
+  Chaining job executions
+
+imports:
+  - yorc-types:1.1.0
+  - tosca-normative-types:1.0.0-ALIEN20
+  - alien-base-types:2.1.1
+  - org.ystia.yorc.samples.job.noscheduler.Components:1.0.0-SNAPSHOT
+
+topology_template:
+  node_templates:
+    Compute2:
+      type: tosca.nodes.Compute
+      capabilities:
+        scalable:
+          properties:
+            min_instances: 1
+            max_instances: 1
+            default_instances: 1
+        endpoint:
+          properties:
+            secure: true
+            protocol: tcp
+            network_name: PRIVATE
+            initiator: source
+    SpawnJob2:
+      type: org.ystia.yorc.samples.job.noscheduler.SpawnJob
+      properties:
+        command: "echo Hello from Job2"
+      requirements:
+        - dependsOnSpawnJob1Feature:
+            type_requirement: dependency
+            node: SpawnJob1
+            capability: tosca.capabilities.Node
+            relationship: tosca.relationships.DependsOn
+        - hostedOnCompute2Host:
+            type_requirement: host
+            node: Compute2
+            capability: tosca.capabilities.Container
+            relationship: tosca.relationships.HostedOn
+    Compute1:
+      type: tosca.nodes.Compute
+      capabilities:
+        scalable:
+          properties:
+            min_instances: 1
+            max_instances: 1
+            default_instances: 1
+        endpoint:
+          properties:
+            secure: true
+            protocol: tcp
+            network_name: PRIVATE
+            initiator: source
+    SpawnJob1:
+      type: org.ystia.yorc.samples.job.noscheduler.SpawnJob
+      properties:
+        command: "echo Hello from Job1"
+      requirements:
+        - hostedOnCompute1Host:
+            type_requirement: host
+            node: Compute1
+            capability: tosca.capabilities.Container
+            relationship: tosca.relationships.HostedOn
