@@ -17,16 +17,16 @@ else
   else
     # Job done.
     # Retrieving outputs
-    if [ -f /var/run/stdout_job_$JOB_TIMESTAMP ]; then
-      outContent=`/usr/bin/cat /var/run/stdout_job_$JOB_TIMESTAMP`
+    if [ -f /tmp/stdout_job_$JOB_TIMESTAMP ]; then
+      outContent=`/usr/bin/cat /tmp/stdout_job_$JOB_TIMESTAMP`
       if [ -n "$outContent" ]; then
         echo "Job output: $outContent"
       fi
     fi
 
     # Considering the job failed if there are error logs
-    if [ -f /var/run/stderr_job_$JOB_TIMESTAMP ]; then
-      errContent=`/usr/bin/cat /var/run/stderr_job_$JOB_TIMESTAMP`
+    if [ -f /tmp/stderr_job_$JOB_TIMESTAMP ]; then
+      errContent=`/usr/bin/cat /tmp/stderr_job_$JOB_TIMESTAMP`
       if [ -n "$errContent" ]; then
         TOSCA_JOB_STATUS="FAILED"
         echo "Job errors: $errContent"
@@ -34,8 +34,8 @@ else
     fi
 
     # Cleanup
-    /bin/rm -f /var/run/stdout_job_$JOB_TIMESTAMP
-    /bin/rm -f /var/run/stderr_job_$JOB_TIMESTAMP
+    /bin/rm -f /tmp/stdout_job_$JOB_TIMESTAMP
+    /bin/rm -f /tmp/stderr_job_$JOB_TIMESTAMP
   fi
 fi
 
