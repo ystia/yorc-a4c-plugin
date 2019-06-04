@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 
-# TOSCA_JOB_ID has format <Jog ID>_<Timestamp>
+# TOSCA_JOB_ID has format <Job ID>_<Timestamp>
 IFS='_' read -r -a array <<< "${TOSCA_JOB_ID}"
 res=${#array[@]}
 if [ "$res" -ne "2" ];then
