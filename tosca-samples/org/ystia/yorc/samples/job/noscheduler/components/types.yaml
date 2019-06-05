@@ -44,9 +44,9 @@ node_types:
           relationship: tosca.relationships.HostedOn
           occurrences: [1, 1] 
     attributes:
-      commandSpawned: { get_operation_output: [SELF, Runnable, submit, COMMAND_SPAWNED] }
-      commandStdout: { get_operation_output: [SELF, Runnable, run, COMMAND_STDOUT] }
-      commandStderr: { get_operation_output: [SELF, Runnable, run, COMMAND_STDERR] }
+      commandSpawned: { get_operation_output: [SELF, tosca.interfaces.node.lifecycle.Runnable, submit, COMMAND_SPAWNED] }
+      commandStdout: { get_operation_output: [SELF, tosca.interfaces.node.lifecycle.Runnable, run, COMMAND_STDOUT] }
+      commandStderr: { get_operation_output: [SELF, tosca.interfaces.node.lifecycle.Runnable, run, COMMAND_STDERR] }
     interfaces:
       tosca.interfaces.node.lifecycle.Runnable:
         inputs:
