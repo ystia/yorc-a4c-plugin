@@ -16,35 +16,6 @@ imports:
 
 topology_template:
   node_templates:
-    Compute2:
-      type: tosca.nodes.Compute
-      capabilities:
-        scalable:
-          properties:
-            min_instances: 1
-            max_instances: 1
-            default_instances: 1
-        endpoint:
-          properties:
-            secure: true
-            protocol: tcp
-            network_name: PRIVATE
-            initiator: source
-    SpawnJob2:
-      type: org.ystia.yorc.samples.job.noscheduler.SpawnJob
-      properties:
-        command: "echo Hello from Job2"
-      requirements:
-        - dependsOnSpawnJob1Feature:
-            type_requirement: dependency
-            node: SpawnJob1
-            capability: tosca.capabilities.Node
-            relationship: tosca.relationships.DependsOn
-        - hostedOnCompute2Host:
-            type_requirement: host
-            node: Compute2
-            capability: tosca.capabilities.Container
-            relationship: tosca.relationships.HostedOn
     Compute1:
       type: tosca.nodes.Compute
       capabilities:
@@ -64,8 +35,42 @@ topology_template:
       properties:
         command: "echo Hello from Job1"
       requirements:
-        - hostedOnCompute1Host:
+        - hostedOnComputeHost:
             type_requirement: host
             node: Compute1
             capability: tosca.capabilities.Container
             relationship: tosca.relationships.HostedOn
+    Compute2:
+      type: tosca.nodes.Compute
+      capabilities:
+        scalable:
+          properties:
+            min_instances: 1
+            max_instances: 1
+            default_instances: 1
+        endpoint:
+          properties:
+            secure: true
+            protocol: tcp
+            network_name: PRIVATE
+            initiator: source
+    DisplayResJob:
+      type: org.ystia.yorc.samples.job.noscheduler.DisplayResJob
+      requirements:
+        - dependsOnSpawnJob1Feature:
+            type_requirement: spawnedJob
+            node: SpawnJob1
+            capability: tosca.capabilities.Node
+            relationship: tosca.relationships.DependsOn
+        - hostedOnCompute2Host:
+            type_requirement: host
+            node: Compute2
+            capability: tosca.capabilities.Container
+            relationship: tosca.relationships.HostedOn
+  outputs:
+    SpawnJob1_commandStdout:
+      value: { get_attribute: [ SpawnJob1, commandStdout ] }
+    SpawnJob1_commandStderr:
+      value: { get_attribute: [ SpawnJob1, commandStderr ] }
+    SpawnJob1_commandSpawned:
+      value: { get_attribute: [ SpawnJob1, commandSpawned ] }
