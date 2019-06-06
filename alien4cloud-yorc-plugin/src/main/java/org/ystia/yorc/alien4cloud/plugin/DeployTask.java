@@ -112,7 +112,7 @@ public class DeployTask extends AlienTask {
         DeploymentTopology dtopo, String paasId, String deploymentURL) {
 
         Map<String, Map<String, InstanceInformation>> curinfo = setupInstanceInformations(dtopo);
-        YorcRuntimeDeploymentInfo jrdi = new YorcRuntimeDeploymentInfo(ctx, DeploymentStatus.INIT_DEPLOYMENT, curinfo, deploymentURL);
+        YorcRuntimeDeploymentInfo jrdi = new YorcRuntimeDeploymentInfo(DeploymentStatus.INIT_DEPLOYMENT, curinfo, deploymentURL);
         orchestrator.putDeploymentInfo(paasId, jrdi);
         orchestrator.doChangeStatus(paasId, DeploymentStatus.INIT_DEPLOYMENT);
         return jrdi;
