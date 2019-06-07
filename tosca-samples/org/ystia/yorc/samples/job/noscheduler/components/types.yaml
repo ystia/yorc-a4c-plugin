@@ -51,9 +51,9 @@ node_types:
       tosca.interfaces.node.lifecycle.Runnable:
         inputs:
           COMMAND_TO_SPAWN: { get_property: [SELF, command]}
-        submit: scripts/submit.sh
-        run: scripts/run.sh
-        cancel: scripts/cancel.sh
+        submit: scripts/operations/submit.sh
+        run: scripts/operations/run.sh
+        cancel: scripts/operations/cancel.sh
 
   # Job displaying results of a previous SpawnJob execution
   org.ystia.yorc.samples.job.noscheduler.DisplayResJob:
@@ -62,18 +62,35 @@ node_types:
       - spawnedJob:
           capability: tosca.capabilities.Node
           node: org.ystia.yorc.samples.job.noscheduler.SpawnJob
-          relationship: tosca.relationships.DependsOn
+          relationship: org.ystia.yorc.samples.relationships.noscheduler.DisplayResult
           occurrences: [1, UNBOUNDED] 
       - host:
           capability: tosca.capabilities.Container
           node: tosca.nodes.Compute
           relationship: tosca.relationships.HostedOn
           occurrences: [1, 1] 
+    attributes:
+      results: { get_operation_output: [SELF, tosca.interfaces.node.lifecycle.Runnable, run, COMMAND_STDOUT] }
     interfaces:
       tosca.interfaces.node.lifecycle.Runnable:
         submit:
           inputs:
             STDOUT_RESULT: { get_attribute: [REQ_TARGET, spawnedJob, commandStdout] }
-          implementation: scripts/display_results.sh
-        run: scripts/run.sh
-        cancel: scripts/cancel.sh
+          implementation: scripts/operations/submit_display_results.sh
+        run: scripts/operations/run.sh
+        cancel: scripts/operations/cancel.sh
+    artifacts:
+      - display_results_script:
+          file: scripts/artifacts/display_results.sh
+          type: tosca.artifacts.File
+relationship_types:
+  org.ystia.yorc.samples.relationships.noscheduler.DisplayResult:
+    derived_from: tosca.relationships.DependsOn
+    interfaces:
+      Configure:
+        target_changed:
+          inputs:
+            DISPLAY_COMMAND_SPAWNED: {get_attribute: [TARGET, commandSpawned]}
+            DISPLAY_COMMAND_STDOUT: {get_attribute: [TARGET, commandStdout]}
+            DISPLAY_COMMAND_STDERR: {get_attribute: [TARGET, commandStderr]}
+          implementation: scripts/operations/on_target_change.sh
