@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-echo "${INSTANCE} waiting for results to be ready and displaying"
+echo "${INSTANCE} submitting script $display_results_script"
 
 JOB_TIMESTAMP=$(/bin/date +%s%N)
 
