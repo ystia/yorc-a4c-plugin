@@ -6,7 +6,8 @@ metadata:
   template_author: appmanager
 
 description: |
-  Chaining job executions
+  Example of two jobs spawning a shell command run in parallel,
+  followed by one job printing the output of these commands.
 
 imports:
   - yorc-types:1.1.0
