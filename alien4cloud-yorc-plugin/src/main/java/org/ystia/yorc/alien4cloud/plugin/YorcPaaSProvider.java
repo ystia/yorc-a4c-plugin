@@ -844,8 +844,6 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
     public List<PluginArchive> pluginArchives() {
         List<PluginArchive> archives = Lists.newArrayList();
         archives.add(archiveService.parsePluginArchives("commons/resources"));
-        archives.add(archiveService.parsePluginArchives("docker/resources"));
-
         return archives;
     }
 
