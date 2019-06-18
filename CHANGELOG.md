@@ -2,6 +2,10 @@
 
 ## UNRELEASED
 
+### FEATURES
+
+* Can be used within Alien 2.2.0
+
 ## 3.2.0 (May 31, 2019)
 
 ### BUG FIXES
