@@ -216,19 +216,21 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
      * @param activeDeployments the currently active deployments that Alien has
      */
     @Override
-    public void init(Map<String, PaaSTopologyDeploymentContext> activeDeployments) {
+    public Set<String> init(Map<String, String> activeDeployments) {
         log.info("Init plugin for " + activeDeployments.size() + " active deployments");
 
         // Update deployment info for all active deployments
-        for (Map.Entry<String, PaaSTopologyDeploymentContext> entry : activeDeployments.entrySet()) {
-            String key = entry.getKey();
-            PaaSTopologyDeploymentContext ctx = entry.getValue();
-            log.info("Active deployment: " + key);
-            doUpdateDeploymentInfo(ctx);
+        for (Map.Entry<String, String> entry : activeDeployments.entrySet()) {
+            String yorcDeploymentId = entry.getKey();
+            String deploymentId = entry.getValue();
+            log.info("Active deployment: " + yorcDeploymentId);
+            doUpdateDeploymentInfo(yorcDeploymentId, deploymentId);
         }
         // prov
         log.info(fileRepository.getRootPath().toString());
         startLogsAndEvents();
+        // Support Alien4Cloud 2.2.0
+        return activeDeployments.keySet();
     }
 
     /**
@@ -303,7 +305,7 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
      * @param callback
      */
     @Override
-    public void launchWorkflow(PaaSDeploymentContext ctx, String workflowName, Map<String, Object> inputs, IPaaSCallback<?> callback) {
+    public void launchWorkflow(PaaSDeploymentContext ctx, String workflowName, Map<String, Object> inputs, IPaaSCallback<String> callback) {
         addTask(new WorkflowTask(ctx, this, workflowName, inputs, callback));
     }
 
@@ -376,7 +378,7 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
             throw new MaintenanceModeException("No Deployment Information");
         }
 
-        Topology topology = jrdi.getDeploymentContext().getDeploymentTopology();
+        //Topology topology = jrdi.getDeploymentContext().getDeploymentTopology();
         Map<String, Map<String, InstanceInformation>> nodes = jrdi.getInstanceInformations();
         if (nodes == null || nodes.isEmpty()) {
             log.error(paasId + " switchMaintenanceMode: No Node found");
@@ -386,9 +388,12 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
             String node = nodeEntry.getKey();
             Map<String, InstanceInformation> nodeInstances = nodeEntry.getValue();
             if (nodeInstances != null && !nodeInstances.isEmpty()) {
-                NodeTemplate nodeTemplate = topology.getNodeTemplates().get(node);
-                NodeType nodeType = toscaTypeSearchService.getRequiredElementInDependencies(NodeType.class, nodeTemplate.getType(),
-                        topology.getDependencies());
+                log.warn("SwithchMaintenanceMode is a Not yet supported feature with Alien 2.2.0 for Node: ", node);
+                // Support Alien4Cloud 2.2.0
+                // TODO
+                //NodeTemplate nodeTemplate = topology.getNodeTemplates().get(node);
+                //NodeType nodeType = toscaTypeSearchService.getRequiredElementInDependencies(NodeType.class, nodeTemplate.getType(),
+                //        topology.getDependencies());
                 // ALIEN 2.0.0 Update
                 /*
                 if (isFromType(NormativeComputeConstants.COMPUTE_TYPE, nodeType)) {
@@ -575,22 +580,23 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
     /**
      * Update Deployment Info from Yorc information
      * Called at init, for each active deployment.
-     * @param ctx
+     * @param yorcDeploymentId
+     * @param deploymentId
      */
-    protected void doUpdateDeploymentInfo(PaaSTopologyDeploymentContext ctx) {
-        String paasId = ctx.getDeploymentPaaSId();
-        a4cDeploymentIds.put(paasId, ctx.getDeploymentId());
+    protected void doUpdateDeploymentInfo(String yorcDeploymentId, String deploymentId) {
+        String paasId = yorcDeploymentId;
+        a4cDeploymentIds.put(paasId, deploymentId);
         String deploymentUrl = "/deployments/" + paasId;
         log.debug("update deployment info " + paasId);
 
         // Create the YorcRuntimeDeploymentInfo for this deployment
         Map<String, Map<String, InstanceInformation>> nodemap = Maps.newHashMap();
-        YorcRuntimeDeploymentInfo jrdi = new YorcRuntimeDeploymentInfo(ctx, DeploymentStatus.UNKNOWN, nodemap, deploymentUrl);
+        YorcRuntimeDeploymentInfo jrdi = new YorcRuntimeDeploymentInfo(DeploymentStatus.UNKNOWN, nodemap, deploymentUrl);
         runtimeDeploymentInfos.put(paasId, jrdi);
 
         DeploymentStatus ds = null;
         try {
-            ds = updateNodeInfo(ctx);
+            ds = updateNodeInfo(yorcDeploymentId);
         } catch (Exception e) {
             log.error(paasId + " : Cannot update DeploymentInfo ", e);
         }
@@ -601,18 +607,17 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
      * This is needed to let a4c know all about the nodes and their instances
      * Information is got from Yorc using the REST API
      *
-     * @param ctx PaaSDeploymentContext to be updated
+     * @param yorcDeploymentId
      * @return deployment status
      *
      * @throws
      */
-    private DeploymentStatus updateNodeInfo(PaaSDeploymentContext ctx) throws Exception {
-        String paasId = ctx.getDeploymentPaaSId();
-        String deploymentUrl = "/deployments/" + paasId;
-        log.debug("updateNodeInfo " + paasId);
+    private DeploymentStatus updateNodeInfo(String yorcDeploymentId) throws Exception {
+        String deploymentUrl = "/deployments/" + yorcDeploymentId;
+        log.debug("updateNodeInfo " + yorcDeploymentId);
 
         // Assumes YorcRuntimeDeploymentInfo already created.
-        YorcRuntimeDeploymentInfo jrdi = runtimeDeploymentInfos.get(paasId);
+        YorcRuntimeDeploymentInfo jrdi = runtimeDeploymentInfos.get(yorcDeploymentId);
         if (jrdi == null) {
             log.error("No YorcRuntimeDeploymentInfo");
             return DeploymentStatus.FAILURE;
@@ -662,7 +667,7 @@ public class YorcPaaSProvider implements IOrchestratorPlugin<ProviderConfig> {
                             }
                         }
                         // Let a4c know the instance state
-                        updateInstanceState(paasId, node, inb, iinfo, instRes.getStatus());
+                        updateInstanceState(yorcDeploymentId, node, inb, iinfo, instRes.getStatus());
                     }
                 }
             }

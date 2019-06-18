@@ -43,7 +43,7 @@ public class YstiaOrchestratorFactory implements IOrchestratorPluginFactory<Yorc
     private BeanFactory beanFactory;
 
     @Override
-    public YorcPaaSProvider newInstance() {
+    public YorcPaaSProvider newInstance(ProviderConfig config) {
         return beanFactory.getBean(YorcPaaSProvider.class);
     }
 
@@ -87,6 +87,5 @@ public class YstiaOrchestratorFactory implements IOrchestratorPluginFactory<Yorc
     public String getType() {
         return "Ystia Orchestrator";
     }
-
 
 }
