@@ -31,8 +31,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class YorcRuntimeDeploymentInfo {
     @NonNull
-    private PaaSTopologyDeploymentContext deploymentContext;
-    @NonNull
     private DeploymentStatus status;
     /**
      * Represents the status of every instance of node templates currently deployed.

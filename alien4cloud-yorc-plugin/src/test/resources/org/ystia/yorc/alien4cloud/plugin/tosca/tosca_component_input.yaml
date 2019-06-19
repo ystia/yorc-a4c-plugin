@@ -92,7 +92,7 @@ capability_types:
         default: false
       url_path:
         type: string
-        description: The optional URL path of the endpoint’s address if applicable for the protocol.
+        description: The optional URL path of the endpoint's address if applicable for the protocol.
         required: false
       port_name:
         type: string
@@ -122,7 +122,7 @@ capability_types:
     attributes:
       ip_address:
         type: string
-        description: This is the IP address as propagated up by the associated node’s host (Compute) container.
+        description: This is the IP address as propagated up by the associated node's host (Compute) container.
 
 node_types:
   org.yorc.samples.python.Component:

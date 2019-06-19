@@ -114,13 +114,18 @@ public class EventListenerTask extends AlienTask {
                                             ninfo.remove(eInstance);
                                             break;
                                         case "started":
+                                            // Support Alien4Cloud 2.2.0
+                                            // TODO
+                                            // How can we get the Deployment's source name (the application name as we don't have
+                                            // anymore in jrdi the full deployment context ???
                                             // persist BS Id
+                                            /*
                                             String source = jrdi.getDeploymentContext().getDeployment().getSourceName();
                                             if (source.equals("BLOCKSTORAGE_APPLICATION")) {
                                                 PaaSInstancePersistentResourceMonitorEvent prme = new PaaSInstancePersistentResourceMonitorEvent(eNode, eInstance,
                                                         MapUtil.newHashMap(new String[]{NormativeBlockStorageConstants.VOLUME_ID}, new Object[]{UUID.randomUUID().toString()}));
                                                 orchestrator.postEvent(prme, paasId);
-                                            }
+                                            }*/
                                             break;
                                         case "error":
                                             log.warn("Error instance status in deploymentID: {} and nodeID: {}", paasId, eNode);
