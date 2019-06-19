@@ -12,6 +12,11 @@
 
 * Can be used within Alien 2.2.0
 
+### ENHANCEMENTS
+
+* Add an example of basic job implementation for infrastructures without a default
+  job scheduler ([GH-125](https://github.com/ystia/yorc-a4c-plugin/issues/125))
+
 ### BUG FIXES
 
 * mem_per_node slurm option parameter is limited to integer number of GB ([GH-446](https://github.com/ystia/yorc/issues/446))

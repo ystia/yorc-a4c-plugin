@@ -1,0 +1,230 @@
+tosca_definitions_version: alien_dsl_2_0_0
+
+metadata:
+  template_name: ChainedJobs
+  template_version: 0.1.0-SNAPSHOT
+  template_author: appmanager
+
+description: |
+  Example of two jobs spawning a shell command run in parallel,
+  followed by one job printing the output of these commands.
+
+imports:
+  - yorc-types:1.1.0
+  - tosca-normative-types:1.0.0-ALIEN20
+  - alien-base-types:2.1.1
+  - org.ystia.yorc.samples.job.noscheduler.Components:1.0.0-SNAPSHOT
+
+topology_template:
+  node_templates:
+    Compute1:
+      type: tosca.nodes.Compute
+      capabilities:
+        scalable:
+          properties:
+            min_instances: 1
+            max_instances: 1
+            default_instances: 1
+        endpoint:
+          properties:
+            secure: true
+            protocol: tcp
+            network_name: PRIVATE
+            initiator: source
+    SpawnJob1:
+      type: org.ystia.yorc.samples.job.noscheduler.SpawnJob
+      properties:
+        command: "echo Hello from Job1"
+      requirements:
+        - hostedOnComputeHost:
+            type_requirement: host
+            node: Compute1
+            capability: tosca.capabilities.Container
+            relationship: tosca.relationships.HostedOn
+    Compute2:
+      type: tosca.nodes.Compute
+      capabilities:
+        scalable:
+          properties:
+            min_instances: 1
+            max_instances: 1
+            default_instances: 1
+        endpoint:
+          properties:
+            secure: true
+            protocol: tcp
+            network_name: PRIVATE
+            initiator: source
+    SpawnJob2:
+      type: org.ystia.yorc.samples.job.noscheduler.SpawnJob
+      properties:
+        command: "echo Hello from Job2"
+      requirements:
+        - hostedOnCompute2Host:
+            type_requirement: host
+            node: Compute2
+            capability: tosca.capabilities.Container
+            relationship: tosca.relationships.HostedOn
+    Compute3:
+      type: tosca.nodes.Compute
+      capabilities:
+        scalable:
+          properties:
+            min_instances: 1
+            max_instances: 1
+            default_instances: 1
+        endpoint:
+          properties:
+            secure: true
+            protocol: tcp
+            network_name: PRIVATE
+            initiator: source
+    DisplayResJob:
+      type: org.ystia.yorc.samples.job.noscheduler.DisplayResJob
+      requirements:
+        - displayResultSpawnJob1Feature:
+            type_requirement: spawnedJob
+            node: SpawnJob1
+            capability: tosca.capabilities.Node
+            relationship: org.ystia.yorc.samples.relationships.noscheduler.DisplayResult
+        - displayResultSpawnJob2Feature:
+            type_requirement: spawnedJob
+            node: SpawnJob2
+            capability: tosca.capabilities.Node
+            relationship: org.ystia.yorc.samples.relationships.noscheduler.DisplayResult
+        - hostedOnCompute3Host:
+            type_requirement: host
+            node: Compute3
+            capability: tosca.capabilities.Container
+            relationship: tosca.relationships.HostedOn
+  outputs:
+    DisplayResJob_results:
+      value: { get_attribute: [ DisplayResJob, results ] }
+  # Workaround for bug https://github.com/ystia/yorc/issues/435 :
+  # calling explicitly the relationship configure operation 'target_changed'
+  # until Yorc is able to call it automatically each time the target changes 
+  workflows:
+    run:
+      steps:
+        SpawnJob1_executed:
+          target: SpawnJob1
+          activities:
+            - set_state: executed
+          on_success:
+            - DisplayResJob_displayResultSpawnJob1Feature_target_changed
+        SpawnJob2_run:
+          target: SpawnJob2
+          activities:
+            - call_operation: tosca.interfaces.node.lifecycle.Runnable.run
+          on_success:
+            - SpawnJob2_executed
+        DisplayResJob_executed:
+          target: DisplayResJob
+          activities:
+            - set_state: executed
+        SpawnJob1_submitting:
+          target: SpawnJob1
+          activities:
+            - set_state: submitting
+          on_success:
+            - SpawnJob1_submit
+        DisplayResJob_submitting:
+          target: DisplayResJob
+          activities:
+            - set_state: submitting
+          on_success:
+            - DisplayResJob_submit
+        DisplayResJob_executing:
+          target: DisplayResJob
+          activities:
+            - set_state: executing
+          on_success:
+            - DisplayResJob_run
+        SpawnJob2_submitted:
+          target: SpawnJob2
+          activities:
+            - set_state: submitted
+          on_success:
+            - SpawnJob2_executing
+        SpawnJob1_submitted:
+          target: SpawnJob1
+          activities:
+            - set_state: submitted
+          on_success:
+            - SpawnJob1_executing
+        SpawnJob1_run:
+          target: SpawnJob1
+          activities:
+            - call_operation: tosca.interfaces.node.lifecycle.Runnable.run
+          on_success:
+            - SpawnJob1_executed
+        DisplayResJob_displayResultSpawnJob1Feature_target_changed:
+          target: DisplayResJob
+          target_relationship: displayResultSpawnJob1Feature
+          operation_host: SOURCE
+          activities:
+            - call_operation: Configure.target_changed
+          on_success:
+            - DisplayResJob_submitting
+        DisplayResJob_submit:
+          target: DisplayResJob
+          activities:
+            - call_operation: tosca.interfaces.node.lifecycle.Runnable.submit
+          on_success:
+            - DisplayResJob_submitted
+        SpawnJob1_executing:
+          target: SpawnJob1
+          activities:
+            - set_state: executing
+          on_success:
+            - SpawnJob1_run
+        SpawnJob1_submit:
+          target: SpawnJob1
+          activities:
+            - call_operation: tosca.interfaces.node.lifecycle.Runnable.submit
+          on_success:
+            - SpawnJob1_submitted
+        SpawnJob2_executing:
+          target: SpawnJob2
+          activities:
+            - set_state: executing
+          on_success:
+            - SpawnJob2_run
+        SpawnJob2_submitting:
+          target: SpawnJob2
+          activities:
+            - set_state: submitting
+          on_success:
+            - SpawnJob2_submit
+        SpawnJob2_submit:
+          target: SpawnJob2
+          activities:
+            - call_operation: tosca.interfaces.node.lifecycle.Runnable.submit
+          on_success:
+            - SpawnJob2_submitted
+        DisplayResJob_run:
+          target: DisplayResJob
+          activities:
+            - call_operation: tosca.interfaces.node.lifecycle.Runnable.run
+          on_success:
+            - DisplayResJob_executed
+        SpawnJob2_executed:
+          target: SpawnJob2
+          activities:
+            - set_state: executed
+          on_success:
+            - DisplayResJob_displayResultSpawnJob2Feature_target_changed
+        DisplayResJob_submitted:
+          target: DisplayResJob
+          activities:
+            - set_state: submitted
+          on_success:
+            - DisplayResJob_executing
+        DisplayResJob_displayResultSpawnJob2Feature_target_changed:
+          target: DisplayResJob
+          target_relationship: displayResultSpawnJob2Feature
+          operation_host: SOURCE
+          activities:
+            - call_operation: Configure.target_changed
+          on_success:
+            - DisplayResJob_submitting
