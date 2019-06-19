@@ -134,7 +134,7 @@ public class DeployTask extends AlienTask {
         //MappingTosca.quoteProperties(ctx);
 
         // Create the deployment archive, using in its name the unique orchestrator
-        // deployment ID to ensure other deployments running in parallel won't 
+        // deployment ID to ensure other deployments running in parallel won't
         // work on the same archive
         String zipName = new StringBuilder(ctx.getDeploymentPaaSId()).append("-")
                                 .append("topology.zip").toString();
@@ -403,41 +403,6 @@ public class DeployTask extends AlienTask {
         }
     }
 
-    private void matchKubernetesImplementation(ArchiveRoot root) {
-        root.getNodeTypes().forEach((k, t) -> {
-            Map<String,  Interface> interfaces = t.getInterfaces();
-            if (interfaces != null) {
-                Interface ifce = interfaces.get("tosca.interfaces.node.lifecycle.Standard");
-                if (ifce != null) {
-                    Operation start = ifce.getOperations().get("start");
-                    if (start != null && start.getImplementationArtifact() != null) {
-                        String implArtifactType = start.getImplementationArtifact().getArtifactType();
-                        // Check implementation artifact type Not null to avoid NPE
-                        if (implArtifactType != null) {
-                            if (implArtifactType.equals("tosca.artifacts.Deployment.Image.Container.Docker")) {
-                                start.getImplementationArtifact().setArtifactType("tosca.artifacts.Deployment.Image.Container.Docker.Kubernetes");
-                            }
-                        } //else {
-                        //System.out.println("Found start implementation artifcat with type NULL : " + start.getImplementationArtifact().toString());
-                        // The implementation artifact with type null was :
-                        // ImplementationArtifact{} AbstractArtifact{artifactType='null', artifactRef='scripts/kubectl_endpoint_start.sh', artifactRepository='null', archiveName='null', archiveVersion='null', repositoryURL='null', repositoryName='null', artifactPath=null}
-                        //}
-                    }
-                }
-            }
-        });
-    }
-    private void matchKubernetesImplementation(Map<String, Object> topology) {
-        Map<String, HashMap> nodeTypes = ((Map) topology.get("node_types"));
-
-        nodeTypes.forEach((k,nodeType)->{
-            String t = (String) getNestedValue(nodeType, "interfaces.Standard.start.implementation.type");
-            if (t.equals("tosca.artifacts.Deployment.Image.Container.Docker")) {
-                setNestedValue(nodeType, "interfaces.Standard.start.implementation.type", "tosca.artifacts.Deployment.Image.Container.Docker.Kubernetes");
-            }
-        });
-    }
-
     /**
      * Copy artifacts to archive
      * @param node
@@ -641,10 +606,6 @@ public class DeployTask extends AlienTask {
                                 }
                             }
                             ArchiveRoot root = parsingResult.getResult();
-                            if (location == LOC_KUBERNETES) {
-                                matchKubernetesImplementation(root);
-                            }
-
                             String yaml;
                             if (root.hasToscaTopologyTemplate()) {
                                 log.debug("File has topology template : " + name);
