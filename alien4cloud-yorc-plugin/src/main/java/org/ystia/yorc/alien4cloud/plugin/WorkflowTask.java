@@ -67,28 +67,29 @@ public class WorkflowTask extends AlienTask {
         // wait for end of task
         boolean done = false;
         while (!done && error == null) {
-            // We were awaken for some bad reason or a timeout
-            // Check Task Status to decide what to do now.
-            String status;
-            try {
-                status = restClient.getStatusFromYorc(taskUrl);
-                log.debug("Returned status:" + status);
-            } catch (Exception e) {
-                status = "FAILED";
-            }
-            switch (status) {
-                case "DONE":
-                    // Task OK.
-                    log.debug("Workflow OK");
-                    done = true;
-                    break;
-                case "FAILED":
-                    log.debug("Workflow failed");
-                    error = new Exception("Workflow failed");
-                    break;
-                default:
-                    log.debug("Workflow Status is currently " + status);
-                    break;
+            synchronized (jrdi) {
+                // Check workflow related event
+                Event evt = jrdi.getLastEvent();
+                if (evt != null && evt.getType().equals(EventListenerTask.EVT_WORKFLOW) && taskId.equals(evt.getAlienExecutionId())) {
+                    jrdi.setLastEvent(null);
+                    switch (evt.getStatus()) {
+                        case "failed":
+                            log.debug("Workflow failed");
+                            error = new Exception("Workflow failed");
+                            break;
+                        case "canceled":
+                            log.debug("Workflow failed");
+                            error = new Exception("Workflow canceled");
+                            break;
+                        case "done":
+                            log.debug("Workflow OK");
+                            done = true;
+                            break;
+                        default:
+                            log.debug("Workflow Status is currently " + evt.getStatus());
+                            break;
+                    }
+                }
             }
         }
         synchronized (jrdi) {
