@@ -160,6 +160,7 @@ public class EventListenerTask extends AlienTask {
                                     eMessage += event.getType() + ":" + eState;
                                     log.debug("Received Event from Yorc <<< " + eMessage);
                                     synchronized (jrdi) {
+                                        jrdi.setLastEvent(event);
                                         jrdi.notifyAll();
                                     }
                                     switch (event.getStatus()) {
