@@ -88,6 +88,7 @@ a4c_login "$a4cURL" "$userName" "$password" "cookies.a4c"
 
 # Get the Application environment ID
 res=`curl --request POST \
+          --insecure \
           --url $a4cURL/rest/latest/applications/environments \
           --header 'Content-Type: application/json' \
           --cookie cookies.a4c \
@@ -119,6 +120,7 @@ postData="{\"inputProperties\": {$inputData}}"
 
 # Set input parameters
 response=`curl --request PUT \
+               --insecure \
                --url $a4cURL/rest/latest/applications/$applicationName/environments/$envID/deployment-topology \
                --header 'Content-Type: application/json' \
                --cookie cookies.a4c \

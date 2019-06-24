@@ -92,6 +92,7 @@ a4c_login "$a4cURL" "$userName" "$password" "cookies.a4c"
 
 # Import Git repository
 response=`curl --request POST \
+               --insecure \
                --url $a4cURL/rest/latest/csarsgit \
                --header 'Content-Type: application/json' \
                --cookie cookies.a4c \
@@ -116,6 +117,7 @@ echo "Archive created, proceeding to the import..."
 
 # Proceed to the import
 response=`curl --request POST \
+               --insecure \
                --url $a4cURL/rest/latest/csarsgit/$csarID \
                --header 'Content-Type: application/json' \
                --cookie cookies.a4c \

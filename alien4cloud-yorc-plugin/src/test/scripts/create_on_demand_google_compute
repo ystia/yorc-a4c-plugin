@@ -136,6 +136,7 @@ a4c_login "$a4cURL" "$userName" "$password" "cookies.a4c"
 
 # Get Orchestratror ID
 res=`curl --request GET \
+          --insecure \
           --url $a4cURL/rest/latest/orchestrators?query=Yorc \
           --header 'Accept: application/json' \
           --silent \
@@ -150,6 +151,7 @@ fi
 
 # Get the location ID
 res=`curl --request GET \
+          --insecure \
           --url $a4cURL/rest/latest/orchestrators/$yorcID/locations?query=$locationName \
           --header 'Accept: application/json' \
           --silent \
@@ -165,6 +167,7 @@ fi
 
 # Create a Google Compute on-demand resource
 response=`curl --request POST \
+               --insecure \
                --url $a4cURL/rest/latest/orchestrators/$yorcID/locations/$locationID/resources  \
                --header 'Content-Type: application/json' \
                --cookie cookies.a4c \
@@ -188,6 +191,7 @@ fi
 
 # Update properties
 response=`curl --request POST \
+               --insecure \
                --url $a4cURL/rest/latest/orchestrators/$yorcID/locations/$locationID/resources/$resourceID/template/properties \
                --header 'Content-Type: application/json' \
                --cookie cookies.a4c \
@@ -202,6 +206,7 @@ then
 fi
 
 response=`curl --request POST \
+               --insecure \
                --url $a4cURL/rest/latest/orchestrators/$yorcID/locations/$locationID/resources/$resourceID/template/properties \
                --header 'Content-Type: application/json' \
                --cookie cookies.a4c \
@@ -216,6 +221,7 @@ then
 fi
 
 response=`curl --request POST \
+               --insecure \
                --url $a4cURL/rest/latest/orchestrators/$yorcID/locations/$locationID/resources/$resourceID/template/properties \
                --header 'Content-Type: application/json' \
                --cookie cookies.a4c \
@@ -231,6 +237,7 @@ fi
 
 # Add a key/value pair ssh-keys / user:ssh public key in the instance metadata
 response=`curl --request POST \
+               --insecure \
                --url $a4cURL/rest/latest/orchestrators/$yorcID/locations/$locationID/resources/$resourceID/template/properties \
                --header 'Content-Type: application/json' \
                --cookie cookies.a4c \
@@ -246,6 +253,7 @@ fi
 
 # Update username in credentials
 response=`curl --request POST \
+               --insecure \
                --url $a4cURL/rest/latest/orchestrators/$yorcID/locations/$locationID/resources/$resourceID/template/capabilities/endpoint/properties \
                --header 'Content-Type: application/json' \
                --cookie cookies.a4c \

@@ -76,6 +76,7 @@ a4c_login "$a4cURL" "$userName" "$password" "cookies.a4c"
 
 # Get Orchestratror ID
 res=`curl --request GET \
+           --insecure \
           --url $a4cURL/rest/latest/orchestrators?query=Yorc \
           --header 'Accept: application/json' \
           --silent \
@@ -90,6 +91,7 @@ fi
 
 # Create the location
 response=`curl --request POST \
+               --insecure \
                --url $a4cURL/rest/latest/orchestrators/$yorcID/locations  \
                --header 'Content-Type: application/json' \
                --cookie cookies.a4c \

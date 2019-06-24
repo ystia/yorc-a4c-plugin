@@ -84,6 +84,7 @@ fi
 # Download Yorc plugin
 echo "Downloading the plugin..."
 response=`curl --request GET \
+               --insecure \
                --url $yorcPluginURL \
                --location \
                --output yorcPlugin.zip`
@@ -97,6 +98,7 @@ fi
 
 # Upload plugin in Alien4Cloud
 response=`curl --request POST \
+               --insecure \
                --url $a4cURL/rest/latest/plugins \
                --header 'Content-Type: multipart/form-data' \
                --cookie cookies.a4c \

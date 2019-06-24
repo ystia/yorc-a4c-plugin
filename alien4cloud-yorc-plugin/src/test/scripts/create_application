@@ -102,6 +102,7 @@ a4c_login "$a4cURL" "$userName" "$password" "cookies.a4c"
 
 # Create the applications
 response=`curl --request POST \
+               --insecure \
                --url $a4cURL/rest/latest/applications \
                --header 'Content-Type: application/json' \
                --cookie cookies.a4c \
