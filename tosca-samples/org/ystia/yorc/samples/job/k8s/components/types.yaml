@@ -14,7 +14,7 @@ description: Contains types for testing Jobs in Kubernetes
 repositories:
   docker:
     url: https://hub.docker.com/
-    type: http
+    type: docker
 
 node_types:
   org.ystia.yorc.samples.kube.containers.nodes.ComputePIJob:
