@@ -12,7 +12,7 @@ description: |
 imports:
   - yorc-types:1.1.0
   - tosca-normative-types:1.0.0-ALIEN20
-  - alien-base-types:2.1.1
+  - alien-base-types:2.2.0-SM6
   - org.ystia.yorc.samples.job.noscheduler.Components:1.0.0-SNAPSHOT
 
 topology_template:
