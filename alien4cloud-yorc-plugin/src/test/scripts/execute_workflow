@@ -1,0 +1,122 @@
+#!/bin/bash
+
+#
+# execute_workflow - Execute an application workflow
+# Prerequisites : the application has been deployed
+#
+
+a4cURL="http://localhost:8088"
+userName="admin"
+password="admin"
+applicationName=""
+usage() {
+    echo ""
+    echo "Usage:"
+    echo "execute_workflow --application <Application Name>"
+    echo "                 --workflow <Workflow name>"
+    echo "                 [--a4c-url <Alien4Cloud URL>]"
+    echo "                 [--user <Alien4Cloud administrator user name>]"
+    echo "                 [--password <Alien4Cloud administrator password>]"
+    echo "   - default A4C URL  : $a4cURL"
+    echo "   - default user     : $userName"
+    echo "   - default password : $password"
+}
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+    -n|--application)
+    applicationName="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -w|--workflow)
+    workflowName="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -a|--a4c-url)
+    a4cURL="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -u|--user)
+    userName="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -p|--password)
+    password="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -h|--help)
+    usage
+    exit 0
+    ;;
+    *)    # unknown option
+    POSITIONAL+=("$1") # save it in an array for later
+    shift # past argument
+    ;;
+esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+if [ -z "$applicationName" ]
+then
+    echo "Error: missing mandatory parameter application name"
+    usage
+    exit 1
+fi
+
+if [ -z "$workflowName" ]
+then
+    echo "Error: missing mandatory parameter workflow name"
+    usage
+    exit 1
+fi
+
+# Load utilities
+declare -r DIR=$(cd "$(dirname "$0")" && pwd)
+source $DIR/utils.bash
+
+# First, login and store the cookies
+a4c_login "$a4cURL" "$userName" "$password" "cookies.a4c"
+
+# Get the Application environment ID
+res=`curl --request POST \
+          --insecure \
+          --url $a4cURL/rest/latest/applications/environments \
+          --header 'Content-Type: application/json' \
+          --cookie cookies.a4c \
+          --silent \
+          --data "[\"$applicationName\"]"`
+envID=`getJsonval id $res`
+
+if [ -z "$envID" ]
+then
+    echo "Exiting on error getting the environment ID for Application $applicationName"
+    exit 1
+fi
+
+# Execute the workflow
+echo "Executing workflow $workflowName on $applicationName..."
+response=`curl --request POST \
+               --insecure \
+               --url $a4cURL/rest/latest/applications//$applicationName/environments/$envID/workflows/$workflowName \
+               --header 'Content-Type: application/json' \
+               --silent \
+               --cookie cookies.a4c`
+res=$?
+if [ $res -ne 0 ]
+then
+    echo "Exiting on error executing workflow $workflowName on $applicationName : $response"
+    exit 1
+fi
+
+echo "Workflow $workflowName executed on $applicationName"
+
+exit 0
