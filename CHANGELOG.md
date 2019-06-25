@@ -14,10 +14,12 @@
 
 ### ENHANCEMENTS
 
+* Sample scripts using REST API should be updated to run with a secured Alien4Cloud ([GH-136](https://github.com/ystia/yorc-a4c-plugin/issues/136))
 * Add an example of basic job implementation for infrastructures without a default
   job scheduler ([GH-125](https://github.com/ystia/yorc-a4c-plugin/issues/125))
 
 ### BUG FIXES
+
 
 * mem_per_node slurm option parameter is limited to integer number of GB ([GH-446](https://github.com/ystia/yorc/issues/446))
 * Workflow ends with timeout after 4 hours and application is undeployed ([GH-131](https://github.com/ystia/yorc-a4c-plugin/issues/131))
