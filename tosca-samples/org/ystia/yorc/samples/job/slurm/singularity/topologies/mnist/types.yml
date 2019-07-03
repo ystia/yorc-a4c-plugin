@@ -9,7 +9,7 @@ description: ""
 
 imports:
   - tosca-normative-types:1.0.0-ALIEN20
-  - alien-base-types:2.1.1
+  - alien-base-types:2.2.0-SM6
   - yorc-slurm-types:1.2.0
   - org.ystia.yorc.samples.job.slurm.singularity.mnist:1.0.0-SNAPSHOT
   - yorc-types:1.1.0

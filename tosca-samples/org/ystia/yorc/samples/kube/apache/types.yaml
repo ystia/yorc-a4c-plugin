@@ -7,7 +7,7 @@ metadata:
 
 imports:
   - tosca-normative-types:1.0.0-ALIEN20
-  - docker-types:2.1.1
+  - docker-types:2.2.0-SM6
 
 description: Apacahe Docker that can be deployed on K8S
 
