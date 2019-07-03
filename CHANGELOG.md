@@ -20,7 +20,7 @@
 
 ### BUG FIXES
 
-
+* Update TOSCA samples to use Alien4Cloud 2.2 types  ([GH-134](https://github.com/ystia/yorc-a4c-plugin/issues/134))
 * mem_per_node slurm option parameter is limited to integer number of GB ([GH-446](https://github.com/ystia/yorc/issues/446))
 * Workflow ends with timeout after 4 hours and application is undeployed ([GH-131](https://github.com/ystia/yorc-a4c-plugin/issues/131))
 
