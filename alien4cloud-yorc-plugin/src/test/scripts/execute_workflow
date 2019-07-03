@@ -1,25 +1,25 @@
 #!/bin/bash
 
 #
-# set_application_inputs - Sets application input properties
+# execute_workflow - Execute an application workflow
+# Prerequisites : the application has been deployed
 #
 
 a4cURL="http://localhost:8088"
 userName="admin"
 password="admin"
 applicationName=""
-keyaluePairs=""
 usage() {
     echo ""
     echo "Usage:"
-    echo "set_application_inputs [--a4c-url <Alien4Cloud URL>]"
-    echo "                       [--user <Alien4Cloud administrator user name>]"
-    echo "                       [--password <Alien4Cloud administrator password>]"
-    echo "                       --application <Application Name>"
-    echo "                       --inputs \"key1=value1 key2=value2\""
-    echo "   - default A4C URL : $a4cURL"
-    echo "   - default user    : $userName"
-    echo "   - default password: $password"
+    echo "execute_workflow --application <Application Name>"
+    echo "                 --workflow <Workflow name>"
+    echo "                 [--a4c-url <Alien4Cloud URL>]"
+    echo "                 [--user <Alien4Cloud administrator user name>]"
+    echo "                 [--password <Alien4Cloud administrator password>]"
+    echo "   - default A4C URL  : $a4cURL"
+    echo "   - default user     : $userName"
+    echo "   - default password : $password"
 }
 
 POSITIONAL=()
@@ -28,6 +28,16 @@ do
 key="$1"
 
 case $key in
+    -n|--application)
+    applicationName="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -w|--workflow)
+    workflowName="$2"
+    shift # past argument
+    shift # past value
+    ;;
     -a|--a4c-url)
     a4cURL="$2"
     shift # past argument
@@ -40,16 +50,6 @@ case $key in
     ;;
     -p|--password)
     password="$2"
-    shift # past argument
-    shift # past value
-    ;;
-    -n|--application)
-    applicationName="$2"
-    shift # past argument
-    shift # past value
-    ;;
-    -i|--inputs)
-    keyaluePairs="$2"
     shift # past argument
     shift # past value
     ;;
@@ -72,9 +72,9 @@ then
     exit 1
 fi
 
-if [ -z "$keyaluePairs" ]
+if [ -z "$workflowName" ]
 then
-    echo "Error: missing mandatory parameter inputs"
+    echo "Error: missing mandatory parameter workflow name"
     usage
     exit 1
 fi
@@ -102,36 +102,21 @@ then
     exit 1
 fi
 
-# Create the data to post
-inputData=""
-for keyValuePair in $keyaluePairs; do
-    set -- `echo $keyValuePair | tr '=' ' '`
-    key=$1
-    value=$2
-    newInput="\"$key\": \"$value\""
-    if [ -z "$inputData" ]
-    then
-        inputData="$newInput"
-    else
-        inputData="$inputData, $newInput"
-    fi
-done
-postData="{\"inputProperties\": {$inputData}}"
-
-# Set input parameters
-response=`curl --request PUT \
+# Execute the workflow
+echo "Executing workflow $workflowName on $applicationName..."
+response=`curl --request POST \
                --insecure \
-               --url $a4cURL/rest/latest/applications/$applicationName/environments/$envID/deployment-topology \
+               --url $a4cURL/rest/latest/applications//$applicationName/environments/$envID/workflows/$workflowName \
                --header 'Content-Type: application/json' \
-               --cookie cookies.a4c \
                --silent \
-               --data "$postData"`
-
+               --cookie cookies.a4c`
 res=$?
 if [ $res -ne 0 ]
 then
-    echo "Exiting on error creating application $applicationName : $response"
+    echo "Exiting on error executing workflow $workflowName on $applicationName : $response"
     exit 1
 fi
 
-echo "Input parameters set on Application $applicationName"
+echo "Workflow $workflowName executed on $applicationName"
+
+exit 0

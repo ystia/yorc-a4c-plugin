@@ -14,6 +14,7 @@
 
 ### ENHANCEMENTS
 
+* Sample scripts using REST API should be updated to run with a secured Alien4Cloud ([GH-136](https://github.com/ystia/yorc-a4c-plugin/issues/136))
 * Add an example of basic job implementation for infrastructures without a default
   job scheduler ([GH-125](https://github.com/ystia/yorc-a4c-plugin/issues/125))
 

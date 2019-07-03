@@ -78,6 +78,7 @@ fi
 
 # Create the orchestrator
 response=`curl --request POST \
+               --insecure \
                --url $a4cURL/rest/latest/orchestrators \
                --header 'Content-Type: application/json' \
                --cookie cookies.a4c \

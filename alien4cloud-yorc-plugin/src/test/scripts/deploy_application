@@ -88,6 +88,7 @@ a4c_login "$a4cURL" "$userName" "$password" "cookies.a4c"
 
 # Get the Application environment ID
 res=`curl --request POST \
+          --insecure \
           --url $a4cURL/rest/latest/applications/environments \
           --header 'Content-Type: application/json' \
           --cookie cookies.a4c \
@@ -103,6 +104,7 @@ fi
 
 # Deploy the application
 response=`curl --request POST \
+               --insecure \
                --url $a4cURL/rest/latest/applications/deployment \
                --header 'Content-Type: application/json' \
                --cookie cookies.a4c \
@@ -133,6 +135,7 @@ do
     printf "."
     # Get the deployment status
     response=`curl --request POST \
+                   --insecure \
                    --url $a4cURL/rest/latest/applications/statuses \
                    --header 'Content-Type: application/json' \
                    --cookie cookies.a4c \
