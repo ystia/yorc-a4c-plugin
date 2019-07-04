@@ -21,6 +21,9 @@ node_types:
   yorc.nodes.kubernetes.api.types.JobResource:
     derived_from: org.alien4cloud.kubernetes.api.types.JobResource
 
+  yorc.nodes.kubernetes.api.types.StatefulsetResource:
+    derived_from: org.alien4cloud.kubernetes.api.types.StatefulsetResource
+
   yorc.nodes.kubernetes.api.types.ServiceResource:
     derived_from: org.alien4cloud.kubernetes.api.types.ServiceResource
 

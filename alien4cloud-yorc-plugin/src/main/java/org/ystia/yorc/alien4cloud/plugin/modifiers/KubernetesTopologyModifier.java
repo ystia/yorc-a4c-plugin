@@ -41,12 +41,14 @@ public class KubernetesTopologyModifier extends TopologyModifierSupport {
     // Yorc K8S resource types
     protected static final String YORC_KUBERNETES_TYPES_DEPLOYMENT_RESOURCE = "yorc.nodes.kubernetes.api.types.DeploymentResource";
     protected static final String YORC_KUBERNETES_TYPES_JOB_RESOURCE = "yorc.nodes.kubernetes.api.types.JobResource";
+    protected static final String YORC_KUBERNETES_TYPES_STATEFULSET_RESOURCE = "yorc.nodes.kubernetes.api.types.StatefulsetResource";
     protected static final String YORC_KUBERNETES_TYPES_SERVICE_RESOURCE = "yorc.nodes.kubernetes.api.types.ServiceResource";
     protected static final String YORC_KUBERNETES_TYPES_SIMPLE_RESOURCE = "yorc.nodes.kubernetes.api.types.SimpleResource";
 
     // A4C K8S resource types defined in org.alien4cloud.plugin.kubernetes.modifier
     public static final String K8S_TYPES_DEPLOYMENT_RESOURCE = "org.alien4cloud.kubernetes.api.types.DeploymentResource";
     public static final String K8S_TYPES_JOB_RESOURCE = "org.alien4cloud.kubernetes.api.types.JobResource";
+    public static final String K8S_TYPES_STATEFULSET_RESOURCE = "org.alien4cloud.kubernetes.api.types.StatefulsetResource";
     public static final String K8S_TYPES_SERVICE_RESOURCE = "org.alien4cloud.kubernetes.api.types.ServiceResource";
     public static final String K8S_TYPES_SIMPLE_RESOURCE = "org.alien4cloud.kubernetes.api.types.SimpleResource";
 
@@ -99,6 +101,8 @@ public class KubernetesTopologyModifier extends TopologyModifierSupport {
         transformKubernetesResourceTypes(topology,  csar, "deployment", yorcKubernetesTypesArchiveVersion);
         // Treat job resource types
         transformKubernetesResourceTypes(topology,  csar, "job", yorcKubernetesTypesArchiveVersion);
+        // Treat statefulset types
+        transformKubernetesResourceTypes(topology,  csar, "statefulset", yorcKubernetesTypesArchiveVersion);
         // Treat service resource types
         transformKubernetesResourceTypes(topology,  csar, "service", yorcKubernetesTypesArchiveVersion);
         // Treat simple resource types
@@ -127,6 +131,10 @@ public class KubernetesTopologyModifier extends TopologyModifierSupport {
             case "job" :
                 sourceResourceType = K8S_TYPES_JOB_RESOURCE;
                 targetResourceType = YORC_KUBERNETES_TYPES_JOB_RESOURCE;
+                break;
+            case "statefulset":
+                sourceResourceType = K8S_TYPES_STATEFULSET_RESOURCE;
+                targetResourceType = YORC_KUBERNETES_TYPES_STATEFULSET_RESOURCE;
                 break;
             case "deployment" :
                 sourceResourceType = K8S_TYPES_DEPLOYMENT_RESOURCE;
