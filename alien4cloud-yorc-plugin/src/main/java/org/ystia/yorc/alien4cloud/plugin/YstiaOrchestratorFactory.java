@@ -24,8 +24,6 @@ import alien4cloud.model.orchestrators.locations.LocationSupport;
 import alien4cloud.orchestrators.plugin.IOrchestratorPluginFactory;
 import com.google.common.collect.Maps;
 import org.alien4cloud.tosca.model.definitions.PropertyDefinition;
-import org.alien4cloud.tosca.model.definitions.ScalarPropertyValue;
-import org.alien4cloud.tosca.normative.types.ToscaTypes;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.stereotype.Component;
 
@@ -40,8 +38,7 @@ public class YstiaOrchestratorFactory implements IOrchestratorPluginFactory<Yorc
     public static final String AWS = "AWS";
     public static final String GOOGLE = "Google Cloud";
     public static final String HOSTS_POOL = "HostsPool";
-    public static final String MONITORING_TIME_INTERVAL = "monitoring_time_interval";
-    private final Map<String, PropertyDefinition> deploymentProperties = buildDeploymentProperties();
+    private final Map<String, PropertyDefinition> deploymentProperties = Maps.newHashMap();
     @Resource
     private BeanFactory beanFactory;
 
@@ -77,7 +74,8 @@ public class YstiaOrchestratorFactory implements IOrchestratorPluginFactory<Yorc
                 "tosca.artifacts.Implementation.Bash", "tosca.artifacts.Implementation.Ansible", "org.alien4cloud.artifacts.AnsiblePlaybook",
                 "tosca.artifacts.Deployment.Image.Container.Docker", "tosca.artifacts.Deployment.Image.Container.Docker.Kubernetes",
                 "yorc.artifacts.Deployment.SlurmJob",
-                "yorc.artifacts.google.Deployment"});
+                "yorc.artifacts.google.Deployment",
+                "yorc.artifacts.openstack.Deployment"});
     }
 
     @Override
@@ -90,18 +88,5 @@ public class YstiaOrchestratorFactory implements IOrchestratorPluginFactory<Yorc
         return "Ystia Orchestrator";
     }
 
-    public Map<String, PropertyDefinition> buildDeploymentProperties() {
-        Map<String, PropertyDefinition> depProps = Maps.newHashMap();
-
-        // Monitoring time interval
-        PropertyDefinition monitoringInterval = new PropertyDefinition();
-        monitoringInterval.setType(ToscaTypes.INTEGER.toString());
-        monitoringInterval.setRequired(false);
-        monitoringInterval.setDescription("This enables a liveness computes and services monitoring and defines the time interval in seconds between the checks.");
-        monitoringInterval.setDefault(new ScalarPropertyValue("0"));
-        depProps.put(MONITORING_TIME_INTERVAL, monitoringInterval);
-
-        return depProps;
-    }
 
 }

@@ -32,8 +32,6 @@ public class WorkflowTask extends AlienTask {
     IPaaSCallback<?> callback;
     String workflowName;
     Map<String, Object> inputs;
-
-    private final int YORC_OPE_TIMEOUT = 1000 * 3600 * 4;  // 4 hours
     
     public WorkflowTask(PaaSDeploymentContext ctx, YorcPaaSProvider prov, String workflowName, Map<String, Object> inputs, IPaaSCallback<?> callback) {
         super(prov);
@@ -68,48 +66,30 @@ public class WorkflowTask extends AlienTask {
 
         // wait for end of task
         boolean done = false;
-        long timeout = System.currentTimeMillis() + YORC_OPE_TIMEOUT;
-        Event evt;
         while (!done && error == null) {
             synchronized (jrdi) {
-                // Check deployment timeout
-                long timetowait = timeout - System.currentTimeMillis();
-                if (timetowait <= 0) {
-                    log.warn("Deployment Timeout occured");
-                    error = new Throwable("Deployment timeout");
-                    orchestrator.doChangeStatus(paasId, DeploymentStatus.FAILURE);
-                    break;
+                // Check workflow related event
+                Event evt = jrdi.getLastEvent();
+                if (evt != null && evt.getType().equals(EventListenerTask.EVT_WORKFLOW) && taskId.equals(evt.getAlienExecutionId())) {
+                    jrdi.setLastEvent(null);
+                    switch (evt.getStatus()) {
+                        case "failed":
+                            log.debug("Workflow failed");
+                            error = new Exception("Workflow failed");
+                            break;
+                        case "canceled":
+                            log.debug("Workflow failed");
+                            error = new Exception("Workflow canceled");
+                            break;
+                        case "done":
+                            log.debug("Workflow OK");
+                            done = true;
+                            break;
+                        default:
+                            log.debug("Workflow Status is currently " + evt.getStatus());
+                            break;
+                    }
                 }
-                // Wait Deployment Events from Yorc
-                log.debug(paasId + ": Waiting for deployment events.");
-                try {
-                    jrdi.wait(timetowait);
-                } catch (InterruptedException e) {
-                    log.warn("Interrupted while waiting for deployment");
-                }
-            }
-            // We were awaken for some bad reason or a timeout
-            // Check Task Status to decide what to do now.
-            String status;
-            try {
-                status = restClient.getStatusFromYorc(taskUrl);
-                log.debug("Returned status:" + status);
-            } catch (Exception e) {
-                status = "FAILED";
-            }
-            switch (status) {
-                case "DONE":
-                    // Task OK.
-                    log.debug("Workflow OK");
-                    done = true;
-                    break;
-                case "FAILED":
-                    log.debug("Workflow failed");
-                    error = new Exception("Workflow failed");
-                    break;
-                default:
-                    log.debug("Workflow Status is currently " + status);
-                    break;
             }
         }
         synchronized (jrdi) {

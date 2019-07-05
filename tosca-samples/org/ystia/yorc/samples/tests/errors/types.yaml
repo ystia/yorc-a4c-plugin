@@ -23,7 +23,7 @@ metadata:
 
 imports:
   - tosca-normative-types:1.0.0-ALIEN20
-  - yorc-types:1.0.0
+  - yorc-types:1.1.0
 
 node_types:
   org.ystia.yorc.samples.test.ErrorComponent:
@@ -43,6 +43,11 @@ node_types:
         type: boolean
         required: false
         default: false
+      failOnStop:
+        description: "Should the stop operation implemented with an Ansible playbook fail?"
+        type: boolean
+        required: false
+        default: false
     interfaces:
       Standard:
         create:
@@ -53,3 +58,7 @@ node_types:
           inputs:
             SHOULD_FAIL: { get_property: [SELF, failOnStart] }
           implementation: implementation/start.yaml
+        stop:
+          inputs:
+            SHOULD_FAIL: { get_property: [SELF, failOnStop] }
+          implementation: implementation/stop.yaml

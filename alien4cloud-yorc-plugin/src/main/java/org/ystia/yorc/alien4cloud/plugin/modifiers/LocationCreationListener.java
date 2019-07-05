@@ -85,7 +85,7 @@ public class LocationCreationListener implements ApplicationListener<AfterLocati
         yorcKubernetesTopologyModifierRef = new LocationModifierReference();
         yorcKubernetesTopologyModifierRef.setPluginId(selfContext.getPlugin().getId());
         yorcKubernetesTopologyModifierRef.setBeanName(KubernetesTopologyModifier.YORC_KUBERNETES_MODIFIER_TAG);
-        yorcKubernetesTopologyModifierRef.setPhase(FlowPhases.POST_NODE_MATCH);
+        yorcKubernetesTopologyModifierRef.setPhase(FlowPhases.POST_MATCHED_NODE_SETUP);
 
         kubernetesTopologyModifierRef = new LocationModifierReference();
         kubernetesTopologyModifierRef.setPluginId("alien4cloud-kubernetes-plugin");

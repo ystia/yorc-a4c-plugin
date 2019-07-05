@@ -51,7 +51,6 @@ import alien4cloud.tosca.parser.ParsingErrorLevel;
 import alien4cloud.tosca.parser.ParsingException;
 import alien4cloud.tosca.parser.ParsingResult;
 import alien4cloud.tosca.parser.ToscaParser;
-import alien4cloud.utils.MapUtil;
 import com.google.common.collect.Sets;
 import lombok.extern.slf4j.Slf4j;
 import org.alien4cloud.tosca.model.CSARDependency;
@@ -95,25 +94,40 @@ public class DeployTask extends AlienTask {
      * Execute the Deployment
      */
     public void run() {
-        Throwable error = null;
 
         // Keep Ids in a Map
         String paasId = ctx.getDeploymentPaaSId();
         String alienId = ctx.getDeploymentId();
-        String deploymentUrl = "/deployments/" + paasId;
-        log.debug("Deploying " + paasId + "with id : " + alienId);
         orchestrator.putDeploymentId(paasId, alienId);
+
+        log.info("Deploying " + paasId + "with id : " + alienId);
+        deploy(paasId, alienId);
+    }
+
+    protected void changeStatusToFailure(String paasId) {
+        orchestrator.doChangeStatus(paasId, DeploymentStatus.FAILURE);
+    }
+
+    protected YorcRuntimeDeploymentInfo setupDeploymentInfo(
+        DeploymentTopology dtopo, String paasId, String deploymentURL) {
+
+        Map<String, Map<String, InstanceInformation>> curinfo = setupInstanceInformations(dtopo);
+        YorcRuntimeDeploymentInfo jrdi = new YorcRuntimeDeploymentInfo(ctx, DeploymentStatus.INIT_DEPLOYMENT, curinfo, deploymentURL);
+        orchestrator.putDeploymentInfo(paasId, jrdi);
+        orchestrator.doChangeStatus(paasId, DeploymentStatus.INIT_DEPLOYMENT);
+        return jrdi;
+    }
+
+    protected void deploy(String paasId, String alienId) {
+
+        Throwable error = null;
+
+        String deploymentUrl = "/deployments/" + paasId;
 
         // Init Deployment Info from topology
         DeploymentTopology dtopo = ctx.getDeploymentTopology();
 
-        // Build Monitoring tags for computes
-        buildComputeMonitoringTags(dtopo, ctx.getPaaSTopology());
-
-        Map<String, Map<String, InstanceInformation>> curinfo = setupInstanceInformations(dtopo);
-        YorcRuntimeDeploymentInfo jrdi = new YorcRuntimeDeploymentInfo(ctx, DeploymentStatus.INIT_DEPLOYMENT, curinfo, deploymentUrl);
-        orchestrator.putDeploymentInfo(paasId, jrdi);
-        orchestrator.doChangeStatus(paasId, DeploymentStatus.INIT_DEPLOYMENT);
+        YorcRuntimeDeploymentInfo jrdi = setupDeploymentInfo(dtopo, paasId, deploymentUrl);
 
         // Show Topoloy for debug
         //ShowTopology.topologyInLog(ctx);
@@ -127,19 +141,20 @@ public class DeployTask extends AlienTask {
         try {
             buildZip(ctx, zipName);
         } catch (Throwable e) {
-            orchestrator.doChangeStatus(paasId, DeploymentStatus.FAILURE);
+            changeStatusToFailure(paasId);
             callback.onFailure(e);
             return;
         }
 
         // Send topology zip to Yorc
-        log.info("Sending Topology " + ctx.getDeploymentPaaSId() + " to Yorc");
+        log.info("Sending Topology " + paasId + " to Yorc");
         String taskUrl;
         try {
             taskUrl = restClient.sendTopologyToYorc(paasId, zipName);
         } catch (Exception e) {
+            log.error("Yorc returned an error for topology " + paasId + " : " + e.getMessage());
             orchestrator.sendMessage(paasId, "Deployment not accepted by Yorc: " + e.getMessage());
-            orchestrator.doChangeStatus(paasId, DeploymentStatus.FAILURE);
+            changeStatusToFailure(paasId);
             callback.onFailure(e);
             return;
         } finally {
@@ -152,9 +167,11 @@ public class DeployTask extends AlienTask {
             }
         }
 
-        String taskId = taskUrl.substring(taskUrl.lastIndexOf("/") + 1);
-        jrdi.setDeployTaskId(taskId);
-        orchestrator.sendMessage(paasId, "Deployment sent to Yorc. TaskKey=" + taskId);
+        if (taskUrl != null) {
+            String taskId = taskUrl.substring(taskUrl.lastIndexOf("/") + 1);
+            jrdi.setDeployTaskId(taskId);
+            orchestrator.sendMessage(paasId, "Deployment sent to Yorc. TaskKey=" + taskId);
+        }
 
         // wait for Yorc deployment completion
         boolean done = false;
@@ -162,21 +179,24 @@ public class DeployTask extends AlienTask {
         Event evt;
         while (!done && error == null) {
             synchronized (jrdi) {
-                // Check deployment timeout
-                long timetowait = timeout - System.currentTimeMillis();
-                if (timetowait <= 0) {
-                    log.warn("Deployment Timeout occured");
-                    error = new Throwable("Deployment timeout");
-                    orchestrator.doChangeStatus(paasId, DeploymentStatus.FAILURE);
-                    break;
+                // Wait for an event unless no task was scheduled
+                if (taskUrl != null) {
+                    long timetowait = timeout - System.currentTimeMillis();
+                    if (timetowait <= 0) {
+                        log.warn("Deployment Timeout occured");
+                        error = new Throwable("Deployment timeout");
+                        changeStatusToFailure(paasId);
+                        break;
+                    }
+                    // Wait Deployment Events from Yorc
+                    log.debug(paasId + ": Waiting for deployment events.");
+                    try {
+                        jrdi.wait(timetowait);
+                    } catch (InterruptedException e) {
+                        log.warn("Interrupted while waiting for deployment");
+                    }
                 }
-                // Wait Deployment Events from Yorc
-                log.debug(paasId + ": Waiting for deployment events.");
-                try {
-                    jrdi.wait(timetowait);
-                } catch (InterruptedException e) {
-                    log.warn("Interrupted while waiting for deployment");
-                }
+
                 // Check if we received a Deployment Event and process it
                 evt = jrdi.getLastEvent();
                 if (evt != null && evt.getType().equals(EventListenerTask.EVT_DEPLOYMENT)) {
@@ -188,12 +208,25 @@ public class DeployTask extends AlienTask {
                             error = new Exception("Deployment failed");
                             break;
                         case "deployed":
-                            log.debug("Deployment success: " + paasId);
+                            log.info("Deployment success: " + paasId);
                             orchestrator.doChangeStatus(paasId, DeploymentStatus.DEPLOYED);
                             done = true;
                             break;
                         case "deployment_in_progress":
                             orchestrator.doChangeStatus(paasId, DeploymentStatus.DEPLOYMENT_IN_PROGRESS);
+                            break;
+                        case "update_failure":
+                            log.warn("Update failed: " + paasId);
+                            orchestrator.doChangeStatus(paasId, DeploymentStatus.UPDATE_FAILURE);
+                            error = new Exception("Update failed");
+                            break;
+                        case "updated":
+                            log.info("Update success: " + paasId);
+                            orchestrator.doChangeStatus(paasId, DeploymentStatus.UPDATED);
+                            done = true;
+                            break;
+                        case "update_in_progress":
+                            orchestrator.doChangeStatus(paasId, DeploymentStatus.UPDATE_IN_PROGRESS);
                             break;
                         default:
                             orchestrator.sendMessage(paasId, "Deployment status = " + evt.getStatus());
@@ -231,12 +264,23 @@ public class DeployTask extends AlienTask {
                     break;
                 case "DEPLOYED":
                     // Deployment is OK.
+                    log.info("Deployment was successful: " + paasId);
                     orchestrator.changeStatus(paasId, DeploymentStatus.DEPLOYED);
                     done = true;
                     break;
                 case "DEPLOYMENT_FAILED":
                     orchestrator.doChangeStatus(paasId, DeploymentStatus.FAILURE);
                     error = new Exception("Deployment failed");
+                    break;
+                case "UPDATED":
+                    // Update is OK.
+                    log.info("Update was successful: " + paasId);
+                    orchestrator.changeStatus(paasId, DeploymentStatus.UPDATED);
+                    done = true;
+                    break;
+                case "UPDATE_FAILURE":
+                    orchestrator.doChangeStatus(paasId, DeploymentStatus.UPDATE_FAILURE);
+                    error = new Exception("Update failed");
                     break;
                 default:
                     log.debug("Deployment Status is currently " + status);
@@ -669,34 +713,5 @@ public class DeployTask extends AlienTask {
             }
         }
         return currentInformations;
-    }
-
-    private void buildComputeMonitoringTags(final DeploymentTopology depTopology, PaaSTopology ptopo) {
-        Map<String, String> depProps = depTopology.getProviderDeploymentProperties();
-        if (depProps != null && !depProps.isEmpty()) {
-            // Check for Monitoring time interval : it enables monitoring only if time interval is > 0
-            String monitoringIntervalStr = (String) MapUtil.get(depProps, YstiaOrchestratorFactory.MONITORING_TIME_INTERVAL);
-            log.debug("monitoringIntervalStr='" + monitoringIntervalStr + "'");
-            if (monitoringIntervalStr != "") {
-                int monitoringInterval = 0;
-                // No blocking error for deployment
-                try {
-                    monitoringInterval = Integer.parseInt(monitoringIntervalStr);
-                } catch(NumberFormatException nfe) {
-                    log.error(String.format("Failed to parse number from value=\"%s\". No monitoring will be planned but deployment goes on.", monitoringIntervalStr));
-                    return;
-                }
-                if (monitoringInterval > 0) {
-                    List<Tag> tags = new ArrayList<>();
-                    Tag tag = new Tag();
-                    tag.setName(YstiaOrchestratorFactory.MONITORING_TIME_INTERVAL);
-                    tag.setValue(monitoringIntervalStr);
-                    tags.add(tag);
-                    for (PaaSNodeTemplate compute : ptopo.getComputes()) {
-                        compute.getTemplate().setTags(tags);
-                    }
-                }
-            }
-        }
     }
 }

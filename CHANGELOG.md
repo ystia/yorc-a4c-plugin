@@ -1,16 +1,77 @@
 # Yorc Alien4Cloud Plugin Changelog
 
-## 3.1.2 (February 13, 2019)
+## 3.2.1 (July 05, 2019)
 
-## 3.1.1 (February 06, 2019)
+### BUG FIXES
+
+* mem_per_node slurm option parameter is limited to integer number of GB ([GH-446](https://github.com/ystia/yorc/issues/446))
+* Workflow ends with timeout after 4 hours and application is undeployed ([GH-131](https://github.com/ystia/yorc-a4c-plugin/issues/131))
+
+## 3.2.0 (May 31, 2019)
+
+### BUG FIXES
+
+* Emit a persistent event on deployment purge ([GH-402](https://github.com/ystia/yorc/issues/402))
+
+
+## 3.2.0-RC1 (May 10, 2019)
+
+## 3.2.0-M5 (April 19, 2019)
+
+### FEATURES
+
+* Implement an anti-affinity placement policy for Openstack ([GH-84](https://github.com/ystia/yorc/issues/84))
+* Monitor deployed services liveness ([GH-104](https://github.com/ystia/yorc/issues/104))
+
+### BUG FIXES
+
+* Scale Down operation never ending with compute instance final status 'Initial' ([GH-117](https://github.com/ystia/yorc-a4c-plugin/issues/117))
+
+
+## 3.2.0-M4 (March 29, 2019)
+
+### FEATURES
+
+* Deployment update: support the ability to add/remove workflows with Yorc Premium version ([GH-112](https://github.com/ystia/yorc-a4c-plugin/issues/112))
+* Yorc support of kubernetes PersistentVolumeClaim ([GH-209](https://github.com/ystia/yorc/issues/209))
+
+### BUG FIXES
+
+* Application undeployment seen in progress until timeout of 30 minutes occurs ([GH-110](https://github.com/ystia/yorc-a4c-plugin/issues/110))
+
+
+## 3.2.0-M3 (March 11, 2019)
+
+### FEATURES
+
+* Yorc supports Slurm Accounting ([GH-280](https://github.com/ystia/yorc/issues/280))
+* Yorc supports Slurm reservation ([GH-132](https://github.com/ystia/yorc/issues/132))
+
+## 3.2.0-M2 (February 15, 2019)
+
+### DEPENDENCIES
+
+* Upgrade to Alien4Cloud 2.1.1
+
+### ENHANCEMENTS
+
+* Add SSL configuration parameters to connect to a secure Yorc Server ([GH-82](https://github.com/ystia/yorc-a4c-plugin/issues/82))
+* Publish value change event for instance attributes ([GH-222](https://github.com/ystia/yorc/issues/222))
+* Slurm user credentials can be defined as slurm deployment topology properties, as an alternative to yorc configuration properties ([GH-281](https://github.com/ystia/yorc/issues/281))
+
+### BUG FIXES
+
+* Deploying applications simultaneously can fail on invalid zip error ([GH-45](https://github.com/ystia/yorc-a4c-plugin/issues/45))
+* Uninstall workflow is not correct for Topology involving BlockStorage node ([GH-90](https://github.com/ystia/yorc-a4c-plugin/issues/90))
+* Yorc failure at undeployment leaves an app unpurged on Yorc server while undeployed in Alien4Cloud ([GH-95](https://github.com/ystia/yorc-a4c-plugin/issues/95))
+
+## 3.2.0-M1 (January 28, 2019)
 
 ### BUG FIXES
 
 * Can't connect to Yorc in secure mode  ([GH-81](https://github.com/ystia/yorc-a4c-plugin/issues/81))
 * Deployment status inconsistency when restarting Alien4Cloud and an application finishes to deploy  ([GH-77](https://github.com/ystia/yorc-a4c-plugin/issues/77))
-* Deploying applications simultaneously can fail on invalid zip error ([GH-45](https://github.com/ystia/yorc-a4c-plugin/issues/45))
 * Uninstall workflow is not correct for Topology involving BlockStorage node ([GH-90](https://github.com/ystia/yorc-a4c-plugin/issues/90))
-* Yorc failure at undeployment leaves an app unpurged on Yorc server while undeployed in Alien4Cloud ([GH-95](https://github.com/ystia/yorc-a4c-plugin/issues/95))
 
 ## 3.1.0 (December 20, 2018)
 
@@ -157,7 +218,7 @@ This release brings a tech preview support of jobs scheduling. It allows to desi
 
 In this release we mainly focused on the integration with Slurm for supporting this feature (but we are also working on Kubernetes for the next release :smile:). Bellow are new supported TOSCA types and implementations:
 
-* SlurmJobs: will lead to issuing a srun command with a given executable file.  
+* SlurmJobs: will lead to issuing a srun command with a given executable file.
 * SlurmBatch: will lead to issuing a sbatch command with a given batch file and associated executables
 * Singularity integration: allows to execute a Singularity container instead of an executable file.
 

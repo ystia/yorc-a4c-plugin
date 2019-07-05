@@ -1,0 +1,31 @@
+tosca_definitions_version: alien_dsl_2_0_0
+
+metadata:
+  template_name: SingularityComputePITemplate
+  template_version: 0.1.0-SNAPSHOT
+  template_author: admin
+
+description: ""
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN20
+  - alien-base-types:2.1.1
+  - yorc-slurm-types:1.2.0
+  - org.ystia.yorc.samples.job.slurm.singularity.components:1.0.0-SNAPSHOT
+  - yorc-types:1.1.0
+
+topology_template:
+  node_templates:
+    ComputePIComponent:
+      type: org.ystia.yorc.samples.job.slurm.singularity.nodes.ComputePIComponent
+      properties:
+        execution_options:
+          command: perl
+          args:
+            - "-Mbignum=bpi"
+            - "-wle"
+            - "print bpi(2000)"
+        slurm_options:
+          tasks: 1
+          nodes: 1
+        working_directory: work

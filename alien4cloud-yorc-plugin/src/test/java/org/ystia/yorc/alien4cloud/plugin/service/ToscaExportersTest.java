@@ -240,7 +240,7 @@ public class ToscaExportersTest extends AbstractPluginTest {
         Assert.assertEquals(parsingResult.getResult().getTopology().getNodeTemplates().get("Comp1").getInterfaces().get("tosca.interfaces.node.lifecycle.Runnable").getOperations().size(), 1);
         Assert.assertEquals(parsingResult.getResult().getTopology().getNodeTemplates().get("Comp1").getInterfaces().get("tosca.interfaces.node.lifecycle.Runnable").getOperations().containsKey("run"), true);
 
-        Assert.assertEquals(parsingResult.getResult().getTopology().getNodeTemplates().get("Comp1").getInterfaces().get("tosca.interfaces.node.lifecycle.Runnable").getOperations().get("run").getImplementationArtifact().getArtifactType(), "yorc.artifacts.Deployment.SlurmJobBin");
+        Assert.assertEquals(parsingResult.getResult().getTopology().getNodeTemplates().get("Comp1").getInterfaces().get("tosca.interfaces.node.lifecycle.Runnable").getOperations().get("run").getImplementationArtifact().getArtifactType(), "yorc.artifacts.Deployment.SlurmJobBatch");
         Assert.assertEquals(parsingResult.getResult().getTopology().getNodeTemplates().get("Comp1").getInterfaces().get("tosca.interfaces.node.lifecycle.Runnable").getOperations().get("run").getImplementationArtifact().getArtifactRef(), "bin/submit.sh");
     }
 

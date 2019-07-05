@@ -1,0 +1,8 @@
+# Run Tensorflow Mnist tutorial with Singularity Slurm Job
+
+Results are logged into output directory.
+
+Requirements:
+- Need Tensorflow Docker image related to Slurm cluster CPU/GPU architecture
+- Datasets are provided with Tosca zrtifacts
+- Need to create an output directory and bind it to Singularity container with singularity-command_options property

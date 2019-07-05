@@ -23,6 +23,7 @@ import org.elasticsearch.common.collect.Maps;
 import org.ystia.yorc.alien4cloud.plugin.rest.Response.Event;
 import org.ystia.yorc.alien4cloud.plugin.rest.Response.EventResponse;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -40,6 +41,7 @@ public class EventListenerTask extends AlienTask {
     public static final String EVT_WORKFLOW   = "Workflow";
     public static final String EVT_WORKFLOW_STEP   = "WorkflowStep";
     public static final String EVT_ALIEN_TASK   = "AlienTask";
+    public static final String EVT_ATTRIBUTE_CHANGE   = "AttributeValue";
 
     // Set this to false to stop pollong events
     private boolean valid = true;
@@ -110,24 +112,9 @@ public class EventListenerTask extends AlienTask {
                                         ninfo.put(eInstance, iinfo);
                                     }
                                     orchestrator.updateInstanceState(paasId, eNode, eInstance, iinfo, eState);
-
-                                    // Retrieve instance attribute for all states
-                                    orchestrator.updateInstanceAttributes(paasId, iinfo, eNode, eInstance);
-
                                     switch (eState) {
-                                        case "initial":
-                                        case "creating":
-                                        case "deleting":
-                                        case "starting":
-                                        case "stopping":
-                                        case "configured":
-                                        case "configuring":
-                                        case "created":
-                                            break;
                                         case "deleted":
                                             ninfo.remove(eInstance);
-                                            break;
-                                        case "stopped":
                                             break;
                                         case "started":
                                             // persist BS Id
@@ -142,7 +129,6 @@ public class EventListenerTask extends AlienTask {
                                             log.warn("Error instance status in deploymentID: {} and nodeID: {}", paasId, eNode);
                                             break;
                                         default:
-                                            log.warn("Unknown instance status: " + eState);
                                             break;
                                     }
                                     break;
@@ -177,6 +163,7 @@ public class EventListenerTask extends AlienTask {
                                     eMessage += event.getType() + ":" + eState;
                                     log.debug("Received Event from Yorc <<< " + eMessage);
                                     synchronized (jrdi) {
+                                        jrdi.setLastEvent(event);
                                         jrdi.notifyAll();
                                     }
                                     switch (event.getStatus()) {
@@ -259,6 +246,57 @@ public class EventListenerTask extends AlienTask {
                                             log.warn("An event has been ignored. Unexpected status=" + event.getStatus());
                                             break;
                                     }
+                                    break;
+                                case EVT_ATTRIBUTE_CHANGE:
+                                    eNode = event.getNodeId();
+                                    eInstance = event.getInstanceId();
+                                    String eAttribute = event.getAttribute();
+                                    String eValue = event.getValue();
+                                    log.debug(
+                                        "Received Event from Yorc <<< {}{}:{} Attribute <{}> updated to value <{}> for node <{}>, instance <{}>",
+                                        eMessage, event.getType(), eState,  eAttribute, eValue, eNode, eInstance);
+
+                                    // If this is an attribute change notification
+                                    // that the instance state changed to deleted,
+                                    // the code here should not attempt to add a
+                                    // new instance in instanceInfo if no such
+                                    // instance exists.
+                                    // The deletion of this instance in instanceInfo
+                                    // is managed above when receiving an instance
+                                    // event
+                                    Map<String, String> attrValueMap;
+                                    if ("state".equals(eAttribute) &&
+                                        "deleted".equals(eValue)) {
+
+                                            attrValueMap = new HashMap<String, String>();
+                                            attrValueMap.put(eAttribute, eValue);
+                                    } else {
+                                        ninfo = instanceInfo.get(eNode);
+                                        if (ninfo == null) {
+                                            // Add a new Node in YorcRuntimeDeploymentInfo
+                                            log.debug("Add a node in YorcRuntimeDeploymentInfo: " + eNode);
+                                            ninfo = Maps.newHashMap();
+                                            instanceInfo.put(eNode, ninfo);
+                                        }
+                                        iinfo = ninfo.get(eInstance);
+                                        if (iinfo == null) {
+                                            // Add a new Instance for this node in YorcRuntimeDeploymentInfo
+                                            log.debug("Add an instance in YorcRuntimeDeploymentInfo: " + eInstance);
+                                            iinfo = orchestrator.newInstance(new Integer(eInstance));
+                                            ninfo.put(eInstance, iinfo);
+                                        }
+
+                                        iinfo.getAttributes().put(eAttribute, eValue);
+                                        attrValueMap = iinfo.getAttributes();
+                                    }
+
+                                    // Notify a4c
+                                    PaaSInstanceStateMonitorEvent a4cEvent = new PaaSInstanceStateMonitorEvent();
+                                    a4cEvent.setInstanceState(eState);
+                                    a4cEvent.setInstanceId(eInstance);
+                                    a4cEvent.setNodeTemplateId(eNode);
+                                    a4cEvent.setAttributes(attrValueMap);
+                                    orchestrator.postEvent(a4cEvent, paasId);
                                     break;
                                 default:
                                     log.warn("Unknown event type received from Yorc <<< " + event.getType());

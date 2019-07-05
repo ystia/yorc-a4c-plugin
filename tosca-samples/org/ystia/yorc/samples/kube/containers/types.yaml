@@ -7,14 +7,14 @@ metadata:
 
 imports:
   - tosca-normative-types:1.0.0-ALIEN20
-  - docker-types:2.1.0
+  - docker-types:2.1.1
 
 description: DockerContainers that can be deployed on K8S
 
 repositories:
   docker:
     url: https://hub.docker.com/
-    type: http
+    type: docker
 
 node_types:
   org.ystia.yorc.samples.kube.containers.nodes.MySQL:

@@ -20,7 +20,7 @@
     <parent>
       <groupId>alien4cloud</groupId>
       <artifactId>alien4cloud-yorc-plugin-parent</artifactId>
-      <version>3.1.2</version>
+      <version>3.2.1</version>
     </parent>
 
     <artifactId>alien4cloud-yorc-plugin</artifactId>
@@ -28,18 +28,18 @@
 
       <properties>
         <lombok.version>1.16.20</lombok.version>
-        <httpclient.version>4.4.1</httpclient.version>
+        <httpclient.version>4.3.2</httpclient.version>
         <skipTests>false</skipTests>
 
         <!-- Embedded TOSCA types versions -->
-        <yorc.types.version>1.0.0</yorc.types.version>
+        <yorc.types.version>1.1.0</yorc.types.version>
         <yorc.aws.types.version>1.0.0</yorc.aws.types.version>
         <yorc.docker.types.version>1.0.0</yorc.docker.types.version>
         <yorc.google.types.version>1.0.0</yorc.google.types.version>
         <yorc.hp.types.version>1.0.0</yorc.hp.types.version>
         <yorc.k8s.types.version>2.0.0</yorc.k8s.types.version>
-        <yorc.os.types.version>1.0.0</yorc.os.types.version>
-        <yorc.slurm.types.version>1.1.0</yorc.slurm.types.version>
+        <yorc.os.types.version>1.1.0</yorc.os.types.version>
+        <yorc.slurm.types.version>1.2.0</yorc.slurm.types.version>
       </properties>
 
     <dependencies>
@@ -59,6 +59,11 @@
         <groupId>org.json</groupId>
         <artifactId>json</artifactId>
         <version>20180130</version>
+      </dependency>
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcpkix-jdk15on</artifactId>
+        <version>1.60</version>
       </dependency>
 
       <!-- tests -->

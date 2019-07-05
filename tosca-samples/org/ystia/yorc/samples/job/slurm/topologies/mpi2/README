@@ -1,0 +1,1 @@
+# Same as MPI except that only sbatch script is provided and use accessible MPI executable

@@ -26,7 +26,7 @@ description: Implementation for the the complex data type demo.
 imports:
   - tosca-normative-types:1.0.0-ALIEN20
   - yorc.tests.datatypes.pub:1.0-SNAPSHOT
-  - yorc-types:1.0.0
+  - yorc-types:1.1.0
 
 
 
