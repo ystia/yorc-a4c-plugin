@@ -32,7 +32,7 @@ public class WorkflowTask extends AlienTask {
     IPaaSCallback<?> callback;
     String workflowName;
     Map<String, Object> inputs;
-    private final int WAIT_EVENT_TIMEOUT = 1000 * 60; // 60 seconds
+    private final int WAIT_EVENT_TIMEOUT = 1000 * 300; // 5 minutes
     
     public WorkflowTask(PaaSDeploymentContext ctx, YorcPaaSProvider prov, String workflowName, Map<String, Object> inputs, IPaaSCallback<?> callback) {
         super(prov);
