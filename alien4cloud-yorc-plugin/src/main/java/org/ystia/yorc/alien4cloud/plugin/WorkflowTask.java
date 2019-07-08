@@ -92,7 +92,7 @@ public class WorkflowTask extends AlienTask {
                         status = restClient.getStatusFromYorc(taskUrl).toLowerCase();
                         log.debug("Task " + taskId + " returned status:" + status);
                     } catch (Exception e) {
-                        log.debug("Attempting to get task " + taskId + " status throws " + e.getMessage());
+                        log.error("Failed to get task " + taskId + " status", e);
                         status = "failed";
                     }
                 }
