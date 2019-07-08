@@ -1,0 +1,114 @@
+tosca_definitions_version: alien_dsl_2_0_0
+
+metadata:
+  template_name: org.ystia.yorc.samples.kube.consul
+  template_version: 1.0.0-SNAPSHOT
+  template_author: Yorc team
+
+imports:
+  - tosca-normative-types:1.0.0-ALIEN20
+  - docker-types:2.2.0-SM6
+
+description: Consul that can be deployed on K8S
+
+repositories:
+  docker:
+    url: https://hub.docker.com/
+    type: docker
+
+node_types:
+  org.ystia.yorc.samples.kube.containers.nodes.Consul:
+    derived_from: tosca.nodes.Container.Application.DockerContainer
+    capabilities:
+      consul_ui:
+        description: Endpoint to acess consul UI
+        type: org.ystia.yorc.samples.kube.containers.capabilities.ConsulUI
+    interfaces:
+      Standard:
+        create:
+          implementation:
+            file: consul:1.0.6
+            repository: docker
+            type: tosca.artifacts.Deployment.Image.Container.Docker
+
+capability_types:
+  org.ystia.yorc.samples.kube.containers.capabilities.ConsulUI:
+    derived_from: tosca.capabilities.Endpoint
+    properties:
+      docker_bridge_port_mapping:
+        type: integer
+        description: Port used to bridge to the container's endpoint.
+        default: 8500
+      port:
+        type: integer
+        default: 8500
+  org.ystia.yorc.samples.kube.containers.capabilities.Server:
+    derived_from: tosca.capabilities.Endpoint
+    properties:
+      docker_bridge_port_mapping:
+        type: integer
+        description: Port used to bridge to the container's endpoint.
+        default: 8300
+      port:
+        type: integer
+        default: 8300
+  org.ystia.yorc.samples.kube.containers.capabilities.Serflan:
+    derived_from: tosca.capabilities.Endpoint
+    properties:
+      docker_bridge_port_mapping:
+        type: integer
+        description: Port used to bridge to the container's endpoint.
+        default: 8301
+      port:
+        type: integer
+        default: 8301
+  org.ystia.yorc.samples.kube.containers.capabilities.Serfwan:
+    derived_from: tosca.capabilities.Endpoint
+    properties:
+      docker_bridge_port_mapping:
+        type: integer
+        description: Port used to bridge to the container's endpoint.
+        default: 8302
+      port:
+        type: integer
+        default: 8302
+  org.ystia.yorc.samples.kube.containers.capabilities.ConsulHttp:
+    derived_from: tosca.capabilities.Endpoint
+    properties:
+      docker_bridge_port_mapping:
+        type: integer
+        description: Port used to bridge to the container's endpoint.
+        default: 8080
+      port:
+        type: integer
+        default: 8080
+  org.ystia.yorc.samples.kube.containers.capabilities.ConsulHttps:
+    derived_from: tosca.capabilities.Endpoint
+    properties:
+      docker_bridge_port_mapping:
+        type: integer
+        description: Port used to bridge to the container's endpoint.
+        default: 8443
+      port:
+        type: integer
+        default: 8443
+  org.ystia.yorc.samples.kube.containers.capabilities.ConsulDNS:
+    derived_from: tosca.capabilities.Endpoint
+    properties:
+      docker_bridge_port_mapping:
+        type: integer
+        description: Port used to bridge to the container's endpoint.
+        default: 8600
+      port:
+        type: integer
+        default: 8600
+  org.ystia.yorc.samples.kube.containers.capabilities.ConsulUDP:
+    derived_from: tosca.capabilities.Endpoint
+    properties:
+      docker_bridge_port_mapping:
+        type: integer
+        description: Port used to bridge to the container's endpoint.
+        default: 53
+      port:
+        type: integer
+        default: 53
