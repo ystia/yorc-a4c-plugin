@@ -1,5 +1,11 @@
 # Yorc Alien4Cloud Plugin Changelog
 
+## 3.2.2 (July 09, 2019)
+
+### BUG FIXES
+
+* Running a custom workflow consumes 100% of one CPU thread ([GH-140](https://github.com/ystia/yorc/issues/140))
+
 ## 3.2.1 (July 05, 2019)
 
 ### BUG FIXES
