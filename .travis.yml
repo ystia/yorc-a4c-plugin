@@ -9,7 +9,7 @@ env:
     - secure: "WS0CXs5AbxhJR+NCsvlvbkqL79/2flWZ2SJ8CeoPxlVdkviOGSrLg5V+edEciAJFe/8SvFBfTG+ESaeze2TGwVJrv6IpBvDiJxkC63AigjbbCHAPWsxCGHIq3DfG9K+ZDU2L1wNSOa6rWEfPQdIrnL/nELTWGNrqiqikCNqpBergwdmlghT54h4Qmyi/IWvmVagb2SoUxLMUUbzga8Kkc/ajfmJx5dKV4WyOADeojP0Dgv+ZQyEIy2SQOAw7hf4wO8DHWiTnWqzg0OgUHaExFZx/cjgtRyKyBf4zZ4w3QcfXbAPwX7Cczyql+zfGmm4Ge+Cx5gayhVtXtpfB45rZKDv3gsXQ130a3fLgRDCcBixqbz5tOzwEcQezL+Xz13ue2u0c7BOObglJ5HZPlsNKwDSuJEaNEYI0Dd9yoB+3Qf5YeJSKNRfRRGuMQn0ZGXUiMTL3X9gGIBA2p86CWuHicQgk0wtLu0pvXnrGH4C+JDmHCxEGYV+nHvTrG7Xy4e7cqoCIuhLAP6ofv25i7MARzl0olMHWJtOfVoh+xU3jfr0+T5b8DpqSlfcKjE5TV5mWvsSg9WizEDaKrIS6bzucDx5tPI/8XbLzTbzC7AiLHKQql2wKhXbt6LjrfB5/UMrHmRE83k7FlEEfGovufAIh7WsfchMd7oQpIHoal8w0xUs="
 
 install:
-  - pip install --user --upgrade sphinx==1.7.9 semantic-version requests urllib3[secure]
+  - pip install --user --upgrade sphinx==1.7.9 semantic-version requests urllib3[secure] pyOpenSSL==16.2.0
   - curl -fL https://getcli.jfrog.io | sh
 
 script:
