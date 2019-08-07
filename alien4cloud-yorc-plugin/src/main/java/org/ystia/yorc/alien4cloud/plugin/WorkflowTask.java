@@ -32,6 +32,7 @@ public class WorkflowTask extends AlienTask {
     IPaaSCallback<?> callback;
     String workflowName;
     Map<String, Object> inputs;
+    private final int WAIT_EVENT_TIMEOUT = 1000 * 300; // 5 minutes
     
     public WorkflowTask(PaaSDeploymentContext ctx, YorcPaaSProvider prov, String workflowName, Map<String, Object> inputs, IPaaSCallback<?> callback) {
         super(prov);
@@ -68,30 +69,53 @@ public class WorkflowTask extends AlienTask {
         boolean done = false;
         while (!done && error == null) {
             synchronized (jrdi) {
-                // Check workflow related event
+                // Wait for Events from Yorc
+                log.debug(paasId + ": Waiting for Worflow events.");
+                try {
+                    jrdi.wait(WAIT_EVENT_TIMEOUT);
+                } catch (InterruptedException e) {
+                    log.error(paasId + ": Interrupted while waiting for Workflow event");
+                    break;
+                }
+
+                String status;
+                // Woke up on wait timeout or event received
+                // Checking if this is a workflow event
                 Event evt = jrdi.getLastEvent();
                 if (evt != null && evt.getType().equals(EventListenerTask.EVT_WORKFLOW) && taskId.equals(evt.getAlienExecutionId())) {
                     jrdi.setLastEvent(null);
-                    switch (evt.getStatus()) {
-                        case "failed":
-                            log.debug("Workflow failed");
-                            error = new Exception("Workflow failed");
-                            break;
-                        case "canceled":
-                            log.debug("Workflow failed");
-                            error = new Exception("Workflow canceled");
-                            break;
-                        case "done":
-                            log.debug("Workflow OK");
-                            done = true;
-                            break;
-                        default:
-                            log.debug("Workflow Status is currently " + evt.getStatus());
-                            break;
+                    status = evt.getStatus();
+                } else {
+                    // No event received for this workflow, checking the task
+                    // status to confirm it is ongoing
+                    try {
+                        status = restClient.getStatusFromYorc(taskUrl).toLowerCase();
+                        log.debug("Task " + taskId + " returned status:" + status);
+                    } catch (Exception e) {
+                        log.error("Failed to get task " + taskId + " status", e);
+                        status = "failed";
                     }
+                }
+                switch (status) {
+                    case "failed":
+                        log.debug("Workflow failed");
+                        error = new Exception("Workflow failed");
+                        break;
+                    case "canceled":
+                        log.debug("Workflow canceled");
+                        error = new Exception("Workflow canceled");
+                        break;
+                    case "done":
+                        log.debug("Workflow OK");
+                        done = true;
+                        break;
+                    default:
+                        log.debug("Workflow Status is currently " + status);
+                        break;
                 }
             }
         }
+
         synchronized (jrdi) {
             // Task is ended: Must remove the taskId and notify a possible undeploy waiting for it.
             jrdi.setDeployTaskId(null);
