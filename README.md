@@ -1,5 +1,34 @@
 # Alien4Cloud Yorc Plugin
 
+
+_**Warning:** **This repository is no more maintained !**
+
+The new Yorc A4C plugin is [alien4cloud-yorc-provider](https://github.com/alien4cloud/alien4cloud-yorc-provider) as Yorc is the new official Alien4cloud orchestrator. 
+
+You will find the existing features of the defunct yorc-a4c-plugin in the new alien4cloud-yorc-provider
+
+You can find the tosca samples components in their dedicated repository: [Tosca-samples](https://github.com/ystia/tosca-samples)
+
+You can find the new [related documentation](https://alien4cloud.github.io/#/documentation/2.1.0/orchestrators/yorc/index.html)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 [![Download](https://api.bintray.com/packages/ystia/yorc-a4c-plugin/distributions/images/download.svg?version=4.0.0-M2)](https://bintray.com/ystia/yorc-a4c-plugin/distributions/4.0.0-M2/link) [![Build Status](https://travis-ci.org/ystia/yorc-a4c-plugin.svg?branch=release/3.2)](https://travis-ci.org/ystia/yorc-a4c-plugin)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
