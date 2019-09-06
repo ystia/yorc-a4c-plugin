@@ -1,7 +1,7 @@
 # Alien4Cloud Yorc Plugin
 
 
-_**Warning:** **This repository is no more maintained !**
+_**Warning:** **This repository is no longer maintained !**
 
 The new Yorc A4C plugin is [alien4cloud-yorc-provider](https://github.com/alien4cloud/alien4cloud-yorc-provider) as Yorc is the new official Alien4cloud orchestrator. 
 
